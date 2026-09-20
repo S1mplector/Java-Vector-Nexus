@@ -82,6 +82,31 @@ controlled comparison, override the cap with
 `-Djvn.editor.previewMaxFps=15..240`. UI layout/style overrides are applied when they
 change rather than reparsed and reloaded on every preview frame.
 
+### Layered timeline CPU cost
+
+The VN renderer retains immutable layer target names and group topology across frames.
+The metadata cache is bounded to 16 character/expression/slot contexts and is cleared
+on project changes, cache resets, and disposal. Entity proxies, visibility, and transform
+values are still resolved each frame, so new timelines and expression changes remain live.
+This avoids repeatedly sanitizing every declared expression name and scanning group
+membership while head/body groups animate. Target-name sanitization also uses a single
+pass rather than compiling a regular expression for each alias.
+
+To reproduce the Was I Write lightning scene with real assets and collect a JFR profile:
+
+```bash
+JVN_LIGHTNING_ROOT=/path/to/Was_I_Write ./gradlew :editor:test \
+  --tests '*LightningRenderPerformanceTest'
+```
+
+The opt-in test replays the section after source line 263 in
+`scripts/story/620-686-lightning.vns`. It checks that authored group positions change,
+flushes Canvas rendering through a 1280×720 snapshot, and writes timing, a final frame,
+and `render.jfr` under `modules/editor/build/reports/lightning` by default.
+Set `JVN_LIGHTNING_OUTPUT` to choose another output directory. Snapshot-inclusive timings
+are useful for comparing the same machine and scene; they are not an interactive FPS
+or GPU-only benchmark.
+
 ### Preview memory safety
 
 JavaFX image caches are bounded by estimated decoded raster bytes as well as entry

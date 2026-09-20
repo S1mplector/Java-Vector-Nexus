@@ -2654,6 +2654,9 @@ public class EditorApp extends Application {
       e.consume();
     });
 
+    // Keep preview draw work within the Hub budget independently of editor UI updates.
+    final com.jvn.editor.ui.PreviewFramePacer previewPacer =
+        com.jvn.editor.ui.PreviewFramePacer.forCurrentPipeline();
     // Timer
     timer = new AnimationTimer() {
       long last = -1;
@@ -2672,7 +2675,8 @@ public class EditorApp extends Application {
               primaryStage.isShowing(),
               primaryStage.isIconified(),
               primaryStage.isFocused())) {
-            ft.render(dt);
+            var previewFrame = previewPacer.next(now);
+            if (previewFrame.render()) ft.render(previewFrame.deltaMs());
           }
         }
         if (lastTabDirtyRefreshNs < 0

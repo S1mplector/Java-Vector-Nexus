@@ -882,6 +882,33 @@ public final class JvnHub {
         jvmLaunchSettings.summary(),
         ACCENT_TOOLS));
     tools.addSeparator();
+    JMenu checks = hubMenu("Build & Verify", ACCENT_TOOLS);
+    JMenuItem toolsQuickCheck = hubMenuItem("Quick Verification", "Compile all modules and run the core/runtime tests.",
+        VectorIcon.Kind.HEALTH, ACCENT_TOOLS, () -> runGradle("quickCheck", "Quick Verification"));
+    toolsQuickCheck.setEnabled(!busy);
+    checks.add(toolsQuickCheck);
+    JMenuItem prepareEditor = hubMenuItem("Prepare Editor Launch", "Compile the editor and refresh its direct-launch cache.",
+        VectorIcon.Kind.REFRESH, ACCENT_TOOLS, () -> runGradle(":editor:prepareFastLaunch", "Prepare Editor Launch"));
+    prepareEditor.setEnabled(!busy);
+    checks.add(prepareEditor);
+    tools.add(checks);
+    JMenu profiling = hubMenu("Performance & Recordings", ACCENT_TOOLS);
+    JMenuItem record = hubMenuItem("Record Editor Session (JFR)",
+        "Record CPU, memory allocation, and garbage collection; close the editor to finish the recording.",
+        VectorIcon.Kind.PLAY, ACCENT_TOOLS, () -> guardedRun("Profile Editor", this::runProfiledEditor));
+    record.setEnabled(!busy);
+    profiling.add(record);
+    profiling.add(hubMenuItem("Open Recordings Folder", "Open saved Java Flight Recorder sessions.",
+        VectorIcon.Kind.DOCUMENTATION, ACCENT_TOOLS, () -> revealHubFolder("recordings",
+            RenderPipelineSettings.profileDirectory(System.getProperty("os.name", ""),
+                Path.of(System.getProperty("user.home", ".")), System.getenv()))));
+    profiling.add(hubMenuItem("Copy Performance Setup", "Copy renderer, preview budget, and JVM settings for comparison.",
+        VectorIcon.Kind.CHECK, ACCENT_TOOLS, () -> {
+          Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
+              new StringSelection(renderPipelineSummary() + "\nApplication JVM: " + jvmLaunchSettings.summary()), null);
+          setStatus("Performance setup copied", ACCENT_TOOLS);
+        }));
+    tools.add(profiling);
     tools.add(hubMenuItem(
         "JVM Memory Settings...",
         "Set real heap, garbage collector, and out-of-memory options for managed application launches.",
@@ -1114,7 +1141,7 @@ public final class JvnHub {
     render.add(menuStatusCard(
         "VSync " + (renderPipelineOptions.vsync() ? "on" : "off")
             + " · Dirty regions " + (renderPipelineOptions.dirtyRegions() ? "on" : "off"),
-        "Shape cache · " + renderPipelineOptions.shapeCache().displayName(),
+        "Preview budget · " + RenderPipelineSettings.previewBudgetSummary(renderPipelineOptions),
         ACCENT_RENDER));
     if (renderPipelineOptions.diagnosticsEnabled()) {
       render.add(menuStatusCard(
@@ -1142,7 +1169,22 @@ public final class JvnHub {
         RenderPipelineSettings.Mode.SOFTWARE);
 
     render.addSeparator();
-    JMenu performance = hubMenu("Performance Tuning", ACCENT_RENDER);
+    JMenu budget = hubMenu("Preview Frame Budget", ACCENT_RENDER);
+    ButtonGroup budgets = new ButtonGroup();
+    int[] frameRates = {0, 30, 60, 120};
+    String[] budgetLabels = {"Automatic (Recommended)", "Efficient — 30 FPS", "Balanced — 60 FPS", "High Refresh — 120 FPS"};
+    for (int i = 0; i < frameRates.length; i++) {
+      int fps = frameRates[i];
+      JRadioButtonMenuItem choice = new HelpRadioButtonMenuItem(budgetLabels[i], renderPipelineOptions.previewMaxFps() == fps);
+      styleMenuItem(choice, ACCENT_RENDER);
+      choice.setToolTipText("Caps editor preview draw work. Display refresh and the editor frame limit still apply; game runtime is unchanged.");
+      choice.addActionListener(event -> setRenderPipelineOptions(
+          renderPipelineOptions.withPreviewMaxFps(fps), "Preview frame budget"));
+      budgets.add(choice);
+      budget.add(choice);
+    }
+    render.add(budget);
+    JMenu performance = hubMenu("Advanced Rendering", ACCENT_RENDER);
     performance.setToolTipText("Tune presentation, redraw, culling, and vector-shape caching.");
     JCheckBoxMenuItem vsync = hubCheckMenuItem(
         "Display Synchronization (VSync)",
@@ -1169,6 +1211,7 @@ public final class JvnHub {
         "Skip obscured content while dirty-region rendering is active.",
         ACCENT_RENDER,
         renderPipelineOptions.occlusionCulling());
+    occlusion.setEnabled(renderPipelineOptions.dirtyRegions());
     occlusion.addActionListener(e -> setRenderPipelineOptions(
         renderPipelineOptions.withOcclusionCulling(occlusion.isSelected()),
         "Occlusion culling"));
@@ -1273,6 +1316,10 @@ public final class JvnHub {
         () -> clickIfAvailable(runEditorButton));
     launch.setEnabled(!busy);
     render.add(launch);
+    JMenuItem probe = hubMenuItem("Check Actual Renderer", "Start JavaFX briefly and report the initialized backend in the console.",
+        VectorIcon.Kind.HEALTH, ACCENT_RENDER, () -> runGradle(":editor:probeGraphics", "Check Actual Renderer"));
+    probe.setEnabled(!busy);
+    render.add(probe);
     render.add(hubMenuItem(
         "Inspect Render Stack...",
         "Show the selected backends, active tuning, and host graphics environment.",
@@ -3107,6 +3154,9 @@ public final class JvnHub {
                 ? ". Diagnostic overlays and logging may reduce performance."
                 : ".")));
 
+    report.add(new HealthCheck(CheckStatus.INFO, "Editor preview budget",
+        RenderPipelineSettings.previewBudgetSummary(tuning),
+        "Applies to docked, detached, and fullscreen editor previews. Lower caps reduce draw work; game runtime timing is unchanged."));
     report.add(displayDeviceCheck());
     report.add(new HealthCheck(
         CheckStatus.INFO,
@@ -3295,6 +3345,7 @@ public final class JvnHub {
         "JVN Render Pipeline",
         "Profile: " + mode.displayName() + " (" + mode.id() + ")",
         "Backend order: " + mode.backendOrder(System.getProperty("os.name", "")),
+        "Preview budget: " + RenderPipelineSettings.previewBudgetSummary(tuning),
         "VSync: " + tuning.vsync(),
         "Dirty regions: " + tuning.dirtyRegions(),
         "Occlusion culling: " + tuning.occlusionCulling(),
@@ -4462,6 +4513,8 @@ public final class JvnHub {
     appendLog("$ " + String.join(" ", cmd));
     startProcess(cmd, "Profile Editor", Map.of(
         "JVN_PROFILE_JFR", "1",
+        "JVN_PROFILE_DIR", RenderPipelineSettings.profileDirectory(System.getProperty("os.name", ""),
+            Path.of(System.getProperty("user.home", ".")), System.getenv()).toString(),
         "JVN_APP_JAVA_OPTS_FILE", jvmLaunchArgumentsFile.toAbsolutePath().toString()));
   }
 

@@ -135,12 +135,11 @@ fun JavaExec.configureGraphicsPipelineAtProcessStart() {
       systemProperty("jvn.graphics.mode", "hardware")
       val os = System.getProperty("os.name", "").lowercase()
       val prismOrder = when {
-        os.contains("win") -> "d3d,es2,sw"
-        os.contains("mac") -> "metal,es2,sw"
+        os.contains("win") -> "d3d,sw"
+        os.contains("mac") -> "es2,sw"
         else -> "es2,sw"
       }
       systemProperty("prism.order", prismOrder)
-      systemProperty("prism.forceGPU", "true")
     }
     "sw", "software", "compatibility" -> {
       systemProperty("jvn.graphics.mode", "software")
@@ -155,7 +154,8 @@ fun JavaExec.configureFlightRecordingForLaunch() {
   if (requested !in setOf("1", "true", "yes", "on")) return
   val os = System.getProperty("os.name", "").lowercase()
   val userHome = File(System.getProperty("user.home", "."))
-  val profileDir = when {
+  val configuredProfileDir = System.getenv("JVN_PROFILE_DIR")?.trim().orEmpty()
+  val profileDir = if (configuredProfileDir.isNotEmpty()) File(configuredProfileDir) else when {
     os.contains("win") -> File(System.getenv("LOCALAPPDATA") ?: userHome.path, "JVN Engine Hub/profiles")
     os.contains("mac") -> File(userHome, "Library/Application Support/JVN Engine Hub/profiles")
     else -> File(System.getenv("XDG_STATE_HOME") ?: File(userHome, ".local/state").path,
@@ -322,5 +322,15 @@ tasks.register<JavaExec>("generateDocsScreenshots") {
   mainClass.set("com.jvn.editor.ui.actioneditor.docs.DocsScreenshotTool")
   workingDir = rootProject.projectDir
   forwardDocsScreenshotSystemProps()
+  configureJavaFxRuntime()
+}
+
+// Probe uses the same JavaFX modules and early graphics configuration as the editor.
+tasks.register<JavaExec>("probeGraphics") {
+  group = "verification"
+  description = "Starts JavaFX briefly and reports the initialized renderer and hardware capabilities."
+  dependsOn(tasks.named("classes"))
+  classpath = sourceSets["main"].runtimeClasspath
+  mainClass.set("com.jvn.editor.GraphicsProbe")
   configureJavaFxRuntime()
 }

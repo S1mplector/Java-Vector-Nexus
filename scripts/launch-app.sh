@@ -331,12 +331,12 @@ VERSION="$(sed -n '1p' "$VERSION_FILE")"
 declare -a JAVA_ARGS=("-Djvn.version=$VERSION" "${MODE_PROPS[@]}")
 HARDWARE_PRISM_ORDER="es2,sw"
 case "$(uname -s 2>/dev/null)" in
-  MINGW*|MSYS*|CYGWIN*) HARDWARE_PRISM_ORDER="d3d,es2,sw" ;;
-  Darwin) HARDWARE_PRISM_ORDER="metal,es2,sw" ;;
+  MINGW*|MSYS*|CYGWIN*) HARDWARE_PRISM_ORDER="d3d,sw" ;;
+  Darwin) HARDWARE_PRISM_ORDER="es2,sw" ;;
 esac
 case "$GRAPHICS_MODE_NORMALIZED" in
   gpu|hardware|accelerated|prefer-gpu)
-    JAVA_ARGS+=("-Djvn.graphics.mode=hardware" "-Dprism.order=$HARDWARE_PRISM_ORDER" "-Dprism.forceGPU=true")
+    JAVA_ARGS+=("-Djvn.graphics.mode=hardware" "-Dprism.order=$HARDWARE_PRISM_ORDER")
     ;;
   sw|software|compatibility)
     JAVA_ARGS+=("-Djvn.graphics.mode=software" "-Dprism.order=sw")
@@ -346,7 +346,14 @@ case "$GRAPHICS_MODE_NORMALIZED" in
     ;;
 esac
 if [[ "$JFR_PROFILE" -eq 1 ]]; then
-  JFR_DIR="${XDG_STATE_HOME:-${HOME:-.}/.local/state}/jvn-engine-hub/profiles"
+  JFR_DIR="${JVN_PROFILE_DIR:-}"
+  if [[ -z "$JFR_DIR" ]]; then
+    case "$(uname -s 2>/dev/null)" in
+      Darwin) JFR_DIR="${HOME:-.}/Library/Application Support/JVN Engine Hub/profiles" ;;
+      MINGW*|MSYS*|CYGWIN*) JFR_DIR="${LOCALAPPDATA:-${HOME:-.}}/JVN Engine Hub/profiles" ;;
+      *) JFR_DIR="${XDG_STATE_HOME:-${HOME:-.}/.local/state}/jvn-engine-hub/profiles" ;;
+    esac
+  fi
   mkdir -p "$JFR_DIR"
   JFR_FILE="$JFR_DIR/${APP}-$(date '+%Y%m%d-%H%M%S').jfr"
   JAVA_ARGS+=("-XX:StartFlightRecording=filename=$JFR_FILE,settings=profile,dumponexit=true" \

@@ -115,6 +115,25 @@ public class VnRenderer {
   // data. Keep exactly the layers used by consecutive frames resident so two large layered
   // characters cannot evict and synchronously reload one another through imageCache every frame.
   private final FrameRetainedCache<Image> timelineLayerWorkingSet = new FrameRetainedCache<>();
+  // Character definitions and target spellings are immutable. Do not rebuild their alias/group
+  // topology every animation frame; proxies and their transforms are still resolved live.
+  private record LayerMetadataKey(VnCharacter character, String expression, String characterId) {}
+  private static final class LayerMetadata {
+    final Map<String, List<String>> targetNames = new HashMap<>();
+    final Map<List<String>, List<SpriteLayer>> expressions = new HashMap<>();
+  }
+  private final Map<LayerMetadataKey, LayerMetadata> layerMetadataCache =
+      new LinkedHashMap<>(16, 0.75f, true) {
+        @Override protected boolean removeEldestEntry(Map.Entry<LayerMetadataKey, LayerMetadata> eldest) {
+          return size() > 16;
+        }
+      };
+
+  private LayerMetadata layerMetadata(VnCharacter character, String expression, String characterId) {
+    return layerMetadataCache.computeIfAbsent(new LayerMetadataKey(character, expression, characterId),
+        ignored -> new LayerMetadata());
+  }
+
   private final FxTextMetrics textMetrics = new FxTextMetrics();
   private Font nameFont;
   private Font dialogueFont;
@@ -283,6 +302,7 @@ public class VnRenderer {
     imageCache.clear();
     compositeSpriteCache.clear();
     timelineLayerWorkingSet.clear();
+    layerMetadataCache.clear();
     backgroundImageCache.clear();
     particleBlitter.clearCache();
     particleBlitter.setProjectRoot(root);
@@ -1688,7 +1708,8 @@ public class VnRenderer {
       String expression,
       String layerId
   ) {
-    return com.jvn.core.vn.LayerTargetNaming.declaredLayerTargetNames(character, characterId, expression, layerId);
+    return layerMetadata(character, expression, characterId).targetNames.computeIfAbsent(layerId,
+        ignored -> com.jvn.core.vn.LayerTargetNaming.declaredLayerTargetNames(character, characterId, expression, layerId));
   }
 
   private Entity2D firstProxy(List<String> targetNames) {
@@ -1723,6 +1744,9 @@ public class VnRenderer {
   }
 
   private List<SpriteLayer> spriteLayers(VnCharacter character, String expression, String characterId, List<String> layerPaths) {
+    LayerMetadata metadata = layerMetadata(character, expression, characterId);
+    List<SpriteLayer> cached = metadata.expressions.get(layerPaths);
+    if (cached != null) return cached;
     List<SpriteLayer> layers = new ArrayList<>();
     List<String> layerIds = character != null ? character.getExpressionLayerIds(expression) : List.of();
     for (int i = 0; i < layerPaths.size(); i++) {
@@ -1736,7 +1760,9 @@ public class VnRenderer {
       // full-canvas sources on every frame, even though the composite itself was cached.
       layers.add(new SpriteLayer(path, layerId, targetNames, groupTargets, null));
     }
-    return layers;
+    List<SpriteLayer> result = List.copyOf(layers);
+    metadata.expressions.put(List.copyOf(layerPaths), result);
+    return result;
   }
 
   private String timelineLayerTargetName(String characterId, String expression, String layerId) {
@@ -4388,6 +4414,7 @@ public class VnRenderer {
     imageCache.clear();
     compositeSpriteCache.clear();
     timelineLayerWorkingSet.clear();
+    layerMetadataCache.clear();
     backgroundImageCache.clear();
     stageBackgroundCache.clear();
     stageCharacterCache.clear();
@@ -4404,6 +4431,7 @@ public class VnRenderer {
     imageCache.clear();
     compositeSpriteCache.clear();
     timelineLayerWorkingSet.clear();
+    layerMetadataCache.clear();
     backgroundImageCache.clear();
     stageBackgroundCache.clear();
     stageCharacterCache.clear();

@@ -17,19 +17,21 @@ public final class LayerTargetNaming {
 
     public static String selectorSafeName(String raw) {
         String value = raw == null ? "" : raw.trim();
-        StringBuilder out = new StringBuilder();
+        StringBuilder out = new StringBuilder(value.length());
+        boolean separator = false;
         for (int i = 0; i < value.length(); i++) {
             char ch = value.charAt(i);
-            if (Character.isLetterOrDigit(ch) || ch == '_' || ch == '-') {
+            if (Character.isLetterOrDigit(ch) || ch == '-') {
+                if (separator && !out.isEmpty()) out.append('_');
                 out.append(ch);
+                separator = false;
             } else {
-                out.append('_');
+                // Collapse runs of underscores/replaced punctuation and omit edge separators
+                // in one pass. This is used for every declared expression/layer alias.
+                separator = true;
             }
         }
-        String cleaned = out.toString().replaceAll("_+", "_");
-        while (cleaned.startsWith("_")) cleaned = cleaned.substring(1);
-        while (cleaned.endsWith("_")) cleaned = cleaned.substring(0, cleaned.length() - 1);
-        return cleaned;
+        return out.toString();
     }
 
     public static List<String> layerTargetNames(String characterId, String expression, String layerId) {

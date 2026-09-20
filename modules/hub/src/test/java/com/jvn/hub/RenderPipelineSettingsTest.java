@@ -96,13 +96,13 @@ class RenderPipelineSettingsTest {
   @Test
   void reportsBackendOrderForEachPlatformProfile() {
     assertEquals(
-        "Direct3D → OpenGL ES2 → software",
+        "Direct3D → software",
         RenderPipelineSettings.Mode.HARDWARE.backendOrder("Windows 11"));
     assertEquals(
         "OpenGL ES2 → software",
         RenderPipelineSettings.Mode.HARDWARE.backendOrder("Linux"));
     assertEquals(
-        "Metal → OpenGL ES2 → software",
+        "OpenGL ES2 → software",
         RenderPipelineSettings.Mode.HARDWARE.backendOrder("macOS"));
     assertEquals(
         "Software renderer only",
@@ -121,7 +121,8 @@ class RenderPipelineSettingsTest {
         true,
         true,
         true,
-        false);
+        false,
+        30);
 
     RenderPipelineSettings.saveOptions(tuning, requested);
 
@@ -137,6 +138,30 @@ class RenderPipelineSettingsTest {
 
     assertTrue(options.printRenderGraph());
     assertTrue(options.dirtyRegions());
+  }
+
+  @Test
+  void previewBudgetsPersistAndOldFilesKeepAutomaticPacing() throws Exception {
+    Path tuning = temporaryDirectory.resolve("tuning.properties");
+    var options = RenderPipelineSettings.Options.defaults().withPreviewMaxFps(30).withVsync(false);
+    RenderPipelineSettings.saveOptions(tuning, options);
+    assertEquals(30, RenderPipelineSettings.loadOptions(tuning).previewMaxFps());
+    Files.writeString(tuning, "render.vsync=true\nrender.previewMaxFps=invalid\n");
+    assertEquals(0, RenderPipelineSettings.loadOptions(tuning).previewMaxFps());
+    assertEquals(240, options.withPreviewMaxFps(999).previewMaxFps());
+  }
+
+  @Test
+  void recordingsFolderMatchesEachDesktopPlatformAndCustomOverrides() {
+    Path home = temporaryDirectory.resolve("home");
+    assertEquals(home.resolve("Library/Application Support/JVN Engine Hub/profiles"),
+        RenderPipelineSettings.profileDirectory("Mac OS X", home, Map.of()));
+    assertEquals(home.resolve("JVN Engine Hub/profiles"),
+        RenderPipelineSettings.profileDirectory("Windows 11", home, Map.of("LOCALAPPDATA", home.toString())));
+    assertEquals(home.resolve("jvn-engine-hub/profiles"),
+        RenderPipelineSettings.profileDirectory("Linux", home, Map.of("XDG_STATE_HOME", home.toString())));
+    assertEquals(home.toAbsolutePath(),
+        RenderPipelineSettings.profileDirectory("Linux", home, Map.of("JVN_PROFILE_DIR", home.toString())));
   }
 
   @Test

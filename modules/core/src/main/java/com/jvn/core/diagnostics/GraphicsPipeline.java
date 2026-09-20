@@ -57,6 +57,8 @@ public final class GraphicsPipeline {
     applyUserTuning();
     configureRenderGraphRoots();
     Mode mode = requestedMode();
+    // Launch settings are immutable for this process; the HUD must not reread disk every frame.
+    System.setProperty(MODE_PROPERTY, mode.name().toLowerCase(Locale.ROOT));
     if (System.getProperty(PRISM_ORDER_PROPERTY) == null) {
       switch (mode) {
         case HARDWARE -> System.setProperty(PRISM_ORDER_PROPERTY, preferredHardwareOrder());
@@ -65,11 +67,6 @@ public final class GraphicsPipeline {
           // Leave Prism untouched so JavaFX can select its platform default.
         }
       }
-    }
-    if (mode == Mode.HARDWARE && System.getProperty(PRISM_FORCE_GPU_PROPERTY) == null) {
-      // JavaFX's hardware qualifier can reject newer or unrecognized GPUs before trying ES2.
-      // The pipeline order still retains software as the final fallback if ES2 cannot initialize.
-      System.setProperty(PRISM_FORCE_GPU_PROPERTY, "true");
     }
     return mode;
   }
@@ -97,8 +94,8 @@ public final class GraphicsPipeline {
 
   static String preferredHardwareOrder() {
     String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
-    if (os.contains("win")) return "d3d,es2,sw";
-    if (os.contains("mac")) return "metal,es2,sw";
+    if (os.contains("win")) return "d3d,sw";
+    if (os.contains("mac")) return "es2,sw";
     return "es2,sw";
   }
 
@@ -119,6 +116,14 @@ public final class GraphicsPipeline {
     applyBooleanSetting(properties, "render.dirtyRegions", PRISM_DIRTY_REGIONS_PROPERTY);
     applyBooleanSetting(properties, "render.occlusionCulling", PRISM_OCCLUSION_CULLING_PROPERTY);
     applyStringSetting(properties, "render.shapeCache", PRISM_SHAPE_CACHE_PROPERTY);
+    if (System.getProperty("jvn.editor.previewMaxFps") == null) {
+      try {
+        int fps = Integer.parseInt(properties.getProperty("render.previewMaxFps", "0").trim());
+        if (fps >= 15 && fps <= 240) System.setProperty("jvn.editor.previewMaxFps", Integer.toString(fps));
+      } catch (NumberFormatException ignored) {
+        // Malformed settings retain automatic frame pacing.
+      }
+    }
     applyBooleanSetting(properties, "diagnostics.verbose", PRISM_VERBOSE_PROPERTY);
     applyBooleanSetting(properties, "diagnostics.showDirtyRegions", PRISM_SHOW_DIRTY_PROPERTY);
     applyBooleanSetting(properties, "diagnostics.showOverdraw", PRISM_SHOW_OVERDRAW_PROPERTY);

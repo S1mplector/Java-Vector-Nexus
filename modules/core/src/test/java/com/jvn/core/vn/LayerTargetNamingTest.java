@@ -17,6 +17,14 @@ class LayerTargetNamingTest {
     }
 
     @Test
+    void selectorNamesPreserveUnicodeHyphensAndSeparatorRules() {
+        assertEquals("éclair_猫-2", LayerTargetNaming.selectorSafeName(" __éclair!!__猫-2__ "));
+        assertEquals("a_b_c", LayerTargetNaming.selectorSafeName("a___b / + c"));
+        assertEquals("-", LayerTargetNaming.selectorSafeName("__-__"));
+        assertEquals("", LayerTargetNaming.selectorSafeName("_ + / 😀 __"));
+    }
+
+    @Test
     void layerTargetNamesBuildsExpressionAndBareCandidates() {
         List<String> names = LayerTargetNaming.layerTargetNames("hero", "happy", "arm_l");
         assertEquals(List.of("hero_happy_arm_l", "hero_arm_l"), names);

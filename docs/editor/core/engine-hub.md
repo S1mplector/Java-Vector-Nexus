@@ -65,7 +65,22 @@ The Engine Hub's **Render Pipeline** menu controls the JavaFX rendering profile 
 
 The selected profile is shared by the editor, Puppeteer and other previews, the standalone launcher, and game-runtime processes. It is stored as `graphics.mode` in `~/.jvn-editor/editor-preferences.properties` and takes effect when the next process starts; an already-open editor is not reconfigured in place.
 
-The **Performance Tuning** submenu also controls:
+The bundled JavaFX 23 renderer uses `d3d,sw` on Windows and `es2,sw` on macOS/Linux. GPU Preferred retains JavaFX's driver qualification checks; it does not force a rejected driver or claim a native Metal backend. Explicit advanced `prism.order` / `prism.forceGPU` overrides remain available to manual launches.
+
+**Preview Frame Budget** controls drawing in docked, detached, and fullscreen editor previews:
+
+| Budget | Use |
+|---|---|
+| Automatic | 60 FPS with hardware features; 30 FPS with software rendering |
+| Efficient — 30 FPS | Reduce preview draw work and power use while editing |
+| Balanced — 60 FPS | Smooth previews at a standard display refresh rate |
+| High Refresh — 120 FPS | Raise the preview cap when the display and editor frame limit permit it |
+
+This is a cap, not a guaranteed frame rate. Lower budgets preserve elapsed animation time while skipping draw calls; the game runtime's timing is unchanged. The setting is `render.previewMaxFps` in the tuning file (`0` means automatic). A manual `-Djvn.editor.previewMaxFps` override takes priority. At a stable 60 Hz pulse rate, the efficient budget performs 300 draws over ten seconds instead of 600.
+
+**Check Actual Renderer** starts a short JavaFX process using the chosen profile and prints its initialized Prism backend, hardware capabilities, and preview cap to the Hub console. It does not open the full editor. The equivalent command is `./gradlew :editor:probeGraphics` (use `gradlew.bat` on Windows). It needs a graphical desktop and the platform's JavaFX native libraries.
+
+The **Advanced Rendering** submenu also controls:
 
 - display synchronization (Prism VSync)
 - dirty-region rendering
@@ -245,6 +260,16 @@ In Developer Mode, both the editor and launcher add a collapsed **Logs** panel a
 When the launcher opens the editor in Developer Mode, it also forwards Developer Mode to the editor and captures that child process output under the workspace `.jvn/logs` folder.
 
 Developer Mode also adds a **DevTools** menu to the editor and launcher menu bars. It includes runtime/JVM diagnostics, manual GC, log-panel refresh, a developer settings file shortcut, a launcher output-capture toggle, an editor JVM heap setting, and **Save Diagnostics Bundle...**. The editor DevTools menu also includes **Auto-write Editor Diagnostics**. The diagnostics bundle writes a timestamped folder and `.zip` containing discovered logs, crash/audit/diagnostic files, Gradle daemon output, launcher logs, a manifest of copied/skipped files, and JVM/runtime memory details. The heap setting is stored in `~/.jvn-editor/devtools.properties` and applies to the next editor launch started from the launcher.
+
+### Tools: verification and profiling
+
+- **Build & Verify > Quick Verification** compiles every module and runs the fast core/runtime test slice.
+- **Build & Verify > Prepare Editor Launch** compiles the editor and refreshes its direct-launch metadata without opening it.
+- **Performance & Recordings > Record Editor Session (JFR)** launches the editor with Java Flight Recorder. Close that editor to finish the recording.
+- **Open Recordings Folder** opens the same location used by direct and Gradle launches: `%LOCALAPPDATA%/JVN Engine Hub/profiles` on Windows, `~/Library/Application Support/JVN Engine Hub/profiles` on macOS, and `$XDG_STATE_HOME/jvn-engine-hub/profiles` (or `~/.local/state/jvn-engine-hub/profiles`) on Linux. `JVN_PROFILE_DIR` overrides the location.
+- **Copy Performance Setup** copies the rendering and JVM settings so two recordings can be compared with their configuration recorded.
+
+Commands that start a build, probe, or application are disabled while a Hub-managed task is running. Diagnostics, logs, and JVM memory settings remain available from Tools.
 
 ### JVM memory settings
 

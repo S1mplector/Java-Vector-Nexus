@@ -70,8 +70,8 @@ final class RenderPipelineSettings {
       return switch (this) {
         case AUTO -> "JavaFX platform default";
         case HARDWARE -> {
-          if (os.contains("win")) yield "Direct3D → OpenGL ES2 → software";
-          if (os.contains("mac")) yield "Metal → OpenGL ES2 → software";
+          if (os.contains("win")) yield "Direct3D → software";
+          if (os.contains("mac")) yield "OpenGL ES2 → software";
           yield "OpenGL ES2 → software";
         }
         case SOFTWARE -> "Software renderer only";
@@ -128,61 +128,68 @@ final class RenderPipelineSettings {
       boolean showDirtyRegions,
       boolean showOverdraw,
       boolean printRenderGraph,
-      boolean linuxGlxRecovery) {
+      boolean linuxGlxRecovery,
+      int previewMaxFps) {
 
     Options {
       shapeCache = shapeCache == null ? ShapeCache.COMPLEX : shapeCache;
+      if (previewMaxFps != 0) previewMaxFps = Math.max(15, Math.min(240, previewMaxFps));
       // Prism builds its printable render tree from dirty-region roots.
       if (printRenderGraph) dirtyRegions = true;
     }
 
     static Options defaults() {
-      return new Options(true, true, true, ShapeCache.COMPLEX, false, false, false, false, true);
+      return new Options(true, true, true, ShapeCache.COMPLEX, false, false, false, false, true, 0);
     }
 
     Options withVsync(boolean value) {
       return new Options(value, dirtyRegions, occlusionCulling, shapeCache,
-          verbose, showDirtyRegions, showOverdraw, printRenderGraph, linuxGlxRecovery);
+          verbose, showDirtyRegions, showOverdraw, printRenderGraph, linuxGlxRecovery, previewMaxFps);
     }
 
     Options withDirtyRegions(boolean value) {
       return new Options(vsync, value, occlusionCulling, shapeCache,
-          verbose, showDirtyRegions, showOverdraw, printRenderGraph, linuxGlxRecovery);
+          verbose, showDirtyRegions, showOverdraw, printRenderGraph, linuxGlxRecovery, previewMaxFps);
     }
 
     Options withOcclusionCulling(boolean value) {
       return new Options(vsync, dirtyRegions, value, shapeCache,
-          verbose, showDirtyRegions, showOverdraw, printRenderGraph, linuxGlxRecovery);
+          verbose, showDirtyRegions, showOverdraw, printRenderGraph, linuxGlxRecovery, previewMaxFps);
     }
 
     Options withShapeCache(ShapeCache value) {
       return new Options(vsync, dirtyRegions, occlusionCulling, value,
-          verbose, showDirtyRegions, showOverdraw, printRenderGraph, linuxGlxRecovery);
+          verbose, showDirtyRegions, showOverdraw, printRenderGraph, linuxGlxRecovery, previewMaxFps);
     }
 
     Options withVerbose(boolean value) {
       return new Options(vsync, dirtyRegions, occlusionCulling, shapeCache,
-          value, showDirtyRegions, showOverdraw, printRenderGraph, linuxGlxRecovery);
+          value, showDirtyRegions, showOverdraw, printRenderGraph, linuxGlxRecovery, previewMaxFps);
     }
 
     Options withShowDirtyRegions(boolean value) {
       return new Options(vsync, dirtyRegions, occlusionCulling, shapeCache,
-          verbose, value, showOverdraw, printRenderGraph, linuxGlxRecovery);
+          verbose, value, showOverdraw, printRenderGraph, linuxGlxRecovery, previewMaxFps);
     }
 
     Options withShowOverdraw(boolean value) {
       return new Options(vsync, dirtyRegions, occlusionCulling, shapeCache,
-          verbose, showDirtyRegions, value, printRenderGraph, linuxGlxRecovery);
+          verbose, showDirtyRegions, value, printRenderGraph, linuxGlxRecovery, previewMaxFps);
     }
 
     Options withPrintRenderGraph(boolean value) {
       return new Options(vsync, dirtyRegions, occlusionCulling, shapeCache,
-          verbose, showDirtyRegions, showOverdraw, value, linuxGlxRecovery);
+          verbose, showDirtyRegions, showOverdraw, value, linuxGlxRecovery, previewMaxFps);
     }
 
     Options withLinuxGlxRecovery(boolean value) {
       return new Options(vsync, dirtyRegions, occlusionCulling, shapeCache,
-          verbose, showDirtyRegions, showOverdraw, printRenderGraph, value);
+          verbose, showDirtyRegions, showOverdraw, printRenderGraph, value, previewMaxFps);
+    }
+
+    Options withPreviewMaxFps(int value) {
+      return new Options(vsync, dirtyRegions, occlusionCulling, shapeCache,
+          verbose, showDirtyRegions, showOverdraw, printRenderGraph, linuxGlxRecovery, value);
     }
 
     boolean diagnosticsEnabled() {
@@ -248,7 +255,8 @@ final class RenderPipelineSettings {
           readBoolean(properties, SHOW_DIRTY_REGIONS_KEY, defaults.showDirtyRegions()),
           readBoolean(properties, SHOW_OVERDRAW_KEY, defaults.showOverdraw()),
           readBoolean(properties, PRINT_RENDER_GRAPH_KEY, defaults.printRenderGraph()),
-          readBoolean(properties, LINUX_GLX_RECOVERY_KEY, defaults.linuxGlxRecovery()));
+          readBoolean(properties, LINUX_GLX_RECOVERY_KEY, defaults.linuxGlxRecovery()),
+          readPreviewMaxFps(properties));
     } catch (IOException | IllegalArgumentException ignored) {
       return defaults;
     }
@@ -258,6 +266,7 @@ final class RenderPipelineSettings {
     if (tuningFile == null) throw new IOException("Render Pipeline settings path is unavailable.");
     Options options = requestedOptions == null ? Options.defaults() : requestedOptions;
     Properties properties = new Properties();
+    properties.setProperty("render.previewMaxFps", Integer.toString(options.previewMaxFps()));
     properties.setProperty(VSYNC_KEY, Boolean.toString(options.vsync()));
     properties.setProperty(DIRTY_REGIONS_KEY, Boolean.toString(options.dirtyRegions()));
     properties.setProperty(OCCLUSION_CULLING_KEY, Boolean.toString(options.occlusionCulling()));
@@ -268,6 +277,35 @@ final class RenderPipelineSettings {
     properties.setProperty(PRINT_RENDER_GRAPH_KEY, Boolean.toString(options.printRenderGraph()));
     properties.setProperty(LINUX_GLX_RECOVERY_KEY, Boolean.toString(options.linuxGlxRecovery()));
     writeProperties(tuningFile, properties, "JVN Render Pipeline Settings");
+  }
+
+  private static int readPreviewMaxFps(Properties properties) {
+    try {
+      int value = Integer.parseInt(properties.getProperty("render.previewMaxFps", "0").trim());
+      return value >= 15 && value <= 240 ? value : 0;
+    } catch (NumberFormatException ignored) {
+      return 0;
+    }
+  }
+
+  static Path profileDirectory(String operatingSystem, Path home, Map<String, String> environment) {
+    String explicit = environment.getOrDefault("JVN_PROFILE_DIR", "");
+    if (!explicit.isBlank()) return Path.of(explicit).toAbsolutePath().normalize();
+    String os = operatingSystem.toLowerCase(Locale.ROOT);
+    if (os.contains("mac") || os.contains("darwin")) {
+      return home.resolve("Library/Application Support/JVN Engine Hub/profiles");
+    }
+    if (os.startsWith("windows")) {
+      String local = environment.getOrDefault("LOCALAPPDATA", "");
+      return (local.isBlank() ? home : Path.of(local)).resolve("JVN Engine Hub/profiles");
+    }
+    String state = environment.getOrDefault("XDG_STATE_HOME", "");
+    return (state.isBlank() ? home.resolve(".local/state") : Path.of(state)).resolve("jvn-engine-hub/profiles");
+  }
+
+  static String previewBudgetSummary(Options options) {
+    return options.previewMaxFps() == 0 ? "Automatic (GPU 60 / software 30 FPS)"
+        : options.previewMaxFps() + " FPS";
   }
 
   private static boolean readBoolean(Properties properties, String key, boolean fallback) {
@@ -307,7 +345,7 @@ final class RenderPipelineSettings {
   static boolean isManagedGradleTask(String task) {
     if (task == null) return false;
     return switch (task.trim()) {
-      case ":editor:run", ":editor:runLauncher", ":runtime:run" -> true;
+      case ":editor:run", ":editor:runLauncher", ":editor:probeGraphics", ":runtime:run" -> true;
       default -> false;
     };
   }

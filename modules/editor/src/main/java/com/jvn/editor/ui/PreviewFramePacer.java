@@ -11,6 +11,7 @@ public final class PreviewFramePacer {
   private static final long PULSE_JITTER_TOLERANCE_NS = 500_000L;
   private final long minimumFrameIntervalNs;
   private long lastRenderNs = -1L;
+  private long remainderNs;
 
   public record Frame(boolean render, long deltaMs) {
     private static final Frame SKIP = new Frame(false, 0L);
@@ -47,7 +48,9 @@ public final class PreviewFramePacer {
     long elapsedNs = nowNs - lastRenderNs;
     if (elapsedNs + PULSE_JITTER_TOLERANCE_NS < minimumFrameIntervalNs) return Frame.SKIP;
     lastRenderNs = nowNs;
-    long deltaMs = Math.max(1L, Math.min(100L, elapsedNs / 1_000_000L));
+    long accumulatedNs = Math.min(100_000_000L, elapsedNs) + remainderNs;
+    long deltaMs = Math.max(1L, accumulatedNs / 1_000_000L);
+    remainderNs = accumulatedNs % 1_000_000L;
     return new Frame(true, deltaMs);
   }
 }

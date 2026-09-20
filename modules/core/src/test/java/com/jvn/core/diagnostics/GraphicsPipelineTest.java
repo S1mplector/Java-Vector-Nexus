@@ -35,6 +35,7 @@ class GraphicsPipelineTest {
       System.getProperty(GraphicsPipeline.PRISM_PRINT_RENDER_GRAPH_PROPERTY);
   private final String originalPulseLogger =
       System.getProperty(GraphicsPipeline.JAVAFX_PULSE_LOGGER_PROPERTY);
+  private final String originalPreviewFps = System.getProperty("jvn.editor.previewMaxFps");
   private final String originalOs = System.getProperty("os.name");
 
   @BeforeEach
@@ -59,6 +60,7 @@ class GraphicsPipelineTest {
     restore(GraphicsPipeline.PRISM_SHOW_OVERDRAW_PROPERTY, originalShowOverdraw);
     restore(GraphicsPipeline.PRISM_PRINT_RENDER_GRAPH_PROPERTY, originalPrintRenderGraph);
     restore(GraphicsPipeline.JAVAFX_PULSE_LOGGER_PROPERTY, originalPulseLogger);
+    restore("jvn.editor.previewMaxFps", originalPreviewFps);
     restore("os.name", originalOs);
   }
 
@@ -69,8 +71,8 @@ class GraphicsPipelineTest {
     System.clearProperty(GraphicsPipeline.PRISM_ORDER_PROPERTY);
 
     assertEquals(GraphicsPipeline.Mode.HARDWARE, GraphicsPipeline.configure());
-    assertEquals("d3d,es2,sw", System.getProperty(GraphicsPipeline.PRISM_ORDER_PROPERTY));
-    assertEquals("true", System.getProperty(GraphicsPipeline.PRISM_FORCE_GPU_PROPERTY));
+    assertEquals("d3d,sw", System.getProperty(GraphicsPipeline.PRISM_ORDER_PROPERTY));
+    assertNull(System.getProperty(GraphicsPipeline.PRISM_FORCE_GPU_PROPERTY));
     assertTrue(GraphicsPipeline.statusText().startsWith("GPU preferred"));
   }
 
@@ -81,8 +83,8 @@ class GraphicsPipelineTest {
     System.clearProperty(GraphicsPipeline.PRISM_ORDER_PROPERTY);
 
     assertEquals(GraphicsPipeline.Mode.HARDWARE, GraphicsPipeline.configure());
-    assertEquals("metal,es2,sw", System.getProperty(GraphicsPipeline.PRISM_ORDER_PROPERTY));
-    assertEquals("true", System.getProperty(GraphicsPipeline.PRISM_FORCE_GPU_PROPERTY));
+    assertEquals("es2,sw", System.getProperty(GraphicsPipeline.PRISM_ORDER_PROPERTY));
+    assertNull(System.getProperty(GraphicsPipeline.PRISM_FORCE_GPU_PROPERTY));
     assertTrue(GraphicsPipeline.statusText().startsWith("GPU preferred"));
   }
 
@@ -94,7 +96,7 @@ class GraphicsPipelineTest {
 
     assertEquals(GraphicsPipeline.Mode.HARDWARE, GraphicsPipeline.configure());
     assertEquals("es2,sw", System.getProperty(GraphicsPipeline.PRISM_ORDER_PROPERTY));
-    assertEquals("true", System.getProperty(GraphicsPipeline.PRISM_FORCE_GPU_PROPERTY));
+    assertNull(System.getProperty(GraphicsPipeline.PRISM_FORCE_GPU_PROPERTY));
     assertTrue(GraphicsPipeline.statusText().startsWith("GPU preferred"));
   }
 
@@ -116,7 +118,7 @@ class GraphicsPipelineTest {
     GraphicsPipeline.configure();
 
     assertEquals("custom", System.getProperty(GraphicsPipeline.PRISM_ORDER_PROPERTY));
-    assertEquals("true", System.getProperty(GraphicsPipeline.PRISM_FORCE_GPU_PROPERTY));
+    assertNull(System.getProperty(GraphicsPipeline.PRISM_FORCE_GPU_PROPERTY));
   }
 
   @Test
@@ -166,6 +168,31 @@ class GraphicsPipelineTest {
 
     assertNull(System.getProperty(GraphicsPipeline.JAVAFX_PULSE_LOGGER_PROPERTY));
     assertEquals("true", System.getProperty(GraphicsPipeline.PRISM_DIRTY_REGIONS_PROPERTY));
+  }
+
+  @Test
+  void previewBudgetIsLoadedBeforeToolkitAndExplicitOverrideWins() throws Exception {
+    Path settings = temporaryDirectory.resolve("render.properties");
+    Files.writeString(settings, "render.previewMaxFps=30\n");
+    System.setProperty(GraphicsPipeline.SETTINGS_FILE_PROPERTY, settings.toString());
+    System.clearProperty("jvn.editor.previewMaxFps");
+    GraphicsPipeline.configure();
+    assertEquals("30", System.getProperty("jvn.editor.previewMaxFps"));
+    System.setProperty("jvn.editor.previewMaxFps", "120");
+    GraphicsPipeline.configure();
+    assertEquals("120", System.getProperty("jvn.editor.previewMaxFps"));
+    System.clearProperty("jvn.editor.previewMaxFps");
+    Files.writeString(settings, "render.previewMaxFps=-100\n");
+    GraphicsPipeline.configure();
+    assertNull(System.getProperty("jvn.editor.previewMaxFps"));
+  }
+
+  @Test
+  void explicitDriverOverrideIsPreservedButNeverEnabledByPreference() {
+    System.setProperty(GraphicsPipeline.MODE_PROPERTY, "hardware");
+    System.setProperty(GraphicsPipeline.PRISM_FORCE_GPU_PROPERTY, "false");
+    GraphicsPipeline.configure();
+    assertEquals("false", System.getProperty(GraphicsPipeline.PRISM_FORCE_GPU_PROPERTY));
   }
 
   private static void restore(String key, String value) {
