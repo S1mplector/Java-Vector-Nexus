@@ -1216,7 +1216,7 @@ button then opens it in the editor."""));
   // --- VNS Scene State Resolver ---
 
   public static SceneSnapshot resolveSnapshot(String source, int upToLine) {
-    return resolveSnapshot(source, upToLine, null, null);
+    return resolveSnapshot(source, upToLine, (String) null, null);
   }
 
   public static SceneSnapshot resolveSnapshot(
@@ -1265,6 +1265,7 @@ button then opens it in the editor."""));
         charLayerGroups,
         customPositions,
         displayPresets,
+        dynamicGroups,
         new HashSet<>());
 
     for (int i = 0; i <= limit; i++) {
@@ -1665,6 +1666,67 @@ button then opens it in the editor."""));
     LinkedHashSet<String> names = new LinkedHashSet<>();
     names.add(safeCharacter + "_" + safeGroup);
     names.add(safeCharacter + "_" + safeExpression + "_" + safeGroup);
+    return List.copyOf(names);
+  }
+
+	  public static List<CharacterLayerGroupEntry> snapshotLayerGroupChain(
+	      String layerId,
+	      List<CharacterLayerGroupEntry> groups
+	  ) {
+	    if (layerId == null || layerId.isBlank() || groups == null || groups.isEmpty()) return List.of();
+	    CharacterLayerGroupEntry deepest = null;
+	    int deepestDepth = -1;
+	    for (CharacterLayerGroupEntry candidate : groups) {
+	      if (candidate == null || !candidate.layerIds.contains(layerId)) continue;
+	      int depth = snapshotLayerGroupDepth(candidate, groups, new LinkedHashSet<>());
+	      if (depth > deepestDepth) {
+	        deepest = candidate;
+	        deepestDepth = depth;
+	      }
+	    }
+	    if (deepest == null) return List.of();
+
+	    LinkedHashSet<String> seen = new LinkedHashSet<>();
+	    List<CharacterLayerGroupEntry> chain = new ArrayList<>();
+	    CharacterLayerGroupEntry current = deepest;
+	    while (current != null && current.groupId != null && seen.add(current.groupId)) {
+	      chain.add(0, current);
+	      current = snapshotLayerGroupById(groups, current.parentGroupId);
+	    }
+	    return List.copyOf(chain);
+	  }
+
+	  private static int snapshotLayerGroupDepth(
+	      CharacterLayerGroupEntry group,
+	      List<CharacterLayerGroupEntry> groups,
+	      Set<String> seen
+	  ) {
+	    if (group == null || group.groupId == null || !seen.add(group.groupId)) return 0;
+	    CharacterLayerGroupEntry parent =
+	        snapshotLayerGroupById(groups, group.parentGroupId);
+	    return parent == null ? 0 : 1 + snapshotLayerGroupDepth(parent, groups, seen);
+	  }
+
+	  private static CharacterLayerGroupEntry snapshotLayerGroupById(
+	      List<CharacterLayerGroupEntry> groups,
+	      String groupId
+	  ) {
+	    if (groupId == null || groupId.isBlank() || groups == null) return null;
+	    for (CharacterLayerGroupEntry group : groups) {
+	      if (group != null && groupId.equals(group.groupId)) return group;
+	    }
+	    return null;
+	  }
+
+
+  /** Names of every rendered occurrence, including repeated layers in a composite. */
+  public static List<String> snapshotLayerOccurrenceNames(SceneSnapshot snapshot, CharacterEntry character, String layerId) {
+    List<String> names = new ArrayList<>();
+    List<CharacterLayerEntry> layers = snapshot.resolveCharacterLayers(character.characterId, character.expression);
+    String base = snapshotStableLayerEntityName(character.characterId, layerId);
+    for (int i = 0; i < layers.size(); i++) {
+      if (layerId.equals(layers.get(i).layerId)) names.add(names.isEmpty() ? base : base + "_" + (i + 2));
+    }
     return List.copyOf(names);
   }
 
@@ -2105,7 +2167,16 @@ button then opens it in the editor."""));
     String key = entry.displaySlot == null || entry.displaySlot.isBlank()
         ? "character:" + entry.characterId
         : "slot:" + entry.displaySlot;
+    CharacterEntry previous = visible.get(key);
+    if (entry.layerOrder == null) entry = entry.withLayerOrder(previous != null && previous.layerOrder != null
+        ? previous.layerOrder : snapshotPosition(entry).getDefaultLayerOrder());
     visible.put(key, entry);
+  }
+
+  public static com.jvn.core.vn.CharacterPosition snapshotPosition(CharacterEntry character) {
+    var predefined = com.jvn.core.vn.CharacterPosition.predefined(character.position);
+    return predefined != null ? predefined : com.jvn.core.vn.CharacterPosition.named(
+        character.position, character.positionX, character.positionY);
   }
 
   private static CharacterEntry findVisible(
@@ -2334,6 +2405,7 @@ button then opens it in the editor."""));
       Map<String, CharacterLayerGroupEntry> charLayerGroups,
       Map<String, SnapshotPosition> customPositions,
       Map<String, List<DisplayPresetEntry>> displayPresets,
+      Map<String, String> dynamicGroups,
       Set<String> includeStack
   ) {
     if (source == null || source.isBlank()) return;
@@ -2370,12 +2442,21 @@ button then opens it in the editor."""));
                     charLayerGroups,
                     customPositions,
                     displayPresets,
+                    dynamicGroups,
                     includeStack);
               }
             } catch (IOException ignored) {
             // reason: I/O failure on best-effort save/load; in-memory state remains valid
             }
           }
+          continue;
+        }
+
+        Matcher groupMatcher = GROUP_DECL_PATTERN.matcher(trimmed);
+        if (groupMatcher.find()) {
+          String parent = normalizeGroupParent(groupMatcher.group(2));
+          if (parent.isBlank()) dynamicGroups.remove(groupMatcher.group(1));
+          else dynamicGroups.put(groupMatcher.group(1), parent);
           continue;
         }
 
@@ -2762,7 +2843,17 @@ button then opens it in the editor."""));
     return List.copyOf(layers);
   }
 
+  public static SceneSnapshot resolveProjectSnapshot(String source, int line, File script, File root) {
+    return resolveSnapshot(source, line, script == null ? null : script.getAbsolutePath(),
+        (name, path) -> resolveIncludeSource(name, path, script, root));
+  }
+
   private ResolvedInclude resolveIncludeSource(String sourceName, String includePath) throws IOException {
+    return resolveIncludeSource(sourceName, includePath, activeScriptFile, projectRoot);
+  }
+
+  private static ResolvedInclude resolveIncludeSource(
+      String sourceName, String includePath, File activeScriptFile, File projectRoot) throws IOException {
     String normalized = includePath == null ? "" : includePath.trim().replace('\\', '/');
     if (normalized.isBlank()) {
       throw new IOException("Include path is empty");
@@ -3198,7 +3289,17 @@ button then opens it in the editor."""));
           groups.add(group);
         }
       }
-      return List.copyOf(groups);
+      // A parent can animate a visible child even when none of its own layers are shown.
+      Set<String> active = new LinkedHashSet<>();
+      for (CharacterLayerGroupEntry group : groups) {
+        CharacterLayerGroupEntry current = group;
+        while (current != null && active.add(current.groupId)) {
+          current = resolveCharacterLayerGroup(characterId, current.parentGroupId);
+        }
+      }
+      return characterLayerGroups.entrySet().stream()
+          .filter(entry -> entry.getKey().startsWith(prefix) && active.contains(entry.getValue().groupId))
+          .map(Map.Entry::getValue).toList();
     }
 
 	    public boolean hasInlineTimeline() {

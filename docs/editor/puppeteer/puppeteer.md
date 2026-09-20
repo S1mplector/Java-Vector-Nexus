@@ -983,11 +983,10 @@ hero: I'm there!
 
 ## 11. Performance Notes
 
-- **TimelineRunner** is lightweight — interpolation is O(k) per property per frame where k is the number of keyframes (linear scan for surrounding pair)
-- **Multiple simultaneous timelines** are fine for typical use (< 10 concurrent). Each is independent with its own elapsed time
-- **Audio cues** are triggered by comparing timestamp windows, not polling — no overhead between cue points
-- **Entity lookup** via `SceneAccessor.findEntity(name)` is called every frame for every track. In VNS scenes this is a linear scan of the character list — fast for typical counts (< 20 entities)
-- **Looping timelines** use modulo arithmetic, not timeline restart — no allocation per loop cycle
+- Puppeteer shares character-group rest bounds across all layer tracks within each preview frame. The cache ends with that frame, so edits to keyframes, membership, and sprite bounds are reflected on the next evaluation.
+- Scene import reads image dimensions from metadata, without decoding full PNG/JPEG pixel buffers. A bounded cache checks file size and modification time before reusing dimensions. Formats without an ImageIO reader retain the JavaFX fallback.
+- `PuppeteerGroupFrameBench` compares the same nested-rig transform evaluator with and without frame caching. On the development Mac, 32 layers measured approximately 54 → 6 microseconds; 128 layers measured 2.18 → 0.037 milliseconds. These are CPU transform timings, not total rendering time or FPS guarantees.
+- GPU effects, image sizes, onion skins, and interpolation ghosts still contribute to total preview cost. Evaluate performance on the target machine with the intended scene and preview options.
 
 ---
 

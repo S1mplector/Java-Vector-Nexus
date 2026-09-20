@@ -76,6 +76,12 @@ class AssetAutoLabelServiceTest {
     assertTrue(inferred.label().startsWith("normal_eyes"), inferred.label());
     assertTrue(inferred.confidence() >= 0.80, Double.toString(inferred.confidence()));
     assertTrue(inferred.reason().contains("declared sibling"));
+    assertTrue(byPath(service.scan(project), project.relativize(newLayer).toString()).isNew(),
+        "A rescan must not silently consume a newly discovered asset");
+    assertTrue(byPath(new AssetAutoLabelService().scan(project), project.relativize(newLayer).toString()).isNew(),
+        "New flags survive reopening the project");
+    service.saveDecision(project, inferred, LabelStatus.IGNORED);
+    assertFalse(byPath(service.scan(project), project.relativize(newLayer).toString()).isNew());
   }
 
   @Test

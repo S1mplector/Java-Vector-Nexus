@@ -7551,3 +7551,20 @@
   -fx-background-color: transparent;
   -fx-border-color: transparent;
 }
+
+/* Asset labeling queue and discovery notice. */
+.asset-label-dashboard .asset-label-queue { -fx-background-color: #f5f8fb; -fx-padding: 3; }
+.asset-label-dashboard .asset-label-queue .list-cell { -fx-background-color: #f5f8fb; -fx-padding: 8 10; -fx-border-color: transparent transparent #dbe3eb transparent; }
+.asset-label-dashboard .asset-label-queue .list-cell:odd { -fx-background-color: #edf3f8; }
+.asset-label-dashboard .asset-label-queue .list-cell:selected { -fx-background-color: #c9e2f5; }
+.asset-label-dashboard .asset-label-queue .list-cell:hover { -fx-background-color: #deebf5; }
+.asset-label-dashboard .asset-label-row-name { -fx-text-fill: #213a4c; -fx-font-weight: bold; }
+.asset-label-dashboard .asset-label-row-path { -fx-text-fill: #536b7d; -fx-font-size: 11px; }
+.asset-label-dashboard .asset-label-badge { -fx-text-fill: #245a46; -fx-background-color: #dcefe4; -fx-background-radius: 4; -fx-padding: 3 6; -fx-font-size: 11px; }
+.asset-label-dashboard .asset-label-selected-path { -fx-font-weight: bold; }
+.asset-label-dashboard .asset-label-details, .asset-label-dashboard .scroll-pane > .viewport { -fx-background-color: #f1f5f9; }
+.asset-label-dashboard .button.asset-label-primary { -fx-background-color: linear-gradient(to bottom, #e6f5ff, #bedbef); -fx-text-fill: #21435c; -fx-border-color: #89abc4; }
+.asset-label-notice { -fx-background-color: linear-gradient(to bottom, #e3f2ff, #d5e8f7); -fx-border-color: #96b6ce; -fx-border-width: 0 0 1 0; }
+.asset-label-notice .label { -fx-text-fill: #234b69; }
+
+.asset-label-dashboard .asset-label-queue .list-cell { -fx-pref-width: 0; }

@@ -235,6 +235,12 @@ them and review or generate labels in the Auto-label tab."""));
   /** Opens the label inventory and review dashboard. */
   public void showAutoLabelDashboard() {
     workspaceTabs.getSelectionModel().select(autoLabelTab);
+    autoLabelDashboard.refreshUnlessEditing();
+  }
+
+  /** Refreshes the queue after background discovery without replacing an unsaved label edit. */
+  public void refreshAutoLabelSuggestions() {
+    autoLabelDashboard.refreshUnlessEditing();
   }
 
   /** Handles supported files dropped on the editor and prompts for import/auto-labeling. */

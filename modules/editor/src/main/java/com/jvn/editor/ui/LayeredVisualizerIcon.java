@@ -98,7 +98,7 @@ public final class LayeredVisualizerIcon extends Pane {
       case HIDE_CONTROLS -> sidebar(true);
       case SHOW_CONTROLS -> sidebar(false);
     };
-    artwork.setEffect(new DropShadow(2.4, 0, 1, Color.rgb(0, 0, 0, 0.76)));
+    artwork.setEffect(new DropShadow(1.3, 0, .7, Color.rgb(10, 26, 36, 0.45)));
     getChildren().setAll(artwork);
   }
 
@@ -258,10 +258,10 @@ public final class LayeredVisualizerIcon extends Pane {
   }
 
   private static Group sidebar(boolean hide) {
-    Rectangle viewport = roundedRect(2.4, 3, 17.2, 16, 2.1, DARK, SILVER, 1.15);
+    Rectangle viewport = roundedRect(2.4, 3, 17.2, 16, 2.1, paperGlass(BLUE), Color.web("#52697b"), .85);
     Rectangle controls = roundedRect(
         hide ? 3.8 : 12.6, 4.5, 5.4, 13, 1.0,
-        Color.web("#27353b"), ORANGE, 0.9);
+        paperGlass(ORANGE), Color.web("#96662b"), 0.9);
     SVGPath layers = stroked(
         hide
             ? "M5 8 L7.7 6.8 L10.4 8 L7.7 9.2 Z M5 11 L7.7 9.8 L10.4 11 L7.7 12.2 Z"
@@ -274,55 +274,55 @@ public final class LayeredVisualizerIcon extends Pane {
   }
 
   private static Group layerStack(Color accent, double opacity) {
-    SVGPath rear = filled("M3.2 6.1 L11 2.6 L18.8 6.1 L11 9.6 Z", Color.rgb(52, 62, 67, opacity));
-    rear.setStroke(SILVER.deriveColor(0, 1, 0.80, opacity));
+    SVGPath rear = filled("M3.2 6.1 L11 2.6 L18.8 6.1 L11 9.6 Z", metallic(accent.deriveColor(0,.55,.9,1)));
+    rear.setStroke(Color.web("#3c5669"));
     rear.setStrokeWidth(0.9);
-    SVGPath middle = filled("M3.2 10.4 L11 6.9 L18.8 10.4 L11 13.9 Z", Color.rgb(29, 38, 43, opacity));
-    middle.setStroke(accent.deriveColor(0, 0.82, 1.04, opacity));
+    SVGPath middle = filled("M3.2 10.4 L11 6.9 L18.8 10.4 L11 13.9 Z", metallic(accent.deriveColor(0,.7,1,1)));
+    middle.setStroke(accent.deriveColor(0, .8, .45, 1));
     middle.setStrokeWidth(1.05);
-    SVGPath front = filled("M3.2 14.7 L11 11.2 L18.8 14.7 L11 18.3 Z", Color.rgb(16, 24, 29, opacity));
-    front.setStroke(accent.deriveColor(0, 0.94, 1.22, opacity));
+    SVGPath front = filled("M3.2 14.7 L11 11.2 L18.8 14.7 L11 18.3 Z", metallic(accent));
+    front.setStroke(accent.deriveColor(0, .8, .4, 1));
     front.setStrokeWidth(1.15);
     Line shine = line(6.3, 13.35, 11, 11.35, Color.rgb(255, 255, 255, opacity * 0.55), 0.7);
     return new Group(rear, middle, front, shine);
   }
 
   private static Group presetCard(Color accent) {
-    Rectangle card = roundedRect(3, 2.8, 14.8, 16.6, 2.2, Color.web("#1a2328"), accent, 1.2);
+    Rectangle card = roundedRect(3, 2.8, 14.8, 16.6, 2.2, paperGlass(accent), Color.web("#52697b"), .85);
     SVGPath layers = stroked(
         "M5.5 8 L10.4 5.8 L15.3 8 L10.4 10.2 Z "
             + "M5.5 11.2 L10.4 9 L15.3 11.2 L10.4 13.4 Z",
-        SILVER, 0.9);
+        Color.web("#426985"), 1.0);
     Line label = line(6, 16.2, 12.2, 16.2, accent, 1.0);
     return new Group(card, layers, label);
   }
 
   private static Group characterCard(Color accent) {
-    Rectangle card = roundedRect(2.5, 2.4, 15.4, 17.2, 2.2, Color.web("#1e1925"), accent, 1.2);
-    Circle head = new Circle(10.2, 7.3, 2.55, Color.web("#d7dde0"));
-    SVGPath bust = filled("M5.8 15.8 Q6.3 11.2 10.2 11.2 Q14.1 11.2 14.6 15.8 Z", Color.web("#59636a"));
+    Rectangle card = roundedRect(2.5, 2.4, 15.4, 17.2, 2.2, paperGlass(accent), Color.web("#52697b"), .85);
+    Circle head = new Circle(10.2, 7.3, 2.55, Color.web("#566f91"));
+    SVGPath bust = filled("M5.8 15.8 Q6.3 11.2 10.2 11.2 Q14.1 11.2 14.6 15.8 Z", Color.web("#7b92af"));
     Line layerOne = line(6.4, 13.3, 14, 13.3, accent, 0.95);
     Line layerTwo = line(6.1, 15.4, 14.3, 15.4, BRIGHT, 0.75);
     return new Group(card, head, bust, layerOne, layerTwo);
   }
 
   private static Group pictureCard(double x, double y, Color accent) {
-    Rectangle card = roundedRect(x, y, 15.7, 13.7, 2.0, Color.web("#17232a"), accent, 1.2);
+    Rectangle card = roundedRect(x, y, 15.7, 13.7, 2.0, paperGlass(accent), Color.web("#52697b"), .85);
     Circle sun = new Circle(x + 11.9, y + 3.7, 1.25, Color.web("#ffd477"));
     SVGPath landscape = filled(
         "M" + (x + 1.8) + " " + (y + 11.7) + " L" + (x + 5.4) + " " + (y + 7.6)
             + " L" + (x + 8.0) + " " + (y + 10.0) + " L" + (x + 10.4) + " " + (y + 7.0)
             + " L" + (x + 13.9) + " " + (y + 11.7) + " Z",
-        metallic(accent));
+        metallic(Color.web("#52996d")));
     Line layer = line(x + 3.0, y + 12.5, x + 12.8, y + 12.5, BRIGHT, 0.65);
     return new Group(card, sun, landscape, layer);
   }
 
   private static Group setupCard(double x, double y, Color accent) {
-    Rectangle card = roundedRect(x, y, 15.2, 16.7, 2.1, Color.web("#19231d"), accent, 1.15);
-    Line one = line(x + 3, y + 5, x + 12.2, y + 5, SILVER, 1.0);
-    Line two = line(x + 3, y + 8.5, x + 12.2, y + 8.5, SILVER, 1.0);
-    Line three = line(x + 3, y + 12, x + 12.2, y + 12, SILVER, 1.0);
+    Rectangle card = roundedRect(x, y, 15.2, 16.7, 2.1, paperGlass(accent), Color.web("#52697b"), .85);
+    Line one = line(x + 3, y + 5, x + 12.2, y + 5, Color.web("#55717d"), 1.0);
+    Line two = line(x + 3, y + 8.5, x + 12.2, y + 8.5, Color.web("#55717d"), 1.0);
+    Line three = line(x + 3, y + 12, x + 12.2, y + 12, Color.web("#55717d"), 1.0);
     Circle knobOne = new Circle(x + 6, y + 5, 1.3, accent);
     Circle knobTwo = new Circle(x + 10, y + 8.5, 1.3, accent);
     Circle knobThree = new Circle(x + 7.8, y + 12, 1.3, accent);
@@ -392,7 +392,7 @@ public final class LayeredVisualizerIcon extends Pane {
 
   private static Rectangle roundedRect(
       double x, double y, double width, double height, double radius,
-      Color fill, Color stroke, double strokeWidth) {
+      javafx.scene.paint.Paint fill, Color stroke, double strokeWidth) {
     Rectangle rectangle = new Rectangle(x, y, width, height);
     rectangle.setArcWidth(radius * 2);
     rectangle.setArcHeight(radius * 2);
@@ -429,6 +429,12 @@ public final class LayeredVisualizerIcon extends Pane {
     line.setStrokeWidth(width);
     line.setStrokeLineCap(StrokeLineCap.ROUND);
     return line;
+  }
+
+  private static LinearGradient paperGlass(Color accent) {
+    return new LinearGradient(0,0,0,1,true,CycleMethod.NO_CYCLE,
+        new Stop(0,Color.web("#fbfeff")), new Stop(.42,accent.interpolate(Color.WHITE,.75)),
+        new Stop(.46,accent.interpolate(Color.WHITE,.55)), new Stop(1,accent.deriveColor(0,.45,.85,1)));
   }
 
   private static LinearGradient metallic(Color accent) {

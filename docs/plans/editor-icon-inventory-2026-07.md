@@ -4,6 +4,37 @@ Date: 2026-07-18
 
 This document maps the editor's icon systems and migration surface before a possible Aero-style redesign. Counts describe the current source tree and intentionally distinguish reusable icon concepts from the hundreds of places where they are instantiated.
 
+## September 2026 visual review
+
+The production icon atlas now covers **414 semantic roles across 12 families**. It includes
+shared actions, sidebar utilities, Puppeteer, diagnostics, console controls, code dockers,
+layer tools, panel actions, file types, and compact glyphs. Each role is rendered on dark
+and light surfaces at native size and enlarged for review. Repeated call sites share the
+same artwork; brand wordmarks, OS window controls, and arbitrary user-installed icon
+packs are not part of the command-icon atlas.
+
+Generate a fresh atlas from the actual JavaFX factories:
+
+```bash
+JVN_EDITOR_ICON_ATLAS="$PWD/build/reports/editor-icons/after" ./gradlew :editor:test \
+  --tests '*EditorIconContactSheetTest'
+```
+
+Open `build/reports/editor-icons/after/index.html` for all contact sheets;
+`inventory.csv` lists every exported family and role.
+
+This polish pass replaces flat bundled explorer folders with manila folders, paper
+inserts, and semantic emblems. Generic documents and media files use folded paper,
+while language and ecosystem logos remain recognizable. Installed icon themes keep
+priority over the bundled artwork. Main project/file actions now use the same shell
+materials. Layered Image Visualizer commands have filled glass layers, paper cards,
+stronger edges, and lighter shadows. Puppeteer commands use distinct clipboard,
+folder, character, help, audio-note, recording, and validation metaphors where generic
+boxed glyphs were ambiguous. Existing button sizes and hover/press behavior are retained.
+
+The July inventory below is the historical migration baseline; its counts and visual
+status predate this review.
+
 ## Inventory summary
 
 | System | Source | Inventory | Current rendering | Aero migration fit |

@@ -34,6 +34,15 @@ final class MaterialProjectIconPack {
     return template.map(value -> value.create(size));
   }
 
+  static Optional<Region> folderEmblem(String name, double size) {
+    Optional<IconTemplate> template = CACHE.computeIfAbsent(normalizeName(name), MaterialProjectIconPack::loadTemplate);
+    return template.filter(value -> value.parts().size() > 1).map(value -> {
+      List<SvgPart> marks = value.parts().stream().filter(part -> !"folder".equals(part.id()))
+          .map(part -> new SvgPart(part.pathData(), Color.web("#35647e"), part.id())).toList();
+      return new IconTemplate(value.viewBox(), marks).create(size);
+    });
+  }
+
   private static Optional<IconTemplate> loadTemplate(String name) {
     if (name.isBlank()) return Optional.empty();
     try (InputStream input = MaterialProjectIconPack.class.getResourceAsStream(RESOURCE_ROOT + name + ".svg")) {
@@ -76,7 +85,7 @@ final class MaterialProjectIconPack {
       String pathData = element.getAttribute("d");
       if (!pathData.isBlank() && !"none".equalsIgnoreCase(fill)) {
         Paint paint = parsePaint(fill).orElse(Color.web("#c6d1dc"));
-        parts.add(new SvgPart(pathData, paint));
+        parts.add(new SvgPart(pathData, paint, element.getAttribute("id")));
       }
       return;
     }
@@ -161,7 +170,7 @@ final class MaterialProjectIconPack {
     }
   }
 
-  private record SvgPart(String pathData, Paint paint) {
+  private record SvgPart(String pathData, Paint paint, String id) {
     private SvgPart {
       pathData = pathData == null ? "" : pathData;
       paint = paint == null ? Color.web("#c6d1dc") : paint;

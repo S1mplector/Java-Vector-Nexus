@@ -63,12 +63,16 @@ Open **Assets → Auto-label Assets...** from the editor's top menu to inventory
 - Suggestions use the closest matching declared filenames and character folders. When at least two sibling files agree on a label template, new labels follow that template (for example, `eyes_n_01`, `eyes_n_02`, then `eyes_n_03`). Ambiguous owner/type groups stay below the automatic-generation threshold. Non-image extensions keep their audio, video, font, or data type even beside character art. Filename-only suggestions remain below the 80% automatic-generation threshold.
 - **Save Label** stores an editor decision in `.jvn/asset-labels.properties`. **Ignore** retains an asset in the inventory without including it in automatic generation.
 - **Generate VNS** writes to `scripts/definitions/auto_labels.vns`, adds a character declaration if needed, and inserts an include into the manifest's existing entry script. If there is no valid entry script, include the generated file manually.
-- **Auto-label High Confidence** processes pending suggestions at 80% confidence or above after confirmation. Non-VNS assets receive saved labels.
+- **Auto-label N ready assets** processes all pending suggestions at 80% confidence or above after confirmation, in the background. Non-VNS assets receive saved labels.
 - Generation checks the whole batch before writing: missing files, paths outside the project, and labels already assigned to another file stop the batch with an error. Change existing declarations in their source VNS file.
 - Missing declaration targets and conflicting declarations appear in the inventory. Removing a generated declaration returns its asset to review on the next scan.
 - Dragging supported files onto the editor offers **Import & Review** or **Auto-label**. External files are copied to a recommended folder with unique filenames; existing files and saved decisions are preserved. Import errors and generation results remain visible after the scan.
 
-The **New only** filter compares each scan with the previous saved scan. `AssetAutoLabelService.preview` offers a read-only audit that does not update that baseline.
+The dashboard opens on the **Unlabeled** queue, with new files first and ready suggestions ahead of items needing review. Search and filters remain above the queue; the review form sits beside it in a wide panel and below it in a narrow panel. Asset preview, suggestion reasons, and VNS text expand on demand.
+
+The editor checks project asset metadata every four seconds in the background, including when the Assets panel is closed. An **unlabeled assets detected** banner offers **Review & auto-label**. **Later** dismisses the current offer until additional unlabeled paths arrive or the project is reopened. Discovery does not write labels or declarations.
+
+The **New only** filter includes files discovered after the first saved scan. Their **NEW** status survives rescans and reopening until they are labeled, declared, or ignored. The first scan still offers all existing unlabeled files. `AssetAutoLabelService.preview` offers a read-only audit that does not update the baseline. Automatic panel refresh preserves an unsaved label edit.
 
 ---
 

@@ -209,6 +209,99 @@ class PuppeteerSnapshotSceneConstructionTest {
     assertEquals(1431.0, hero.getY(), 1e-9);
   }
 
+  @Test
+  void repeatedLayersFollowGroupTransformsAndStayBehindEqualZForeground() throws Exception {
+    String source = """
+        @charlayer hero body body.png
+        @chargroup hero rig pivot=0.5,1 $body
+        @charpreset hero neutral $body | $body
+        @charimg booth neutral booth.png
+        [show hero center neutral z=2]
+        [show booth center neutral z=2]
+        timeline {
+          move "hero_rig" {
+            x: 120
+            dur: 0
+          }
+        }
+        Narrator: done
+        """;
+    var snapshot = PuppeteerLauncherPanel.resolveSnapshot(source, source.split("\n", -1).length - 1);
+    EditorApp app = new EditorApp();
+    var scene = buildScene(app, snapshot);
+    var occurrences = PuppeteerLauncherPanel.snapshotLayerOccurrenceNames(snapshot, snapshot.characters.get(0), "body");
+    assertEquals(2, occurrences.size());
+    Entity2D first = scene.find(occurrences.get(0));
+    Entity2D second = scene.find(occurrences.get(1));
+    double baseX = first.getX();
+    assertEquals(scene.find("booth").getZ(), second.getZ());
+    Method capture = EditorApp.class.getDeclaredMethod("captureRuntimeExportBaselines", JesScene2D.class);
+    capture.setAccessible(true);
+    Method replay = EditorApp.class.getDeclaredMethod("applySnapshotTimelineEndStateToScene", JesScene2D.class,
+        PuppeteerLauncherPanel.SceneSnapshot.class, String.class, Map.class);
+    replay.setAccessible(true);
+    replay.invoke(app, scene, snapshot, null, capture.invoke(app, scene));
+    assertEquals(baseX + 120, first.getX(), 1e-9);
+    assertEquals(first.getX(), second.getX(), 1e-9);
+    assertTrue(scene.getChildren().indexOf(second) < scene.getChildren().indexOf(scene.find("booth")));
+  }
+
+  @Test
+  void nestedParentAndChildTransformsComposeAcrossTimelineHistory() throws Exception {
+    String source = """
+        @charlayer hero eyes eyes.png
+        @charlayer hero body body.png
+        @chargroup hero face parent=head pivot=0.5,1 $eyes
+        @chargroup hero head pivot=0.5,1 $body
+        @charpreset hero neutral $eyes
+        [show hero center neutral]
+        timeline {
+          parallel {
+            move "hero_head" { x: 10 dur: 0 }
+            rotate "hero_head" { deg: 90 dur: 0 }
+          }
+        }
+        Narrator: next
+        timeline {
+          move "hero_face" { x: 20 dur: 0 }
+        }
+        Narrator: done
+        """;
+    var snapshot = PuppeteerLauncherPanel.resolveSnapshot(source, source.split("\n", -1).length - 1);
+    var app = new EditorApp();
+    var scene = buildScene(app, snapshot);
+    var eyes = scene.find("hero_eyes");
+    double x = eyes.getX(), y = eyes.getY();
+    Method capture = EditorApp.class.getDeclaredMethod("captureRuntimeExportBaselines", JesScene2D.class);
+    capture.setAccessible(true);
+    Method replay = EditorApp.class.getDeclaredMethod("applySnapshotTimelineEndStateToScene", JesScene2D.class,
+        PuppeteerLauncherPanel.SceneSnapshot.class, String.class, Map.class);
+    replay.setAccessible(true);
+    replay.invoke(app, scene, snapshot, null, capture.invoke(app, scene));
+    assertEquals(x + 10, eyes.getX(), 1e-9);
+    assertEquals(y + 20, eyes.getY(), 1e-9);
+    assertEquals(0, eyes.getMatrixMxx(), 1e-9);
+    assertEquals(-1, eyes.getMatrixMxy(), 1e-9);
+    assertEquals(1, eyes.getMatrixMyx(), 1e-9);
+  }
+
+  @Test
+  void viewportSizedCharacterArtworkStillUsesDeclaredScale() throws Exception {
+    Path image = tempDir.resolve("wide.png");
+    javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(192, 108, java.awt.image.BufferedImage.TYPE_INT_ARGB),
+        "png", image.toFile());
+    Files.writeString(tempDir.resolve("jvn.project"), "width=1920\nheight=1080\n");
+    String source = "@character hero \"Hero\" scale=1.5\n@charimg hero neutral " + image + "\n[show hero center neutral]\n";
+    var snapshot = PuppeteerLauncherPanel.resolveSnapshot(source, 2);
+    var app = new EditorApp();
+    Field root = EditorApp.class.getDeclaredField("projectRoot");
+    root.setAccessible(true);
+    root.set(app, tempDir.toFile());
+    Sprite2D hero = (Sprite2D) buildScene(app, snapshot).find("hero");
+    assertEquals(1620, hero.getHeight(), 1e-9);
+    assertEquals(2880, hero.getWidth(), 1e-9);
+  }
+
   private static JesScene2D buildScene(PuppeteerLauncherPanel.SceneSnapshot snapshot) throws Exception {
     return buildScene(new EditorApp(), snapshot);
   }

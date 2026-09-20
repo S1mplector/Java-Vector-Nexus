@@ -208,6 +208,13 @@ public class EditorApp extends Application {
   private VnsFlowMapView vnsFlowMapView;
   private VnsTimelineOutlineView vnsTimelineOutlineView;
   private AssetBrowserView assetBrowserView;
+  private HBox newAssetNotice;
+  private Label newAssetNoticeText;
+  private com.jvn.editor.ui.AssetAutoLabelMonitor assetLabelMonitor;
+  private java.util.Set<String> dismissedAssetSuggestions = java.util.Set.of();
+  private java.util.Set<String> offeredAssetSuggestions = java.util.Set.of();
+  private File assetNoticeProject;
+
   private VersionControlView versionControlView;
   private LayoutEditorLauncherView layoutEditorLauncherView;
   private StoryboardOverlayView storyboardOverlayView;
@@ -551,6 +558,7 @@ public class EditorApp extends Application {
 
   @Override
   public void stop() {
+    if (assetLabelMonitor != null) assetLabelMonitor.close();
     if (pluginHost != null) pluginHost.close();
   }
 
@@ -568,6 +576,7 @@ public class EditorApp extends Application {
 
   private void configureProjectContext(File root, Properties mf) {
     if (root == null) return;
+    updateAssetMonitorProject(root);
     if (projView != null) {
       projView.setRootDirectory(root);
       if (tabProject != null && tabProject.getContent() != projView) {
@@ -2489,7 +2498,40 @@ public class EditorApp extends Application {
     toolbar.setRight(logoBox);
 
     // Layout
-    VBox top = new VBox(commandBar, toolbar);
+    newAssetNoticeText = new Label();
+    newAssetNoticeText.setWrapText(true);
+    HBox.setHgrow(newAssetNoticeText, Priority.ALWAYS);
+    Button reviewNewAssets = new Button("Review & auto-label", SidebarToolIcon.auto());
+    reviewNewAssets.setOnAction(event -> selectAssetAutoLabelDashboard());
+    Button dismissNewAssets = new Button("Later");
+    dismissNewAssets.setOnAction(event -> {
+      dismissedAssetSuggestions = offeredAssetSuggestions;
+      newAssetNotice.setVisible(false);
+      newAssetNotice.setManaged(false);
+    });
+    newAssetNotice = new HBox(10, newAssetNoticeText, reviewNewAssets, dismissNewAssets);
+    newAssetNotice.setAlignment(Pos.CENTER_LEFT);
+    newAssetNotice.setPadding(new Insets(8, 12, 8, 12));
+    newAssetNotice.getStyleClass().add("asset-label-notice");
+    newAssetNotice.setVisible(false);
+    newAssetNotice.setManaged(false);
+    assetLabelMonitor = new com.jvn.editor.ui.AssetAutoLabelMonitor(result -> Platform.runLater(() -> {
+      if (shutdownInProgress || projectRoot == null
+          || !projectRoot.toPath().toAbsolutePath().normalize().equals(result.projectRoot())) return;
+      var pending = result.assets().stream()
+          .filter(asset -> asset.status() == com.jvn.editor.ui.AssetAutoLabelService.LabelStatus.SUGGESTED)
+          .toList();
+      offeredAssetSuggestions = pending.stream().map(com.jvn.editor.ui.AssetAutoLabelService.AssetSuggestion::relativePath)
+          .collect(java.util.stream.Collectors.toUnmodifiableSet());
+      boolean show = !pending.isEmpty() && !dismissedAssetSuggestions.containsAll(offeredAssetSuggestions);
+      newAssetNoticeText.setText(pending.size() + " unlabeled assets detected · "
+          + result.highConfidenceSuggestions() + " ready to auto-label");
+      newAssetNotice.setVisible(show);
+      newAssetNotice.setManaged(show);
+      if (assetBrowserView != null) assetBrowserView.refreshAutoLabelSuggestions();
+    }));
+    updateAssetMonitorProject(projectRoot);
+    VBox top = new VBox(commandBar, toolbar, newAssetNotice);
     if (DEVELOPER_MODE) {
       developerLogPanel = new DeveloperLogPanel("Logs", this::developerLogRoots);
       top.getChildren().add(developerLogPanel);
@@ -4271,6 +4313,7 @@ public class EditorApp extends Application {
   }
 
   private void applyProjectRootToTabs() {
+    updateAssetMonitorProject(projectRoot);
     if (filesTabs == null) return;
     for (Tab t : filesTabs.getTabs()) {
       if (t.getContent() instanceof com.jvn.editor.ui.FileEditorTab fet) {
@@ -7108,6 +7151,19 @@ public class EditorApp extends Application {
     }
   }
 
+  private void updateAssetMonitorProject(File root) {
+    if (!java.util.Objects.equals(assetNoticeProject, root)) {
+      assetNoticeProject = root;
+      dismissedAssetSuggestions = java.util.Set.of();
+      offeredAssetSuggestions = java.util.Set.of();
+      if (newAssetNotice != null) {
+        newAssetNotice.setVisible(false);
+        newAssetNotice.setManaged(false);
+      }
+    }
+    if (assetLabelMonitor != null) assetLabelMonitor.setProjectRoot(root);
+  }
+
   private void selectAssetAutoLabelDashboard() {
     selectAssetBrowserTab();
     ensureAssetBrowserView().showAutoLabelDashboard();
@@ -7307,7 +7363,7 @@ public class EditorApp extends Application {
       FileEditorTab currentFt = getActiveFileTab();
       if (currentFt == null) return;
       int caretLine = currentFt.getVnsCaretLine();
-      PuppeteerLauncherPanel.SceneSnapshot newSnapshot = PuppeteerLauncherPanel.resolveSnapshot(currentFt.getCurrentTextSnapshot(), caretLine);
+      PuppeteerLauncherPanel.SceneSnapshot newSnapshot = PuppeteerLauncherPanel.resolveProjectSnapshot(currentFt.getCurrentTextSnapshot(), caretLine, currentFt.getFile(), projectRoot);
       JesScene2D newScene = buildSceneFromSnapshot(newSnapshot);
       puppeteer.syncWithSnapshot(newSnapshot, newScene);
     });
@@ -7652,13 +7708,18 @@ public class EditorApp extends Application {
 	        scene, snapshot, vnOffsetBaselines);
 	    if (selectedTimelineName == null && snapshot.hasInlineTimelineHistory()) {
 	      boolean applied = false;
+          var groupReplay = new com.jvn.editor.ui.actioneditor.PuppeteerGroupReplay();
 	      for (PuppeteerLauncherPanel.InlineTimelineContext context : snapshot.inlineTimelineHistory) {
 	        AnimationProject stateTimeline = importInlineTimelineFromSnapshot(snapshot, context, false);
 	        if (stateTimeline == null) continue;
-	        applySnapshotStateTimelineToScene(scene, snapshot, stateTimeline, true, snapshotBaselines);
+	        groupReplay.record(stateTimeline);
+            applySnapshotStateTimelineToScene(scene, snapshot, stateTimeline, true, snapshotBaselines);
 	        applied = true;
 	      }
-	      if (applied) return;
+	      if (applied) {
+            groupReplay.apply(scene, snapshot, snapshotBaselines);
+            return;
+          }
 	    }
 	    AnimationProject stateTimeline = importTimelineFromSnapshot(snapshot, false);
 	    if (stateTimeline == null) return;
@@ -7676,6 +7737,10 @@ public class EditorApp extends Application {
 	    Map<String, Map<PropertyType, Double>> baselines = new LinkedHashMap<>();
 	    if (provided != null) baselines.putAll(provided);
 	    if (scene == null || snapshot == null) return baselines;
+        for (String name : scene.names()) {
+          Entity2D entity = scene.find(name);
+          if (entity != null) baselines.putIfAbsent(name, captureEntityProperties(entity));
+        }
 	    for (PuppeteerLauncherPanel.CharacterEntry character : snapshot.characters) {
 	      if (character == null) continue;
 	      Entity2D anchor = firstSnapshotEntity(scene, snapshot, character);
@@ -7712,7 +7777,8 @@ public class EditorApp extends Application {
 	    PuppeteerLauncherPanel.InlineTimelineContext loadedTimeline = snapshot.hasInlineTimeline()
 	        ? snapshot.inlineTimelineHistory.get(snapshot.inlineTimelineHistory.size() - 1)
 	        : null;
-	    for (PuppeteerLauncherPanel.InlineTimelineContext context : snapshot.inlineTimelineHistory) {
+	    var groupReplay = new com.jvn.editor.ui.actioneditor.PuppeteerGroupReplay();
+        for (PuppeteerLauncherPanel.InlineTimelineContext context : snapshot.inlineTimelineHistory) {
 	      if (context == null) continue;
 	      if (loadedTimeline != null
 	          && context.startLine() == loadedTimeline.startLine()
@@ -7721,8 +7787,10 @@ public class EditorApp extends Application {
 	      }
 	      AnimationProject stateTimeline = importInlineTimelineFromSnapshot(snapshot, context, false);
 	      if (stateTimeline == null) continue;
-	      applySnapshotStateTimelineToScene(scene, snapshot, stateTimeline, true, snapshotBaselines);
+	      groupReplay.record(stateTimeline);
+          applySnapshotStateTimelineToScene(scene, snapshot, stateTimeline, true, snapshotBaselines);
 	    }
+        groupReplay.apply(scene, snapshot, snapshotBaselines);
 	  }
 
 	  private void applySnapshotStateTimelineToScene(
@@ -7806,64 +7874,16 @@ public class EditorApp extends Application {
 	        }
 	        List<Entity2D> members = new ArrayList<>();
 	        for (PuppeteerLauncherPanel.CharacterLayerEntry layer : visibleLayers) {
-	          if (layer == null || !snapshotLayerGroupChain(layer.layerId, visibleGroups).contains(group)) {
+	          if (layer == null || !PuppeteerLauncherPanel.snapshotLayerGroupChain(layer.layerId, visibleGroups).contains(group)) {
 	            continue;
 	          }
-	          Entity2D member = scene.find(PuppeteerLauncherPanel.snapshotStableLayerEntityName(
-	              character.characterId, layer.layerId));
-	          if (member != null && !members.contains(member)) members.add(member);
+	          for (String occurrence : PuppeteerLauncherPanel.snapshotLayerOccurrenceNames(snapshot, character, layer.layerId)) {
+                Entity2D member = scene.find(occurrence);
+                if (member != null && !members.contains(member)) members.add(member);
+              }
 	        }
 	        return new SnapshotLayerGroupTarget(group, List.copyOf(members));
 	      }
-	    }
-	    return null;
-	  }
-
-	  private List<PuppeteerLauncherPanel.CharacterLayerGroupEntry> snapshotLayerGroupChain(
-	      String layerId,
-	      List<PuppeteerLauncherPanel.CharacterLayerGroupEntry> groups
-	  ) {
-	    if (layerId == null || layerId.isBlank() || groups == null || groups.isEmpty()) return List.of();
-	    PuppeteerLauncherPanel.CharacterLayerGroupEntry deepest = null;
-	    int deepestDepth = -1;
-	    for (PuppeteerLauncherPanel.CharacterLayerGroupEntry candidate : groups) {
-	      if (candidate == null || !candidate.layerIds.contains(layerId)) continue;
-	      int depth = snapshotLayerGroupDepth(candidate, groups, new LinkedHashSet<>());
-	      if (depth > deepestDepth) {
-	        deepest = candidate;
-	        deepestDepth = depth;
-	      }
-	    }
-	    if (deepest == null) return List.of();
-
-	    LinkedHashSet<String> seen = new LinkedHashSet<>();
-	    List<PuppeteerLauncherPanel.CharacterLayerGroupEntry> chain = new ArrayList<>();
-	    PuppeteerLauncherPanel.CharacterLayerGroupEntry current = deepest;
-	    while (current != null && current.groupId != null && seen.add(current.groupId)) {
-	      chain.add(0, current);
-	      current = snapshotLayerGroupById(groups, current.parentGroupId);
-	    }
-	    return List.copyOf(chain);
-	  }
-
-	  private int snapshotLayerGroupDepth(
-	      PuppeteerLauncherPanel.CharacterLayerGroupEntry group,
-	      List<PuppeteerLauncherPanel.CharacterLayerGroupEntry> groups,
-	      Set<String> seen
-	  ) {
-	    if (group == null || group.groupId == null || !seen.add(group.groupId)) return 0;
-	    PuppeteerLauncherPanel.CharacterLayerGroupEntry parent =
-	        snapshotLayerGroupById(groups, group.parentGroupId);
-	    return parent == null ? 0 : 1 + snapshotLayerGroupDepth(parent, groups, seen);
-	  }
-
-	  private PuppeteerLauncherPanel.CharacterLayerGroupEntry snapshotLayerGroupById(
-	      List<PuppeteerLauncherPanel.CharacterLayerGroupEntry> groups,
-	      String groupId
-	  ) {
-	    if (groupId == null || groupId.isBlank() || groups == null) return null;
-	    for (PuppeteerLauncherPanel.CharacterLayerGroupEntry group : groups) {
-	      if (group != null && groupId.equals(group.groupId)) return group;
 	    }
 	    return null;
 	  }
@@ -7998,6 +8018,7 @@ public class EditorApp extends Application {
 	    for (PuppeteerLauncherPanel.CharacterLayerEntry layer : layers) {
 	      if (layer == null || layer.path == null || layer.path.isBlank()) continue;
 	      names.addAll(PuppeteerLauncherPanel.equivalentSnapshotLayerEntityNames(snapshot, character, layer.layerId));
+          names.addAll(PuppeteerLauncherPanel.snapshotLayerOccurrenceNames(snapshot, character, layer.layerId));
 	    }
 	    for (PuppeteerLauncherPanel.CharacterLayerGroupEntry group :
 	        snapshot.resolveCharacterLayerGroups(character.characterId, character.expression)) {
@@ -8396,6 +8417,11 @@ public class EditorApp extends Application {
     double sceneH = Math.max(1.0, viewport.height());
     PuppeteerCharacterFraming framing = resolvePuppeteerCharacterFraming();
     double characterHeight = sceneH * framing.heightFactor();
+    // The VN runtime clears its stage to opaque black, including before the first background.
+    var stageClear = new com.jvn.core.scene2d.Panel2D(sceneW, sceneH);
+    stageClear.setFill(0, 0, 0, 1);
+    stageClear.setZ((double) Integer.MIN_VALUE - 1.0);
+    scene.add(stageClear);
 
     if (snapshot.previousBackgroundId != null) {
       String prevBgPath = resolveProjectPathSpec(snapshot.resolvePreviousBackgroundPath());
@@ -8418,7 +8444,10 @@ public class EditorApp extends Application {
       scene.registerEntity("bg_current", bg);
     }
 
-    for (PuppeteerLauncherPanel.CharacterEntry ch : snapshot.characters) {
+    List<PuppeteerLauncherPanel.CharacterEntry> drawOrder = new ArrayList<>(snapshot.characters);
+    drawOrder.sort(java.util.Comparator.comparingInt(character ->
+        PuppeteerLauncherPanel.snapshotPosition(character).getOrdinal()));
+    for (PuppeteerLauncherPanel.CharacterEntry ch : drawOrder) {
       List<PuppeteerLauncherPanel.CharacterLayerEntry> layers = snapshot.resolveCharacterLayers(ch.characterId, ch.expression);
       if (!layers.isEmpty()) {
         addLayeredSnapshotCharacter(
@@ -8429,7 +8458,7 @@ public class EditorApp extends Application {
       String spritePathSpec = resolveProjectPathSpec(snapshot.resolveCharacterPath(ch.characterId, ch.expression));
       SnapshotSpriteLayout spriteLayout = estimateSnapshotSpriteLayout(
           firstLayerPath(spritePathSpec), characterHeight * ch.scale,
-          sceneW, sceneH, framing.baselineY());
+          sceneW, sceneH, framing.baselineY(), ch.scale);
       double[] spriteSize = spriteLayout.size();
       double charW = spriteSize[0];
       double charH = spriteSize[1];
@@ -8468,7 +8497,7 @@ public class EditorApp extends Application {
       String resolvedPath = resolveProjectPath(layer.path);
       resolvedPaths.add(resolvedPath);
       SnapshotSpriteLayout layout = estimateSnapshotSpriteLayout(
-          resolvedPath, characterHeight, sceneW, sceneH, characterBaselineY);
+          resolvedPath, characterHeight, sceneW, sceneH, characterBaselineY, ch.scale);
       double[] size = layout.size();
       charW = Math.max(charW, size[0]);
       charH = Math.max(charH, size[1]);
@@ -8490,7 +8519,8 @@ public class EditorApp extends Application {
       com.jvn.core.scene2d.Sprite2D sprite = new com.jvn.core.scene2d.Sprite2D(resolvedPath, charW, charH);
       sprite.setOrigin(0.5, 1.0);
       sprite.setPosition(leftX + (charW * 0.5), bottomY);
-      sprite.setZ(baseZ + (layerIndex * 0.001));
+      // Stable scene order preserves the whole character at its declared Z.
+      sprite.setZ(baseZ);
       scene.add(sprite);
       scene.registerEntity(entityName, sprite);
       for (String alias : PuppeteerLauncherPanel.equivalentSnapshotLayerEntityNames(snapshot, ch, layer.layerId)) {
@@ -8507,6 +8537,15 @@ public class EditorApp extends Application {
       for (String layerId : group.layerIds) {
         anchor = visibleEntitiesByLayerId.get(layerId);
         if (anchor != null) break;
+      }
+      if (anchor == null) {
+        var groups = snapshot.resolveCharacterLayerGroups(ch.characterId, ch.expression);
+        for (var layer : layers) {
+          if (PuppeteerLauncherPanel.snapshotLayerGroupChain(layer.layerId, groups).contains(group)) {
+            anchor = visibleEntitiesByLayerId.get(layer.layerId);
+            if (anchor != null) break;
+          }
+        }
       }
       if (anchor == null) continue;
       for (String alias : PuppeteerLauncherPanel.equivalentSnapshotLayerGroupEntityNames(
@@ -8594,26 +8633,29 @@ public class EditorApp extends Application {
     return new PuppeteerCharacterFraming(heightFactor, baselineY);
   }
 
+  private final com.jvn.editor.ui.actioneditor.ImageDimensions puppeteerImageDimensions =
+      new com.jvn.editor.ui.actioneditor.ImageDimensions();
+
   private SnapshotSpriteLayout estimateSnapshotSpriteLayout(
       String spritePath,
       double targetHeight,
       double viewportWidth,
       double viewportHeight,
-      double baselineY
+      double baselineY,
+      double characterScale
   ) {
     double height = Math.max(1.0, targetHeight);
     double width = height * 0.5;
     boolean canvasAligned = false;
     if (spritePath != null && !spritePath.isBlank()) {
       try {
-        javafx.scene.image.Image image = new javafx.scene.image.Image(
-            new java.io.File(spritePath).toURI().toString(), 0, 0, true, false);
+        var image = puppeteerImageDimensions.read(spritePath);
         if (image.getWidth() > 0.0 && image.getHeight() > 0.0) {
           double imageAspect = image.getWidth() / image.getHeight();
           double viewportAspect = viewportWidth / Math.max(1.0, viewportHeight);
           canvasAligned = Math.abs(imageAspect - viewportAspect)
               <= Math.max(1e-6, viewportAspect * 0.001);
-          height = canvasAligned ? Math.max(1.0, viewportHeight) : height;
+          height = canvasAligned ? Math.max(1.0, viewportHeight) * characterScale : height;
           width = image.getWidth() * (height / image.getHeight());
         }
       } catch (Exception ignored) {
@@ -8629,8 +8671,7 @@ public class EditorApp extends Application {
     double width = height * 0.5;
     if (spritePath == null || spritePath.isBlank()) return new double[] { width, height };
     try {
-      javafx.scene.image.Image image = new javafx.scene.image.Image(
-          new java.io.File(spritePath).toURI().toString(), 0, 0, true, false);
+      var image = puppeteerImageDimensions.read(spritePath);
       if (image.getWidth() > 0.0 && image.getHeight() > 0.0) {
         width = image.getWidth() * (height / image.getHeight());
       }
@@ -8693,7 +8734,7 @@ public class EditorApp extends Application {
       FileEditorTab currentFt = getActiveFileTab();
       if (currentFt == null) return;
       int caretLine = currentFt.getVnsCaretLine();
-      PuppeteerLauncherPanel.SceneSnapshot newSnapshot = PuppeteerLauncherPanel.resolveSnapshot(currentFt.getCurrentTextSnapshot(), caretLine);
+      PuppeteerLauncherPanel.SceneSnapshot newSnapshot = PuppeteerLauncherPanel.resolveProjectSnapshot(currentFt.getCurrentTextSnapshot(), caretLine, currentFt.getFile(), projectRoot);
       JesScene2D newScene = buildSceneFromSnapshot(newSnapshot);
       puppeteer.syncWithSnapshot(newSnapshot, newScene);
     });

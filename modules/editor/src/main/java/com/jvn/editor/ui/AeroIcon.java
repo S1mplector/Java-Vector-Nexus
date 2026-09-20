@@ -51,7 +51,7 @@ public final class AeroIcon extends StackPane {
   private AeroIcon(Kind kind, double size) {
     this.kind = kind == null ? Kind.PROJECT : kind;
     this.iconSize = clampSize(size);
-    double artworkScale = isVnsCommand(this.kind) ? 0.88 : isSidebarPanelKind(this.kind) ? 0.92 : 0.72;
+    double artworkScale = isVnsCommand(this.kind) ? 0.88 : isSidebarPanelKind(this.kind) ? 0.92 : 0.86;
     Region glyph = glyphFor(this.kind, Math.max(10, iconSize * artworkScale));
     glyph.setMouseTransparent(true);
 
@@ -122,21 +122,23 @@ public final class AeroIcon extends StackPane {
           TIMELINE_OUTLINE, ASSETS, LAYOUT, STORYBOARD, LAYERS, IMAGE_ATTRIBUTES,
           LIGHTING, VERSION_CONTROL, PUPPETEER, SCRIPT_EDITOR, SETTINGS ->
           SidebarPanelArtwork.of(kind, size);
-      case OPEN_PROJECT, DOCUMENTATION, REVEAL, NEW_PROJECT -> CssIcon.folder(color, size);
-      case RUN -> sized(CssIcon.play(color), size);
-      case BUILD -> sized(CssIcon.download(color), size);
+      case OPEN_PROJECT, REVEAL, NEW_PROJECT -> ShellFileArtwork.folder(size, null);
+      case DOCUMENTATION -> SidebarPanelArtwork.of(Kind.TIMELINE_OUTLINE, size);
+      case RUN -> PuppeteerAeroIcon.of(PuppeteerAeroIcon.Kind.PLAY, size);
+      case BUILD -> SidebarToolIcon.of(SidebarToolIcon.Kind.DOWNLOAD, "#57aadd", size);
       case REFRESH -> RefreshIcon.of(size);
-      case ENTRY_SCRIPT -> sized(CssIcon.speech(color), size);
+      case ENTRY_SCRIPT -> ShellFileArtwork.document(size, CssIcon.play("#37a666"));
       case VNS_RUN_LABEL, VNS_RUN_CURSOR, VNS_RUN_ENTRY, VNS_SYMBOLS, VNS_SNIPPET, VNS_FIND,
           VNS_COMMANDS, VNS_WORD_WRAP, VNS_DIFF, VNS_DIAGNOSTICS, VNS_PREVIEW ->
           vnsCommandGlyph(kind, size, palette);
-      case MANIFEST, README -> sized(CssIcon.document(color), size);
-      case ARROW_BACK -> sized(CssIcon.arrowLeft(color), size);
+      case MANIFEST, README -> ShellFileArtwork.document(size, null);
+      case ARROW_BACK -> SidebarToolIcon.of(SidebarToolIcon.Kind.PREVIOUS, "#55bce5", size);
       case HELP -> helpGlyph(size);
-      case WHATS_NEW -> sized(CssIcon.sparkles(color), size);
+      case WHATS_NEW -> SidebarToolIcon.of(SidebarToolIcon.Kind.SPARKLES, "#e4ae54", size);
       case NO_PROJECT -> noProjectGlyph(size);
     };
     if (kind != Kind.HELP && kind != Kind.NO_PROJECT && kind != Kind.REFRESH
+        && kind != Kind.RUN && kind != Kind.ARROW_BACK && kind != Kind.WHATS_NEW
         && !isVnsCommand(kind) && !isSidebarPanelKind(kind)) {
       glyph = decorate(kind, glyph, size, palette);
     }

@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
-import javafx.scene.control.TableView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import org.junit.jupiter.api.Test;
@@ -86,7 +85,7 @@ class AssetBrowserViewFxTest {
 
     for (int i = 0; i < 80; i++) {
       int count = runFx(() -> {
-        TableView<?> table = (TableView<?>) view.lookup("#asset-auto-label-table");
+        ListView<?> table = (ListView<?>) view.lookup("#asset-auto-label-table");
         assertNotNull(table, "Auto-label dashboard table should be attached to the scene");
         return table.getItems().size();
       });
@@ -94,7 +93,7 @@ class AssetBrowserViewFxTest {
       Thread.sleep(50);
     }
     assertEquals(1, runFx(() ->
-        ((TableView<?>) view.lookup("#asset-auto-label-table")).getItems().size()));
+        ((ListView<?>) view.lookup("#asset-auto-label-table")).getItems().size()));
   }
 
   @Test
@@ -114,7 +113,7 @@ class AssetBrowserViewFxTest {
     });
     boolean generated = false;
     for (int i = 0; i < 100; i++) {
-      if (runFx(() -> !((TableView<?>) view.lookup("#asset-auto-label-table")).getItems().isEmpty())) {
+      if (runFx(() -> !((ListView<?>) view.lookup("#asset-auto-label-table")).getItems().isEmpty())) {
         runFx(() -> {
           Button generate = view.lookupAll(".button").stream().filter(Button.class::isInstance)
               .map(Button.class::cast).filter(button -> "Generate VNS".equals(button.getText()))

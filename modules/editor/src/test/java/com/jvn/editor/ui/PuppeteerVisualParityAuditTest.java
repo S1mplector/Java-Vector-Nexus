@@ -198,6 +198,9 @@ class PuppeteerVisualParityAuditTest {
     writeMetrics(csv, metrics);
     long visibleDiffs = metrics.stream().filter(metric -> metric.changedPixelPercent() >= 0.01).count();
     assertTrue(!metrics.isEmpty(), "No visual checkpoints found for " + projectRoot);
+    if (Boolean.parseBoolean(setting("jvnPuppeteerAuditStrict", "JVN_PUPPETEER_AUDIT_STRICT", "false"))) {
+      assertTrue(visibleDiffs == 0, visibleDiffs + " checkpoints differ by at least 0.01% of pixels. See " + csv);
+    }
     System.out.println("Rendered " + metrics.size() + " canonical/Puppeteer checkpoint pairs; "
         + visibleDiffs + " have >= 0.01% changed pixels (mode=" + checkpointMode.setting + "). Report: " + csv);
   }

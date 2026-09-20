@@ -26,8 +26,12 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TitledPane;
+import javafx.scene.layout.FlowPane;
+
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
@@ -53,7 +57,7 @@ final class AssetAutoLabelDashboardView extends BorderPane {
   private final ComboBox<AssetKind> kindFilter = new ComboBox<>();
   private final ComboBox<LabelStatus> statusFilter = new ComboBox<>();
   private final CheckBox newOnly = new CheckBox("New only");
-  private final TableView<AssetSuggestion> table = new TableView<>();
+  private final ListView<AssetSuggestion> table = new ListView<>();
   private final List<AssetSuggestion> allAssets = new ArrayList<>();
 
   private final ImageView preview = new ImageView();
@@ -68,7 +72,7 @@ final class AssetAutoLabelDashboardView extends BorderPane {
   private final Button ignoreButton = new Button("Ignore");
   private final Button openButton = new Button("Open");
   private final Button copyButton = new Button("Copy VNS");
-  private final Button batchButton = new Button("Auto-label High Confidence");
+  private final Button batchButton = new Button("Auto-label ready assets", SidebarToolIcon.auto());
   private final ExecutorService scanExecutor = Executors.newSingleThreadExecutor(task -> {
     Thread thread = new Thread(task, "jvn-asset-label-scan");
     thread.setDaemon(true);
@@ -83,8 +87,9 @@ final class AssetAutoLabelDashboardView extends BorderPane {
   private String pendingOutcome;
 
   AssetAutoLabelDashboardView() {
-    getStyleClass().add("sidebar-tool-root");
-    Label title = new Label("Asset Labels");
+    getStyleClass().addAll("sidebar-tool-root", "asset-label-dashboard");
+    batchButton.setDisable(true);
+    Label title = new Label("Unlabeled assets");
     title.getStyleClass().add("sidebar-tool-title");
     HBox titleRow = new HBox(6, title, SidebarToolHelp.button(this, "Asset Auto-labeling", """
         This dashboard inventories every supported project asset. Existing @background,
@@ -111,12 +116,15 @@ final class AssetAutoLabelDashboardView extends BorderPane {
     search.setPromptText("Filter path, owner, or label...");
     search.textProperty().addListener((obs, oldValue, newValue) -> applyFilter());
     kindFilter.setPromptText("All types");
+    kindFilter.getItems().add(null);
     kindFilter.getItems().addAll(AssetKind.values());
     kindFilter.valueProperty().addListener((obs, oldValue, newValue) -> applyFilter());
     kindFilter.setButtonCell(new AssetKindCell());
     kindFilter.setCellFactory(ignored -> new AssetKindCell());
     statusFilter.setPromptText("All states");
+    statusFilter.getItems().add(null);
     statusFilter.getItems().addAll(LabelStatus.values());
+    statusFilter.setValue(LabelStatus.SUGGESTED);
     statusFilter.valueProperty().addListener((obs, oldValue, newValue) -> applyFilter());
     statusFilter.setButtonCell(new LabelStatusCell());
     statusFilter.setCellFactory(ignored -> new LabelStatusCell());
@@ -133,32 +141,43 @@ final class AssetAutoLabelDashboardView extends BorderPane {
     refreshButton.setOnAction(event -> refresh());
     refreshButton.setTooltip(new Tooltip("Rescan assets and VNS declarations"));
 
-    HBox filters = new HBox(6, search, kindFilter, statusFilter, newOnly, clearFilters, refreshButton);
-    HBox.setHgrow(search, Priority.ALWAYS);
-    kindFilter.setPrefWidth(145);
-    statusFilter.setPrefWidth(125);
-    VBox header = new VBox(7, titleRow, summary, filters);
-    header.setPadding(new Insets(9));
+    search.setMinWidth(0);
+    search.setMaxWidth(Double.MAX_VALUE);
+    kindFilter.setPrefWidth(130);
+    statusFilter.setPrefWidth(140);
+    FlowPane filters = new FlowPane(6, 6, kindFilter, statusFilter, newOnly, clearFilters);
+    FlowPane primaryActions = new FlowPane(7, 7, batchButton, refreshButton);
+    batchButton.getStyleClass().add("asset-label-primary");
+    batchButton.setId("asset-label-auto-ready");
+    batchButton.setTooltip(new Tooltip("Generate labels for ready suggestions at 80% confidence or above. Other assets stay in the review queue."));
+    VBox header = new VBox(8, titleRow, summary, primaryActions, search, filters);
+    header.setPadding(new Insets(12));
     header.getStyleClass().add("sidebar-tool-header");
 
     configureTable();
-    VBox.setVgrow(table, Priority.ALWAYS);
+    table.setMinHeight(180);
+    table.setMinWidth(0);
+    table.setPrefHeight(360);
     VBox list = new VBox(table);
+    list.setMinWidth(0);
+    list.setMinHeight(180);
     VBox.setVgrow(table, Priority.ALWAYS);
 
     preview.setPreserveRatio(true);
-    preview.setFitWidth(250);
-    preview.setFitHeight(150);
+    preview.setFitWidth(180);
+    preview.setFitHeight(110);
     selectedPath.setWrapText(true);
+    selectedPath.setMinWidth(0);
+    selectedPath.getStyleClass().add("asset-label-selected-path");
     kindEditor.getItems().addAll(AssetKind.values());
     kindEditor.setButtonCell(new AssetKindCell());
     kindEditor.setCellFactory(ignored -> new AssetKindCell());
     reason.setEditable(false);
     reason.setWrapText(true);
-    reason.setPrefRowCount(3);
+    reason.setPrefRowCount(2);
     declaration.setEditable(false);
     declaration.setWrapText(true);
-    declaration.setPrefRowCount(3);
+    declaration.setPrefRowCount(2);
     ownerEditor.setPromptText("Character / object id");
     labelEditor.setPromptText("VNS label");
 
@@ -182,20 +201,39 @@ final class AssetAutoLabelDashboardView extends BorderPane {
     openButton.setOnAction(event -> openSelected());
     copyButton.setOnAction(event -> copyDeclaration());
     batchButton.setOnAction(event -> autoLabelHighConfidence(true));
-    HBox actions = new HBox(6, saveButton, generateButton, ignoreButton, openButton, copyButton);
-    actions.setAlignment(Pos.CENTER_LEFT);
+    FlowPane actions = new FlowPane(6, 6, generateButton, saveButton, ignoreButton, openButton, copyButton);
 
-    VBox details = new VBox(
-        7, preview, selectedPath, editor, new Label("Why this was suggested"), reason,
-        new Label("VNS declaration"), declaration, actions, batchButton, status);
-    details.setPadding(new Insets(9));
-    details.getStyleClass().add("sidebar-tool-footer");
-
-    javafx.scene.control.SplitPane split = new javafx.scene.control.SplitPane(list, details);
+    TitledPane explanation = new TitledPane("Why this label?", reason);
+    explanation.setExpanded(false);
+    TitledPane vnsPreview = new TitledPane("VNS declaration", declaration);
+    vnsPreview.setExpanded(false);
+    TitledPane assetPreview = new TitledPane("Asset preview", preview);
+    assetPreview.setExpanded(false);
+    VBox details = new VBox(9, selectedPath, editor, actions, assetPreview, explanation, vnsPreview);
+    details.setMinWidth(0);
+    details.setPadding(new Insets(12));
+    details.getStyleClass().add("asset-label-details");
+    ScrollPane detailScroll = new ScrollPane(details);
+    detailScroll.setFitToWidth(true);
+    detailScroll.setMinSize(0, 0);
+    detailScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    detailScroll.setId("asset-label-review-details");
+    javafx.scene.control.SplitPane split = new javafx.scene.control.SplitPane(list, detailScroll);
     split.setOrientation(javafx.geometry.Orientation.VERTICAL);
-    split.setDividerPositions(0.55);
+    split.setDividerPositions(0.6);
+    split.setId("asset-label-review-split");
+    widthProperty().addListener((obs, oldWidth, newWidth) -> {
+      var orientation = newWidth.doubleValue() >= 760
+          ? javafx.geometry.Orientation.HORIZONTAL : javafx.geometry.Orientation.VERTICAL;
+      if (split.getOrientation() != orientation) {
+        split.setOrientation(orientation);
+        split.setDividerPositions(0.6);
+      }
+    });
+    status.setPadding(new Insets(8,12,8,12));
     setTop(header);
     setCenter(split);
+    setBottom(status);
     showSelection(null);
   }
 
@@ -215,6 +253,13 @@ final class AssetAutoLabelDashboardView extends BorderPane {
 
   void setOnChanged(Runnable handler) {
     onChanged = handler;
+  }
+
+  void refreshUnlessEditing() {
+    AssetSuggestion selected = table.getSelectionModel().getSelectedItem();
+    if (selected != null && (kindEditor.getValue() != selected.kind()
+        || !ownerEditor.getText().equals(selected.owner()) || !labelEditor.getText().equals(selected.label()))) return;
+    refresh();
   }
 
   void refresh() {
@@ -315,40 +360,54 @@ final class AssetAutoLabelDashboardView extends BorderPane {
   private void configureTable() {
     table.setId("asset-auto-label-table");
     table.setPlaceholder(new Label("No matching assets"));
-    TableColumn<AssetSuggestion, String> path = new TableColumn<>("Asset");
-    path.setCellValueFactory(value -> new SimpleStringProperty(value.getValue().relativePath()));
-    path.setPrefWidth(310);
-    TableColumn<AssetSuggestion, String> type = new TableColumn<>("Type");
-    type.setCellValueFactory(value ->
-        new SimpleStringProperty(value.getValue().kind().displayName()));
-    type.setPrefWidth(125);
-    TableColumn<AssetSuggestion, String> owner = new TableColumn<>("Owner");
-    owner.setCellValueFactory(value -> new SimpleStringProperty(value.getValue().owner()));
-    owner.setPrefWidth(105);
-    TableColumn<AssetSuggestion, String> label = new TableColumn<>("Label");
-    label.setCellValueFactory(value -> new SimpleStringProperty(value.getValue().label()));
-    label.setPrefWidth(135);
-    TableColumn<AssetSuggestion, String> state = new TableColumn<>("State");
-    state.setCellValueFactory(value -> new SimpleStringProperty(
-        (value.getValue().isNew() ? "New · " : "") + value.getValue().status().displayName()));
-    state.setPrefWidth(125);
-    TableColumn<AssetSuggestion, String> confidence = new TableColumn<>("Confidence");
-    confidence.setCellValueFactory(value -> new SimpleStringProperty(
-        Math.round(value.getValue().confidence() * 100) + "%"));
-    confidence.setPrefWidth(90);
-    table.getColumns().addAll(path, type, owner, label, state, confidence);
+    table.getStyleClass().add("asset-label-queue");
+    table.setFixedCellSize(72);
+    table.setCellFactory(ignored -> new ListCell<>() {
+      @Override protected void updateItem(AssetSuggestion asset, boolean empty) {
+        super.updateItem(asset, empty);
+        setText(null);
+        if (empty || asset == null) { setGraphic(null); setTooltip(null); return; }
+        Label name = new Label(asset.file().getFileName().toString());
+        name.getStyleClass().add("asset-label-row-name");
+        name.setMinWidth(0);
+        Label path = new Label(asset.relativePath());
+        path.getStyleClass().add("asset-label-row-path");
+        path.setMinWidth(0);
+        Label label = new Label((asset.owner().isBlank() ? "" : asset.owner() + " · ") + asset.label());
+        label.getStyleClass().add("asset-label-row-path");
+        label.setMinWidth(0);
+        VBox text = new VBox(2, name, path, label);
+        text.setMinWidth(0);
+        HBox.setHgrow(text, Priority.ALWAYS);
+        String readiness = asset.status() == LabelStatus.SUGGESTED
+            ? (asset.confidence() >= HIGH_CONFIDENCE ? "Ready" : "Review") : asset.status().displayName();
+        Label badge = new Label((asset.isNew() ? "NEW · " : "") + readiness);
+        badge.getStyleClass().add("asset-label-badge");
+        badge.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
+        HBox row = new HBox(9, text, badge);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.setMinWidth(0);
+        row.prefWidthProperty().bind(table.widthProperty().subtract(34));
+        setGraphic(row);
+        setTooltip(new Tooltip(asset.relativePath() + "\n" + asset.reason()));
+        setAccessibleText(asset.relativePath() + ", " + readiness + ", label " + asset.label());
+      }
+    });
     table.getSelectionModel().selectedItemProperty().addListener(
         (obs, oldValue, newValue) -> showSelection(newValue));
   }
 
-  private void acceptScan(ScanResult result) {
+  void acceptScan(ScanResult result) {
     lastResult = result;
     allAssets.clear();
     allAssets.addAll(result.assets());
-    summary.setText(result.currentAssetCount() + " assets · " + result.declaredCount()
-        + " declared · " + result.labeledCount() + " labeled · " + result.reviewCount()
-        + " need review · " + result.newAssets() + " new · " + result.missingCount()
-        + " missing");
+    long newUnlabeled = result.assets().stream().filter(asset -> asset.isNew()
+        && asset.status() == LabelStatus.SUGGESTED).count();
+    summary.setText(result.byStatus().getOrDefault(LabelStatus.SUGGESTED, 0) + " need labels · " + result.highConfidenceSuggestions()
+        + " ready to auto-label" + (newUnlabeled > 0 ? " · " + newUnlabeled + " newly detected" : "")
+        + "\n" + result.declaredCount() + " already declared · " + result.missingCount() + " missing files");
+    batchButton.setText("Auto-label " + result.highConfidenceSuggestions() + " ready assets");
+    batchButton.setDisable(result.highConfidenceSuggestions() == 0);
     status.setText(result.scanIssues() == 0
         ? result.highConfidenceSuggestions() + " high-confidence suggestion(s) ready."
         : "Scan completed with " + result.scanIssues() + " unreadable item(s).");
@@ -370,9 +429,17 @@ final class AssetAutoLabelDashboardView extends BorderPane {
       if (query.isBlank()) return true;
       return (asset.relativePath() + " " + asset.owner() + " " + asset.label())
           .toLowerCase(Locale.ROOT).contains(query);
-    }).toList();
+    }).sorted(java.util.Comparator.comparing((AssetSuggestion asset) -> !asset.isNew())
+        .thenComparing(asset -> asset.confidence() < HIGH_CONFIDENCE)
+        .thenComparing(AssetSuggestion::relativePath)).toList();
+    AssetSuggestion selected = table.getSelectionModel().getSelectedItem();
     table.setItems(FXCollections.observableArrayList(filtered));
-    if (!filtered.isEmpty()) table.getSelectionModel().selectFirst();
+    table.setPlaceholder(new Label(labelStatus == LabelStatus.SUGGESTED
+        ? "All caught up. New unlabeled assets will appear here." : "No matching assets"));
+    AssetSuggestion retained = selected == null ? null : filtered.stream()
+        .filter(asset -> asset.relativePath().equals(selected.relativePath())).findFirst().orElse(null);
+    if (retained != null) table.getSelectionModel().select(retained);
+    else if (!filtered.isEmpty()) table.getSelectionModel().selectFirst();
     else showSelection(null);
   }
 
@@ -386,7 +453,7 @@ final class AssetAutoLabelDashboardView extends BorderPane {
     preview.setImage(null);
     if (present && java.nio.file.Files.isRegularFile(suggestion.file())
         && isImage(suggestion.file())) {
-      preview.setImage(new Image(suggestion.file().toUri().toString(), true));
+      preview.setImage(new Image(suggestion.file().toUri().toString(), 240, 160, true, true, true));
     }
     saveButton.setDisable(!present);
     generateButton.setDisable(!present || !suggestion.kind().isVnsDeclarable());
@@ -446,17 +513,27 @@ final class AssetAutoLabelDashboardView extends BorderPane {
       prompt.setHeaderText("Auto-label high-confidence assets");
       if (prompt.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return;
     }
-    try {
-      AssetAutoLabelService.BatchAppliedDeclarations applied =
-          service.applyDeclarations(projectRoot, candidates);
-      pendingOutcome = "Generated " + applied.declarationsGenerated()
-          + " VNS declaration(s); saved " + applied.labelsSaved() + " non-VNS label(s).";
-    } catch (IOException error) {
-      status.setText("Auto-labeling failed: " + error.getMessage());
-      return;
-    }
-    notifyChanged();
-    refresh();
+    Path root = projectRoot;
+    batchButton.setDisable(true);
+    status.setText("Applying " + candidates.size() + " ready labels...");
+    scanExecutor.execute(() -> {
+      try {
+        AssetAutoLabelService.BatchAppliedDeclarations applied = service.applyDeclarations(root, candidates);
+        Platform.runLater(() -> {
+          if (!root.equals(projectRoot)) return;
+          pendingOutcome = "Generated " + applied.declarationsGenerated()
+              + " VNS declaration(s); saved " + applied.labelsSaved() + " non-VNS label(s).";
+          notifyChanged();
+          refresh();
+        });
+      } catch (IOException error) {
+        Platform.runLater(() -> {
+          if (!root.equals(projectRoot)) return;
+          batchButton.setDisable(false);
+          status.setText("Auto-labeling failed: " + error.getMessage());
+        });
+      }
+    });
   }
 
   private void openSelected() {
@@ -488,14 +565,14 @@ final class AssetAutoLabelDashboardView extends BorderPane {
   private static final class AssetKindCell extends javafx.scene.control.ListCell<AssetKind> {
     @Override protected void updateItem(AssetKind item, boolean empty) {
       super.updateItem(item, empty);
-      setText(empty || item == null ? null : item.displayName());
+      setText(item == null ? "All types" : item.displayName());
     }
   }
 
   private static final class LabelStatusCell extends javafx.scene.control.ListCell<LabelStatus> {
     @Override protected void updateItem(LabelStatus item, boolean empty) {
       super.updateItem(item, empty);
-      setText(empty || item == null ? null : item.displayName());
+      setText(item == null ? "All states" : item == LabelStatus.SUGGESTED ? "Unlabeled" : item.displayName());
     }
   }
 }

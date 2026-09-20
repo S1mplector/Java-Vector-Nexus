@@ -31,7 +31,9 @@ final class AssetLabelRegistry {
         properties.getProperty("registry.initialized", "false"));
     Map<String, Entry> entries = new LinkedHashMap<>();
     Set<String> seen = new LinkedHashSet<>();
+    Set<String> pending = new LinkedHashSet<>();
     for (String key : properties.stringPropertyNames()) {
+      if (key.startsWith("new.")) decodeKey(key.substring(4)).ifPresent(pending::add);
       if (key.startsWith("seen.")) decodeKey(key.substring("seen.".length())).ifPresent(seen::add);
     }
     for (String key : properties.stringPropertyNames()) {
@@ -49,7 +51,7 @@ final class AssetLabelRegistry {
           properties.getProperty(prefix + "reason", ""),
           properties.getProperty(prefix + "updated", "")));
     }
-    return new Snapshot(initialized, Map.copyOf(entries), Set.copyOf(seen));
+    return new Snapshot(initialized, Map.copyOf(entries), Set.copyOf(seen), Set.copyOf(pending));
   }
 
   void save(Path root, Snapshot registry) throws IOException {
@@ -58,6 +60,7 @@ final class AssetLabelRegistry {
     Properties properties = new Properties();
     properties.setProperty("registry.initialized", Boolean.toString(registry.initialized()));
     properties.setProperty("registry.version", "1");
+    for (String path : registry.pendingNewPaths()) properties.setProperty("new." + encodeKey(path), "true");
     for (String path : registry.seenPaths()) {
       properties.setProperty("seen." + encodeKey(path), "true");
     }
@@ -115,13 +118,24 @@ final class AssetLabelRegistry {
     }
   }
 
-  record Snapshot(boolean initialized, Map<String, Entry> entries, Set<String> seenPaths) {
-    static Snapshot empty() {
-      return new Snapshot(false, Map.of(), Set.of());
+  record Snapshot(boolean initialized, Map<String, Entry> entries, Set<String> seenPaths,
+                  Set<String> pendingNewPaths) {
+    Snapshot(boolean initialized, Map<String, Entry> entries, Set<String> seenPaths) {
+      this(initialized, entries, seenPaths, Set.of());
     }
 
-    Snapshot withScanBaseline(Set<String> paths) {
-      return new Snapshot(true, entries, Set.copyOf(paths));
+    static Snapshot empty() {
+      return new Snapshot(false, Map.of(), Set.of(), Set.of());
+    }
+
+    Snapshot withScanBaseline(Set<String> paths, Set<String> pending) {
+      return new Snapshot(true, entries, Set.copyOf(paths), Set.copyOf(pending));
+    }
+
+    Snapshot withEntries(Map<String, Entry> updated) {
+      Set<String> pending = new LinkedHashSet<>(pendingNewPaths);
+      pending.removeIf(path -> updated.containsKey(path) && updated.get(path).status() != LabelStatus.SUGGESTED);
+      return new Snapshot(true, Map.copyOf(updated), seenPaths, Set.copyOf(pending));
     }
   }
 }

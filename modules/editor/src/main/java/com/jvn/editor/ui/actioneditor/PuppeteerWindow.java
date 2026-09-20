@@ -7086,7 +7086,6 @@ public class PuppeteerWindow extends Stage {
             if (layers == null || layers.isEmpty()) continue;
             String groupName = snapshotCharacterGroupName(character);
             EntityGroup group = project.getOrCreateGroup(groupName);
-            int layerIndex = 0;
             int groupLayer = Integer.MAX_VALUE;
             String baseEntityName = null;
             for (PuppeteerLauncherPanel.CharacterLayerEntry layer : layers) {
@@ -7113,11 +7112,10 @@ public class PuppeteerWindow extends Stage {
 
                     EntityTrack track = project.getTrack(entityName);
                     if (track == null) continue;
-                    track.setLayerOrder(layerIndex);
+                    track.setLayerOrder(0);
                     project.addEntityToGroup(entityName, groupName);
-                    groupLayer = Math.min(groupLayer, layerIndex);
+                    groupLayer = character.layerOrder == null ? 0 : character.layerOrder;
                 }
-                layerIndex++;
                 changed = true;
             }
             if (groupLayer != Integer.MAX_VALUE) {
@@ -7133,6 +7131,9 @@ public class PuppeteerWindow extends Stage {
                 int rigGroupLayer = Integer.MAX_VALUE;
                 for (String layerId : rigGroup.layerIds) {
                     if (layerId == null || layerId.isBlank()) continue;
+                    var chain = PuppeteerLauncherPanel.snapshotLayerGroupChain(layerId,
+                        launchSceneSnapshot.resolveCharacterLayerGroups(character.characterId, character.expression));
+                    if (chain.isEmpty() || chain.getLast() != rigGroup) continue;
                     for (String entityName : findSnapshotLayerEntityNames(character, layerId)) {
                         EntityTrack track = project.getTrack(entityName);
                         if (track == null) continue;
@@ -7160,7 +7161,15 @@ public class PuppeteerWindow extends Stage {
             }
         }
         for (Map.Entry<String, String> entry : launchSceneSnapshot.dynamicGroups.entrySet()) {
-            project.getOrCreateGroup(entry.getKey()).setParentGroupName(entry.getValue());
+            String child = snapshotHierarchyTarget(entry.getKey());
+            String parent = snapshotHierarchyTarget(entry.getValue());
+            project.getOrCreateGroup(parent);
+            if (project.getTrack(child) != null) {
+                project.addEntityToGroup(child, parent);
+            } else {
+                project.getOrCreateGroup(child);
+                project.addGroupToGroup(child, parent);
+            }
             changed = true;
         }
         if (changed) {
@@ -7173,10 +7182,22 @@ public class PuppeteerWindow extends Stage {
         }
     }
 
+    private String snapshotHierarchyTarget(String target) {
+        for (var character : launchSceneSnapshot.characters) {
+            if ((target.equals(character.characterId) || target.equals(character.displaySlot))
+                    && !launchSceneSnapshot.resolveCharacterLayers(character.characterId, character.expression).isEmpty()) {
+                return snapshotCharacterGroupName(character);
+            }
+        }
+        return target;
+    }
+
     private List<String> findSnapshotLayerEntityNames(PuppeteerLauncherPanel.CharacterEntry character, String layerId) {
         if (character == null || layerId == null || layerId.isBlank()) return List.of();
         List<String> names = new java.util.ArrayList<>();
-        for (String candidate : PuppeteerLauncherPanel.equivalentSnapshotLayerEntityNames(launchSceneSnapshot, character, layerId)) {
+        List<String> candidates = new java.util.ArrayList<>(PuppeteerLauncherPanel.equivalentSnapshotLayerEntityNames(launchSceneSnapshot, character, layerId));
+        candidates.addAll(PuppeteerLauncherPanel.snapshotLayerOccurrenceNames(launchSceneSnapshot, character, layerId));
+        for (String candidate : candidates) {
             String entityName = findSnapshotLayerEntityName(candidate);
             if (entityName != null && !entityName.isBlank() && !names.contains(entityName)) {
                 names.add(entityName);
@@ -8615,6 +8636,10 @@ public class PuppeteerWindow extends Stage {
     }
 
     private void updatePreview(boolean refreshEditorChrome) {
+        project.evaluateFrame(() -> updatePreviewFrame(refreshEditorChrome));
+    }
+
+    private void updatePreviewFrame(boolean refreshEditorChrome) {
         if (scene == null) {
             if (refreshEditorChrome) refreshSidebarTabs();
             return;

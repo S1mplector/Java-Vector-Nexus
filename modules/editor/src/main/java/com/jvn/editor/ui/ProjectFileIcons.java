@@ -215,9 +215,25 @@ final class ProjectFileIcons {
     List<String> semanticNames = configuredSystemIconNames(safeKind);
     return FreedesktopProjectIconPack.icon(semanticNames, effectiveSize)
         .or(() -> FreedesktopProjectIconPack.useBundledFallback()
-            ? MaterialProjectIconPack.icon(iconName(safeKind), effectiveSize)
+            ? bundledIcon(safeKind, effectiveSize)
             : java.util.Optional.empty())
         .orElseGet(() -> fallbackIcon(safeKind, effectiveSize));
+  }
+
+  private static java.util.Optional<Region> bundledIcon(Kind kind, double size) {
+    if (isFolderKind(kind)) {
+      Region emblem = kind == Kind.FOLDER ? null
+          : MaterialProjectIconPack.folderEmblem(iconName(kind), 14).orElse(null);
+      return java.util.Optional.of(ShellFileArtwork.folder(size, emblem));
+    }
+    return switch (kind) {
+      case DOCUMENT, NOTE -> java.util.Optional.of(ShellFileArtwork.document(size, null));
+      case IMAGE, SVG_FILE, AUDIO, VIDEO, ARCHIVE, DATABASE, FONT, LOG, PDF, OFFICE,
+          EXECUTABLE, DLL, LICENSE, CHANGELOG, AUTHORS, CREDITS, STORY, MENU, LAYOUT,
+          TIMELINE, SETTINGS -> java.util.Optional.of(ShellFileArtwork.document(size,
+              MaterialProjectIconPack.icon(iconName(kind), 14).orElse(null)));
+      default -> MaterialProjectIconPack.icon(iconName(kind), size);
+    };
   }
 
   private static List<String> configuredSystemIconNames(Kind kind) {

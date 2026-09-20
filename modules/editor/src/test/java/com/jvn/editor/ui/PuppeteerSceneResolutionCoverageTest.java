@@ -13,6 +13,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** Entity-by-entity coverage for the VNS state handed to Puppeteer at the cursor. */
 class PuppeteerSceneResolutionCoverageTest {
 
+  @Test
+  void cursorSyncUsesTheSameNestedIncludeResolverAsLaunch(@org.junit.jupiter.api.io.TempDir java.nio.file.Path root) throws Exception {
+    java.nio.file.Files.createDirectories(root.resolve("scripts/defs"));
+    java.nio.file.Path script = root.resolve("scripts/main.vns");
+    String source = "@include defs/hero.vns\n[show hero center neutral]\n";
+    java.nio.file.Files.writeString(script, source);
+    java.nio.file.Files.writeString(root.resolve("scripts/defs/hero.vns"),
+        "@group hero cast\n@include layers.vns\n@chargroup hero face parent=head $eyes\n@chargroup hero head $face\n@charpreset hero neutral $head\n");
+    java.nio.file.Files.writeString(root.resolve("scripts/defs/layers.vns"), "@charlayer hero eyes assets/eyes.png\n");
+    var snapshot = PuppeteerLauncherPanel.resolveProjectSnapshot(source, 1, script.toFile(), root.toFile());
+    assertEquals("assets/eyes.png", snapshot.resolveCharacterLayers("hero", "neutral").getFirst().path);
+    assertEquals("head", snapshot.resolveCharacterLayerGroup("hero", "face").parentGroupId);
+    assertEquals("cast", snapshot.dynamicGroups.get("hero"));
+  }
+
   @Nested
   class Backgrounds {
     @Test

@@ -62,7 +62,12 @@ public final class PuppeteerAeroIcon extends StackPane {
     setCache(true);
     setCacheHint(CacheHint.SPEED);
     getStyleClass().add("puppeteer-aero-icon");
-    getChildren().setAll(shell, glyph, status);
+    Region object = objectArtwork(this.kind, iconSize);
+    if (object != null) {
+      object.getStyleClass().add("jvn-puppeteer-bespoke-shell");
+      getChildren().setAll(object);
+    }
+    else getChildren().setAll(shell, glyph, status);
     parentProperty().addListener((observable, oldParent, newParent) -> {
       if (newParent instanceof ButtonBase button) installButtonTreatment(button, palette);
     });
@@ -105,6 +110,22 @@ public final class PuppeteerAeroIcon extends StackPane {
     }
   }
 
+  private static @org.jspecify.annotations.Nullable Region objectArtwork(Kind kind, double size) {
+    return switch (kind) {
+      case COPY, COPY_CODE -> SidebarToolIcon.of(SidebarToolIcon.Kind.COPY, "#6eadd5", size);
+      case PASTE -> ShellFileArtwork.document(size, CssIcon.contentPaste("#c19642"));
+      case HISTORY, MANAGE_EVENTS -> SidebarToolIcon.of(SidebarToolIcon.Kind.TIMELINE, "#76b7d7", size);
+      case PRESET, LOAD_CLIP -> ShellFileArtwork.folder(size, null);
+      case CHARACTER_SLOT -> SidebarToolIcon.of(SidebarToolIcon.Kind.PERSON, "#67b7df", size);
+      case UNDO -> SidebarToolIcon.of(SidebarToolIcon.Kind.UNDO, "#89a2e3", size);
+      case REDO -> SidebarToolIcon.of(SidebarToolIcon.Kind.REDO, "#61bfdc", size);
+      case HELP -> AeroIcon.of(AeroIcon.Kind.HELP, size);
+      case REGISTER -> SidebarToolIcon.of(SidebarToolIcon.Kind.SAVE, "#68afd1", size);
+      case VERIFY -> SidebarToolIcon.of(SidebarToolIcon.Kind.APPLY, "#6ebd79", size);
+      default -> null;
+    };
+  }
+
   private static Region glyphFor(Kind kind, double size) {
     String white = "#f4fbff";
     Region glyph = switch (kind) {
@@ -141,13 +162,14 @@ public final class PuppeteerAeroIcon extends StackPane {
       case SNAP -> CssIcon.grid4x4(white);
       case RUNTIME_PREVIEW -> CssIcon.movie(white);
       case VIEWPORT_STABILIZE -> CssIcon.myLocation(white);
-      case AUTO_KEY, RECORD_GIF -> CssIcon.fiberSmartRecord(white);
+      case AUTO_KEY -> CssIcon.fiberSmartRecord(white);
+      case RECORD_GIF -> CssIcon.icon("M12 4 A8 8 0 1 1 11.99 4 Z", "#ff837d", 14);
       case SNAP_GRID -> CssIcon.borderAll(white);
       case SNAP_ENTITY -> CssIcon.joinInner(white);
       case ORBIT -> CssIcon.threeSixty(white);
       case ORBIT_ALIGN -> CssIcon.explore(white);
       case HELP -> CssIcon.speech(white);
-      case ADD_AUDIO_CUE -> CssIcon.plusBold(white);
+      case ADD_AUDIO_CUE -> CssIcon.icon("M10 3 H19 V16 A3 3 0 1 1 17 13 V7 H12 V18 A3 3 0 1 1 10 15 Z", white,14);
       case ADD_EXPRESSION_CUE -> CssIcon.theater(white);
       case MANAGE_EVENTS, VERIFY -> CssIcon.list(white);
       case REGISTER -> CssIcon.save(white);

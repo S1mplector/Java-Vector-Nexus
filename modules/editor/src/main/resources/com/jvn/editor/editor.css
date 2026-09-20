@@ -7690,3 +7690,20 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-background-color: transparent;
   -fx-border-color: transparent;
 }
+
+/* Asset labeling: a discovery queue with an independently scrolling review pane. */
+.asset-label-dashboard .asset-label-queue { -fx-background-color: #171d23; -fx-padding: 3; }
+.asset-label-dashboard .asset-label-queue .list-cell { -fx-background-color: #171d23; -fx-padding: 8 10; -fx-border-color: transparent transparent #29333d transparent; }
+.asset-label-dashboard .asset-label-queue .list-cell:odd { -fx-background-color: #1b232b; }
+.asset-label-dashboard .asset-label-queue .list-cell:selected { -fx-background-color: #284760; }
+.asset-label-dashboard .asset-label-queue .list-cell:hover { -fx-background-color: #293947; }
+.asset-label-dashboard .asset-label-row-name { -fx-text-fill: #ecf3f9; -fx-font-weight: bold; }
+.asset-label-dashboard .asset-label-row-path { -fx-text-fill: #aebfcd; -fx-font-size: 11px; }
+.asset-label-dashboard .asset-label-badge { -fx-text-fill: #a8dbc2; -fx-background-color: #223b36; -fx-background-radius: 4; -fx-padding: 3 6; -fx-font-size: 11px; }
+.asset-label-dashboard .asset-label-selected-path { -fx-font-weight: bold; }
+.asset-label-dashboard .asset-label-details, .asset-label-dashboard .scroll-pane > .viewport { -fx-background-color: #1b2229; }
+.asset-label-dashboard .button.asset-label-primary { -fx-background-color: linear-gradient(to bottom, #507f9d, #2b526c); -fx-text-fill: #ffffff; -fx-border-color: #749bb6; }
+.asset-label-notice { -fx-background-color: linear-gradient(to bottom, #263d4e, #213240); -fx-border-color: #486d89; -fx-border-width: 0 0 1 0; }
+.asset-label-notice .label { -fx-text-fill: #d9ecfb; }
+
+.asset-label-dashboard .asset-label-queue .list-cell { -fx-pref-width: 0; }

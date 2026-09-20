@@ -103,6 +103,10 @@ Renaming can also move a timeline between clusters by changing its relative path
 
 ## Scene Snapshot Resolution
 
+Launch and cursor sync resolve nested includes from the active script and project roots. Imported rigs retain character presets, repeated layer occurrences, declared parent chains (including parents with no visible layers), and dynamic group membership. Overlapping groups use the runtime's deepest-chain rule. Layer stacks preserve character Z and the runtime's position ordering; character scale also applies to viewport-sized artwork.
+
+Prior inline timelines retain independent parent/child group transforms. Their transforms compose in hierarchy order, including when authored in separate earlier blocks.
+
 The launcher performs a lightweight VNS pass from line `1` through the caret. It recognizes:
 
 - labels
@@ -186,3 +190,9 @@ Likewise, opening a registered animation now backfills missing scene entities fr
 - [Puppeteer Editor Guide](../../puppeteer/puppeteer-editor-guide.md) — full editor workflow after launch
 - [Puppeteer JES DSL Reference](../../puppeteer/puppeteer-jes-dsl.md) — exported timeline syntax
 - [Puppeteer Overview & Architecture](../../puppeteer/puppeteer.md) — system architecture and data flow
+
+## Parity Verification
+
+The opt-in `PuppeteerWasIWriteCorpusTest` resolves every physical cursor line in the reference project and checks declarations, entities, and grouped replay. `PuppeteerVisualParityAuditTest` compares rendered runtime and imported scenes and saves contact sheets and `metrics.csv`. Set `JVN_PUPPETEER_AUDIT_STRICT=true` to fail on a checkpoint with at least 0.01% visibly changed pixels. Use `JVN_PUPPETEER_AUDIT_SCRIPT` to select a script and `JVN_PUPPETEER_AUDIT_CHECKPOINTS` to select `scene-changes`, `grouped-timelines`, or `all-lines`.
+
+The lightning regression covers 128 scene-change checkpoints. Passing that audit establishes parity for those checkpoints; it is not proof for every possible script, runtime branch, or effect.

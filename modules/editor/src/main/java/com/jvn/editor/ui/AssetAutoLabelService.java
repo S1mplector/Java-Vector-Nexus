@@ -60,17 +60,17 @@ public final class AssetAutoLabelService {
       try {
         String relativePath = AssetPathHeuristics.relative(root, file);
         seenNow.add(relativePath);
-        boolean isNew = hasBaseline && !saved.seenPaths().contains(relativePath);
+        boolean isNew = hasBaseline && (!saved.seenPaths().contains(relativePath) || saved.pendingNewPaths().contains(relativePath));
         AssetDeclarationCatalog.Declaration declared = catalog.byPath().get(relativePath);
         AssetLabelRegistry.Entry decision = saved.entries().get(relativePath);
         if (declared != null) {
           suggestions.add(inference.fromDeclaration(
-              file, relativePath, declared, isNew,
+              file, relativePath, declared, false,
               catalog.conflictingPaths().contains(relativePath),
               catalog.aliasCounts().getOrDefault(relativePath, 1)));
         } else if (decision != null && decision.status() != LabelStatus.SUGGESTED
             && decision.status() != LabelStatus.DECLARED) {
-          suggestions.add(inference.fromRegistry(file, relativePath, decision, isNew));
+          suggestions.add(inference.fromRegistry(file, relativePath, decision, false));
         } else {
           suggestions.add(inference.infer(file, relativePath, catalog, usedLabels, isNew));
         }
@@ -88,7 +88,9 @@ public final class AssetAutoLabelService {
         .comparing(AssetSuggestion::isNew).reversed()
         .thenComparing(suggestion -> suggestion.status().sortOrder())
         .thenComparing(AssetSuggestion::relativePath, String.CASE_INSENSITIVE_ORDER));
-    AssetLabelRegistry.Snapshot nextBaseline = saved.withScanBaseline(seenNow);
+    Set<String> pending = new LinkedHashSet<>();
+    suggestions.stream().filter(AssetSuggestion::isNew).forEach(asset -> pending.add(asset.relativePath()));
+    AssetLabelRegistry.Snapshot nextBaseline = saved.withScanBaseline(seenNow, pending);
     if (persistBaseline && !nextBaseline.equals(saved)) registry.save(root, nextBaseline);
     return summarize(root, suggestions, catalog.characterIds(), scanIssues);
   }
@@ -153,7 +155,7 @@ public final class AssetAutoLabelService {
         suggestion.kind(), suggestion.owner(), suggestion.label(),
         status == null ? LabelStatus.LABELED : status, suggestion.confidence(),
         suggestion.reason(), Instant.now().toString()));
-    registry.save(root, new AssetLabelRegistry.Snapshot(true, entries, saved.seenPaths()));
+    registry.save(root, saved.withEntries(entries));
   }
 
   public synchronized AppliedDeclaration applyDeclaration(Path projectRoot, AssetSuggestion suggestion)
@@ -185,7 +187,7 @@ public final class AssetAutoLabelService {
           suggestion.confidence(), suggestion.reason(), Instant.now().toString()));
     }
     if (!batch.isEmpty()) {
-      registry.save(root, new AssetLabelRegistry.Snapshot(true, entries, saved.seenPaths()));
+      registry.save(root, saved.withEntries(entries));
     }
     return new BatchAppliedDeclarations(
         written.declarationFile(), written.declarationsGenerated(), labelsSaved,

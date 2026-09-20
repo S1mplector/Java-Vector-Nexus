@@ -1449,11 +1449,26 @@ public class AnimationProject {
         return center;
     }
 
+    private Map<String, GroupBounds> frameGroupBounds;
+
+    /** Evaluate one read-only preview frame, sharing group bounds across all layer tracks. */
+    public void evaluateFrame(Runnable evaluation) {
+        Map<String, GroupBounds> previous = frameGroupBounds;
+        frameGroupBounds = new LinkedHashMap<>();
+        try { evaluation.run(); }
+        finally { frameGroupBounds = previous; }
+    }
+
     private GroupBounds computeGroupBounds(String groupName) {
+        if (frameGroupBounds != null) {
+            GroupBounds cached = frameGroupBounds.get(groupName);
+            if (cached != null) return cached;
+        }
         GroupBounds bounds = GroupBounds.empty();
         for (String entityName : collectGroupEntityNames(groupName)) {
             bounds = includeEntityRestBounds(bounds, entityName);
         }
+        if (frameGroupBounds != null) frameGroupBounds.put(groupName, bounds);
         return bounds;
     }
 
