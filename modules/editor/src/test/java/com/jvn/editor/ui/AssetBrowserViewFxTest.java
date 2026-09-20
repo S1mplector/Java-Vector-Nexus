@@ -97,6 +97,50 @@ class AssetBrowserViewFxTest {
         ((TableView<?>) view.lookup("#asset-auto-label-table")).getItems().size()));
   }
 
+  @Test
+  void dashboardGeneratesReviewedVnsAndKeepsResultVisible(@TempDir Path project) throws Exception {
+    Files.createDirectories(project.resolve("assets/backgrounds"));
+    Files.createDirectories(project.resolve("scripts"));
+    Files.write(project.resolve("assets/backgrounds/school.png"), ONE_PIXEL_PNG);
+    Files.writeString(project.resolve("jvn.project"), "entryVns=scripts/main.vns\n");
+    Files.writeString(project.resolve("scripts/main.vns"), "@scenario school\n");
+    AssetAutoLabelDashboardView view = runFx(() -> {
+      var created = new AssetAutoLabelDashboardView();
+      created.setProjectRoot(project.toFile());
+      new Scene(created, 1100, 800);
+      created.applyCss();
+      created.layout();
+      return created;
+    });
+    boolean generated = false;
+    for (int i = 0; i < 100; i++) {
+      if (runFx(() -> !((TableView<?>) view.lookup("#asset-auto-label-table")).getItems().isEmpty())) {
+        runFx(() -> {
+          Button generate = view.lookupAll(".button").stream().filter(Button.class::isInstance)
+              .map(Button.class::cast).filter(button -> "Generate VNS".equals(button.getText()))
+              .findFirst().orElseThrow();
+          assertFalse(generate.isDisabled());
+          generate.fire();
+          return null;
+        });
+        generated = true;
+        break;
+      }
+      Thread.sleep(50);
+    }
+    org.junit.jupiter.api.Assertions.assertTrue(generated, "Dashboard scan should finish");
+    org.junit.jupiter.api.Assertions.assertTrue(Files.readString(project.resolve(
+        AssetAutoLabelService.AUTO_DECLARATIONS_PATH)).contains("@background school"));
+    for (int i = 0; i < 100; i++) {
+      if (runFx(() -> view.lookupAll(".label").stream()
+          .filter(javafx.scene.control.Label.class::isInstance)
+          .map(javafx.scene.control.Label.class::cast)
+          .anyMatch(label -> label.getText().contains("Reviewed VNS declaration saved.")))) return;
+      Thread.sleep(50);
+    }
+    org.junit.jupiter.api.Assertions.fail("Refresh must retain the generation result");
+  }
+
   private static <T> T runFx(Callable<T> callable) throws Exception {
     return FxToolkit.runFx(callable);
   }

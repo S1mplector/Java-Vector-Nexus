@@ -105,6 +105,19 @@ narrator: Hours passed in silence.
 
 ---
 
+## Asset Path Quoting
+
+`@background`, `@charimg`, and `@charlayer` accept double-quoted paths containing spaces. The surrounding quotes are removed before resolving the image. Within quoted paths, `\\` represents a backslash and `\"` represents a literal quote. A whitespace-separated `#` outside quotes starts a trailing comment; `#` inside quotes is part of the filename. Existing unquoted paths containing spaces remain supported.
+
+```vns
+@background classroom "assets/backgrounds/classroom day.png"
+@charlayer ari eyes_open "assets/characters/ari/eyes open.png" # neutral eyes
+```
+
+The editor's Auto-label dashboard generates this quoting automatically.
+
+---
+
 ## `@charimg`
 
 Adds an expression-specific sprite path for a character.

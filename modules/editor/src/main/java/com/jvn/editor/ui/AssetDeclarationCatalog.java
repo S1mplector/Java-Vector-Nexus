@@ -93,7 +93,8 @@ final class AssetDeclarationCatalog {
     byDirectory.forEach((key, value) -> immutableDirectories.put(key, List.copyOf(value)));
     return new Index(
         Map.copyOf(byPath), Map.copyOf(immutableDirectories), Map.copyOf(ownerByDirectory),
-        Set.copyOf(characterIds), Set.copyOf(conflictingPaths), Map.copyOf(aliasCounts));
+        Set.copyOf(characterIds), Set.copyOf(conflictingPaths), Map.copyOf(aliasCounts),
+        Map.copyOf(byScopedLabel));
   }
 
   boolean containsCharacter(String source, String owner) {
@@ -124,7 +125,9 @@ final class AssetDeclarationCatalog {
     if (layer.matches()) {
       String path = declarationPath(layer.group(3));
       AssetKind kind = AssetPathHeuristics.kindFromPath(Path.of(path.isBlank() ? "unknown" : path));
-      if (kind == AssetKind.CHARACTER_SPRITE) kind = AssetKind.CHARACTER_LAYER;
+      if (!kind.usesCharacterDeclaration() || kind == AssetKind.CHARACTER_SPRITE) {
+        kind = AssetKind.CHARACTER_LAYER;
+      }
       return new Declaration(
           path, kind, AssetPathHeuristics.sanitizeId(layer.group(1)),
           AssetPathHeuristics.sanitizeId(layer.group(2)), sourceFile, lineNumber, line.strip());
@@ -167,9 +170,10 @@ final class AssetDeclarationCatalog {
   record Index(
       Map<String, Declaration> byPath, Map<String, List<Declaration>> byDirectory,
       Map<String, String> ownerByDirectory, Set<String> characterIds,
-      Set<String> conflictingPaths, Map<String, Integer> aliasCounts) {
+      Set<String> conflictingPaths, Map<String, Integer> aliasCounts,
+      Map<String, Declaration> byScopedLabel) {
     static Index empty() {
-      return new Index(Map.of(), Map.of(), Map.of(), Set.of(), Set.of(), Map.of());
+      return new Index(Map.of(), Map.of(), Map.of(), Set.of(), Set.of(), Map.of(), Map.of());
     }
   }
 }

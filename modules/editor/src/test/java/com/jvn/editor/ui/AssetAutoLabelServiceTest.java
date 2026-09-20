@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.jvn.editor.ui.AssetAutoLabelService.AssetKind;
 import com.jvn.editor.ui.AssetAutoLabelService.AssetSuggestion;
@@ -215,6 +216,133 @@ class AssetAutoLabelServiceTest {
     assertEquals(0, result.currentAssetCount());
     assertEquals(1, result.missingCount());
     assertEquals(LabelStatus.MISSING, result.assets().getFirst().status());
+  }
+
+  @Test
+  void reservesEveryAliasAndSavedLabelForScanAndDrop() throws Exception {
+    Path project = createProject();
+    touch(project.resolve("assets/backgrounds/original.png"));
+    Path added = touch(project.resolve("assets/backgrounds/night.png"));
+    Files.writeString(project.resolve("scripts/definitions/visuals.vns"), """
+        @background day assets/backgrounds/original.png
+        @background night assets/backgrounds/original.png
+        """);
+    AssetAutoLabelService service = new AssetAutoLabelService();
+    AssetSuggestion suggestion = byPath(service.preview(project), "assets/backgrounds/night.png");
+    assertEquals("night_2", suggestion.label());
+    assertEquals("night_2", service.suggestDroppedAsset(project, added).label());
+    service.saveDecision(project, suggestion.reviewed(AssetKind.BACKGROUND, "", "night_2"),
+        LabelStatus.LABELED);
+    Path outside = touch(tempDir.resolve("outside/backgrounds/night.png"));
+    assertEquals("night_3", service.suggestDroppedAsset(project, outside).label());
+  }
+
+  @Test
+  void mixedFoldersKeepNonImageTypesAndGlobalBackgroundScope() throws Exception {
+    Path project = createProject();
+    touch(project.resolve("assets/characters/ari/idle.png"));
+    touch(project.resolve("assets/characters/ari/voice.ogg"));
+    touch(project.resolve("assets/characters/ari/atlas.json"));
+    Files.writeString(project.resolve("scripts/definitions/visuals.vns"), """
+        @charlayer ari idle assets/characters/ari/idle.png
+        """);
+    AssetAutoLabelService.ScanResult result = new AssetAutoLabelService().preview(project);
+    assertEquals(AssetKind.AUDIO, byPath(result, "assets/characters/ari/voice.ogg").kind());
+    assertEquals(AssetKind.DATA, byPath(result, "assets/characters/ari/atlas.json").kind());
+    assertEquals("", byPath(result, "assets/characters/ari/voice.ogg").owner());
+    assertTrue(byPath(result, "assets/characters/ari/atlas.json").confidence() < 0.80);
+  }
+
+  @Test
+  void rejectsBatchCollisionsAndMissingFilesBeforeAnyWrites() throws Exception {
+    Path project = createProject();
+    touch(project.resolve("assets/backgrounds/day.png"));
+    Path night = touch(project.resolve("assets/backgrounds/night.png"));
+    AssetAutoLabelService service = new AssetAutoLabelService();
+    var scan = service.preview(project);
+    var day = byPath(scan, "assets/backgrounds/day.png").reviewed(AssetKind.BACKGROUND, "", "room");
+    var duplicate = byPath(scan, "assets/backgrounds/night.png").reviewed(AssetKind.BACKGROUND, "", "room");
+    assertThrows(java.io.IOException.class,
+        () -> service.applyDeclarations(project, java.util.List.of(day, duplicate)));
+    assertFalse(Files.exists(project.resolve(AssetAutoLabelService.AUTO_DECLARATIONS_PATH)));
+    assertFalse(Files.exists(project.resolve(AssetAutoLabelService.REGISTRY_PATH)));
+    Files.delete(night);
+    var missing = duplicate.reviewed(AssetKind.BACKGROUND, "", "night");
+    assertThrows(java.io.IOException.class,
+        () -> service.applyDeclarations(project, java.util.List.of(day, missing)));
+    assertFalse(Files.exists(project.resolve(AssetAutoLabelService.AUTO_DECLARATIONS_PATH)));
+    service.applyDeclaration(project, day);
+    touch(night);
+    assertThrows(java.io.IOException.class, () -> service.applyDeclaration(project, duplicate));
+    assertEquals(1, service.preview(project).declaredCount());
+  }
+
+  @Test
+  void removedDeclarationsReturnToReviewInsteadOfStaleDeclaredStatus() throws Exception {
+    Path project = createProject();
+    touch(project.resolve("assets/backgrounds/day.png"));
+    AssetAutoLabelService service = new AssetAutoLabelService();
+    service.applyDeclaration(project, service.preview(project).assets().getFirst());
+    Files.delete(project.resolve(AssetAutoLabelService.AUTO_DECLARATIONS_PATH));
+    assertEquals(LabelStatus.SUGGESTED, service.preview(project).assets().getFirst().status());
+  }
+
+  @Test
+  void generatedCharacterLayersAndSpritesLoadThroughEntryScript() throws Exception {
+    Path project = createProject();
+    touch(project.resolve("assets/characters/ari/eyes open.png"));
+    touch(project.resolve("assets/characters/ari/happy.png"));
+    AssetAutoLabelService service = new AssetAutoLabelService();
+    var scan = service.preview(project);
+    service.applyDeclarations(project, java.util.List.of(
+        byPath(scan, "assets/characters/ari/eyes open.png").reviewed(AssetKind.CHARACTER_LAYER, "ari", "eyes_open"),
+        byPath(scan, "assets/characters/ari/happy.png").reviewed(AssetKind.CHARACTER_SPRITE, "ari", "happy")));
+    try (var input = Files.newInputStream(project.resolve("scripts/story/main.vns"))) {
+      var scenario = new com.jvn.core.vn.script.VnScriptParser().parse(input, "story/main.vns",
+          path -> Files.newInputStream(project.resolve("scripts").resolve(path.replaceFirst("^/", ""))));
+      assertEquals("assets/characters/ari/eyes open.png", scenario.getCharacter("ari").getLayerPath("eyes_open"));
+      assertEquals("assets/characters/ari/happy.png", scenario.getCharacter("ari").getExpressionPath("happy"));
+    }
+  }
+
+  @Test
+  void learnsAuthoredEyeAndPanelPatternsInsteadOfUsingDirectoryMajority() throws Exception {
+    Path project = createProject();
+    String eyes = "assets/characters/john_doe/head/head normal/eyes/";
+    for (String number : java.util.List.of("01", "02", "03")) {
+      touch(project.resolve(eyes + "john_doe_hn_e_-_" + number + ".png"));
+      touch(project.resolve("assets/panels/Panel_Cafe_2_wendi_eyes" + number + ".png"));
+    }
+    touch(project.resolve("assets/panels/Panel_Cafe_1_base.png"));
+    Files.writeString(project.resolve("scripts/definitions/visuals.vns"),
+        "@charlayer john eyes_n_01 \"" + eyes + "john_doe_hn_e_-_01.png\"\n"
+        + "@charlayer john eyes_n_02 \"" + eyes + "john_doe_hn_e_-_02.png\"\n"
+        + "@charlayer panel_01 base assets/panels/Panel_Cafe_1_base.png\n"
+        + "@charlayer panel_02 eyes_01 assets/panels/Panel_Cafe_2_wendi_eyes01.png\n"
+        + "@charlayer panel_02 eyes_02 assets/panels/Panel_Cafe_2_wendi_eyes02.png\n");
+    var result = new AssetAutoLabelService().preview(project);
+    var eye = byPath(result, eyes + "john_doe_hn_e_-_03.png");
+    assertEquals("john", eye.owner());
+    assertEquals("eyes_n_03", eye.label());
+    assertTrue(eye.reason().contains("label pattern learned"));
+    var panel = byPath(result, "assets/panels/Panel_Cafe_2_wendi_eyes03.png");
+    assertEquals("panel_02", panel.owner());
+    assertEquals("eyes_03", panel.label());
+    assertTrue(panel.confidence() >= 0.80);
+  }
+
+  @Test
+  void ambiguousSharedFolderStaysBelowAutoLabelThreshold() throws Exception {
+    Path project = createProject();
+    for (String name : java.util.List.of("first", "second", "new")) {
+      touch(project.resolve("assets/props/" + name + ".png"));
+    }
+    Files.writeString(project.resolve("scripts/definitions/visuals.vns"), """
+        @charlayer first idle assets/props/first.png
+        @charlayer second idle assets/props/second.png
+        """);
+    var suggestion = byPath(new AssetAutoLabelService().preview(project), "assets/props/new.png");
+    assertTrue(suggestion.confidence() < 0.80);
   }
 
   private Path createProject() throws Exception {

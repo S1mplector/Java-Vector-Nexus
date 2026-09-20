@@ -80,6 +80,7 @@ final class AssetAutoLabelDashboardView extends BorderPane {
   private Consumer<File> onOpenFile;
   private Runnable onChanged;
   private int refreshGeneration;
+  private String pendingOutcome;
 
   AssetAutoLabelDashboardView() {
     getStyleClass().add("sidebar-tool-root");
@@ -200,6 +201,11 @@ final class AssetAutoLabelDashboardView extends BorderPane {
 
   void setProjectRoot(File root) {
     projectRoot = root == null ? null : root.toPath().toAbsolutePath().normalize();
+    allAssets.clear();
+    table.getItems().clear();
+    lastResult = null;
+    pendingOutcome = null;
+    showSelection(null);
     refresh();
   }
 
@@ -274,6 +280,7 @@ final class AssetAutoLabelDashboardView extends BorderPane {
     ButtonType choice = prompt.showAndWait().orElse(ButtonType.CANCEL);
     if (choice == ButtonType.CANCEL) return true;
 
+    List<String> errors = new ArrayList<>();
     int imported = 0;
     List<Path> targets = new ArrayList<>();
     for (int i = 0; i < supported.size(); i++) {
@@ -283,21 +290,23 @@ final class AssetAutoLabelDashboardView extends BorderPane {
         if (!target.toAbsolutePath().normalize().equals(source.toAbsolutePath().normalize())) imported++;
         targets.add(target);
       } catch (IOException error) {
-        status.setText("Could not import " + source.getFileName() + ": " + error.getMessage());
+        errors.add("Could not import " + source.getFileName() + ": " + error.getMessage());
       }
     }
     int generated = 0;
     if (choice == auto && !targets.isEmpty()) {
       try {
         List<AssetSuggestion> confident = service.suggestDroppedAssets(projectRoot, targets).stream()
+            .filter(target -> target.status() == LabelStatus.SUGGESTED)
             .filter(target -> target.confidence() >= HIGH_CONFIDENCE).toList();
         generated = service.applyDeclarations(projectRoot, confident).declarationsGenerated();
       } catch (IOException error) {
-        status.setText("Imported assets, but auto-labeling stopped: " + error.getMessage());
+        errors.add("Imported assets, but auto-labeling stopped: " + error.getMessage());
       }
     }
-    status.setText("Imported " + imported + "; generated " + generated
-        + ". Review remaining suggestions below.");
+    pendingOutcome = "Imported " + imported + "; generated " + generated
+        + ". Review remaining suggestions below."
+        + (errors.isEmpty() ? "" : "\n" + String.join("\n", errors));
     notifyChanged();
     refresh();
     return true;
@@ -343,6 +352,10 @@ final class AssetAutoLabelDashboardView extends BorderPane {
     status.setText(result.scanIssues() == 0
         ? result.highConfidenceSuggestions() + " high-confidence suggestion(s) ready."
         : "Scan completed with " + result.scanIssues() + " unreadable item(s).");
+    if (pendingOutcome != null) {
+      status.setText(pendingOutcome + "\n" + status.getText());
+      pendingOutcome = null;
+    }
     applyFilter();
   }
 
@@ -386,6 +399,9 @@ final class AssetAutoLabelDashboardView extends BorderPane {
   private void updateDeclarationPreview() {
     AssetSuggestion reviewed = reviewedSelection();
     declaration.setText(reviewed == null ? "" : service.declarationFor(reviewed));
+    boolean hasDeclaration = !declaration.getText().isBlank();
+    generateButton.setDisable(!hasDeclaration || !java.nio.file.Files.isRegularFile(reviewed.file()));
+    copyButton.setDisable(!hasDeclaration);
   }
 
   private AssetSuggestion reviewedSelection() {
@@ -404,8 +420,8 @@ final class AssetAutoLabelDashboardView extends BorderPane {
     try {
       if (generate) service.applyDeclaration(projectRoot, reviewed);
       else service.saveDecision(projectRoot, reviewed, targetStatus);
-      status.setText(generate ? "Generated and linked the reviewed VNS declaration."
-          : targetStatus == LabelStatus.IGNORED ? "Asset ignored." : "Label saved.");
+      pendingOutcome = generate ? "Reviewed VNS declaration saved."
+          : targetStatus == LabelStatus.IGNORED ? "Asset ignored." : "Label saved.";
       notifyChanged();
       refresh();
     } catch (IOException error) {
@@ -433,8 +449,8 @@ final class AssetAutoLabelDashboardView extends BorderPane {
     try {
       AssetAutoLabelService.BatchAppliedDeclarations applied =
           service.applyDeclarations(projectRoot, candidates);
-      status.setText("Generated " + applied.declarationsGenerated()
-          + " VNS declaration(s); saved " + applied.labelsSaved() + " non-VNS label(s).");
+      pendingOutcome = "Generated " + applied.declarationsGenerated()
+          + " VNS declaration(s); saved " + applied.labelsSaved() + " non-VNS label(s).";
     } catch (IOException error) {
       status.setText("Auto-labeling failed: " + error.getMessage());
       return;

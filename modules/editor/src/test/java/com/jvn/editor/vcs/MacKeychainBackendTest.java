@@ -19,7 +19,7 @@ class MacKeychainBackendTest {
   void setUp() {
     Assumptions.assumeTrue(System.getProperty("os.name", "").toLowerCase().contains("mac"),
         "macOS Keychain only available on macOS");
-    backend = new MacKeychainBackend();
+    backend = new MacKeychainBackend("jvn-editor-test-" + java.util.UUID.randomUUID(), "test-token");
     try {
       backend.clear();
     } catch (Exception ignored) {

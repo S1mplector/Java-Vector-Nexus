@@ -24,6 +24,25 @@ final class MacKeychainBackend implements CredentialBackend {
   static final String SERVICE = "jvn-editor-github-token";
   static final String ACCOUNT = "github-token";
 
+  private final String service;
+  private final String account;
+
+  MacKeychainBackend() {
+    this(SERVICE, ACCOUNT);
+  }
+
+  MacKeychainBackend(String service, String account) {
+    this.service = service;
+    this.account = account;
+  }
+
+  private Pointer createDictionary(Pointer[] keys, Pointer[] values) {
+    var library = com.sun.jna.NativeLibrary.getInstance("CoreFoundation");
+    return CoreFoundation.INSTANCE.CFDictionaryCreate(Pointer.NULL, keys, values, keys.length,
+        library.getGlobalVariableAddress("kCFTypeDictionaryKeyCallBacks"),
+        library.getGlobalVariableAddress("kCFTypeDictionaryValueCallBacks"));
+  }
+
   private static final int ERR_SEC_SUCCESS = 0;
   private static final int ERR_SEC_ITEM_NOT_FOUND = -25300;
   private static final int ERR_SEC_DUPLICATE_ITEM = -25299;
@@ -86,8 +105,7 @@ final class MacKeychainBackend implements CredentialBackend {
     try {
       Pointer[] keys = { kSecClass, kSecAttrService, kSecAttrAccount };
       Pointer[] values = { kSecClassGenericPassword, serviceString, accountString };
-      return CoreFoundation.INSTANCE.CFDictionaryCreate(Pointer.NULL, keys, values, keys.length, Pointer.NULL,
-          Pointer.NULL);
+      return createDictionary(keys, values);
     } finally {
       CoreFoundation.INSTANCE.CFRelease(serviceString);
       CoreFoundation.INSTANCE.CFRelease(accountString);
@@ -127,8 +145,7 @@ final class MacKeychainBackend implements CredentialBackend {
     System.arraycopy(keysB, 0, mergedKeys, countA, countB);
     System.arraycopy(valuesB, 0, mergedValues, countA, countB);
 
-    return CoreFoundation.INSTANCE.CFDictionaryCreate(Pointer.NULL, mergedKeys, mergedValues, mergedKeys.length,
-        Pointer.NULL, Pointer.NULL);
+    return createDictionary(mergedKeys, mergedValues);
   }
 
   @Override
@@ -142,19 +159,19 @@ final class MacKeychainBackend implements CredentialBackend {
 
   @Override
   public Optional<String> load() throws IOException {
-    Pointer query = buildBaseQuery(SERVICE, ACCOUNT);
+    Pointer query = buildBaseQuery(service, account);
     Pointer extraAttrs = null;
     Pointer fullQuery = null;
     try {
       Pointer kSecReturnData = cfKeyConstant("kSecReturnData");
-      Pointer kCFBooleanTrue = cfKeyConstant("kCFBooleanTrue");
+      Pointer kCFBooleanTrue = com.sun.jna.NativeLibrary.getInstance("CoreFoundation")
+          .getGlobalVariableAddress("kCFBooleanTrue").getPointer(0);
       Pointer kSecMatchLimit = cfKeyConstant("kSecMatchLimit");
       Pointer kSecMatchLimitOne = cfKeyConstant("kSecMatchLimitOne");
 
       Pointer[] keys = { kSecReturnData, kSecMatchLimit };
       Pointer[] values = { kCFBooleanTrue, kSecMatchLimitOne };
-      extraAttrs = CoreFoundation.INSTANCE.CFDictionaryCreate(Pointer.NULL, keys, values, keys.length, Pointer.NULL,
-          Pointer.NULL);
+      extraAttrs = createDictionary(keys, values);
 
       fullQuery = mergeDictionaries(query, extraAttrs);
       PointerByReference resultRef = new PointerByReference();
@@ -191,7 +208,7 @@ final class MacKeychainBackend implements CredentialBackend {
     if (token == null || token.isBlank()) throw new IllegalArgumentException("Token cannot be empty.");
     byte[] tokenBytes = token.trim().getBytes(StandardCharsets.UTF_8);
 
-    Pointer query = buildBaseQuery(SERVICE, ACCOUNT);
+    Pointer query = buildBaseQuery(service, account);
     Pointer valueData = null;
     Pointer attributesToUpdate = null;
     Pointer addQuery = null;
@@ -201,8 +218,7 @@ final class MacKeychainBackend implements CredentialBackend {
 
       Pointer[] updateKeys = { kSecValueData };
       Pointer[] updateValues = { valueData };
-      attributesToUpdate = CoreFoundation.INSTANCE.CFDictionaryCreate(Pointer.NULL, updateKeys, updateValues,
-          updateKeys.length, Pointer.NULL, Pointer.NULL);
+      attributesToUpdate = createDictionary(updateKeys, updateValues);
 
       int updateStatus = Security.INSTANCE.SecItemUpdate(query, attributesToUpdate);
       if (updateStatus == ERR_SEC_ITEM_NOT_FOUND) {
@@ -224,7 +240,7 @@ final class MacKeychainBackend implements CredentialBackend {
 
   @Override
   public void clear() throws IOException {
-    Pointer query = buildBaseQuery(SERVICE, ACCOUNT);
+    Pointer query = buildBaseQuery(service, account);
     try {
       int status = Security.INSTANCE.SecItemDelete(query);
       if (status != ERR_SEC_SUCCESS && status != ERR_SEC_ITEM_NOT_FOUND) {

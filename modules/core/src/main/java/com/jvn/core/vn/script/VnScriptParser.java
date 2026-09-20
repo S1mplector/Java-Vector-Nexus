@@ -758,7 +758,7 @@ public class VnScriptParser {
       if (bgMatcher.matches()) {
         state.contentEmitted = true;
         String id = bgMatcher.group(1);
-        String path = bgMatcher.group(2).trim();
+        String path = parseAssetDeclarationPath(bgMatcher.group(2));
         state.builder.addBackground(id, path);
         continue;
       }
@@ -768,7 +768,7 @@ public class VnScriptParser {
         state.contentEmitted = true;
         String id = imgMatcher.group(1);
         String expr = imgMatcher.group(2);
-        String path = imgMatcher.group(3).trim();
+        String path = parseAssetDeclarationPath(imgMatcher.group(3));
         com.jvn.core.vn.VnCharacter.Builder cb = state.charBuilders.get(id);
         if (cb == null) {
           cb = com.jvn.core.vn.VnCharacter.builder(id);
@@ -783,7 +783,7 @@ public class VnScriptParser {
         state.contentEmitted = true;
         String id = charLayerMatcher.group(1);
         String layerId = charLayerMatcher.group(2);
-        String path = charLayerMatcher.group(3).trim();
+        String path = parseAssetDeclarationPath(charLayerMatcher.group(3));
         if (path.isEmpty()) {
           throw parseError(sourceName, lineNumber, "@charlayer path cannot be empty", rawLine);
         }
@@ -3620,6 +3620,27 @@ public class VnScriptParser {
     }
     m.appendTail(sb);
     return sb.toString();
+  }
+
+  private String parseAssetDeclarationPath(String raw) {
+    String value = raw.trim();
+    boolean quoted = false;
+    boolean escaped = false;
+    for (int i = 0; i < value.length(); i++) {
+      char c = value.charAt(i);
+      if (escaped) escaped = false;
+      else if (c == '\\') escaped = true;
+      else if (c == '"') quoted = !quoted;
+      else if (c == '#' && !quoted && i > 0 && Character.isWhitespace(value.charAt(i - 1))) {
+        value = value.substring(0, i).stripTrailing();
+        break;
+      }
+    }
+    if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+      return value.substring(1, value.length() - 1)
+          .replace("\\\"", "\"").replace("\\\\", "\\");
+    }
+    return value;
   }
 
   private String resolveIncludePath(String sourceName, String includePath) {

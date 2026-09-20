@@ -61,6 +61,7 @@ Use this hub when your work is primarily inside the editor: opening projects, au
 ### Sidebars
 
 - [Sidebar Utilities Overview](sidebars/overview/sidebar-utilities.md)
+- [Asset Browser and Auto-label Dashboard](sidebars/right/sidebar-asset-browser.md#auto-label-dashboard) — review asset and character labels and generate VNS declarations
 - [Project Explorer](sidebars/left/sidebar-project-explorer.md)
 - [Storyboard Overlay](sidebars/right/sidebar-storyboard-overlay.md)
 - [Version Control](sidebars/right/sidebar-version-control.md)

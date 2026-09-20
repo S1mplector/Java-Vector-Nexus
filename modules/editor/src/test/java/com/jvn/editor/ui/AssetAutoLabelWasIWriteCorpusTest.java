@@ -19,6 +19,56 @@ import org.junit.jupiter.api.Test;
 /** Opt-in, read-only corpus regression for real-world visual-asset labeling conventions. */
 class AssetAutoLabelWasIWriteCorpusTest {
   @Test
+  void generatedCorpusBatchLoadsAndRescansWithoutConflicts(
+      @org.junit.jupiter.api.io.TempDir Path staging) throws Exception {
+    String configured = System.getenv().getOrDefault("WAS_I_WRITE_ROOT", "").trim();
+    Assumptions.assumeTrue(!configured.isEmpty(), "Set WAS_I_WRITE_ROOT to run the corpus audit");
+    Path root = Path.of(configured).toAbsolutePath().normalize();
+    Assumptions.assumeTrue(Files.isRegularFile(root.resolve("jvn.project")));
+    AssetAutoLabelService service = new AssetAutoLabelService();
+    var audit = service.preview(root);
+    var candidates = audit.assets().stream()
+        .filter(asset -> asset.status() == LabelStatus.SUGGESTED && asset.confidence() >= 0.80).toList();
+    assertFalse(candidates.isEmpty());
+    // Copy only scripts and create stand-in files: generation never needs to mutate or decode the art.
+    try (var files = Files.walk(root.resolve("scripts"))) {
+      for (Path source : files.filter(Files::isRegularFile).toList()) {
+        Path target = staging.resolve(root.relativize(source));
+        Files.createDirectories(target.getParent());
+        Files.copy(source, target);
+      }
+    }
+    Files.copy(root.resolve("jvn.project"), staging.resolve("jvn.project"));
+    for (var asset : audit.assets()) {
+      Path target = staging.resolve(asset.relativePath());
+      Files.createDirectories(target.getParent());
+      Files.write(target, new byte[] {0});
+    }
+    var applied = service.applyDeclarations(staging, candidates);
+    assertTrue(applied.declarationsGenerated() > 0);
+    assertEquals(0, service.applyDeclarations(staging, candidates).declarationsGenerated());
+    var result = service.preview(staging);
+    assertEquals(0, result.byStatus().getOrDefault(LabelStatus.CONFLICT, 0));
+    assertEquals(0, result.missingCount());
+    assertEquals(audit.declaredCount() + applied.declarationsGenerated(), result.declaredCount());
+    var scenario = new com.jvn.core.vn.script.VnScriptParser().parseFromString(
+        Files.readString(staging.resolve(AssetAutoLabelService.AUTO_DECLARATIONS_PATH)));
+    for (var candidate : candidates) {
+      String actual = switch (candidate.kind()) {
+        case BACKGROUND -> scenario.getBackground(candidate.label()).getImagePath();
+        case CHARACTER_SPRITE -> scenario.getCharacter(candidate.owner()).getExpressionPath(candidate.label());
+        case CHARACTER_LAYER, PROP, PANEL, UI, EFFECT ->
+            scenario.getCharacter(candidate.owner()).getLayerPath(candidate.label());
+        default -> candidate.relativePath();
+      };
+      assertEquals(candidate.relativePath(), actual);
+      assertTrue(Files.isRegularFile(root.resolve(actual)));
+    }
+    System.out.println("AUTO-LABEL CORPUS GENERATION: " + applied.declarationsGenerated()
+        + " declarations parsed, matched to real files, and reapplied without duplicates");
+  }
+
+  @Test
   void inventoriesAndValidatesEveryWasIWriteAssetWithoutMutatingTheProject() throws Exception {
     String configured = System.getProperty("wasIWriteRoot", "").trim();
     if (configured.isEmpty()) configured = System.getenv().getOrDefault("WAS_I_WRITE_ROOT", "").trim();

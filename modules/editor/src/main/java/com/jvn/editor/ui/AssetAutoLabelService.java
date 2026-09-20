@@ -35,15 +35,21 @@ public final class AssetAutoLabelService {
     return scan(projectRoot, false);
   }
 
-  private ScanResult scan(Path projectRoot, boolean persistBaseline) throws IOException {
+  private synchronized ScanResult scan(Path projectRoot, boolean persistBaseline) throws IOException {
     Path root = AssetPathHeuristics.requireProjectRoot(projectRoot);
     AssetLabelRegistry.Snapshot saved = registry.load(root);
     AssetDeclarationCatalog.Index catalog = declarations.scan(root);
-    List<Path> files = inference.collectAssets(root);
+    Set<Path> discovered = new LinkedHashSet<>(inference.collectAssets(root));
+    for (String path : catalog.byPath().keySet()) {
+      Path file = root.resolve(path).normalize();
+      if (file.startsWith(root) && Files.isRegularFile(file)) discovered.add(file);
+    }
+    List<Path> files = discovered.stream().sorted().toList();
     Set<String> usedLabels = new LinkedHashSet<>();
-    catalog.byPath().values().forEach(value ->
+    catalog.byScopedLabel().values().forEach(value ->
         usedLabels.add(AssetPathHeuristics.scopeKey(value.owner(), value.label())));
-    saved.entries().values().stream().filter(entry -> !entry.label().isBlank()).forEach(entry ->
+    saved.entries().values().stream().filter(entry -> entry.status() != LabelStatus.DECLARED)
+        .filter(entry -> !entry.label().isBlank()).forEach(entry ->
         usedLabels.add(AssetPathHeuristics.scopeKey(entry.owner(), entry.label())));
 
     boolean hasBaseline = saved.initialized();
@@ -62,7 +68,8 @@ public final class AssetAutoLabelService {
               file, relativePath, declared, isNew,
               catalog.conflictingPaths().contains(relativePath),
               catalog.aliasCounts().getOrDefault(relativePath, 1)));
-        } else if (decision != null && decision.status() != LabelStatus.SUGGESTED) {
+        } else if (decision != null && decision.status() != LabelStatus.SUGGESTED
+            && decision.status() != LabelStatus.DECLARED) {
           suggestions.add(inference.fromRegistry(file, relativePath, decision, isNew));
         } else {
           suggestions.add(inference.infer(file, relativePath, catalog, usedLabels, isNew));
@@ -98,7 +105,10 @@ public final class AssetAutoLabelService {
     if (sources == null || sources.isEmpty()) return List.of();
     AssetDeclarationCatalog.Index catalog = declarations.scan(root);
     Set<String> used = new LinkedHashSet<>();
-    catalog.byPath().values().forEach(value ->
+    catalog.byScopedLabel().values().forEach(value ->
+        used.add(AssetPathHeuristics.scopeKey(value.owner(), value.label())));
+    AssetLabelRegistry.Snapshot saved = registry.load(root);
+    saved.entries().values().stream().filter(value -> value.status() != LabelStatus.DECLARED).forEach(value ->
         used.add(AssetPathHeuristics.scopeKey(value.owner(), value.label())));
     List<AssetSuggestion> result = new ArrayList<>();
     for (Path source : sources) {
@@ -110,7 +120,17 @@ public final class AssetAutoLabelService {
           ? AssetPathHeuristics.relative(root, file)
           : "assets/" + AssetPathHeuristics.recommendedDirectory(kindFromPath(file), "")
               + "/" + file.getFileName();
-      result.add(inference.infer(file, relativePath, catalog, used, true));
+      AssetDeclarationCatalog.Declaration declared = catalog.byPath().get(relativePath);
+      AssetLabelRegistry.Entry decision = saved.entries().get(relativePath);
+      if (file.startsWith(root) && declared != null) {
+        result.add(inference.fromDeclaration(file, relativePath, declared, false,
+            catalog.conflictingPaths().contains(relativePath), catalog.aliasCounts().getOrDefault(relativePath, 1)));
+      } else if (file.startsWith(root) && decision != null
+          && decision.status() != LabelStatus.SUGGESTED && decision.status() != LabelStatus.DECLARED) {
+        result.add(inference.fromRegistry(file, relativePath, decision, false));
+      } else {
+        result.add(inference.infer(file, relativePath, catalog, used, true));
+      }
     }
     return List.copyOf(result);
   }
@@ -123,7 +143,7 @@ public final class AssetAutoLabelService {
     return writer.importAsset(root, source, kind, owner);
   }
 
-  public void saveDecision(Path projectRoot, AssetSuggestion suggestion, LabelStatus status)
+  public synchronized void saveDecision(Path projectRoot, AssetSuggestion suggestion, LabelStatus status)
       throws IOException {
     if (suggestion == null) return;
     Path root = AssetPathHeuristics.requireProjectRoot(projectRoot);
@@ -136,7 +156,7 @@ public final class AssetAutoLabelService {
     registry.save(root, new AssetLabelRegistry.Snapshot(true, entries, saved.seenPaths()));
   }
 
-  public AppliedDeclaration applyDeclaration(Path projectRoot, AssetSuggestion suggestion)
+  public synchronized AppliedDeclaration applyDeclaration(Path projectRoot, AssetSuggestion suggestion)
       throws IOException {
     Path root = AssetPathHeuristics.requireProjectRoot(projectRoot);
     if (suggestion == null) throw new IOException("No asset selected");
@@ -147,7 +167,7 @@ public final class AssetAutoLabelService {
   }
 
   /** Applies a reviewed batch with one VNS/catalog pass and one registry write. */
-  public BatchAppliedDeclarations applyDeclarations(
+  public synchronized BatchAppliedDeclarations applyDeclarations(
       Path projectRoot, List<AssetSuggestion> suggestions) throws IOException {
     Path root = AssetPathHeuristics.requireProjectRoot(projectRoot);
     List<AssetSuggestion> batch = suggestions == null ? List.of() : List.copyOf(suggestions);
@@ -275,7 +295,7 @@ public final class AssetAutoLabelService {
       owner = sanitizeId(owner);
       label = sanitizeId(label);
       status = status == null ? LabelStatus.SUGGESTED : status;
-      confidence = Math.max(0.0, Math.min(1.0, confidence));
+      confidence = Double.isFinite(confidence) ? Math.max(0.0, Math.min(1.0, confidence)) : 0.0;
       reason = reason == null ? "" : reason;
     }
 

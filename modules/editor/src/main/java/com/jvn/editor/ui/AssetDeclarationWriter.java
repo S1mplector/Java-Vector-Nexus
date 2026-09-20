@@ -41,9 +41,10 @@ final class AssetDeclarationWriter {
   }
 
   AppliedDeclaration apply(Path root, AssetSuggestion suggestion) throws IOException {
+    AssetDeclarationCatalog.Index existing = declarations.scan(root);
+    validateBatch(root, List.of(suggestion), existing);
     String declaration = declarationFor(suggestion);
     if (declaration.isBlank()) return new AppliedDeclaration(null, "", false, false);
-    AssetDeclarationCatalog.Index existing = declarations.scan(root);
     AssetDeclarationCatalog.Declaration found = existing.byPath().get(suggestion.relativePath());
     if (found != null) {
       return new AppliedDeclaration(found.sourceFile(), found.sourceLineText(), false, false);
@@ -74,6 +75,7 @@ final class AssetDeclarationWriter {
   BatchWriteResult applyAll(Path root, List<AssetSuggestion> suggestions) throws IOException {
     if (suggestions == null || suggestions.isEmpty()) return new BatchWriteResult(null, 0, 0, false);
     AssetDeclarationCatalog.Index existing = declarations.scan(root);
+    validateBatch(root, suggestions, existing);
     Path target = root.resolve(AssetAutoLabelService.AUTO_DECLARATIONS_PATH).normalize();
     if (!target.startsWith(root)) throw new IOException("Unsafe declaration target");
     String current = Files.isRegularFile(target)
@@ -103,6 +105,37 @@ final class AssetDeclarationWriter {
     writeAtomically(target, ensureTrailingNewline(current) + addition);
     return new BatchWriteResult(
         target, generated, charactersAdded, ensureEntryIncludesAutoDeclarations(root));
+  }
+
+  private void validateBatch(Path root, List<AssetSuggestion> suggestions,
+      AssetDeclarationCatalog.Index existing) throws IOException {
+    java.util.Map<String, String> labels = new java.util.LinkedHashMap<>();
+    existing.byScopedLabel().forEach((key, value) -> labels.put(key, value.relativePath()));
+    java.util.Map<String, String> paths = new java.util.LinkedHashMap<>();
+    for (AssetSuggestion suggestion : suggestions) {
+      if (suggestion == null) throw new IOException("No asset selected");
+      Path file = root.resolve(suggestion.relativePath()).normalize();
+      if (!file.startsWith(root) || !Files.isRegularFile(file)) {
+        throw new IOException("Asset is missing or outside the project: " + suggestion.relativePath());
+      }
+      if (suggestion.label().isBlank()) throw new IOException("A label is required");
+      if (declarationFor(suggestion).isBlank()) continue;
+      String owner = suggestion.kind() == AssetKind.BACKGROUND ? "" : declarationOwner(suggestion);
+      String key = AssetPathHeuristics.scopeKey(owner, suggestion.label());
+      String prior = labels.putIfAbsent(key, suggestion.relativePath());
+      if (prior != null && !prior.equals(suggestion.relativePath())) {
+        throw new IOException("Label " + key + " already points to " + prior);
+      }
+      String priorKey = paths.putIfAbsent(suggestion.relativePath(), key);
+      if (priorKey != null && !priorKey.equals(key)) {
+        throw new IOException("Review only one label per asset in a batch: " + suggestion.relativePath());
+      }
+      AssetDeclarationCatalog.Declaration declared = existing.byPath().get(suggestion.relativePath());
+      if (declared != null && (existing.conflictingPaths().contains(suggestion.relativePath())
+          || !existing.byScopedLabel().containsKey(key))) {
+        throw new IOException("Edit the existing VNS declaration for " + suggestion.relativePath());
+      }
+    }
   }
 
   String declarationFor(AssetSuggestion suggestion) {

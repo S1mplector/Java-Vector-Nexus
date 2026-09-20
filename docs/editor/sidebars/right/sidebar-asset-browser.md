@@ -55,6 +55,23 @@ Full Asset Browser sidebar utility view.
 
 ---
 
+## Auto-label Dashboard
+
+Open the **Auto-label** tab inside Assets to inventory and review project labels. The dashboard scans `assets/` and `game/images/` up to 16 levels deep, plus existing files referenced by VNS declarations elsewhere in the project.
+
+- Existing `@background`, `@charimg`, and `@charlayer` declarations are authoritative. Multiple labels for one file are supported as aliases; all aliases are reserved when suggesting new labels.
+- Suggestions use the closest matching declared filenames and character folders. When at least two sibling files agree on a label template, new labels follow that template (for example, `eyes_n_01`, `eyes_n_02`, then `eyes_n_03`). Ambiguous owner/type groups stay below the automatic-generation threshold. Non-image extensions keep their audio, video, font, or data type even beside character art. Filename-only suggestions remain below the 80% automatic-generation threshold.
+- **Save Label** stores an editor decision in `.jvn/asset-labels.properties`. **Ignore** retains an asset in the inventory without including it in automatic generation.
+- **Generate VNS** writes to `scripts/definitions/auto_labels.vns`, adds a character declaration if needed, and inserts an include into the manifest's existing entry script. If there is no valid entry script, include the generated file manually.
+- **Auto-label High Confidence** processes pending suggestions at 80% confidence or above after confirmation. Non-VNS assets receive saved labels.
+- Generation checks the whole batch before writing: missing files, paths outside the project, and labels already assigned to another file stop the batch with an error. Change existing declarations in their source VNS file.
+- Missing declaration targets and conflicting declarations appear in the inventory. Removing a generated declaration returns its asset to review on the next scan.
+- Dragging supported files onto the editor offers **Import & Review** or **Auto-label**. External files are copied to a recommended folder with unique filenames; existing files and saved decisions are preserved. Import errors and generation results remain visible after the scan.
+
+The **New only** filter compares each scan with the previous saved scan. `AssetAutoLabelService.preview` offers a read-only audit that does not update that baseline.
+
+---
+
 ## Asset Type Classification
 
 Files are categorized by extension:

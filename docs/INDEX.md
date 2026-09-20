@@ -124,7 +124,7 @@ source of truth for docs changes.
 - [Puppeteer Launcher](editor/sidebars/right/sidebar-puppeteer-launcher.md) - VNS scene snapshot and animation launch/reopen
 - [VNS Diagnostics](editor/sidebars/right/sidebar-vns-diagnostics.md) - live script problems and click-to-jump
 - [Label Flow Map](editor/sidebars/right/sidebar-label-flow-map.md) - visual VNS label graph
-- [Asset Browser](editor/sidebars/right/sidebar-asset-browser.md) - asset discovery, preview, and path copying
+- [Asset Browser](editor/sidebars/right/sidebar-asset-browser.md) - asset discovery, preview, auto-label review, and VNS generation
 - [Layout Launcher](editor/sidebars/right/sidebar-layout-launcher.md) - entrypoint for menu/layout/style editors
 - [Storyboard Overlay](editor/sidebars/right/sidebar-storyboard-overlay.md) - reference overlays for staging previews
 - [Layered Image Visualizer](editor/sidebars/right/sidebar-layered-image-visualizer.md) - layered sprite inspection and export

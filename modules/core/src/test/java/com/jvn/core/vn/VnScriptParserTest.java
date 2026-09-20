@@ -20,6 +20,21 @@ import com.jvn.core.vn.script.VnScriptParser;
 
 public class VnScriptParserTest {
   @Test
+  public void assetDeclarationPathsDecodeQuotesAndKeepLegacySpaces() throws Exception {
+    VnScenario scenario = new VnScriptParser().parseFromString("""
+        @scenario paths
+        @background room "assets/backgrounds/room day.png" # daytime
+        @background legacy assets/backgrounds/room night.png
+        @charimg ari happy "assets/characters/ari/happy #1.png"
+        @charlayer ari eyes "assets/characters/ari/eyes open.png" # eyes
+        """);
+    assertEquals("assets/backgrounds/room day.png", scenario.getBackground("room").getImagePath());
+    assertEquals("assets/backgrounds/room night.png", scenario.getBackground("legacy").getImagePath());
+    assertEquals("assets/characters/ari/happy #1.png", scenario.getCharacter("ari").getExpressionPath("happy"));
+    assertEquals("assets/characters/ari/eyes open.png", scenario.getCharacter("ari").getLayerPath("eyes"));
+  }
+
+  @Test
   public void parsesMinimalScript() throws Exception {
     String script = """
       @scenario test_story
