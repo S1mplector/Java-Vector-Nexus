@@ -57,7 +57,7 @@ Full Asset Browser sidebar utility view.
 
 ## Auto-label Dashboard
 
-Open the **Auto-label** tab inside Assets to inventory and review project labels. The dashboard scans `assets/` and `game/images/` up to 16 levels deep, plus existing files referenced by VNS declarations elsewhere in the project.
+Open **Assets → Auto-label Assets...** from the editor's top menu to inventory and review project labels. The same action is available under **Tools → Image & Assets → Auto-label Assets...**, or select the **Auto-label** tab inside the Asset Browser. The dashboard scans `assets/` and `game/images/` up to 16 levels deep, plus existing files referenced by VNS declarations elsewhere in the project.
 
 - Existing `@background`, `@charimg`, and `@charlayer` declarations are authoritative. Multiple labels for one file are supported as aliases; all aliases are reserved when suggesting new labels.
 - Suggestions use the closest matching declared filenames and character folders. When at least two sibling files agree on a label template, new labels follow that template (for example, `eyes_n_01`, `eyes_n_02`, then `eyes_n_03`). Ambiguous owner/type groups stay below the automatic-generation threshold. Non-image extensions keep their audio, video, font, or data type even beside character art. Filename-only suggestions remain below the 80% automatic-generation threshold.

@@ -1933,6 +1933,8 @@ public class EditorApp extends Application {
 
 	    // ── Assets ──
 	    Menu menuAssetsTop = new Menu("Assets");
+	    MenuItem miAssetsAutoLabel = new MenuItem("Auto-label Assets...");
+	    miAssetsAutoLabel.setOnAction(e -> selectAssetAutoLabelDashboard());
 	    MenuItem miAssetsBrowser = new MenuItem("Asset Browser");
 	    miAssetsBrowser.setOnAction(e -> selectAssetBrowserTab());
 	    MenuItem miAssetsLayered = new MenuItem("Layered Image Visualizer");
@@ -1950,7 +1952,7 @@ public class EditorApp extends Application {
 	    menuAssetTools.getItems().addAll(miAssetsBrowser, miAssetsLayered, miAssetsAttributes, miAssetsTint);
 	    Menu menuAssetLocations = new Menu("Locations");
 	    menuAssetLocations.getItems().addAll(miAssetsRevealRoot, miAssetsProjectDocs);
-	    menuAssetsTop.getItems().addAll(menuAssetTools, menuAssetLocations);
+	    menuAssetsTop.getItems().addAll(miAssetsAutoLabel, new SeparatorMenuItem(), menuAssetTools, menuAssetLocations);
 
 	    // ── Diagnostics ──
 	    Menu menuDiagnosticsTop = new Menu("Diagnostics");
@@ -2073,6 +2075,8 @@ public class EditorApp extends Application {
     miToolFlowMap.setOnAction(e -> selectVnsFlowMapTab());
     menuVnsTools.getItems().addAll(miToolDiagnostics, miToolFlowMap);
 
+    MenuItem miToolAutoLabel = new MenuItem("Auto-label Assets...");
+    miToolAutoLabel.setOnAction(e -> selectAssetAutoLabelDashboard());
     MenuItem miToolAssets = new MenuItem("Asset Browser");
     miToolAssets.setOnAction(e -> selectAssetBrowserTab());
     MenuItem miToolInspector = new MenuItem("Inspector");
@@ -2089,7 +2093,7 @@ public class EditorApp extends Application {
     Menu menuLayoutTools = new Menu("Layout & UI");
     menuLayoutTools.getItems().addAll(miLayoutLauncher, miStoryboardOverlay);
     Menu menuImageTools = new Menu("Image & Assets");
-    menuImageTools.getItems().addAll(miToolAssets, miLayeredVisualizer, miImageAttributes, miImageTint);
+    menuImageTools.getItems().addAll(miToolAutoLabel, miToolAssets, miLayeredVisualizer, miImageAttributes, miImageTint);
     Menu menuWorkspaceTools = new Menu("Workspace");
     menuWorkspaceTools.getItems().addAll(miToolInspector, miToolVersionControl, miToolEditorSettings);
     menuTools.getItems().addAll(menuAnimationTools, menuScriptTools, menuLayoutTools, menuImageTools,
@@ -7102,6 +7106,11 @@ public class EditorApp extends Application {
     if (t != null && t.getTabPane() != null) {
       t.getTabPane().getSelectionModel().select(t);
     }
+  }
+
+  private void selectAssetAutoLabelDashboard() {
+    selectAssetBrowserTab();
+    ensureAssetBrowserView().showAutoLabelDashboard();
   }
 
   private void selectAssetBrowserTab() {
