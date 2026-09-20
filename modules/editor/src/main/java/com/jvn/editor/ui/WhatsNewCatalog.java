@@ -49,6 +49,40 @@ public final class WhatsNewCatalog {
   private static Map<String, Release> createReleases() {
     Map<String, Release> releases = new LinkedHashMap<>();
     add(releases, new Release(
+        "v0.5.0",
+        "Smarter asset labeling, smoother layered animation, and better tools for tuning and verifying your project.",
+        List.of(
+            new Section(
+                "Automatic character and asset labels",
+                "Turn project assets into script-ready declarations with names that fit your project.",
+                List.of(
+                    "The auto-labeling dashboard follows existing declarations and sibling naming patterns when suggesting character and asset labels.",
+                    "Existing aliases are respected, and missing files or conflicting labels are reported before declarations are generated.",
+                    "Quoted asset paths support filenames with spaces, and repeated generation avoids duplicate declarations.")),
+            new Section(
+                "Smoother layered animation",
+                "Head and body animations spend less time rebuilding unchanged character metadata.",
+                List.of(
+                    "Layer target names and group metadata are reused across frames while movement, visibility, and expression changes remain live.",
+                    "A measured Was I Write scene replay reduced median frame work from 21.4 ms to 7.3 ms on the test Mac, with identical final rendered pixels. Results vary by project and hardware.",
+                    "Active transformed sprite layers stay resident to avoid repeated image loading during playback.")),
+            new Section(
+                "Engine Hub rendering and tools",
+                "Choose a preview budget, inspect the actual renderer, and record performance from the Hub.",
+                List.of(
+                    "GPU Preferred uses supported Windows, macOS, and Linux backends with software fallback and normal driver qualification.",
+                    "Preview frame budgets offer Automatic, 30, 60, and 120 FPS options to balance smoothness and rendering work.",
+                    "Check Actual Renderer reports the initialized JavaFX backend.",
+                    "Tools now includes Quick Verification, Prepare Editor Launch, JFR session recording, the recordings folder, and a copyable performance setup.")),
+            new Section(
+                "Editor polish and reliability",
+                "Clearer authoring tools and more dependable previews.",
+                List.of(
+                    "Refreshed editor and sidebar icons make common actions easier to distinguish.",
+                    "Puppeteer launch reconstruction and scene layering more faithfully preserve authored character placement.",
+                    "macOS Keychain handling is more stable, and the documentation website has been synchronized with the engine docs."))),
+        true));
+    add(releases, new Release(
         "v0.4.4.1",
         "A configurable Render Pipeline, smoother Puppeteer playback, and a more capable Engine Hub.",
         List.of(new Section(
