@@ -217,6 +217,38 @@ nameBoxHeight=0.0
 
 ---
 
+### Separate dialogue and inner-monologue skins
+
+The JavaFX renderer can switch textbox artwork per line. Configure both paths in
+`config/ui/dialogue.layout`:
+
+```properties
+textBoxAsset=assets/ui/dialogue.png
+textBoxNarrationAsset=assets/ui/monologue.png
+```
+
+A nonempty speaker display name selects `textBoxAsset` and shows the name plate.
+An empty display name selects `textBoxNarrationAsset` and hides the name plate:
+
+```vns
+@character hero "Hero"
+@character hero_thought ""
+hero: Hello there.
+hero_thought: I wonder what happens next.
+hero: Shall we go?
+```
+
+Declare or include the thought character in every script that uses it. The ID
+`hero_thought` is an ordinary character ID; its empty display name controls the
+presentation. Parentheses and quotes in colon-style dialogue are literal text and
+do not select a textbox style. A character named `narrator` with a nonempty display
+name still uses the dialogue skin.
+
+Both skins share textbox geometry, text insets, fonts, and action buttons. Export
+the images on matching canvases. If no narration image is configured or resolved,
+unnamed lines fall back to the dialogue image while keeping the name plate hidden.
+The runtime's default-UI or disabled-asset overrides still take precedence.
+
 ## Recipe 2: Dialogue Layout — ADV-Style (Full-Screen Text)
 
 An adventure-game style where text fills most of the screen.
@@ -675,6 +707,7 @@ styles=default,submenu,slot,dark,pastel,fancy
 | Key | Type | Default | Notes |
 |---|---|---|---|
 | `textBoxAsset` | String | *(none)* | Path to textbox background image |
+| `textBoxNarrationAsset` | String | *(none)* | Alternate JavaFX textbox image for an empty speaker display name; falls back to `textBoxAsset` |
 | `textBoxColor` | String | *(none)* | Hex color `#RRGGBB` or `#RRGGBBAA` |
 | `textBoxOpacity` | Double | *(none)* | 0.0–1.0 |
 | `textBoxBoundsPoints` | String | *(none)* | Custom bounds polygon |
