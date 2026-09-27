@@ -1,6 +1,6 @@
 # JVN Source-Available Attribution License
 
-Version 1.1 — 27 September 2026
+Version 1.2 — 27 September 2026
 
 Copyright (c) 2024–2026 S1mplector and respective JVN contributors.
 All rights reserved except as expressly granted below.
@@ -91,6 +91,26 @@ of Your continuing obligation to keep the credit visible in the actual game.
 Private builds not shared with another person remain subject to the other
 applicable license terms. Technical measures do not transfer game ownership.
 
+### 4.1. Modification and concealment do not waive obligations
+
+Renaming, obfuscating, stripping symbols or metadata, repackaging, compressing,
+encrypting, recompiling, porting, signing or re-signing a Playable, or modifying
+or replacing its exporter does not waive the conditions applicable to that
+Playable under this License. Distributing JVN components separately, through
+a wrapper, or by subsequent download likewise does not excuse compliance.
+You must not use these measures to conceal JVN's inclusion or defeat the
+required attribution, notices, or source availability.
+
+JVN code, runtime components, and resources included in a Playable remain
+subject to the relevant rights holders' copyright and this License, including
+when modified or incorporated into derivative works. Public availability of
+JVN source does not surrender those rights. A changed filename, binary hash,
+package structure, or branding does not itself establish independent authorship
+or confer a new license. These provisions concern protected JVN material and
+the permissions granted here; they do not claim ownership of independent game
+content, treat publicly available source as confidential information, or limit
+rights available independently under law or another applicable license.
+
 ## 5. Ownership and branding
 
 The Licensor retains ownership of the Software. You and other respective
@@ -123,6 +143,44 @@ Distribution permission is reinstated prospectively when all relevant
 breaches have been remedied. Reinstatement does not extinguish claims arising
 from earlier noncompliance. Compliant recipients' rights are not terminated
 solely because an upstream distributor breached this License.
+
+### 6.1. Enforcement procedure and available remedies
+
+Upon identifying reasonably substantiated noncompliance, the relevant rights
+holder or its expressly authorized representative may take the following
+steps, as appropriate to the evidence, applicable law, and urgency:
+
+1. Preserve and assess relevant evidence, including distributed copies,
+   release listings, notices, source revisions, and records of acceptance,
+   while respecting applicable privacy and evidence-handling requirements.
+2. Issue a written notice identifying the affected release, the rights and
+   conditions relied upon, and the requested corrective action, including
+   cessation of affected distribution, restoration of attribution, or
+   withdrawal of affected downloads and listings.
+3. Notify relevant distributors, application stores, hosting providers, or
+   other intermediaries through their applicable complaint procedures.
+   Copyright removal requests will be made only where the facts support a
+   copyright claim and the applicable statutory or platform requirements
+   are satisfied, with due regard for available counter-notice and review
+   procedures. A contractual breach alone is not represented as sufficient
+   grounds for every copyright removal procedure.
+4. Seek relief before a court or other tribunal of competent jurisdiction,
+   including injunctive relief, damages, and recoverable costs where legally
+   available. Mediation or arbitration may be pursued where the parties
+   agree or another valid legal basis permits it.
+5. Refer evidence to competent public authorities only where there are
+   reasonable grounds to suspect conduct within their legal remit, including
+   a criminal offence where the applicable legal criteria are met. Missing
+   attribution alone is not declared by this License to be a criminal offence.
+
+The sequence above does not require a rights holder to exhaust informal steps
+before seeking urgent relief, nor does it create an additional cure period.
+There is no universal software governing body designated to enforce this
+License. Notices will be directed only to an intermediary, tribunal, or
+public authority with a relevant role. WIPO dispute-resolution services may
+be used where appropriate; WIPO is not designated as an automatic enforcement
+or takedown authority. No report, remedy, penalty, or removal is automatic
+merely because a rights holder alleges a breach.
 
 ## 7. Disclaimer and limitation of liability
 

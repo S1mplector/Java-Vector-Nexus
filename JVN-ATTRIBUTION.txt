@@ -1,5 +1,5 @@
 JVN GAME DISTRIBUTION NOTICE
-JVN Source-Available Attribution License, version 1.1
+JVN Source-Available Attribution License, version 1.2
 
 Every distributed desktop or mobile Playable covered by this license must show:
 
@@ -24,6 +24,10 @@ Noncompliant distribution loses permission under the license. Relevant rights
 holders, including S1mplector and authorized representatives, may demand withdrawal
 and pursue remedies available under law. Missing credit does not transfer game
 ownership. JVN-LICENSE.md controls; automated checks do not certify legal compliance.
+
+Modification, obfuscation, repackaging, or concealment does not waive applicable
+license obligations for retained JVN components or covered Playables. See
+JVN-LICENSE.md sections 4.1 and 6.1 for scope and enforcement procedures.
 
 Project: https://javavectornexus.com
 Source: https://github.com/S1mplector/Java-Vector-Nexus
