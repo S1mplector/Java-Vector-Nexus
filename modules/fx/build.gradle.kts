@@ -5,6 +5,7 @@ plugins {
 }
 
 dependencies {
+  implementation(project(":branding"))
   api(project(":core"))
   api(project(":render-api"))
 

@@ -1,0 +1,29 @@
+JVN GAME DISTRIBUTION NOTICE
+JVN Source-Available Attribution License, version 1.1
+
+Every distributed desktop or mobile Playable covered by this license must show:
+
+    Made with [official JVN SVG logo] (actual engine version)
+
+The acknowledgement must remain plainly visible in the Settings menu without
+scrolling, with an opaque contrasting background and readable sizing. Settings
+must remain accessible through an ordinary visible control. The logo must have
+accessible text identifying JVN. Removing, hiding, replacing, cropping, fading,
+or disabling the credit or its Settings entry is prohibited. Splash screens and
+external notices do not replace the required Settings credit.
+
+JVN 0.7.0 provides engine-owned Settings access and credits. Official exports
+require current developer license acceptance and a final package-integrity check.
+Game players do not need a developer acceptance receipt.
+
+Retain JVN-LICENSE.md and applicable third-party notices. Provide public access
+to corresponding JVN source and required engine modifications under the license.
+Independent game content retains its own ownership and licensing.
+
+Noncompliant distribution loses permission under the license. Relevant rights
+holders, including S1mplector and authorized representatives, may demand withdrawal
+and pursue remedies available under law. Missing credit does not transfer game
+ownership. JVN-LICENSE.md controls; automated checks do not certify legal compliance.
+
+Project: https://javavectornexus.com
+Source: https://github.com/S1mplector/Java-Vector-Nexus

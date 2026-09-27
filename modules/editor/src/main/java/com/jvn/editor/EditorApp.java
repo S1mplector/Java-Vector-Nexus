@@ -914,6 +914,9 @@ public class EditorApp extends Application {
 
   @Override
   public void start(Stage primaryStage) {
+    if (!com.jvn.editor.ui.LicenseAcceptanceView.requireAcceptance(primaryStage)) {
+      javafx.application.Platform.exit(); return;
+    }
     EditorCrashSupport.installProcessHandler();
     StartupSplashOverlay splash = new StartupSplashOverlay();
     splash.show();
@@ -2241,6 +2244,9 @@ public class EditorApp extends Application {
 
     // ── Help ──
     Menu menuHelp = new Menu("Help");
+    MenuItem miLicense = new MenuItem("License & Terms");
+    miLicense.setOnAction(e -> com.jvn.editor.ui.LicenseAcceptanceView.show(primaryStage, buildInfo.versionLabel()));
+    menuHelp.getItems().add(miLicense);
     MenuItem miWelcome = new MenuItem("Workspace Hub");
     miWelcome.setOnAction(e -> selectWorkspaceHubTab());
     miWelcome.setAccelerator(new KeyCodeCombination(KeyCode.H, KeyCombination.SHORTCUT_DOWN, KeyCombination.SHIFT_DOWN));

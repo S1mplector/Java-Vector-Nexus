@@ -15,6 +15,9 @@ Use this hub when the question is "how do we ship this game?"
 - [Build System](build-system.md) — commands, targets, runtime cache, release profiles
 - [Deployment & Packaging](deployment.md) — broader packaging strategy, asset bundling, distribution tradeoffs
 
+- [Game Licensing and JVN Attribution](licensing.md) — required in-game credit, packaged notices, and license transition
+- [License Acceptance and Receipts](license-acceptance.md) — consent UI, local evidence, verification, and limitations
+
 ## Common Routes
 
 ### I want to build from the editor
@@ -52,3 +55,5 @@ Use this hub when the question is "how do we ship this game?"
 - [Documentation Index](../../INDEX.md)
 - [Editor Guide](../../editor/core/editor.md#game-build-publish)
 - [New Project Wizard](../onboarding/new-project-wizard.md)
+
+- [What's New in JVN 0.7.0](whats-new-0.7.0.md) — licensing, Settings credit, and release verification

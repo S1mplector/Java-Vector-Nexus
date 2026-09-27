@@ -3,7 +3,7 @@
 <div align="left">
   <img src="docs/assets/images/jvn_logo.svg" width="460" alt="Java Vector Nexus logo">
   <br>
-  <strong>Current version:</strong> v0.4.4.1 <em></em>
+  <strong>Current version:</strong> v0.7.0 <em></em>
 </div>
 
 JVN is a young, modular cross-platform Visual Novel engine and 2D animation toolkit written in Java.
@@ -432,4 +432,23 @@ engine changes.
 
 ## License
 
-This repository is licensed under the MIT License. See `LICENSE.md`.
+JVN uses the custom [JVN Source-Available Attribution License](LICENSE.md).
+The engine and utilities remain publicly available for inspection, modification,
+and redistribution under those terms. This is a proprietary, source-available
+license; it is not presented as an OSI-approved open-source license.
+
+Distributed desktop and mobile games must visibly credit **JVN (Java Vector Nexus)**
+in a readily accessible Settings menu as **Made with [JVN SVG logo] (engine version)**.
+The engine-owned credit cannot be hidden or disabled by project configuration.
+Games may be commercial and retain their own license and ownership. Distribution
+of noncompliant builds is unauthorized under the new license and may be subject
+to withdrawal demands and applicable legal remedies.
+
+Existing MIT grants and third-party licenses remain valid. See the
+[game attribution guide](docs/project-setup/release/licensing.md) for compliance,
+source-availability obligations, and the transition from MIT.
+
+Review the license and [Terms of Use](TERMS.md) through **Help → License & Terms**
+in the Hub, Editor, or Launcher. The acceptance flow creates a local
+signed receipt. Current acceptance is required to open developer tools and export games. See
+[License Acceptance and Receipts](docs/project-setup/release/license-acceptance.md).

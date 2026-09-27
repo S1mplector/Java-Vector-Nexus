@@ -96,6 +96,9 @@ public class JvnLauncherApp extends Application {
 
   @Override
   public void start(Stage stage) {
+    if (!com.jvn.editor.ui.LicenseAcceptanceView.requireAcceptance(stage)) {
+      javafx.application.Platform.exit(); return;
+    }
     EditorCrashSupport.installProcessHandler();
     StartupSplashOverlay splash = new StartupSplashOverlay();
     splash.setSubtitle("Loading launcher environment");
@@ -454,6 +457,9 @@ public class JvnLauncherApp extends Application {
     menuView.setOnShowing(e -> syncTheme.run());
 
     Menu menuHelp = new Menu("Help");
+    MenuItem miLicense = new MenuItem("License & Terms");
+    miLicense.setOnAction(e -> com.jvn.editor.ui.LicenseAcceptanceView.show(primaryStage, buildInfo.versionLabel()));
+    menuHelp.getItems().add(miLicense);
     MenuItem miWhatsNew = new MenuItem("What's New in " + buildInfo.versionLabel());
     miWhatsNew.setOnAction(e ->
         WhatsNewDialog.show(primaryStage, WhatsNewCatalog.forVersion(buildInfo.versionLabel())));

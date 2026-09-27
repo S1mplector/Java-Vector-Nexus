@@ -190,6 +190,23 @@ public class FxLauncher extends Application {
       this.perfHud = createPerfHud();
       root.getChildren().add(this.perfHud);
     }
+    RuntimeAttributionOverlay attribution = new RuntimeAttributionOverlay(() -> {
+      if (engine == null || engine.scenes().peek() instanceof SettingsScene) return;
+      var current = engine.scenes().peek();
+      VnScene gameplay = current instanceof VnScene vn ? vn
+          : current instanceof PauseMenuScene pause ? pause.getVnScene()
+          : current instanceof SaveMenuScene save ? save.getCurrentVnScene()
+          : current instanceof HistoryMenuScene history ? history.getVnScene() : null;
+      var settings = gameplay != null ? gameplay.getState().getSettings()
+          : current instanceof MainMenuScene main ? main.getSettingsModel()
+          : current instanceof LoadMenuScene load ? load.getSettingsModel() : new com.jvn.core.vn.VnSettingsStore().load();
+      var audio = gameplay != null ? gameplay.getAudioFacade() : null;
+      engine.scenes().push(new SettingsScene(engine, new com.jvn.core.vn.save.VnSaveManager(), "main", settings, audio));
+    }, () -> {
+      if (engine != null && engine.scenes().peek() instanceof SettingsScene) engine.scenes().pop();
+    });
+    root.getChildren().add(attribution);
+    StackPane.setAlignment(canvas, javafx.geometry.Pos.TOP_CENTER);
     javafx.scene.Scene scene = new javafx.scene.Scene(root, width, height);
     this.fxScene = scene;
     primaryStage.setScene(scene);
@@ -229,7 +246,7 @@ public class FxLauncher extends Application {
     this.actionMap = loadActionBindings();
     this.hotReloadTracker = ProjectHotReloadTracker.create(runtimeProjectRoot);
     canvas.widthProperty().bind(root.widthProperty());
-    canvas.heightProperty().bind(root.heightProperty());
+    canvas.heightProperty().bind(root.heightProperty().subtract(attribution.reservedHeightProperty()));
     applyConfiguredCursor(scene);
     logProjectHealth("startup");
 
@@ -508,6 +525,7 @@ public class FxLauncher extends Application {
           engine.scenes().pop();
           currentScene = engine.scenes().peek();
         }
+        attribution.showSettingsCredit(currentScene instanceof SettingsScene);
         syncPhoneOverlay(currentScene);
         pollProjectHotReload();
         // Use the AnimationTimer's nanosecond clock for the HUD. Engine frame

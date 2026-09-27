@@ -72,7 +72,14 @@ public class SwingLauncher {
       if (engine != null && engine.input() != null) engine.input().addScrollDeltaY(-e.getPreciseWheelRotation());
     });
 
-    frame.setContentPane(panel);
+    JPanel root = new JPanel(new BorderLayout());
+    JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
+    toolbar.setBackground(Color.decode("#202020"));
+    JButton settings = new JButton("Settings");
+    settings.setName("jvn-runtime-settings");
+    settings.addActionListener(event -> showEngineSettings(frame));
+    toolbar.add(settings); root.add(toolbar, BorderLayout.NORTH); root.add(panel, BorderLayout.CENTER);
+    frame.setContentPane(root);
     frame.setSize(w, h);
     frame.setLocationRelativeTo(null);
     applyLinuxDefaultWindowState(frame);
@@ -95,6 +102,29 @@ public class SwingLauncher {
     });
     timer.start();
   }
+
+  static JDialog createEngineSettings(JFrame owner) {
+    JDialog dialog = new JDialog(owner, "Settings", true);
+    JPanel content = new JPanel(new BorderLayout(12, 12));
+    content.setBackground(Color.decode("#202020"));
+    content.setBorder(BorderFactory.createEmptyBorder(22, 22, 22, 22));
+    JLabel title = new JLabel("Engine information"); title.setForeground(Color.WHITE);
+    JPanel credit = new JPanel(new FlowLayout(FlowLayout.CENTER, 9, 8));
+    credit.setName("jvn-settings-credit"); credit.setOpaque(false);
+    JLabel prefix = new JLabel("Made with"); prefix.setForeground(Color.WHITE);
+    JLabel logo = new JLabel(new ImageIcon(com.jvn.branding.EngineBranding.logo().getScaledInstance(100, 50, Image.SCALE_SMOOTH)));
+    logo.getAccessibleContext().setAccessibleName("JVN");
+    JLabel version = new JLabel("(" + com.jvn.branding.EngineBranding.version() + ")"); version.setForeground(Color.WHITE);
+    credit.add(prefix); credit.add(logo); credit.add(version);
+    credit.getAccessibleContext().setAccessibleName(com.jvn.branding.EngineBranding.accessibleCredit());
+    JButton close = new JButton("Close"); close.addActionListener(event -> dialog.dispose());
+    content.add(title, BorderLayout.NORTH); content.add(credit, BorderLayout.CENTER); content.add(close, BorderLayout.SOUTH);
+    dialog.setContentPane(content); dialog.pack(); dialog.setMinimumSize(new Dimension(360, 210));
+    dialog.setSize(400, 240); dialog.setLocationRelativeTo(owner);
+    return dialog;
+  }
+
+  private static void showEngineSettings(JFrame owner) { createEngineSettings(owner).setVisible(true); }
 
   private static int mapButton(int awtButton) {
     return switch (awtButton) {

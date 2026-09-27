@@ -10,6 +10,7 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.tasks.Jar
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.process.ExecOperations
+import java.io.StringWriter
 import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
 import java.net.URI
@@ -37,7 +38,7 @@ interface JvnInjectedExecOperations {
 }
 
 val jvnGroup = (findProperty("jvnGroup") as String?) ?: "com.jvn"
-val jvnVersion = (findProperty("jvnVersion") as String?) ?: "0.4.4.1"
+val jvnVersion = (findProperty("jvnVersion") as String?) ?: "0.7.0"
 val jvnBuildDirOverride = (findProperty("jvnBuildDir") as String?)
   ?.trim()
   ?.takeIf { it.isNotBlank() }
@@ -201,6 +202,7 @@ val jvnGameTargets = listOf(
   JvnGameTarget("macos-aarch64", "MacosAarch64", "mac-aarch64", false)
 )
 val jvnGameRuntimeProjectPaths = listOf(
+  ":branding",
   ":core",
   ":plugin-api",
   ":plugin-runtime",
@@ -687,6 +689,7 @@ fun assertZipArtifactContains(artifact: File, label: String, requiredSuffixes: L
 }
 
 fun verifyPortableArtifact(target: JvnGameTarget, artifact: File) {
+  artifactChecksumFile(artifact).delete()
   val launcherSuffix = if (target.windows) "/bin/${gameLauncherBaseName()}.bat" else "/bin/${gameLauncherBaseName()}"
   assertZipArtifactContains(
     artifact,
@@ -697,13 +700,18 @@ fun verifyPortableArtifact(target: JvnGameTarget, artifact: File) {
       "/lib/",
       "/lib/javafx/",
       "/README.txt",
-      "/BUILD-METADATA.txt"
+      "/BUILD-METADATA.txt",
+      "/JVN-LICENSE.md",
+      "/JVN-ATTRIBUTION.txt",
+      "/JVN-EXPORT-CONTRACT.properties"
     )
   )
+  verifyJvnReleaseIntegrity(artifact)
   writeArtifactChecksum(artifact)
 }
 
 fun verifyBundledRuntimeArtifact(target: JvnGameTarget, artifact: File) {
+  artifactChecksumFile(artifact).delete()
   val launcherSuffix = if (target.windows) "/bin/${gameLauncherBaseName()}.bat" else "/bin/${gameLauncherBaseName()}"
   assertZipArtifactContains(
     artifact,
@@ -715,9 +723,13 @@ fun verifyBundledRuntimeArtifact(target: JvnGameTarget, artifact: File) {
       "/lib/",
       "/lib/javafx/",
       "/README.txt",
-      "/BUILD-METADATA.txt"
+      "/BUILD-METADATA.txt",
+      "/JVN-LICENSE.md",
+      "/JVN-ATTRIBUTION.txt",
+      "/JVN-EXPORT-CONTRACT.properties"
     )
   )
+  verifyJvnReleaseIntegrity(artifact)
   writeArtifactChecksum(artifact)
 }
 
@@ -839,6 +851,7 @@ fun verifyWindowsNativePayload(root: File) {
 }
 
 fun verifyNativeArtifact(artifact: File, packageType: String) {
+  artifactChecksumFile(artifact).delete()
   val inspectRoot = layout.buildDirectory.dir("tmp/jvn-native-smoke/${currentPackageHost().target.id}-$packageType").get().asFile
   deleteAndMkdir(inspectRoot)
   try {
@@ -849,6 +862,7 @@ fun verifyNativeArtifact(artifact: File, packageType: String) {
         commandOutput("hdiutil", "attach", "-nobrowse", "-readonly", "-mountpoint", mount.absolutePath, artifact.absolutePath)
         try {
           verifyMacNativePayload(findSingle(mount, { it.isDirectory && it.extension == "app" }, "macOS app bundle"))
+          verifyJvnReleaseIntegrity(mount)
         } finally {
           commandOutput("hdiutil", "detach", mount.absolutePath)
         }
@@ -858,6 +872,7 @@ fun verifyNativeArtifact(artifact: File, packageType: String) {
         extracted.mkdirs()
         commandOutput("msiexec", "/a", artifact.absolutePath, "/qn", "TARGETDIR=${extracted.absolutePath}")
         verifyWindowsNativePayload(extracted)
+        verifyJvnReleaseIntegrity(extracted)
       }
       "app-image" -> {
         val extracted = inspectRoot.resolve("extracted")
@@ -866,10 +881,36 @@ fun verifyNativeArtifact(artifact: File, packageType: String) {
           "macos" -> verifyMacNativePayload(findSingle(extracted, { it.isDirectory && it.extension == "app" }, "macOS app bundle"))
           "windows" -> verifyWindowsNativePayload(extracted)
         }
+        verifyJvnReleaseIntegrity(extracted)
       }
-      else -> {
-        if (!artifact.isFile || artifact.length() <= 0L) throw GradleException("Native package is missing or empty")
+      "exe" -> {
+        val container = inspectRoot.resolve("container")
+        container.mkdirs()
+        commandOutput("dark", "-nologo", "-x", container.absolutePath, artifact.absolutePath)
+        val installer = findSingle(container, { it.isFile && it.extension.equals("msi", true) }, "embedded MSI")
+        val extracted = inspectRoot.resolve("extracted")
+        extracted.mkdirs()
+        commandOutput("msiexec", "/a", installer.absolutePath, "/qn", "TARGETDIR=${extracted.absolutePath}")
+        verifyWindowsNativePayload(extracted)
+        verifyJvnReleaseIntegrity(extracted)
       }
+      "pkg" -> {
+        val extracted = inspectRoot.resolve("extracted")
+        commandOutput("pkgutil", "--expand-full", artifact.absolutePath, extracted.absolutePath)
+        verifyJvnReleaseIntegrity(extracted)
+      }
+      "deb" -> {
+        val extracted = inspectRoot.resolve("extracted")
+        commandOutput("dpkg-deb", "--extract", artifact.absolutePath, extracted.absolutePath)
+        verifyJvnReleaseIntegrity(extracted)
+      }
+      "rpm" -> {
+        val extracted = inspectRoot.resolve("extracted")
+        extracted.mkdirs()
+        commandOutput("bsdtar", "-xf", artifact.absolutePath, "-C", extracted.absolutePath)
+        verifyJvnReleaseIntegrity(extracted)
+      }
+      else -> throw GradleException("Native format '$packageType' cannot be inspected for final attribution compliance. Use app-image, dmg, msi, deb, or rpm.")
     }
     writeArtifactChecksum(artifact)
   } finally {
@@ -1296,6 +1337,51 @@ $compilerPreflight
   """.trimMargin()
 }
 
+// The current engine build defines the exact runtime payload accepted for release.
+fun jvnExportContract(): Properties = Properties().apply {
+  setProperty("policy", "jvn-settings-credit-v1")
+  setProperty("engine.version", rootProject.version.toString())
+  setProperty("logo.sha256", sha256Hex(rootProject.file("docs/assets/images/jvn_logo.svg")))
+  setProperty("license.sha256", sha256Hex(rootProject.file("LICENSE.md")))
+  setProperty("notice.sha256", sha256Hex(rootProject.file("JVN-ATTRIBUTION.txt")))
+  gameRuntimeClasspathJars().forEach { jar -> setProperty("jar.sha256.${jar.name}", sha256Hex(jar)) }
+}
+
+fun runJvnLicenseUtility(vararg arguments: String) {
+  val licensing = project(":licensing").extensions.getByType<SourceSetContainer>().named("main").get()
+  jvnExecOperations.javaexec {
+    executable = jvnPackagingLauncher.get().executablePath.asFile.absolutePath
+    classpath = licensing.runtimeClasspath
+    mainClass.set("com.jvn.licensing.LicenseCli")
+    args(arguments.toList())
+    providers.systemProperty("jvn.legalDir").orNull?.let { systemProperty("jvn.legalDir", it) }
+  }
+}
+
+fun verifyJvnReleaseIntegrity(artifact: File) {
+  // Repeat at the final boundary: a receipt removed after staging must not pass release.
+  runJvnLicenseUtility("require")
+  val expected = layout.buildDirectory.file("tmp/jvn-final-verification/expected.properties").get().asFile
+  expected.parentFile.mkdirs()
+  expected.outputStream().use { jvnExportContract().store(it, "Expected current engine export contract") }
+  try {
+    runJvnLicenseUtility("verify-release", artifact.absolutePath, expected.absolutePath)
+  } catch (failure: Exception) {
+    artifactChecksumFile(artifact).delete()
+    throw GradleException("Final JVN settings attribution verification failed; this artifact must not be released.", failure)
+  }
+}
+
+// Keep license notices with every supported desktop export format.
+fun writeJvnDistributionNotices(destination: File) {
+  destination.mkdirs()
+  rootProject.file("LICENSE.md").copyTo(destination.resolve("JVN-LICENSE.md"), overwrite = true)
+  rootProject.file("JVN-ATTRIBUTION.txt").copyTo(destination.resolve("JVN-ATTRIBUTION.txt"), overwrite = true)
+  val encoded = StringWriter().also { jvnExportContract().store(it, null) }.toString()
+  destination.resolve("JVN-EXPORT-CONTRACT.properties").writeText(
+      encoded.lineSequence().filter { it.isNotBlank() && !it.startsWith("#") }.sorted().joinToString("\n", postfix = "\n"))
+}
+
 fun gameBundledReadme(target: JvnGameTarget, runtime: JvnBundledRuntimeSelection): String {
   val launcher = if (target.windows) "bin\\${gameLauncherBaseName()}.bat" else "bin/${gameLauncherBaseName()}"
   return """
@@ -1316,6 +1402,8 @@ fun gameBundledReadme(target: JvnGameTarget, runtime: JvnBundledRuntimeSelection
     |  lib/javafx/  JavaFX native jars for ${target.javafxClassifier}
     |  runtime/     bundled ${bundledRuntimeVendor()} runtime archive (${runtime.imageType})
     |  BUILD-METADATA.txt package metadata for this build
+    |  JVN-LICENSE.md engine license (independent game content retains its own terms)
+    |  JVN-ATTRIBUTION.txt mandatory in-game credit and source-availability summary
     |
   """.trimMargin()
 }
@@ -1333,6 +1421,8 @@ fun gameNativeReadme(): String {
     |Contents:
     |  game/        bundled JVN project files
     |  BUILD-METADATA.txt package metadata for this build
+    |  JVN-LICENSE.md engine license (independent game content retains its own terms)
+    |  JVN-ATTRIBUTION.txt mandatory in-game credit and source-availability summary
     |
   """.trimMargin()
 }
@@ -1998,6 +2088,12 @@ fun runPublishCommands(mode: String, artifact: File, targetId: String = currentP
   if (!artifact.exists()) {
     throw GradleException("Publish commands were requested for ${artifact.absolutePath}, but that artifact does not exist.")
   }
+  when (mode) {
+    "native" -> verifyNativeArtifact(artifact)
+    "portable", "bundled" -> verifyJvnReleaseIntegrity(artifact)
+    else -> throw GradleException("Unknown publish mode: $mode")
+  }
+  writeArtifactChecksum(artifact)
   val values = publishCommandVariables(mode, artifact, targetId)
   commands.forEachIndexed { index, template ->
     val command = expandPublishCommand(template, values)
@@ -2244,6 +2340,8 @@ fun gameReadme(target: JvnGameTarget, distName: String, launcherName: String): S
     |  lib/         JVN runtime jars and third-party dependencies
     |  lib/javafx/  JavaFX native jars for ${target.javafxClassifier}
     |  BUILD-METADATA.txt package metadata for this build
+    |  JVN-LICENSE.md engine license (independent game content retains its own terms)
+    |  JVN-ATTRIBUTION.txt mandatory in-game credit and source-availability summary
     |
     |The launcher starts com.jvn.runtime.JvnApp with --assets pointing at the bundled
     |game folder. Runtime options from jvn.project, including entryVns, width,
@@ -2301,7 +2399,8 @@ val gameZipTasks = jvnGameTargets.map { target ->
   val generatedDir = layout.buildDirectory.dir("generated/jvnGamePortable/${target.id}")
   val prepareTask = tasks.register("prepareJvnGamePortable${target.taskSuffix}") {
     group = "distribution"
-    description = "Generates launcher scripts for the ${target.id} portable JVN game build."
+    description = "Generates launcher scripts and the verified export contract for ${target.id}."
+    jvnGameRuntimeProjectPaths.forEach { dependsOn("$it:jar") }
     outputs.dir(generatedDir)
     outputs.upToDateWhen { false }
     doLast {
@@ -2318,6 +2417,7 @@ val gameZipTasks = jvnGameTargets.map { target ->
       if (!target.windows) scriptFile.setExecutable(true)
       rootDir.resolve("README.txt").writeText(gameReadme(target, distName, launcherName))
       rootDir.resolve("BUILD-METADATA.txt").writeText(gameBuildMetadata(target, distName))
+      writeJvnDistributionNotices(rootDir)
     }
   }
 
@@ -2421,6 +2521,7 @@ tasks.register("writeJvnGameReleaseManifest") {
           "\nRun assembleJvnGameRelease first, or build the listed tasks."
       )
     }
+    verifySelectedJvnGameArtifacts()
     val (jsonFile, markdownFile) = writeJvnGameReleaseManifest()
     println("JVN game release manifest written")
     println("  json: ${jsonFile.absolutePath}")
@@ -2450,6 +2551,7 @@ tasks.register("writeJvnGameUpdateBundle") {
   description = "Writes a signed full-artifact update catalog for the selected release profile."
   doLast {
     validateSelectedReleaseProfile()
+    verifySelectedJvnGameArtifacts()
     val outputs = writeJvnGameUpdateBundle()
     if (outputs.isEmpty()) {
       println("JVN update bundle is disabled for profile '${selectedReleaseProfile().name}'.")
@@ -2465,6 +2567,7 @@ tasks.register("assembleJvnGameStoreBundle") {
   description = "Collects selected release artifacts into a generic, itch.io, or Steam upload layout."
   doLast {
     validateSelectedReleaseProfile()
+    verifySelectedJvnGameArtifacts()
     val outputs = writeJvnGameStoreBundle()
     println("JVN store bundle written:")
     outputs.forEach { println("  - ${it.absolutePath}") }
@@ -2484,8 +2587,8 @@ tasks.register("assembleJvnGameRelease") {
           missing.joinToString("\n - ") { "${it.targetId}: ${it.artifact.absolutePath} (build task: ${it.buildTask})" }
       )
     }
-    val (jsonFile, markdownFile) = writeJvnGameReleaseManifest()
     verifySelectedJvnGameArtifacts()
+    val (jsonFile, markdownFile) = writeJvnGameReleaseManifest()
     val updateOutputs = writeJvnGameUpdateBundle()
     println("JVN game release artifacts ready:")
     artifacts.forEach { artifact ->
@@ -2670,6 +2773,7 @@ val bundledRuntimeZipTasks = jvnGameTargets.map { target ->
       if (!target.windows) launcher.setExecutable(true)
       rootDir.resolve("README.txt").writeText(gameBundledReadme(target, runtime))
       rootDir.resolve("BUILD-METADATA.txt").writeText(bundledRuntimeMetadata(target, runtime))
+      writeJvnDistributionNotices(rootDir)
     }
   }
 
@@ -2733,6 +2837,10 @@ tasks.register("prepareJvnGameNativeInputCurrent") {
   inputs.dir(providers.provider { gameProjectDir() })
     .withPropertyName("gameProject")
     .withPathSensitivity(PathSensitivity.RELATIVE)
+  outputs.upToDateWhen { false }
+  inputs.files("LICENSE.md", "JVN-ATTRIBUTION.txt", "docs/assets/images/jvn_logo.svg")
+    .withPropertyName("jvnDistributionNotices")
+    .withPathSensitivity(PathSensitivity.RELATIVE)
   inputs.property("nativePackageType", providers.provider { currentJpackageType() })
   inputs.property("releaseProfile", providers.provider { selectedReleaseProfileName() })
   inputs.property("packageVariant", providers.provider { selectedPackageVariant() })
@@ -2754,6 +2862,7 @@ tasks.register("prepareJvnGameNativeInputCurrent") {
     copyGameProjectFiles(gameContent)
     contentDir.resolve("README.txt").writeText(gameNativeReadme())
     contentDir.resolve("BUILD-METADATA.txt").writeText(nativeBuildMetadata(currentJpackageType()))
+    writeJvnDistributionNotices(contentDir)
   }
 }
 
@@ -3146,4 +3255,18 @@ tasks.register<JavaExec>("validateJvnGameDependencies") {
 tasks.register<JavaExec>("validateJvnDependencies") {
   description = "Alias for validateJvnGameDependencies."
   jvnConfigureDependencyValidationTask(this)
+}
+
+// Read-only inspection and ordinary source builds remain available without recorded consent.
+tasks.configureEach {
+  val gameDistribution = name.startsWith("prepareJvnGame") || name.startsWith("assembleJvnGame") ||
+      name.startsWith("packageJvnGame") || name.startsWith("releaseJvnGame") ||
+      name in setOf("writeJvnGameReleaseManifest", "writeJvnGameUpdateBundle", "smokeTestJvnGameRelease")
+  if (gameDistribution) {
+    dependsOn(":licensing:requireAcceptance")
+    dependsOn(":licensing:classes")
+    if (name.startsWith("assembleJvnGamePortable") || name.startsWith("assembleJvnGameBundledRuntime")) {
+      outputs.upToDateWhen { false }
+    }
+  }
 }

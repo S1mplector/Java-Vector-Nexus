@@ -49,6 +49,14 @@ public final class WhatsNewCatalog {
   private static Map<String, Release> createReleases() {
     Map<String, Release> releases = new LinkedHashMap<>();
     add(releases, new Release(
+        "v0.7.0",
+        "License acceptance, permanent settings credits, and verified release packaging.",
+        List.of(new Section("Release integrity", "A stronger final check before games ship.", List.of(
+            "Hub, Editor, Launcher, and game exports require acceptance of the current license and terms.",
+            "Runtime settings show Made with JVN and the actual engine version using the official SVG logo.",
+            "Final package verification checks engine jars, branding, notices, and checksums before release or publishing."))),
+        true));
+    add(releases, new Release(
         "v0.5.0",
         "Smarter asset labeling, smoother layered animation, and better tools for tuning and verifying your project.",
         List.of(

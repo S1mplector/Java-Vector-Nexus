@@ -204,7 +204,7 @@ Then distribute `custom-jre/` alongside your game JAR, or let JVN's native packa
 - [ ] All config files (`.layout`, `.style`, `.menu`, `.registry`, `.theme`)
 - [ ] Launch script or native installer
 - [ ] README with system requirements
-- [ ] License information (if distributing publicly)
+- [ ] Player-visible JVN credit, packaged license notices, and corresponding engine source availability; see [Game Licensing and JVN Attribution](licensing.md)
 
 ---
 

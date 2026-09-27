@@ -16,6 +16,7 @@ plugins {
 }
 
 dependencies {
+  implementation(project(":licensing"))
   implementation(project(":core"))
   implementation(project(":plugin-runtime"))
   implementation(project(":fx"))

@@ -371,3 +371,33 @@ What is still not solved:
 - Linux aarch64 remains unsupported
 - platform-store specific publishing still needs profile command templates and external tooling
 - mac signing/notarization and Windows signing require real local credentials/tools; JVN now provides hooks, not credentials
+
+
+## JVN 0.7.0 final release validation
+
+Developer-tool startup and game export require acceptance of the current license
+and terms. Review through **Help → License & Terms**, or use
+`:licensing:run --args=show` followed by the explicit CLI acceptance command.
+CI must provision its own valid local receipt; no auto-accept or bypass flag exists.
+
+Every official runtime supplies visible Settings access and **Made with [JVN SVG
+logo] (actual engine version)**. In JavaFX the credit has reserved space outside
+the project canvas; Swing provides engine Settings with the same bundled SVG.
+There is no project preference to disable or replace these controls.
+
+Packaging adds `JVN-EXPORT-CONTRACT.properties` with the policy, engine version,
+logo/license/notice hashes, and expected runtime jar hashes. Final verification
+opens the actual archive or extracted native payload and checks those values and
+required runtime classes. It rejects stale/missing/modified jars, replaced logos,
+missing notices, ambiguous paths, and unsafe or case-colliding ZIP entries.
+Verification precedes checksums, release manifests, update/store bundles, and
+publish hooks. Cached archive tasks cannot bypass the check.
+
+Native verification requires platform extraction tools: `hdiutil` for DMG,
+`pkgutil` for PKG, `msiexec` for MSI, WiX `dark` plus `msiexec` for EXE,
+`dpkg-deb` for DEB, and `bsdtar` for RPM. Missing tools or uninspectable payloads
+fail validation. Use `app-image` ZIPs when installer extraction tools are unavailable.
+These platform paths require testing on their respective hosts.
+
+These controls enforce official builds, not an unmodifiable source-code trust
+boundary. A modified engine remains subject to the license's credit requirements.

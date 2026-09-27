@@ -7,6 +7,7 @@ plugins {
 }
 
 dependencies {
+  implementation(project(":licensing"))
   runtimeOnly("ch.qos.logback:logback-classic:1.5.6")
 
   errorprone("com.google.errorprone:error_prone_core:2.28.0")
@@ -27,7 +28,7 @@ application {
   mainClass.set("com.jvn.hub.JvnHub")
 }
 
-// The hub is intentionally dependency-free: JDK Swing only.
+// The hub and its first-party licensing utility use only JDK APIs (Swing UI).
 // It shells out to ./gradlew and git as child processes.
 
 // --- Generated version resource ---------------------------------------------
@@ -122,6 +123,8 @@ val packageEngineHubLiteJar = tasks.register<Jar>("packageEngineHubLiteJar") {
   }
 
   from(sourceSets.main.get().output)
+  dependsOn(":licensing:classes")
+  from(project(":licensing").extensions.getByType<SourceSetContainer>().named("main").map { it.output })
   from(packagedEngineWorkspaceZip) {
     into("com/jvn/hub")
     rename { "packaged-engine.zip" }
@@ -226,6 +229,8 @@ val packageEngineHubJar = tasks.register<Jar>("packageEngineHubJar") {
   }
 
   from(sourceSets.main.get().output)
+  dependsOn(":licensing:classes")
+  from(project(":licensing").extensions.getByType<SourceSetContainer>().named("main").map { it.output })
   from(packagedEngineWorkspaceZip) {
     into("com/jvn/hub")
     rename { "packaged-engine.zip" }

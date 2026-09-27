@@ -285,5 +285,13 @@ submitting a contribution, you represent that:
 - you agree that it may be distributed under the applicable repository
   license.
 
-See [LICENSE.md](LICENSE.md) for the MIT terms and the boundaries for
-separately licensed files and dependencies.
+New contributions to portions governed by the JVN Source-Available Attribution
+License are submitted under that license. Contributors retain their copyright;
+submission does not assign ownership to S1mplector or other maintainers.
+Contributions to separately licensed components follow those components' terms.
+Earlier MIT contributions and grants remain subject to their existing terms;
+maintainers must obtain any additional authorization required before claiming
+exclusive new terms over another contributor's work.
+
+See [LICENSE.md](LICENSE.md) for the current terms and the boundaries for
+previously licensed material, separately licensed files, and dependencies.

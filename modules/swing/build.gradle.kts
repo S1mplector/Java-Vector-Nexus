@@ -4,6 +4,7 @@ plugins {
 }
 
 dependencies {
+  implementation(project(":branding"))
   api(project(":core"))
   testImplementation(project(":testkit"))
 

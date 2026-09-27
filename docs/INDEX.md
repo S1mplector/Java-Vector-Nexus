@@ -339,6 +339,8 @@ source of truth for docs changes.
 - [Build And Release Docs](project-setup/release/README.md)
 - [Build System](project-setup/release/build-system.md)
 - [Deployment & Packaging](project-setup/release/deployment.md)
+- [Game Licensing and JVN Attribution](project-setup/release/licensing.md)
+- [License Acceptance and Receipts](project-setup/release/license-acceptance.md) — consent UI, local evidence, verification, and limitations
 
 ## Architecture And Quality
 
@@ -369,3 +371,5 @@ source of truth for docs changes.
 
 - [Documentation Maintenance Guide](MAINTENANCE.md)
 - [May 2026 Documentation Audit](plans/docs-audit-2026-05.md) - historical snapshot
+
+- [What's New in JVN 0.7.0](project-setup/release/whats-new-0.7.0.md) — licensing, Settings credit, and release verification

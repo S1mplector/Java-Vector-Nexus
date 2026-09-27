@@ -1,0 +1,36 @@
+/* Licensing uses the editor's graphite surfaces and shared Aero artwork. */
+.legal-page {
+  -fx-background-color: #242424;
+  -fx-base: #303030;
+  -fx-background: #242424;
+  -fx-control-inner-background: #1c1c1c;
+  -fx-accent: #a5a5a5;
+  -fx-focus-color: #aaaaaa;
+  -fx-faint-focus-color: rgba(170, 170, 170, 0.15);
+  -fx-font-size: 13px;
+}
+.legal-page .label, .legal-page .check-box { -fx-text-fill: #e7e7e7; }
+.legal-page .legal-heading { -fx-font-size: 21px; -fx-font-weight: bold; }
+.legal-page .legal-muted { -fx-text-fill: #aaaaaa; }
+.legal-page .legal-status {
+  -fx-background-color: #303030;
+  -fx-background-radius: 5;
+  -fx-padding: 7 10;
+}
+.legal-page .text-area {
+  -fx-font-family: "System";
+  -fx-font-size: 13px;
+  -fx-text-fill: #dedede;
+  -fx-control-inner-background: #1c1c1c;
+}
+.legal-page .text-area .content { -fx-background-color: #1c1c1c; -fx-padding: 16; }
+.legal-page .text-field { -fx-background-color: #1c1c1c; -fx-text-fill: #ededed; -fx-prompt-text-fill: #999999; -fx-padding: 9; }
+.legal-page .tab-pane .tab-header-area .tab-header-background { -fx-background-color: #242424; }
+.legal-page .tab { -fx-background-color: #303030; -fx-padding: 7 12; }
+.legal-page .tab:selected { -fx-background-color: #414141; }
+.legal-page .tab .tab-label { -fx-text-fill: #dedede; }
+.legal-page .button { -fx-background-color: #363636; -fx-text-fill: #ededed; -fx-padding: 10 14; }
+.legal-page .button:hover { -fx-background-color: #464646; }
+.legal-page .button:focused { -fx-border-color: #aaaaaa; -fx-border-radius: 4; }
+.legal-page .legal-primary { -fx-background-color: #525252; -fx-font-weight: bold; }
+.legal-page .button:disabled { -fx-opacity: 0.45; }

@@ -17,6 +17,8 @@ rootProject.name = "JVN"
 
 val jvnModules = listOf(
   "core",
+  "licensing",
+  "branding",
   "plugin-api",
   "plugin-runtime",
   "plugin-example",

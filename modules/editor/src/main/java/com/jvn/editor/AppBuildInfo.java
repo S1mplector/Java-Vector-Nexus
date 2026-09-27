@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 
 public final class AppBuildInfo {
   private static final Logger log = Logger.getLogger(AppBuildInfo.class.getName());
-  private static final String FALLBACK_VERSION = "0.4.4.1";
+  private static final String FALLBACK_VERSION = "0.7.0";
 
   private AppBuildInfo() {
   }

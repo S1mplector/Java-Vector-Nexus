@@ -4,7 +4,7 @@
   "description": "Syntax highlighting and snippets for Java Vector Nexus DSLs.",
   "version": "0.1.5",
   "publisher": "Simplector",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE.md",
   "repository": {
     "type": "git",
     "url": "https://github.com/S1mplector/Java-Vector-Nexus.git",
