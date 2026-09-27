@@ -14,6 +14,20 @@ import org.junit.jupiter.api.io.TempDir;
 
 class LicenseAcceptanceDialogTest {
   @TempDir Path temporary;
+  @Test void fitsUsableDisplayAtEveryHubScale() {
+    for (double scale : new double[] {0.75, 1, 1.2, 1.5, 2}) {
+      for (Dimension area : new Dimension[] {new Dimension(800, 600),
+          new Dimension(1366, 728), new Dimension(2560, 1550), new Dimension(3840, 2100)}) {
+        Dimension size = LicenseAcceptanceDialog.sizeForDisplay(scale, area.width, area.height);
+        assertTrue(size.width <= area.width - 32);
+        assertTrue(size.height <= area.height - 32);
+        assertTrue(size.width > 0 && size.height > 0);
+      }
+    }
+    assertTrue(LicenseAcceptanceDialog.sizeForDisplay(1.5, 3840, 2100).width
+        > LicenseAcceptanceDialog.sizeForDisplay(1, 3840, 2100).width);
+  }
+
   @Test void requiresExplicitAgreementAndPreservesDisplayedTerms() throws Exception {
     assumeFalse(GraphicsEnvironment.isHeadless());
     var store = new AcceptanceStore(temporary.resolve("legal"));

@@ -505,6 +505,10 @@ public final class JvnHub {
       return HubDisplayProfile.clampScale(scale);
   }
 
+  static double currentUiScale() {
+    return activeUiScale;
+  }
+
   static Dimension hubSizeForScale(double scale) {
     double bounded = HubDisplayProfile.clampScale(scale);
     return new Dimension(

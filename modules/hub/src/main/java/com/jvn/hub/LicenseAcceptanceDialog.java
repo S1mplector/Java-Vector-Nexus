@@ -38,6 +38,7 @@ public final class LicenseAcceptanceDialog {
   }
 
   static JDialog create(Frame owner, String appVersion, AcceptanceStore store, LicenseTerms terms, boolean required) {
+      double scale = JvnHub.currentUiScale();
       JDialog dialog = new JDialog(owner, "JVN License & Terms", true);
       dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
       JPanel content = new JPanel(new BorderLayout(12, 12));
@@ -79,7 +80,7 @@ public final class LicenseAcceptanceDialog {
       consentPanel.add(consentText, BorderLayout.NORTH);
       consentPanel.add(consent, BorderLayout.SOUTH);
       actions.add(consentPanel, BorderLayout.CENTER);
-      JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+      JPanel buttons = new JPanel(new GridLayout(0, 2, 8, 8));
       JButton save = new JButton("Save documents…", aero("DOCUMENTATION", 22));
       save.addActionListener(event -> {
         JFileChooser chooser = new JFileChooser();
@@ -131,11 +132,66 @@ public final class LicenseAcceptanceDialog {
       actions.add(buttons, BorderLayout.SOUTH);
       content.add(actions, BorderLayout.SOUTH);
       graphite(content);
-      dialog.setContentPane(content);
-      dialog.setMinimumSize(new Dimension(920, 660));
-      dialog.setSize(1020, 800);
-      dialog.setLocationRelativeTo(owner);
+      scaleComponents(content, scale);
+      // Keep the complete form reachable on small work areas without shrinking text.
+      content.setPreferredSize(new Dimension(px(980, scale), px(740, scale)));
+      JScrollPane viewport = new JScrollPane(content);
+      viewport.setBorder(BorderFactory.createEmptyBorder());
+      viewport.getVerticalScrollBar().setUnitIncrement(px(24, scale));
+      viewport.getHorizontalScrollBar().setUnitIncrement(px(24, scale));
+      dialog.setContentPane(viewport);
+      var configuration = dialog.getGraphicsConfiguration();
+      var available = new java.awt.Rectangle(configuration.getBounds());
+      var insets = java.awt.Toolkit.getDefaultToolkit().getScreenInsets(configuration);
+      available.x += insets.left; available.y += insets.top;
+      available.width -= insets.left + insets.right;
+      available.height -= insets.top + insets.bottom;
+      Dimension size = sizeForDisplay(scale, available.width, available.height);
+      dialog.setMinimumSize(new Dimension(Math.min(640, size.width), Math.min(480, size.height)));
+      dialog.setSize(size);
+      dialog.setLocation(available.x + (available.width - size.width) / 2,
+          available.y + (available.height - size.height) / 2);
       return dialog;
+  }
+
+  static Dimension sizeForDisplay(double scale, int width, int height) {
+    return new Dimension(Math.min(px(1040, scale), Math.max(1, width - 32)),
+        Math.min(px(840, scale), Math.max(1, height - 32)));
+  }
+
+  private static int px(int value, double scale) {
+    return Math.max(1, (int) Math.round(value * scale));
+  }
+
+  private static void scaleComponents(java.awt.Component component, double scale) {
+    // Explicit base sizes avoid multiplying fonts already scaled by Hub defaults.
+    if (component.getFont() != null) {
+      float base = component instanceof JLabel label && label.getIcon() != null ? 19f : 14f;
+      component.setFont(component.getFont().deriveFont((float) (base * scale)));
+    }
+    if (component instanceof JButton button) {
+      button.setMargin(new java.awt.Insets(px(9, scale), px(12, scale), px(9, scale), px(12, scale)));
+      button.setIcon(scaleIcon(button.getIcon(), scale));
+    } else if (component instanceof JLabel label) {
+      label.setIcon(scaleIcon(label.getIcon(), scale));
+    }
+    if (component instanceof JTabbedPane tabs)
+      for (int i = 0; i < tabs.getTabCount(); i++) tabs.setIconAt(i, scaleIcon(tabs.getIconAt(i), scale));
+    if (component instanceof java.awt.Container container)
+      for (var child : container.getComponents()) scaleComponents(child, scale);
+  }
+
+  private static Icon scaleIcon(Icon icon, double scale) {
+    if (icon == null) return null;
+    return new Icon() {
+      public int getIconWidth() { return px(icon.getIconWidth(), scale); }
+      public int getIconHeight() { return px(icon.getIconHeight(), scale); }
+      public void paintIcon(java.awt.Component c, java.awt.Graphics graphics, int x, int y) {
+        var g = (java.awt.Graphics2D) graphics.create();
+        try { g.translate(x, y); g.scale(scale, scale); icon.paintIcon(c, g, 0, 0); }
+        finally { g.dispose(); }
+      }
+    };
   }
 
   private static Icon aero(String kind, int size) {
