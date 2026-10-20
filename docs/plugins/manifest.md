@@ -34,6 +34,10 @@ Every external plugin JAR must contain `/jvn-plugin.json`.
 
 Supported ranges are exact versions, `*`, `1.x`, `1.2.x`, caret ranges such as `^1.2.0`, and whitespace-separated comparisons such as `>=1.0.0 <2.0.0`.
 
+Caret ranges preserve the first non-zero version component: `^0.7.0` accepts
+`0.7.9` but rejects `0.8.0`, and `^0.0.4` accepts only patch `0.0.4`.
+Use an explicit comparison range when broader compatibility is intentional.
+
 ## Capability identifiers
 
 | Identifier | Registry |

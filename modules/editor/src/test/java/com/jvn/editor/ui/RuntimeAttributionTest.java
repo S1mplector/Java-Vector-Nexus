@@ -28,7 +28,7 @@ class RuntimeAttributionTest {
         overlay.resize(size[0],size[1]); overlay.applyCss(); overlay.layout();
         var credit=overlay.lookup("#jvn-settings-credit");
         assertTrue(credit.isVisible()); assertEquals(1,credit.getOpacity());
-        assertEquals("Made with JVN (0.7.0)",credit.getAccessibleText());
+        assertEquals("Made with JVN (0.8.0)",credit.getAccessibleText());
         assertEquals(72,overlay.reservedHeightProperty().get());
         assertTrue(credit.getBoundsInParent().getMaxY() <= size[1]+1);
         assertEquals(1,credit.lookupAll(".image-view").size());

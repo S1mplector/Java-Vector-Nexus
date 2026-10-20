@@ -16,6 +16,11 @@ final class VersionRange {
       } else if (clause.startsWith("^")) {
         int[] expected = parse(clause.substring(1));
         if (compare(actual, expected) < 0 || actual[0] != expected[0]) return false;
+        // Before 1.0, the first non-zero component defines compatibility.
+        String core = clause.substring(1).replaceFirst("^[vV]", "").split("[-+]", 2)[0];
+        int specifiedParts = core.split("\\.").length;
+        if (expected[0] == 0 && specifiedParts > 1 && actual[1] != expected[1]) return false;
+        if (expected[0] == 0 && expected[1] == 0 && specifiedParts > 2 && actual[2] != expected[2]) return false;
       } else {
         String operator = clause.startsWith(">=") || clause.startsWith("<=") ? clause.substring(0, 2)
             : clause.startsWith(">") || clause.startsWith("<") || clause.startsWith("=") ? clause.substring(0, 1) : "=";

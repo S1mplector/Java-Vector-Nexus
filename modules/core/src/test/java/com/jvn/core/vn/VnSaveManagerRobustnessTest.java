@@ -98,6 +98,33 @@ class VnSaveManagerRobustnessTest {
     assertEquals(7, ((Number) latest.getVariables().get("step")).intValue());
   }
 
+  @Test
+  void ignoresDirectoriesMasqueradingAsSaveSlots() throws Exception {
+    Path dir = Files.createTempDirectory("vn_save_listing");
+    VnSaveManager manager = new VnSaveManager(dir.toString());
+    Files.createDirectory(dir.resolve("not-a-slot.json"));
+    Files.createDirectory(dir.resolve("also-not-a-slot.sav"));
+    manager.save(createState("story"), "z");
+    manager.save(createState("story"), "a");
+    assertEquals(List.of("a", "z"), manager.listSaves());
+  }
+
+  @Test
+  void nonFiniteVolumesDoNotPoisonPlaybackSettings() {
+    VnSettings settings = new VnSettings();
+    settings.setBgmVolume(0.4f);
+    settings.setSfxVolume(0.5f);
+    settings.setVoiceVolume(0.6f);
+    for (float value : new float[] {Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY}) {
+      settings.setBgmVolume(value);
+      settings.setSfxVolume(value);
+      settings.setVoiceVolume(value);
+    }
+    assertEquals(0.4f, settings.getBgmVolume());
+    assertEquals(0.5f, settings.getSfxVolume());
+    assertEquals(0.6f, settings.getVoiceVolume());
+  }
+
   private VnState createState(String scenarioId) {
     VnScenario scenario = new VnScenarioBuilder(scenarioId)
         .label("start")

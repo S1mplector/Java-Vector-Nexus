@@ -75,12 +75,10 @@ class BoundedImageCacheTest {
       });
     }
     start.countDown();
-    done.await();
+    assertTrue(done.await(5, java.util.concurrent.TimeUnit.SECONDS));
     pool.shutdown();
 
-    // Due to coarse synchronization, the loader may be called more than once
-    // in rare races, but the cache must never grow beyond maxEntries and must
-    // contain the key.
+    assertEquals(1, loaderCallCount.get());
     assertNotNull(cache.get("shared-key"));
     assertTrue(cache.size() <= 256);
   }
@@ -158,6 +156,31 @@ class BoundedImageCacheTest {
     assertEquals(2, cache.size());
     assertNull(cache.get("b"));
     assertNotNull(cache.get("a"));
+  }
+
+  @Test
+  void weightsAreStableUntilMutableValuesAreReinserted() {
+    BoundedImageCache<long[]> cache = new BoundedImageCache<>(8, 100, value -> value[0]);
+    long[] mutable = {70};
+    cache.put("mutable", mutable);
+    cache.put("other", new long[] {20});
+    mutable[0] = 1;
+    cache.remove("mutable");
+    assertEquals(20, cache.currentWeight());
+    cache.put("new", new long[] {80});
+    assertEquals(2, cache.size());
+    assertEquals(100, cache.currentWeight());
+  }
+
+  @Test
+  void maximumLongBudgetDoesNotOverflowOrUnderCount() {
+    BoundedImageCache<Long> cache = new BoundedImageCache<>(8, Long.MAX_VALUE, value -> value);
+    cache.put("a", Long.MAX_VALUE - 10);
+    cache.put("b", 20L);
+    assertNull(cache.get("a"));
+    assertEquals(20L, cache.currentWeight());
+    cache.remove("b");
+    assertEquals(0, cache.currentWeight());
   }
 
   private record SimulatedRaster(long bytes) {}

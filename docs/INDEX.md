@@ -373,3 +373,5 @@ source of truth for docs changes.
 - [May 2026 Documentation Audit](plans/docs-audit-2026-05.md) - historical snapshot
 
 - [What's New in JVN 0.7.0](project-setup/release/whats-new-0.7.0.md) — licensing, Settings credit, and release verification
+
+- [What's New in JVN 0.8.0](project-setup/release/whats-new-0.8.0.md) — authoring, asset loading, persistence, and live-reload reliability

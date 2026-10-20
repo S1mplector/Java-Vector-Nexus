@@ -7,7 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
+import com.jvn.core.io.AtomicFiles;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +30,6 @@ public class VnSaveManager {
   private static final Logger log = LoggerFactory.getLogger(VnSaveManager.class);
   private static final String SAVE_EXTENSION = ".json";
   private static final String LEGACY_EXTENSION = ".sav";
-  private static final String TEMP_SUFFIX = ".tmp";
   private static final String AUTOSAVE_PREFIX = "_autosave_";
   private static final int AUTOSAVE_SLOT_COUNT = 3;
 
@@ -259,7 +258,7 @@ public class VnSaveManager {
     File dir = saveDirectory.toFile();
     if (dir.exists() && dir.isDirectory()) {
       // List JSON saves
-      File[] jsonFiles = dir.listFiles((d, name) -> name.endsWith(SAVE_EXTENSION));
+      File[] jsonFiles = dir.listFiles(file -> file.isFile() && file.getName().endsWith(SAVE_EXTENSION));
       if (jsonFiles != null) {
         for (File file : jsonFiles) {
           String name = file.getName();
@@ -269,7 +268,7 @@ public class VnSaveManager {
         }
       }
       // Also list legacy .sav files not yet migrated
-      File[] legacyFiles = dir.listFiles((d, name) -> name.endsWith(LEGACY_EXTENSION));
+      File[] legacyFiles = dir.listFiles(file -> file.isFile() && file.getName().endsWith(LEGACY_EXTENSION));
       if (legacyFiles != null) {
         for (File file : legacyFiles) {
           String name = file.getName();
@@ -280,6 +279,7 @@ public class VnSaveManager {
         }
       }
     }
+    saves.sort(String::compareTo);
     return saves;
   }
 
@@ -452,34 +452,7 @@ public class VnSaveManager {
   }
 
   private void writeAtomically(Path finalPath, VnSaveData saveData) throws IOException {
-    Path parent = finalPath.getParent();
-    if (parent != null) Files.createDirectories(parent);
-
-    byte[] payload = VnSaveSerializer.toJson(saveData).getBytes(StandardCharsets.UTF_8);
-
-    String fileName = finalPath.getFileName().toString();
-    Path tempPath = finalPath.resolveSibling(fileName + TEMP_SUFFIX);
-
-    // Ensure stale temp files do not block writes.
-    try {
-      Files.deleteIfExists(tempPath);
-    } catch (Exception ignored) {
-      // reason: pre-existing temp file deletion is best-effort; write proceeds regardless
-    }
-
-    Files.write(tempPath, payload);
-
-    try {
-      Files.move(tempPath, finalPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-    } catch (AtomicMoveNotSupportedException ex) {
-      Files.move(tempPath, finalPath, StandardCopyOption.REPLACE_EXISTING);
-    } finally {
-      try {
-        Files.deleteIfExists(tempPath);
-      } catch (Exception ignored) {
-        // reason: post-move temp file cleanup is best-effort; write already succeeded
-      }
-    }
+    AtomicFiles.write(finalPath, VnSaveSerializer.toJson(saveData).getBytes(StandardCharsets.UTF_8));
   }
 
   private CharacterPosition restoreCharacterPosition(String savedKey, String[] data) {

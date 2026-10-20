@@ -5,6 +5,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.LinkOption;
+import java.nio.file.StandardOpenOption;
+import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -95,10 +99,21 @@ public final class ScriptEditorWorkspaceModel {
       throw new IOException("Unsupported text file type: " + target.getFileName());
     }
 
+    // Check existing ancestors before creating directories through a symlink.
+    Path realRoot = contentRoot.toRealPath();
+    for (Path ancestor = target; ancestor != null && ancestor.startsWith(contentRoot); ancestor = ancestor.getParent()) {
+      if (Files.exists(ancestor, LinkOption.NOFOLLOW_LINKS)
+          && !ancestor.toRealPath().startsWith(realRoot)) {
+        throw new IOException("Text file path must stay inside the project root.");
+      }
+    }
     Path parent = target.getParent();
     if (parent != null) Files.createDirectories(parent);
-    if (!Files.exists(target)) {
-      Files.writeString(target, defaultTemplate(target), StandardCharsets.UTF_8);
+    try {
+      Files.writeString(target, defaultTemplate(target), StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+    } catch (FileAlreadyExistsException ex) {
+      if (!Files.isRegularFile(target)) throw new IOException("Path is not a text file: " + target, ex);
+      // Creating an existing file opens it without replacing its contents.
     }
     return target.toFile();
   }
@@ -133,6 +148,10 @@ public final class ScriptEditorWorkspaceModel {
     Objects.requireNonNull(textFile, "textFile");
     if (newName == null || newName.isBlank()) throw new IOException("New name must not be blank.");
     String sanitized = newName.trim();
+    if (sanitized.equals(".") || sanitized.equals("..") || sanitized.contains("/")
+        || sanitized.contains("\\") || sanitized.contains(":") || sanitized.indexOf('\0') >= 0) {
+      throw new IOException("New name must be a file name without a directory path.");
+    }
     String currentName = textFile.getName();
     int dot = currentName.lastIndexOf('.');
     if (!sanitized.contains(".") && dot > 0) {
@@ -167,7 +186,7 @@ public final class ScriptEditorWorkspaceModel {
     int dot = name.lastIndexOf('.');
     String stem = dot > 0 ? name.substring(0, dot) : name;
     String extension = dot > 0 ? name.substring(dot) : "";
-    Path parent = textFile.toPath().getParent();
+    Path parent = textFile.toPath().toAbsolutePath().getParent();
     Path target = parent.resolve(stem + "_copy" + extension);
     int counter = 2;
     while (Files.exists(target)) {
@@ -206,7 +225,7 @@ public final class ScriptEditorWorkspaceModel {
   private static List<ScriptFileEntry> collectTextFiles(File launchRoot, Path contentRoot) {
     List<ScriptFileEntry> files = new ArrayList<>();
     try {
-      collectTextFiles(launchRoot, contentRoot, contentRoot, files);
+      collectTextFiles(launchRoot, contentRoot, contentRoot, files, new HashSet<>());
     } catch (IOException ignored) {
             // reason: I/O failure on best-effort save/load; in-memory state remains valid
     }
@@ -214,8 +233,10 @@ public final class ScriptEditorWorkspaceModel {
     return files;
   }
 
-  private static void collectTextFiles(File launchRoot, Path contentRoot, Path dir, List<ScriptFileEntry> out) throws IOException {
+  private static void collectTextFiles(File launchRoot, Path contentRoot, Path dir, List<ScriptFileEntry> out, Set<Path> visited) throws IOException {
     if (!Files.isDirectory(dir)) return;
+    Path realDir = dir.toRealPath();
+    if (!realDir.startsWith(contentRoot.toRealPath()) || !visited.add(realDir)) return;
     try (var stream = Files.list(dir)) {
       List<Path> children = stream
           .sorted(Comparator.comparing(path -> path.getFileName().toString().toLowerCase(Locale.ROOT)))
@@ -223,7 +244,11 @@ public final class ScriptEditorWorkspaceModel {
       for (Path child : children) {
         if (Files.isDirectory(child)) {
           if (isIgnoredDirectory(child, contentRoot)) continue;
-          collectTextFiles(launchRoot, contentRoot, child, out);
+          try {
+            collectTextFiles(launchRoot, contentRoot, child, out, visited);
+          } catch (IOException ignored) {
+            // An unreadable child must not hide the rest of the workspace.
+          }
         } else if (Files.isRegularFile(child) && FileEditorTab.supportsTextEditing(child.toFile())) {
           out.add(analyzeTextFile(launchRoot, contentRoot, child));
         }
@@ -273,7 +298,7 @@ public final class ScriptEditorWorkspaceModel {
     }
 
     String relative = contentRoot.relativize(file).toString().replace('\\', '/');
-    String projectRelative = launchRoot.toPath().relativize(file).toString().replace('\\', '/');
+    String projectRelative = launchRoot.toPath().toAbsolutePath().normalize().relativize(file).toString().replace('\\', '/');
     long sizeBytes = safeSize(file);
     long lastModifiedMillis = safeLastModified(file);
     String displayName = file.getFileName().toString();

@@ -38,7 +38,7 @@ interface JvnInjectedExecOperations {
 }
 
 val jvnGroup = (findProperty("jvnGroup") as String?) ?: "com.jvn"
-val jvnVersion = (findProperty("jvnVersion") as String?) ?: "0.7.0"
+val jvnVersion = (findProperty("jvnVersion") as String?) ?: "0.8.0"
 val jvnBuildDirOverride = (findProperty("jvnBuildDir") as String?)
   ?.trim()
   ?.takeIf { it.isNotBlank() }

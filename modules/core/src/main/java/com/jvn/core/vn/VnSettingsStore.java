@@ -1,7 +1,8 @@
 package com.jvn.core.vn;
 
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
+import com.jvn.core.io.AtomicFiles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -96,8 +97,9 @@ public class VnSettingsStore {
       p.setProperty("accessibility_theme", s.getAccessibilityTheme());
       p.setProperty("text_to_speech_enabled", Boolean.toString(s.isTextToSpeechEnabled()));
       p.setProperty("ui_font_scale", Double.toString(s.getUiFontScale()));
-      try (FileOutputStream out = new FileOutputStream(settingsPath.toFile())) {
+      try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
         p.store(out, "JVN Settings");
+        AtomicFiles.write(settingsPath, out.toByteArray());
       }
     } catch (Exception ignored) {
       // reason: settings could not be persisted; in-memory state is still valid

@@ -1,115 +1,95 @@
 package com.jvn.core.assets;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.zip.ZipFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * {@link AssetManager} that reads assets from a single packed archive file.
- *
- * <p>The pack file is a ZIP archive containing assets organized by type
- * (matching the {@link AssetPaths} conventional layout). It includes an in-memory
- * index for fast lookups without decompressing the entire archive.</p>
- *
- * <p>Used by web and mobile exports to reduce download size and app install size.</p>
+ * Reads a ZIP asset pack using its central directory, without decompressing assets
+ * to build the index. Each open stream owns its archive handle; callers must close it.
+ * Directory listings contain sorted immediate children, including implicit folders.
  */
 public class PackFileAssetManager implements AssetManager {
   private static final Logger log = LoggerFactory.getLogger(PackFileAssetManager.class);
+  private final Path packFile;
+  private final Set<String> index = new HashSet<>();
+  private final Map<String, Set<String>> directoryIndex = new HashMap<>();
 
-  private final String packFilePath;
-  private final Map<String, PackEntry> index = new HashMap<>();
-  private final Map<String, List<String>> directoryIndex = new HashMap<>();
-
-  private static class PackEntry {
-    String path = "";
-  }
-
-  /**
-   * Construct a pack file asset manager and load the index.
-   *
-   * @param packFilePath path to the .pack file (ZIP archive)
-   * @throws IOException if the pack file cannot be read or is invalid
-   */
+  /** @throws IOException if the pack is missing, unreadable, or not a valid ZIP */
   public PackFileAssetManager(String packFilePath) throws IOException {
-    this.packFilePath = packFilePath;
-    loadIndex();
+    packFile = Path.of(packFilePath).toAbsolutePath().normalize();
+    try (ZipFile zip = new ZipFile(packFile.toFile())) {
+      var entries = zip.entries();
+      while (entries.hasMoreElements()) {
+        ZipEntry entry = entries.nextElement();
+        String name = entry.getName();
+        if (!entry.isDirectory()) index.add(name);
+        String[] parts = name.split("/");
+        String parent = "";
+        for (String part : parts) {
+          if (part.isEmpty()) continue;
+          directoryIndex.computeIfAbsent(parent, ignored -> new TreeSet<>()).add(part);
+          parent += part + "/";
+        }
+      }
+    }
+    log.info("Loaded pack file with {} entries: {}", index.size(), packFile);
   }
 
   @Override
   public boolean exists(AssetType type, String name) {
-    String path = AssetPaths.build(type, name);
-    return index.containsKey(path);
+    return index.contains(AssetPaths.build(type, name));
   }
 
   @Override
   public URL url(AssetType type, String name) {
-    // Pack files don't have URLs; return null
+    // The AssetManager API permits stream-only stores.
     return null;
   }
 
   @Override
   public InputStream open(AssetType type, String name) throws IOException {
     String path = AssetPaths.build(type, name);
-    PackEntry entry = index.get(path);
-    if (entry == null) {
-      throw new IOException("Asset not found in pack: " + path);
+    if (!index.contains(path)) throw new IOException("Asset not found in pack: " + path);
+    ZipFile zip = new ZipFile(packFile.toFile());
+    try {
+      ZipEntry entry = zip.getEntry(path);
+      if (entry == null) throw new IOException("Entry not found in pack: " + path);
+      return new FilterInputStream(zip.getInputStream(entry)) {
+        @Override
+        public void close() throws IOException {
+          try {
+            super.close();
+          } finally {
+            zip.close();
+          }
+        }
+      };
+    } catch (IOException | RuntimeException | Error failure) {
+      try { zip.close(); } catch (IOException closeFailure) { failure.addSuppressed(closeFailure); }
+      throw failure;
     }
-    return readEntryData(entry);
   }
 
   @Override
   public List<String> list(String directory) {
-    String dir = directory.endsWith("/") ? directory : directory + "/";
-    List<String> results = directoryIndex.get(dir);
-    return results != null ? new ArrayList<>(results) : Collections.emptyList();
-  }
-
-  private void loadIndex() throws IOException {
-    try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(
-        new java.io.FileInputStream(packFilePath)))) {
-      ZipEntry entry;
-      while ((entry = zis.getNextEntry()) != null) {
-        String name = entry.getName();
-        if (!entry.isDirectory()) {
-          PackEntry pe = new PackEntry();
-          pe.path = name;
-          index.put(name, pe);
-
-          // Build directory index
-          int lastSlash = name.lastIndexOf('/');
-          if (lastSlash > 0) {
-            String dir = name.substring(0, lastSlash + 1);
-            String filename = name.substring(lastSlash + 1);
-            directoryIndex.computeIfAbsent(dir, k -> new ArrayList<>()).add(filename);
-          }
-        }
-      }
-    }
-    log.info("Loaded pack file with {} entries: {}", index.size(), packFilePath);
-  }
-
-  private InputStream readEntryData(PackEntry entry) throws IOException {
-    try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(
-        new java.io.FileInputStream(packFilePath)))) {
-      ZipEntry ze;
-      while ((ze = zis.getNextEntry()) != null) {
-        if (ze.getName().equals(entry.path)) {
-          byte[] data = zis.readAllBytes();
-          return new ByteArrayInputStream(data);
-        }
-      }
-    }
-    throw new IOException("Entry not found in pack: " + entry.path);
+    String dir = directory == null ? "" : directory.replace('\\', '/');
+    while (dir.startsWith("/")) dir = dir.substring(1);
+    if (!dir.isEmpty() && !dir.endsWith("/")) dir += "/";
+    Set<String> children = directoryIndex.get(dir);
+    return children == null ? List.of() : new ArrayList<>(children);
   }
 }

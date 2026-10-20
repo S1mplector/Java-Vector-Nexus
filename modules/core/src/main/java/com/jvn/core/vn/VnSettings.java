@@ -29,13 +29,13 @@ public class VnSettings {
   public void setTextSpeed(int speed) { this.textSpeed = Math.max(0, Math.min(speed, 200)); }
 
   public float getBgmVolume() { return bgmVolume; }
-  public void setBgmVolume(float volume) { this.bgmVolume = Math.max(0f, Math.min(volume, 1f)); }
+  public void setBgmVolume(float volume) { if (Float.isFinite(volume)) this.bgmVolume = Math.max(0f, Math.min(volume, 1f)); }
 
   public float getSfxVolume() { return sfxVolume; }
-  public void setSfxVolume(float volume) { this.sfxVolume = Math.max(0f, Math.min(volume, 1f)); }
+  public void setSfxVolume(float volume) { if (Float.isFinite(volume)) this.sfxVolume = Math.max(0f, Math.min(volume, 1f)); }
 
   public float getVoiceVolume() { return voiceVolume; }
-  public void setVoiceVolume(float volume) { this.voiceVolume = Math.max(0f, Math.min(volume, 1f)); }
+  public void setVoiceVolume(float volume) { if (Float.isFinite(volume)) this.voiceVolume = Math.max(0f, Math.min(volume, 1f)); }
 
   public long getAutoPlayDelay() { return autoPlayDelay; }
   public void setAutoPlayDelay(long delay) { this.autoPlayDelay = Math.max(500, delay); }

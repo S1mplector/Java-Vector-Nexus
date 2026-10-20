@@ -49,6 +49,24 @@ public final class WhatsNewCatalog {
   private static Map<String, Release> createReleases() {
     Map<String, Release> releases = new LinkedHashMap<>();
     add(releases, new Release(
+        "v0.8.0",
+        "More reliable project editing, asset loading, saves, and live reload.",
+        List.of(
+            new Section("Project editing", "Keep your work intact while navigating and creating files.", List.of(
+                "Workspace indexing handles relative project paths and folder-link cycles.",
+                "New files preserve existing content; rename actions reject directory paths.",
+                "File creation cannot follow existing folder links outside the project.")),
+            new Section("Assets and persistence", "More predictable loading and storage.", List.of(
+                "Asset packs use ZIP directory lookup and streaming reads instead of repeated full scans.",
+                "Image-cache memory accounting remains accurate when values change or budgets are very large.",
+                "Saves, settings, and persistent progress use independent temporary files before replacement.",
+                "Invalid non-finite audio volumes are ignored and save lists exclude directories.")),
+            new Section("Live reload and plugins", "More dependable connections and compatibility checks.", List.of(
+                "Hot reload listens only on localhost, bounds client work, and closes connections on shutdown.",
+                "Invalid ports and oversized commands are handled without crashing the editor or runtime.",
+                "Plugin caret ranges respect compatibility boundaries for versions below 1.0."))),
+        true));
+    add(releases, new Release(
         "v0.7.0",
         "License acceptance, permanent settings credits, and verified release packaging.",
         List.of(new Section("Release integrity", "A stronger final check before games ship.", List.of(

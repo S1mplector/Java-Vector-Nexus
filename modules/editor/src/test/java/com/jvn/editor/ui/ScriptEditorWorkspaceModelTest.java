@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -129,4 +131,66 @@ class ScriptEditorWorkspaceModelTest {
     String text = Files.readString(created.toPath());
     assertTrue(text.contains("title=Settings"));
   }
+  @Test
+  void indexingAcceptsRelativeProjectRoots() throws Exception {
+    Files.writeString(tempRoot.resolve("scene.vns"), "@label start\n");
+    Path relative = Path.of("").toAbsolutePath().relativize(tempRoot);
+    var snapshot = ScriptEditorWorkspaceModel.index(relative.toFile());
+    assertEquals("scene.vns", snapshot.scripts().getFirst().projectRelativePath());
+  }
+
+  @Test
+  void indexingDoesNotFollowDirectoryLinkCyclesOrExternalFolders() throws Exception {
+    Path project = Files.createDirectory(tempRoot.resolve("project"));
+    Files.writeString(project.resolve("scene.vns"), "@label start\n");
+    Path outside = Files.createDirectory(tempRoot.resolve("outside"));
+    Files.writeString(outside.resolve("private.vns"), "@label private\n");
+    try {
+      Files.createSymbolicLink(project.resolve("loop"), project);
+      Files.createSymbolicLink(project.resolve("external"), outside);
+    } catch (UnsupportedOperationException | java.nio.file.FileSystemException ex) {
+      org.junit.jupiter.api.Assumptions.abort("Symbolic links unavailable: " + ex.getMessage());
+    }
+    var snapshot = assertTimeoutPreemptively(java.time.Duration.ofSeconds(3),
+        () -> ScriptEditorWorkspaceModel.index(project.toFile()));
+    assertEquals(1, snapshot.scripts().size());
+  }
+
+  @Test
+  void creatingExistingFilePreservesContentsAndRejectsDirectories() throws Exception {
+    Path existing = Files.writeString(tempRoot.resolve("scene.vns"), "important work");
+    ScriptEditorWorkspaceModel.createTextFile(tempRoot.toFile(), "scene.vns");
+    assertEquals("important work", Files.readString(existing));
+    Files.createDirectory(tempRoot.resolve("folder.vns"));
+    assertThrows(java.io.IOException.class,
+        () -> ScriptEditorWorkspaceModel.createTextFile(tempRoot.toFile(), "folder.vns"));
+  }
+
+  @Test
+  void creationCannotEscapeThroughParentTraversalOrDirectoryLinks() throws Exception {
+    Path project = Files.createDirectory(tempRoot.resolve("project"));
+    Path outside = Files.createDirectory(tempRoot.resolve("outside"));
+    assertThrows(java.io.IOException.class,
+        () -> ScriptEditorWorkspaceModel.createTextFile(project.toFile(), "../escape.vns"));
+    try {
+      Files.createSymbolicLink(project.resolve("linked"), outside);
+    } catch (UnsupportedOperationException | java.nio.file.FileSystemException ex) {
+      org.junit.jupiter.api.Assumptions.abort("Symbolic links unavailable: " + ex.getMessage());
+    }
+    assertThrows(java.io.IOException.class,
+        () -> ScriptEditorWorkspaceModel.createTextFile(project.toFile(), "linked/new/escape.vns"));
+    assertFalse(Files.exists(outside.resolve("new")));
+  }
+
+  @Test
+  void renameRequiresASingleNameAndRetainsExtension() throws Exception {
+    File original = Files.writeString(tempRoot.resolve("scene.vns"), "story").toFile();
+    for (String name : List.of("../escape.vns", "..\\escape.vns", "/tmp/escape.vns", ".", "..")) {
+      assertThrows(java.io.IOException.class, () -> ScriptEditorWorkspaceModel.renameTextFile(original, name));
+    }
+    File renamed = ScriptEditorWorkspaceModel.renameTextFile(original, "chapter");
+    assertEquals("chapter.vns", renamed.getName());
+    assertEquals("story", Files.readString(renamed.toPath()));
+  }
+
 }

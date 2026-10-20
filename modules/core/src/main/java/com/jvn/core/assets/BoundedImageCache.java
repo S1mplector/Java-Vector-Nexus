@@ -24,7 +24,9 @@ public class BoundedImageCache<V> {
   private int maxEntries;
   private final long maxWeight;
   private final ToLongFunction<? super V> weightFunction;
-  private final LinkedHashMap<String, V> map;
+  private record Entry<V>(V value, long weight) {}
+
+  private final LinkedHashMap<String, Entry<V>> map;
   private final AtomicLong hits = new AtomicLong();
   private final AtomicLong misses = new AtomicLong();
   private long currentWeight;
@@ -35,6 +37,7 @@ public class BoundedImageCache<V> {
 
   /**
    * Creates an LRU cache constrained by both entry count and total value weight.
+   * Weights are measured once on insertion; reinsert a mutated value to update its weight.
    * Values whose individual weight exceeds the budget are returned to callers
    * but not retained by the cache.
    */
@@ -54,7 +57,8 @@ public class BoundedImageCache<V> {
 
   /** Returns the cached value, or {@code null} if absent. */
   public synchronized V get(String key) {
-    V v = map.get(key);
+    Entry<V> entry = map.get(key);
+    V v = entry == null ? null : entry.value();
     if (v != null) hits.incrementAndGet(); else misses.incrementAndGet();
     return v;
   }
@@ -65,7 +69,8 @@ public class BoundedImageCache<V> {
    * per call.
    */
   public synchronized V computeIfAbsent(String key, Function<String, V> loader) {
-    V existing = map.get(key);
+    Entry<V> entry = map.get(key);
+    V existing = entry == null ? null : entry.value();
     if (existing != null) {
       hits.incrementAndGet();
       return existing;
@@ -85,19 +90,19 @@ public class BoundedImageCache<V> {
 
   /** Removes and returns one entry, or {@code null} when the key is absent. */
   public synchronized V remove(String key) {
-    V removed = map.remove(key);
-    if (removed != null) currentWeight = Math.max(0L, currentWeight - weightOf(removed));
-    return removed;
+    Entry<V> removed = map.remove(key);
+    if (removed != null) currentWeight -= removed.weight();
+    return removed == null ? null : removed.value();
   }
 
   /** Removes every entry whose key matches the predicate. */
   public synchronized void removeKeysIf(Predicate<String> predicate) {
     if (predicate == null) return;
-    Iterator<Map.Entry<String, V>> iterator = map.entrySet().iterator();
+    Iterator<Map.Entry<String, Entry<V>>> iterator = map.entrySet().iterator();
     while (iterator.hasNext()) {
-      Map.Entry<String, V> entry = iterator.next();
+      Map.Entry<String, Entry<V>> entry = iterator.next();
       if (predicate.test(entry.getKey())) {
-        currentWeight = Math.max(0L, currentWeight - weightOf(entry.getValue()));
+        currentWeight = currentWeight - entry.getValue().weight();
         iterator.remove();
       }
     }
@@ -144,20 +149,26 @@ public class BoundedImageCache<V> {
 
   private void putInternal(String key, V value) {
     long weight = weightOf(value);
-    V previous = map.remove(key);
-    if (previous != null) currentWeight = Math.max(0L, currentWeight - weightOf(previous));
+    Entry<V> previous = map.remove(key);
+    if (previous != null) currentWeight -= previous.weight();
     if (weight > maxWeight) return;
 
-    map.put(key, value);
-    currentWeight = saturatedAdd(currentWeight, weight);
+    // Make room before addition so even a Long.MAX_VALUE budget cannot overflow.
+    Iterator<Map.Entry<String, Entry<V>>> iterator = map.entrySet().iterator();
+    while (currentWeight > maxWeight - weight && iterator.hasNext()) {
+      currentWeight -= iterator.next().getValue().weight();
+      iterator.remove();
+    }
+    map.put(key, new Entry<>(value, weight));
+    currentWeight += weight;
     evictToBudget();
   }
 
   private void evictToBudget() {
-    Iterator<Map.Entry<String, V>> iterator = map.entrySet().iterator();
+    Iterator<Map.Entry<String, Entry<V>>> iterator = map.entrySet().iterator();
     while ((map.size() > maxEntries || currentWeight > maxWeight) && iterator.hasNext()) {
-      Map.Entry<String, V> eldest = iterator.next();
-      currentWeight = Math.max(0L, currentWeight - weightOf(eldest.getValue()));
+      Map.Entry<String, Entry<V>> eldest = iterator.next();
+      currentWeight = currentWeight - eldest.getValue().weight();
       iterator.remove();
     }
   }
@@ -171,8 +182,4 @@ public class BoundedImageCache<V> {
     }
   }
 
-  private static long saturatedAdd(long left, long right) {
-    if (right > Long.MAX_VALUE - left) return Long.MAX_VALUE;
-    return left + right;
-  }
 }

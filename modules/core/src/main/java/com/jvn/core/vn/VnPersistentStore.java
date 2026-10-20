@@ -1,6 +1,7 @@
 package com.jvn.core.vn;
 
 import java.io.IOException;
+import com.jvn.core.io.AtomicFiles;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -98,7 +99,7 @@ public class VnPersistentStore {
     try {
       Path parent = file.getParent();
       if (parent != null) Files.createDirectories(parent);
-      Files.writeString(file, toJson(values), StandardCharsets.UTF_8);
+      AtomicFiles.write(file, toJson(values).getBytes(StandardCharsets.UTF_8));
     } catch (IOException ignored) {
             // reason: I/O failure on best-effort save/load; in-memory state remains valid
     }

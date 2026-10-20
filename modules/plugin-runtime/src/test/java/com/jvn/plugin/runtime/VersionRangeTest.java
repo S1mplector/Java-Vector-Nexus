@@ -6,6 +6,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 class VersionRangeTest {
+  @Test void caretRangesRespectPreOneZeroCompatibilityBoundaries() {
+    assertTrue(VersionRange.accepts("^0.7.0", "0.7.9"));
+    assertFalse(VersionRange.accepts("^0.7.0", "0.8.0"));
+    assertFalse(VersionRange.accepts("^0.7.0", "0.6.9"));
+    assertTrue(VersionRange.accepts("^0.0.4", "0.0.4"));
+    assertFalse(VersionRange.accepts("^0.0.4", "0.0.5"));
+    assertFalse(VersionRange.accepts("^0.0.4", "0.1.0"));
+    assertTrue(VersionRange.accepts("^0.0", "0.0.9"));
+    assertFalse(VersionRange.accepts("^0.0", "0.1.0"));
+    assertTrue(VersionRange.accepts("^0", "0.9.0"));
+    assertFalse(VersionRange.accepts("^0", "1.0.0"));
+  }
+
   @Test void supportsCommonManifestRanges() {
     assertTrue(VersionRange.accepts("*", "4.8.0"));
     assertTrue(VersionRange.accepts("1.x", "1.9.2"));

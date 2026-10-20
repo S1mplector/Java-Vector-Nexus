@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Test;
 
 class EngineBrandingTest {
   @Test void rendersOfficialSvgAndUsesActualBuildVersion() {
-    assertEquals("0.7.0", EngineBranding.version());
-    assertEquals("Made with JVN (0.7.0)", EngineBranding.accessibleCredit());
+    assertEquals("0.8.0", EngineBranding.version());
+    assertEquals("Made with JVN (0.8.0)", EngineBranding.accessibleCredit());
     assertTrue(new String(EngineBranding.svg(), java.nio.charset.StandardCharsets.UTF_8).contains("<svg"));
     var image = EngineBranding.logo();
     assertEquals(760, image.getWidth());

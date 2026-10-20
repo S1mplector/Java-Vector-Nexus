@@ -6957,7 +6957,7 @@ public final class JvnHub {
   private static String displayVersionLabel(String rawVersion) {
     String raw = rawVersion == null ? "" : rawVersion.trim();
     if (raw.isBlank() || raw.equalsIgnoreCase("dev") || raw.equalsIgnoreCase("vdev")) {
-      return "v0.7.0";
+      return "v0.8.0";
     }
 
     String version = raw.startsWith("v") || raw.startsWith("V") ? raw.substring(1) : raw;
@@ -6976,7 +6976,7 @@ public final class JvnHub {
     int plus = version.indexOf('+');
     if (plus >= 0) version = version.substring(0, plus);
     version = version.trim();
-    if (version.isBlank()) version = "0.7.0";
+    if (version.isBlank()) version = "0.8.0";
     return "v" + version + (maturity == null ? "" : " " + maturity);
   }
 
