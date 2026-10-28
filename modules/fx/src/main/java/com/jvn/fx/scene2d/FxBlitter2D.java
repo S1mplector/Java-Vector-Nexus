@@ -38,7 +38,6 @@ import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 
 public class FxBlitter2D implements Blitter2D {
@@ -102,6 +101,9 @@ public class FxBlitter2D implements Blitter2D {
   }
 
   private final GraphicsContext gc;
+  private final FxTextMeasurementCache textMeasurements = new FxTextMeasurementCache();
+  private double[] polygonX = new double[0];
+  private double[] polygonY = new double[0];
   private double viewportW = 0;
   private double viewportH = 0;
   private static final int CACHE_MAX_ENTRIES = 128;
@@ -169,7 +171,7 @@ public class FxBlitter2D implements Blitter2D {
   @Override
   public void setFont(String family, double size, boolean bold) {
     String fam = (family == null || family.isBlank()) ? "Arial" : family;
-    gc.setFont(Font.font(fam, bold ? FontWeight.BOLD : FontWeight.NORMAL, size));
+    gc.setFont(textMeasurements.font(fam, size, bold));
   }
 
   @Override
@@ -281,7 +283,7 @@ public class FxBlitter2D implements Blitter2D {
     markOwnerDirty();
     Font cur = gc.getFont();
     String fam = (cur != null && cur.getFamily() != null && !cur.getFamily().isBlank()) ? cur.getFamily() : "Arial";
-    gc.setFont(Font.font(fam, bold ? FontWeight.BOLD : FontWeight.NORMAL, size));
+    gc.setFont(textMeasurements.font(fam, size, bold));
     gc.fillText(text, x, y);
   }
 
@@ -290,22 +292,12 @@ public class FxBlitter2D implements Blitter2D {
     if (text == null) return 0;
     Font cur = gc.getFont();
     String fam = (cur != null && cur.getFamily() != null && !cur.getFamily().isBlank()) ? cur.getFamily() : "Arial";
-    javafx.scene.text.Text t = new javafx.scene.text.Text(text);
-    t.setFont(Font.font(fam, bold ? FontWeight.BOLD : FontWeight.NORMAL, size));
-    return t.getLayoutBounds().getWidth();
+    return textMeasurements.measure(text, fam, size, bold).width();
   }
 
   @Override
   public TextFontMetrics2D measureTextMetrics(String text, String family, double size, boolean bold) {
-    javafx.scene.text.Text measured = new javafx.scene.text.Text(text == null ? "" : text);
-    measured.setFont(Font.font(
-        family == null || family.isBlank() ? "Arial" : family,
-        bold ? FontWeight.BOLD : FontWeight.NORMAL,
-        size));
-    javafx.geometry.Bounds bounds = measured.getLayoutBounds();
-    double ascent = Math.max(0.0, measured.getBaselineOffset());
-    double descent = Math.max(0.0, bounds.getHeight() - ascent);
-    return new TextFontMetrics2D(bounds.getWidth(), ascent, descent, 0.0);
+    return textMeasurements.measure(text, family, size, bold);
   }
 
   @Override
@@ -430,13 +422,8 @@ public class FxBlitter2D implements Blitter2D {
     if (xy == null || xy.length < 6 || xy.length % 2 != 0) return;
     markOwnerDirty();
     int count = xy.length / 2;
-    double[] xs = new double[count];
-    double[] ys = new double[count];
-    for (int i = 0; i < count; i++) {
-      xs[i] = xy[i * 2];
-      ys[i] = xy[i * 2 + 1];
-    }
-    gc.fillPolygon(xs, ys, count);
+    preparePolygon(xy, count);
+    gc.fillPolygon(polygonX, polygonY, count);
   }
 
   @Override
@@ -444,13 +431,21 @@ public class FxBlitter2D implements Blitter2D {
     if (xy == null || xy.length < 6 || xy.length % 2 != 0) return;
     markOwnerDirty();
     int count = xy.length / 2;
-    double[] xs = new double[count];
-    double[] ys = new double[count];
-    for (int i = 0; i < count; i++) {
-      xs[i] = xy[i * 2];
-      ys[i] = xy[i * 2 + 1];
+    preparePolygon(xy, count);
+    gc.strokePolygon(polygonX, polygonY, count);
+  }
+
+  private void preparePolygon(double[] xy, int count) {
+    // GraphicsContext copies coordinates into its command buffer during the call.
+    if (polygonX.length < count) {
+      int capacity = Math.max(count, Math.max(8, polygonX.length * 2));
+      polygonX = new double[capacity];
+      polygonY = new double[capacity];
     }
-    gc.strokePolygon(xs, ys, count);
+    for (int i = 0; i < count; i++) {
+      polygonX[i] = xy[i * 2];
+      polygonY[i] = xy[i * 2 + 1];
+    }
   }
 
   @Override

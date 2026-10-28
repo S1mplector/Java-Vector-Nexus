@@ -138,7 +138,7 @@ public class Label2D extends Entity2D {
     b.setGlobalAlpha(a);
     b.setFill(r, g, blue, 1);
     b.setFont(fontFamily, size, bold);
-    double w = b.measureTextWidth(text, size, bold);
+    double w = align == Align.LEFT ? 0.0 : b.measureTextWidth(text, size, bold);
     double ox = 0;
     if (align == Align.CENTER) ox = -w / 2.0;
     else if (align == Align.RIGHT) ox = -w;
