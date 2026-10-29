@@ -28,3 +28,7 @@ rules and subsystem contracts live in the scripting and runtime references.
 - [Scripting Language Contract](../scripting/spec/README.md)
 - [Editor Documentation](../editor/README.md)
 - [Build And Release](../project-setup/release/README.md)
+
+- [Lavender’s 30-lesson workshop](lavender-workshop.md) — the built-in course across JVN systems
+
+- [Reading annotated examples and diagrams](reading-the-docs.md)

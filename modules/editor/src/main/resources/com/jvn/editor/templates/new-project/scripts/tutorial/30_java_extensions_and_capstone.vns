@@ -1,0 +1,74 @@
+# Tutorial 30 — Extensions and Capstone
+# Reference: docs/scripting/vns/integration/java-jes-cross-development.md
+# Read scripts/tutorial/README.md for the complete course and linked references.
+@scenario {{SCENARIO_PREFIX}}_tutorial_30
+@include {{CHARACTERS_INCLUDE}}
+{{BG_DECL}}@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[set ui.textBoxAsset none]
+[set ui.continueIndicator spinning_arrow]
+[if tutorial_still]
+[set ui.reduceMotion true]
+[else]
+[set ui.reduceMotion false]
+[endif]
+[if !tutorial_initialized]
+[set tutorial_count 0]
+[flag tutorial_initialized]
+[endif]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
+[set character.lavender.imageEffect none]
+{{BG_START}}
+[textspeed 28]
+[show lavender center talking]
+Lavender: You now have a map of JVN. This last workshop connects its extension paths and turns the pieces into a small game you can finish and ship.
+@label lesson_menu
+> Choose VNS, JES, Java or a plugin -> boundaries
+> Runtime and plugin lifecycle -> lifecycle
+> Build the capstone -> practice
+> Verify and ship -> shipping
+> Final checkpoint -> checkpoint
+> Finish and return to the hub -> return_hub
+@label boundaries
+Lavender: Use VNS for story sequencing and decisions. Use JES for scenes, entities, input, and timelines. Use Java when behavior needs code, and package reusable extension families as plugins.
+Lavender: Inline Java blocks, imports, variable bindings, and the Vn facade let a project connect custom logic. Reusable classes and explicit handlers are easier to test as complexity grows.
+Lavender: A plugin command runs through its registered command ID. An image effect runs through the image-effect registry. An easing contributes a curve that motion tools can expose.
+Lavender: Start with the smallest extension point that expresses the feature. Do not add a separate game loop just to change a line's color.
+[jump lesson_menu]
+@label lifecycle
+Lavender: Know when a scene is pushed, paused, resumed, replaced, and disposed. Stop timers and release resources when their owning scene or tool closes.
+Lavender: Plugins are discovered, checked for compatibility and dependencies, initialized, started, and stopped. Initialization failure must remove partial registrations; close must release class loaders and owned resources.
+Lavender: Runtime listeners observe lifecycle events. Asset importers ingest supported resources. Editor tools should use host services instead of assuming a particular window implementation.
+Lavender: Native Java plugins are trusted code, not a sandbox. Review a plugin before installing it and keep its declared API range compatible with the host.
+[jump lesson_menu]
+@label practice
+Lavender: Make a five-minute game: a white-page opening, two meaningful choices, three expressions, one reusable animation, a phone clue, and a facet that reflects a story variable.
+Lavender: Add a short JES interaction that returns a result. Let that result change the ending. Keep a still-art option, readable text, and working save/load.
+Lavender: Exercise: ask someone unfamiliar with the source to play both routes. Watch where they hesitate. Revise the interaction, then repeat the test without explaining it for them.
+Lavender: Optional extension: build a second image-effect plugin with one parameter and one preset, then compare it with Pikupiku using the same editor preview service.
+[jump lesson_menu]
+@label shipping
+Lavender: Validate scripts and layouts, run relevant automated tests, play every branch, test loading old and fresh saves, and inspect the exported package on the target platform.
+Lavender: Keep asset licenses and credits with the release. The engine's contribution verification, build tasks, deployment guide, and license-acceptance workflow are linked from the workshop README.
+Lavender: Backend coverage varies. JavaFX is the target of this image-effect integration; confirm platform and renderer support before promising the same features in Swing, mobile, or web builds.
+Lavender: Version the release, describe visible changes and known limits, and synchronize the documentation with the code you actually ship.
+[jump lesson_menu]
+@label checkpoint
+Lavender: What proves the capstone is ready?
+> Tested player behavior in the exported game, supported by automated checks -> correct
+> Only that the source files parse -> retry
+@label retry
+Lavender: Parsing is necessary, but it cannot prove the complete experience works. Test the actual exported game too.
+[jump checkpoint]
+@label correct
+Lavender: You have the right standard. Build a small complete thing, then grow it with evidence.
+[jump return_hub]
+
+@label return_hub
+[if !tutorial_done_30]
+[flag tutorial_done_30]
+[inc tutorial_count]
+[endif]
+[goto {{HUB_TARGET}}:topics_page_6]

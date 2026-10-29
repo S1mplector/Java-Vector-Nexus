@@ -1,0 +1,73 @@
+# Tutorial 20 — Dialogue Presentation
+# Reference: docs/scripting/vns/integration/vns-interop.md
+# Read scripts/tutorial/README.md for the complete course and linked references.
+@scenario {{SCENARIO_PREFIX}}_tutorial_20
+@include {{CHARACTERS_INCLUDE}}
+{{BG_DECL}}@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[set ui.textBoxAsset none]
+[set ui.continueIndicator spinning_arrow]
+[if tutorial_still]
+[set ui.reduceMotion true]
+[else]
+[set ui.reduceMotion false]
+[endif]
+[if !tutorial_initialized]
+[set tutorial_count 0]
+[flag tutorial_initialized]
+[endif]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
+[set character.lavender.imageEffect none]
+{{BG_START}}
+[textspeed 28]
+[show lavender center talking]
+Lavender: The same story can use an ADV textbox, a full reading panel, or speaker bubbles. These are presentation modes, not separate script languages.
+@label lesson_menu
+> Read an NVL passage -> nvl
+> Try speaker bubbles -> bubbles
+> Compose accessible text -> text
+> Checkpoint -> checkpoint
+> Finish and return to the hub -> return_hub
+@label nvl
+[mode dialogue nvl]
+narrator: A page can give a quiet moment room to breathe.
+narrator: NVL presentation collects the passage into a larger reading surface. Test paragraph length and the player's font scale.
+Lavender: The story still uses ordinary dialogue nodes. A mode change does not require a new script format.
+[mode dialogue standard]
+Lavender: Back to the standard textbox. Always restore the intended mode at reusable scene boundaries.
+[jump lesson_menu]
+@label bubbles
+[mode dialogue bubble]
+[char lavender bubble center]
+Lavender: This bubble belongs to my speaker ID. Placement can be left, center, right, or automatic.
+[char lavender bubble_offset 12 -8]
+Lavender: Small offsets can help with a pose, but check the smallest window and largest font scale before settling on them.
+[char lavender bubble clear]
+[mode dialogue standard]
+[jump lesson_menu]
+@label text
+Lavender: Inline bold, italic, color, and animated text can support a line. A voice clip, punctuation, and a pause can do the same job without visual motion.
+Lavender: Keep important information in actual text. Test long names, translated strings, line breaks, narration, and choices instead of sizing the UI around one sentence.
+Lavender: Exercise: tell the same short scene in all three modes. Restore standard mode before leaving and explain which version best serves the scene.
+[jump lesson_menu]
+@label checkpoint
+Lavender: You launch a standalone lesson after an NVL scene. What keeps its appearance predictable?
+> Set its intended presentation mode at entry -> correct
+> Assume the previous scene used the same mode -> retry
+@label retry
+Lavender: Presentation is state. Set the mode you need at a reusable entry point.
+[jump checkpoint]
+@label correct
+Lavender: Exactly. That is why every workshop begins by restoring its dialogue presentation.
+[jump return_hub]
+
+@label return_hub
+[mode dialogue standard]
+[char lavender bubble clear]
+[if !tutorial_done_20]
+[flag tutorial_done_20]
+[inc tutorial_count]
+[endif]
+[goto {{HUB_TARGET}}:topics_page_4]

@@ -47,5 +47,6 @@ Use an explicit comparison range when broader compatibility is intentional.
 | `asset.importer` | Asset importers |
 | `runtime.listener` | Runtime lifecycle listeners |
 | `animation.easing` | Named easing curves and their authoring metadata |
+| `image.effect` | Prepared image effects, controls, and presets (API 1.2) |
 
 Unknown capabilities, malformed JSON, missing required fields, duplicate plugin IDs, incompatible API ranges, and invalid dependencies prevent loading. Diagnostics include a stable code suitable for tooling.

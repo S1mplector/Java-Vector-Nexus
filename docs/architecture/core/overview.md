@@ -1,5 +1,25 @@
 # Overview
 
+```mermaid
+flowchart TD
+  accTitle: JVN authoring and runtime boundaries
+  accDescr: The editor creates scripts and configuration. VNS and JES feed scene state. The engine updates scenes; rendering, audio and input are backend services. Plugins contribute through supported registries.
+  Editor["Editor and visual authoring tools"] --> Files["VNS · JES · layouts · assets"]
+  Files --> VNS["VNS scenario and state"]
+  Files --> JES["JES entities and timelines"]
+  VNS <--> Bridge["Explicit interop / scene handoff"]
+  Bridge <--> JES
+  VNS --> Stack["Engine and scene stack"]
+  JES --> Stack
+  Stack --> Backends["Rendering · audio · input"]
+  Plugins["Plugin host and owned registries"] --> VNS
+  Plugins --> Backends
+  Plugins --> Editor
+```
+
+> [!NOTE]
+> An authoring tool writes project data; a runtime backend presents that data. Feature availability can differ by backend, so validate the platform you intend to ship.
+
 JVN (Java Vector Nexus) is a Java game engine with a strong focus on visual novel production, scriptable 2D scenes, and editor-driven workflow.
 
 This page is the high-level map. Use the linked docs for deeper implementation details.

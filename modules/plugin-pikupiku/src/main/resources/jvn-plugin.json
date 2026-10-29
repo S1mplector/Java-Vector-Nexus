@@ -1,0 +1,1 @@
+{"id":"com.jvn.pikupiku","name":"Pikupiku Line Wiggler","version":"1.0.0","jvnApi":">=1.2.0 <2.0.0","entrypoint":"com.jvn.pikupiku.PikupikuPlugin","capabilities":["image.effect","editor.tool"]}

@@ -35,24 +35,8 @@ class NewProjectScaffoldTemplateWiringTest {
       "scripts/story/epilogue_blank.vns",
       "scripts/story/epilogue_sample.vns");
 
-  private static final List<String> TUTORIAL_TEMPLATE_PATHS = List.of(
-      "scripts/tutorial/01_dialogue_basics.vns",
-      "scripts/tutorial/02_narration_and_pacing.vns",
-      "scripts/tutorial/03_expressions_and_characters.vns",
-      "scripts/tutorial/04_images_and_backgrounds.vns",
-      "scripts/tutorial/05_transitions_and_effects.vns",
-      "scripts/tutorial/06_audio_and_music.vns",
-      "scripts/tutorial/07_variables_and_conditions.vns",
-      "scripts/tutorial/08_character_movement.vns",
-      "scripts/tutorial/09_puppeteer_timeline.vns",
-      "scripts/tutorial/10_choices_and_menus.vns",
-      "scripts/tutorial/11_subroutines_and_flow.vns",
-      "scripts/tutorial/12_best_practices.vns",
-      "scripts/tutorial/13_camera_and_staging.vns",
-      "scripts/tutorial/14_localization_and_textkeys.vns",
-      "scripts/tutorial/15_ui_layout_and_theme.vns",
-      "scripts/tutorial/16_testing_and_release.vns",
-      "scripts/tutorial/17_vns_jes_integration.vns");
+  private static final List<String> TUTORIAL_TEMPLATE_PATHS = TutorialCatalog.LESSONS.stream()
+      .map(TutorialCatalog.Lesson::path).toList();
 
   private static final Map<String, String> TOKENS = buildTokens();
 
@@ -69,7 +53,7 @@ class NewProjectScaffoldTemplateWiringTest {
 
   @Test
   void tutorialTemplatesRenderWithoutUnresolvedTokens() throws Exception {
-    assertEquals(17, TUTORIAL_TEMPLATE_PATHS.size(), "Tutorial template inventory changed");
+    assertEquals(30, TUTORIAL_TEMPLATE_PATHS.size(), "Tutorial template inventory changed");
     for (String path : TUTORIAL_TEMPLATE_PATHS) {
       String rendered = render(path);
       assertFalse(
@@ -95,14 +79,14 @@ class NewProjectScaffoldTemplateWiringTest {
   }
 
   @Test
-  void lavenderUsesViewportSafeFramingInStarterScenes() throws Exception {
+  void lavenderUsesWaistUpFramingInStarterScenes() throws Exception {
     String prologue = render("scripts/story/prologue_sample.vns");
     String tutorialHub = render("scripts/story/tutorial_hub.vns");
 
     assertTrue(prologue.contains("@position desk_left 0.28 0.96"));
     for (String scene : List.of(prologue, tutorialHub)) {
-      assertTrue(scene.contains("[set ui.characterHeightFactor 0.82]"));
-      assertTrue(scene.contains("[set ui.characterBaselineY 0.96]"));
+      assertTrue(scene.contains("[set ui.characterHeightFactor 1.5]"));
+      assertTrue(scene.contains("[set ui.characterBaselineY 1.5]"));
       assertFalse(scene.contains("[set ui.characterHeightFactor 1.28]"));
       assertFalse(scene.contains("[set ui.characterBaselineY 1.42]"));
     }
@@ -126,9 +110,9 @@ class NewProjectScaffoldTemplateWiringTest {
   }
 
   @Test
-  void defaultGameBackgroundsAreFullHdAndStrictlyMonochrome() throws Exception {
-    assertMonochromeBackground("demo_bg/game.png");
-    assertMonochromeBackground("demo_bg/menu.png");
+  void defaultGameBackgroundsAreFullHdAndPlainWhite() throws Exception {
+    assertWhiteBackground("demo_bg/game.png");
+    assertWhiteBackground("demo_bg/menu.png");
   }
 
   @Test
@@ -136,13 +120,13 @@ class NewProjectScaffoldTemplateWiringTest {
     for (String path : TUTORIAL_TEMPLATE_PATHS) {
       String rendered = render(path);
       assertTrue(
-          rendered.contains("[mode dialogue standard]\n[set ui.dialogueUi default]\n[set ui.textBoxAsset default]\n[inc tutorial_count]"),
+          rendered.contains("[mode dialogue standard]\n[set ui.dialogueUi project]\n[set ui.textBoxAsset none]"),
           () -> "Tutorial does not reset dialogue presentation mode at entry: " + path);
     }
 
     String hub = render("scripts/story/tutorial_hub.vns");
     assertTrue(
-        hub.contains("[mode dialogue standard]\n[set ui.dialogueUi default]\n[set ui.textBoxAsset default]\n[textspeed 28]"),
+        hub.contains("[mode dialogue standard]\n[set ui.dialogueUi project]\n[set ui.textBoxAsset none]"),
         "Tutorial hub does not reset dialogue presentation mode at entry");
   }
 
@@ -163,17 +147,14 @@ class NewProjectScaffoldTemplateWiringTest {
   }
 
   @Test
-  void tutorialHubStillRoutesToAllSeventeenLessons() throws Exception {
+  void tutorialHubRoutesToEveryCatalogLesson() throws Exception {
     String hub = render("scripts/story/tutorial_hub.vns");
-    List<String> expectedTargets = List.of(
-        "T01_Dialogue", "T02_Narration", "T03_Expressions", "T04_Images",
-        "T05_Transitions", "T06_Audio", "T07_Variables", "T08_Movement",
-        "T09_Puppeteer", "T10_Menus", "T11_Subroutines", "T12_BestPractices",
-        "T13_Camera", "T14_Localization", "T15_UILayout", "T16_TestingRelease",
-        "T17_VnsJes");
-    for (String target : expectedTargets) {
-      assertTrue(hub.contains("[goto " + target + ":start]"), "Missing hub route for " + target);
+    assertEquals(30, TutorialCatalog.LESSONS.size());
+    for (TutorialCatalog.Lesson lesson : TutorialCatalog.LESSONS) {
+      assertTrue(hub.contains("[goto " + lesson.arc() + ":start]"), "Missing hub route for " + lesson.arc());
+      assertTrue(hub.contains("@label " + lesson.hubLabel()), "Missing hub entry for " + lesson.arc());
     }
+    for (int page = 1; page <= 6; page++) assertTrue(hub.contains("@label topics_page_" + page));
     assertTrue(hub.contains("@label topics_page_1"));
     assertTrue(hub.contains("@label topics_page_2"));
     assertTrue(hub.contains("@label topics_page_3"));
@@ -193,6 +174,38 @@ class NewProjectScaffoldTemplateWiringTest {
     assertTrue(branch.contains("scripts/story/branch_demo.vns"));
     assertTrue(branch.contains("[goto Epilogue:start]"));
     assertTrue(epilogue.contains("[end]"));
+  }
+
+  @Test
+  void lessonsRecordCompletionOnceAtReturnAndDefaultToStillArtwork() throws Exception {
+    int number = 0;
+    for (String path : TUTORIAL_TEMPLATE_PATHS) {
+      String rendered = render(path);
+      String done = String.format(java.util.Locale.ROOT, "tutorial_done_%02d", ++number);
+      assertTrue(rendered.contains("[set character.lavender.imageEffect none]"), path);
+      assertTrue(rendered.contains("[if tutorial_still]"), path);
+      assertTrue(rendered.contains("[if !" + done + "]\n[flag " + done + "]\n[inc tutorial_count]\n[endif]"), path);
+      assertTrue(rendered.indexOf("[inc tutorial_count]") > rendered.indexOf("@label return_hub"), path);
+    }
+  }
+
+  @Test
+  void everyLocalJumpAndChoiceHasATarget() throws Exception {
+    var labels = Pattern.compile("(?m)^@label ([A-Za-z0-9_]+)");
+    var jumps = Pattern.compile("(?m)(?:^\\[jump ([A-Za-z0-9_]+)\\]|^>.* -> ([A-Za-z0-9_]+)$)");
+    var paths = new java.util.ArrayList<>(TUTORIAL_TEMPLATE_PATHS);
+    paths.add("scripts/story/tutorial_hub.vns");
+    for (String path : paths) {
+      String script = render(path);
+      java.util.Set<String> targets = new java.util.HashSet<>();
+      var found = labels.matcher(script);
+      while (found.find()) assertTrue(targets.add(found.group(1)), "Duplicate label in " + path);
+      var jump = jumps.matcher(script);
+      while (jump.find()) {
+        String target = jump.group(1) == null ? jump.group(2) : jump.group(1);
+        assertTrue(targets.contains(target), "Missing target " + target + " in " + path);
+      }
+    }
   }
 
   private static String render(String relativePath) throws Exception {
@@ -220,7 +233,7 @@ class NewProjectScaffoldTemplateWiringTest {
         ignored -> new ByteArrayInputStream(sharedCharacters.getBytes(StandardCharsets.UTF_8)));
   }
 
-  private static void assertMonochromeBackground(String relativePath) throws Exception {
+  private static void assertWhiteBackground(String relativePath) throws Exception {
     String resourcePath = "com/jvn/editor/templates/new-project/demo-assets/" + relativePath;
     try (InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath)) {
       assertNotNull(in, "Missing background resource: " + resourcePath);
@@ -234,8 +247,8 @@ class NewProjectScaffoldTemplateWiringTest {
           int red = (rgb >>> 16) & 0xff;
           int green = (rgb >>> 8) & 0xff;
           int blue = rgb & 0xff;
-          assertTrue(red == green && green == blue,
-              "Colored pixel in " + relativePath + " at " + x + "," + y);
+          assertTrue(red == 255 && green == 255 && blue == 255,
+              "Non-white pixel in " + relativePath + " at " + x + "," + y);
         }
       }
     }

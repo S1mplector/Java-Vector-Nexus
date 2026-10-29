@@ -1652,6 +1652,8 @@ public class FxLauncher extends Application {
       settings.adjustCurrent(delta);
     } else if (currentScene instanceof LoadMenuScene load) {
       load.movePage(delta);
+    } else if (currentScene instanceof MainMenuScene main && menuRenderer.getTheme().isDockPresentation()) {
+      main.moveSelection(delta);
     }
   }
 

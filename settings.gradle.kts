@@ -22,6 +22,7 @@ val jvnModules = listOf(
   "plugin-api",
   "plugin-runtime",
   "plugin-example",
+  "plugin-pikupiku",
   "render-api",
   "fx",
   "runtime",

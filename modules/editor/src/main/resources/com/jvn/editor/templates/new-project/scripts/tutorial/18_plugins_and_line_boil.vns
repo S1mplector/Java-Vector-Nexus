@@ -1,0 +1,71 @@
+# Tutorial 18 — Plugins and Pikupiku
+# Reference: docs/plugins/image-effects.md
+# Read scripts/tutorial/README.md for the complete course and linked references.
+@scenario {{SCENARIO_PREFIX}}_tutorial_18
+@include {{CHARACTERS_INCLUDE}}
+{{BG_DECL}}@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[set ui.textBoxAsset none]
+[set ui.continueIndicator spinning_arrow]
+[if tutorial_still]
+[set ui.reduceMotion true]
+[else]
+[set ui.reduceMotion false]
+[endif]
+[if !tutorial_initialized]
+[set tutorial_count 0]
+[flag tutorial_initialized]
+[endif]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
+[set character.lavender.imageEffect none]
+{{BG_START}}
+[textspeed 28]
+[show lavender center talking]
+Lavender: {b}Pikupiku{/b} is an optional native Java plugin port of the line wiggler. This tutorial keeps my original drawing and the title still.
+Lavender: The plugin prepares a few drawings once, then holds each frame. You can try it in the editor's preview window when it suits your own project.
+@label lesson_menu
+> Compare presets in the editor -> compare
+> Use the editor tool -> studio
+> How plugins extend JVN -> authoring
+> Checkpoint -> checkpoint
+> Finish and return to the hub -> return_hub
+@label compare
+Lavender: In the Pikupiku tool, compare Subtle with Strong. Look at displacement, line width, and pressure; use Off to compare the original image.
+narrator: Optional script example: [set character.lavender.imageEffect pikupiku.lineboil]
+narrator: Optional parameter: [set character.lavender.imageEffect.strength 0.6]
+Lavender: These are ordinary saved variables. To remove an effect, set its ID to {b}none{/b}. The example is printed here without applying it to the tutorial.
+[jump lesson_menu]
+@label studio
+Lavender: Open {b}Tools > Plugins > Pikupiku Line Wiggler{/b}. Start with Lavender, or open your own PNG.
+Lavender: Try the Lavender, Subtle, Strong, Graphite, Omori, and Off presets. Then tune displacement, timing, ink, pressure, seed, width, grain, smoothing, color, paper, and hatching.
+Lavender: Copy VNS settings for your character. Export PNG drawings when you need baked frames; the export includes timing and the script settings, and keeps transparency.
+Lavender: Exercise: make two visibly different presets, copy them into this file, and let a story choice select between them.
+[jump lesson_menu]
+@label authoring
+Lavender: A plugin JAR declares its entrypoint, API range, dependencies, and capabilities in {b}jvn-plugin.json{/b}. Project plugins live in {b}plugins/{/b}; user plugins live in the JVN user data folder.
+Lavender: API 1.2 adds {b}image.effect{/b}: typed pixels, validated parameters, presets, and prepared animation frames. The editor provides a native preview service so the plugin stays independent of JavaFX.
+Lavender: Other families are script commands, editor tools, asset importers, runtime listeners, and animation easings. Registration handles can be closed individually; stopping a plugin removes its contributions.
+Lavender: Capability checks organize access. Plugins are still executable Java with your process permissions: install code you trust. Reload uses a new host; save work before changing plugin JARs.
+Lavender: Exercise: inspect {b}modules/plugin-pikupiku{/b} in the engine source, then implement an image effect with one parameter and a qualified ID such as mygame.outline.
+[jump lesson_menu]
+@label checkpoint
+Lavender: Where should an expensive pixel transform run?
+> Once on a worker, with prepared frames reused -> correct
+> On every render pass -> retry
+@label retry
+Lavender: That can stall dialogue and input. Prepare bounded frames in the background, then reuse them.
+[jump checkpoint]
+@label correct
+Lavender: Exactly. The host validates settings, limits cached frames, and falls back to the original image if an effect fails.
+[jump return_hub]
+
+@label return_hub
+[set character.lavender.imageEffect.strength default]
+[set character.lavender.imageEffect.fps default]
+[if !tutorial_done_18]
+[flag tutorial_done_18]
+[inc tutorial_count]
+[endif]
+[goto {{HUB_TARGET}}:topics_page_4]

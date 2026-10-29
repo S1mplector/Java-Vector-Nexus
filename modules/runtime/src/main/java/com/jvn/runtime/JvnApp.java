@@ -246,6 +246,7 @@ public class JvnApp {
         .build();
     pluginHost.discoverAndStart();
     com.jvn.core.animation.EasingExtensions.install(pluginHost.registries().animationEasings());
+    com.jvn.core.assets.ImageEffects.install(pluginHost.registries().imageEffects());
     Runtime.getRuntime().addShutdownHook(new Thread(pluginHost::close, "jvn-plugin-shutdown"));
     if (!pluginHost.plugins().isEmpty()) {
       log.info("Plugins -> discovered={}, diagnostics={}", pluginHost.plugins().size(), pluginHost.diagnostics().size());
@@ -313,7 +314,7 @@ public class JvnApp {
         try {
           Class<?> cls = Class.forName("com.jvn.audio.simp3.Simp3AudioService");
           Object inst = cls.getDeclaredConstructor().newInstance();
-          audio = (AudioFacade) inst;
+          audio = new com.jvn.audio.simp3.AsyncAudioService((AudioFacade) inst);
         } catch (Throwable t) {
           // Fallback to FX if adapter not on classpath
           audio = new FxAudioService();

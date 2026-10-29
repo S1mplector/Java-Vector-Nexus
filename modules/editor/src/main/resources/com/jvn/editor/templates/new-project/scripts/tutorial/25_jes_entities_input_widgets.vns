@@ -1,0 +1,66 @@
+# Tutorial 25 — JES Entities, Input and Widgets
+# Reference: docs/guides/jes-by-example.md
+# Read scripts/tutorial/README.md for the complete course and linked references.
+@scenario {{SCENARIO_PREFIX}}_tutorial_25
+@include {{CHARACTERS_INCLUDE}}
+{{BG_DECL}}@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[set ui.textBoxAsset none]
+[set ui.continueIndicator spinning_arrow]
+[if tutorial_still]
+[set ui.reduceMotion true]
+[else]
+[set ui.reduceMotion false]
+[endif]
+[if !tutorial_initialized]
+[set tutorial_count 0]
+[flag tutorial_initialized]
+[endif]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
+[set character.lavender.imageEffect none]
+{{BG_START}}
+[textspeed 28]
+[show lavender center talking]
+Lavender: JES is the scene language for entities, components, input bindings, camera work, and timelines. Java handlers supply behavior that needs game logic.
+@label lesson_menu
+> Visit the runnable JES studio -> scene
+> Understand scene composition -> components
+> Add controls and behaviors -> practice
+> Checkpoint -> checkpoint
+> Finish and return to the hub -> return_hub
+@label scene
+Lavender: The studio uses Panel2D and Label2D, a parallel timeline, and keyboard return handlers. Press Enter or Escape to come back.
+[jes push {{JES_SCENE_PATH}} label scene_return with source=workshop]
+@label scene_return
+Lavender: A pushed scene returned to this label. The VNS conversation is still here.
+[jump lesson_menu]
+@label components
+Lavender: An entity has a name and components. Panel2D draws a colored region; Label2D draws text; Sprite2D displays an image. Transform and hierarchy determine where they appear.
+Lavender: Sprite animation, particles, camera motion, and parallel timeline tracks can combine into a scene. Keep names stable because scripts and handlers refer to them.
+Lavender: In {b}scripts/scenes/studio_tour.jes{/b}, change the title, its coordinates, and the motion duration. Run it again and compare the result.
+[jump lesson_menu]
+@label practice
+Lavender: Button2D, Slider2D, and other UI components expose callback names. Register the matching Java call handlers before running a scene that depends on them.
+Lavender: Exercise: add a Button2D using the existing {b}return{/b} handler, with readable normal, hover, and pressed colors. Make keyboard return work too.
+Lavender: The interactive-UI guide then shows a settings panel with live values and callbacks. Follow that example when you need actual mutable game logic.
+Lavender: Screen coordinates, camera coordinates, and parent-relative transforms are different spaces. Debug a misplaced control by checking which space its component uses.
+[jump lesson_menu]
+@label checkpoint
+Lavender: A button names a custom callback. What else must exist?
+> A registered handler for that callback -> correct
+> Nothing; its label becomes executable logic -> retry
+@label retry
+Lavender: A label is text. The named handler provides the behavior.
+[jump checkpoint]
+@label correct
+Lavender: Right. Keep visual composition and executable behavior connected by explicit names.
+[jump return_hub]
+
+@label return_hub
+[if !tutorial_done_25]
+[flag tutorial_done_25]
+[inc tutorial_count]
+[endif]
+[goto {{HUB_TARGET}}:topics_page_5]

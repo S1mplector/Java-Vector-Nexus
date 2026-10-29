@@ -1,0 +1,74 @@
+# Tutorial 24 — Layers, Display Slots and Lighting
+# Reference: docs/scripting/vns/presentation/vns-movable-layer-groups.md
+# Read scripts/tutorial/README.md for the complete course and linked references.
+@scenario {{SCENARIO_PREFIX}}_tutorial_24
+@include {{CHARACTERS_INCLUDE}}
+{{BG_DECL}}@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[set ui.textBoxAsset none]
+[set ui.continueIndicator spinning_arrow]
+[if tutorial_still]
+[set ui.reduceMotion true]
+[else]
+[set ui.reduceMotion false]
+[endif]
+[if !tutorial_initialized]
+[set tutorial_count 0]
+[flag tutorial_initialized]
+[endif]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
+[set character.lavender.imageEffect none]
+{{BG_START}}
+[textspeed 28]
+[show lavender center talking]
+Lavender: My character ID, expression, display slot, layer group, and lighting preset solve different problems. Keeping them distinct makes complex staging manageable.
+@label lesson_menu
+> Inspect layered expressions -> expressions
+> Slots, groups and eye focus -> groups
+> Stage lighting workflow -> lighting
+> Checkpoint -> checkpoint
+> Finish and return to the hub -> return_hub
+@label expressions
+[show lavender center idle]
+Lavender: Idle uses a body, eyes, and mouth. Open {b}scripts/definitions/characters.vns{/b} to inspect the actual declarations in your project.
+[show lavender center happy]
+Lavender: Happy changes the selected parts. The unchanged source art is reused.
+[show lavender center emphasis]
+Lavender: Emphasis selects another combination. A layered preset can create many expressions from a small asset set.
+[show lavender center talking]
+Lavender: Use the Layered Image Visualizer and image attribute tools to inspect alignment and transparent margins. Keep layers on the same coordinate canvas.
+[jump lesson_menu]
+@label groups
+Lavender: Display slots let a character occupy independently addressable stage instances. Presets can reuse a blocking arrangement without redefining the character.
+Lavender: Movable layer groups collect parts such as an arm, head, or face so a timeline can transform them together. Declare layers and groups before presets that reference them.
+Lavender: Eye focus maps named eye layers and small offsets to a target. It complements expressions; it does not replace your character's identity or the active slot.
+Lavender: Exercise: create a face group in a copy of the character file, animate a small group movement in Puppeteer, and check that the outline effect stays attached to each rendered layer.
+[jump lesson_menu]
+@label lighting
+Lavender: Scene Lighting Studio exports a {b}.stagepreset{/b} file. Declare it with @stagepreset and select it with the stage command.
+narrator: @stagepreset warm config/stage/warm.stagepreset
+narrator: [stage warm]
+narrator: [stage clear]
+Lavender: These are authoring examples; no lighting preset is applied to our plain white workshop. Build a separate lighting test scene when you want to grade the background.
+Lavender: Lights can target different scene layers. Occluders and response zones describe how light reaches surfaces; named presets carry that setup into VNS and Puppeteer.
+Lavender: Exercise: light a character, move it through the light, switch its expression, then clear the preset. Check the result with and without line boil.
+[jump lesson_menu]
+@label checkpoint
+Lavender: Which part decides the combination of eyes and mouth currently drawn?
+> The character expression or layered preset -> correct
+> The plugin's API version range -> retry
+@label retry
+Lavender: API compatibility controls whether a plugin can load. The expression chooses the visual parts.
+[jump checkpoint]
+@label correct
+Lavender: Exactly. Separate content, placement, transformation, and rendering effects.
+[jump return_hub]
+
+@label return_hub
+[if !tutorial_done_24]
+[flag tutorial_done_24]
+[inc tutorial_count]
+[endif]
+[goto {{HUB_TARGET}}:topics_page_5]

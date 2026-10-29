@@ -12,6 +12,10 @@ Contributed curves are available through shared timeline parsing and evaluation,
 
 See [Animation Easing Extensions](animation-extensions.md) for the complete authoring API, DSL grammar, lifecycle, validation, testing guidance, and limitations.
 
+## Image effects
+
+`context.contribute().images().effect(id, effect)` registers a toolkit-independent pixel transformation with validated controls, presets, and held animation frames. Requires `image.effect` and Plugin API 1.2. The JavaFX character renderer prepares frames off-thread and reuses them; the native editor studio provides preview, script settings, and PNG export. See [Image Effects and Pikupiku](image-effects.md).
+
 ## Script commands
 
 `ScriptCommand` receives the source language, registered command ID, parsed arguments, current variables, and project directory. It returns whether it handled the call, an optional value, and variable updates.
@@ -24,7 +28,7 @@ Handlers execute on the calling script/runtime thread. Keep them short; schedule
 
 ## Editor tools
 
-`EditorTool` contributes an action under **Tools → Plugins**. It receives the current project directory and a small services map. The editor currently supplies `window` when an owner window exists.
+`EditorTool` contributes an action under **Tools → Plugins**. It receives the current project directory and a small services map. The editor supplies `window` when an owner window exists and an `ImageEffectEditor` service for the standard image-effect studio. Use `context.service(ImageEffectEditor.class)` to request it without a JavaFX dependency.
 
 Plugins may choose JavaFX for editor-only UI, but should isolate that code from runtime classes. Do not cast or reflect into `EditorApp`.
 

@@ -62,6 +62,10 @@ public class MenuTheme {
   private String labelSettings = null;
   private String labelQuit = null;
 
+  private boolean dockPresentation;
+  private boolean menuMotion = true;
+  private String titleImageEffect;
+
   // Title screen assets
   private String backgroundImagePath = null; // path to background image
   private String logoImagePath = null; // path to logo/title image
@@ -186,6 +190,9 @@ public class MenuTheme {
 
     // Title screen assets
     backgroundImagePath = emptyToNull(p.getProperty("backgroundImage"));
+    dockPresentation = "dock".equalsIgnoreCase(p.getProperty("mainMenuPresentation", "list"));
+    menuMotion = parseBool(p.getProperty("menuMotion"), true);
+    titleImageEffect = emptyToNull(p.getProperty("titleImageEffect"));
     logoImagePath = emptyToNull(p.getProperty("logoImage"));
     bgmPath = emptyToNull(p.getProperty("bgm"));
     logoX = parseDouble(p.getProperty("logoX"), logoX);
@@ -276,6 +283,8 @@ public class MenuTheme {
   public Color getHintColor() { return hintColor; }
   public Color getAccentColor() { return accentColor; }
 
+  public String getTitleFontFamily() { return titleFontFamily; }
+  public int getTitleFontSize() { return titleFontSize; }
   public Font getTitleFont() { return Font.font(titleFontFamily, titleFontWeight, titleFontSize); }
   public Font getItemFont() { return Font.font(itemFontFamily, itemFontWeight, itemFontSize); }
   public Font getHintFont() { return Font.font(hintFontFamily, hintFontWeight, hintFontSize); }
@@ -295,6 +304,9 @@ public class MenuTheme {
 
   // Title screen asset getters
   public String getBackgroundImagePath() { return backgroundImagePath; }
+  public boolean isDockPresentation() { return dockPresentation; }
+  public boolean isMenuMotion() { return menuMotion; }
+  public String getTitleImageEffect() { return titleImageEffect; }
   public String getLogoImagePath() { return logoImagePath; }
   public String getBgmPath() { return bgmPath; }
   public double getLogoX() { return logoX; }

@@ -5,9 +5,21 @@
 @include {{CHARACTERS_INCLUDE}}
 {{BG_DECL}}@label start
 [mode dialogue standard]
-[set ui.dialogueUi default]
-[set ui.textBoxAsset default]
-[inc tutorial_count]
+[set ui.dialogueUi project]
+[set ui.textBoxAsset none]
+[set ui.continueIndicator spinning_arrow]
+[if tutorial_still]
+[set ui.reduceMotion true]
+[else]
+[set ui.reduceMotion false]
+[endif]
+[if !tutorial_initialized]
+[set tutorial_count 0]
+[flag tutorial_initialized]
+[endif]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
+[set character.lavender.imageEffect none]
 {{BG_START}}
 [textspeed 28]
 [autodelay 1650]
@@ -176,4 +188,8 @@ Lavender: Edit the numbers in this file and replay to feel how timing changes th
 > Back to menu -> lesson_menu
 
 @label return_hub
+[if !tutorial_done_05]
+[flag tutorial_done_05]
+[inc tutorial_count]
+[endif]
 [goto {{HUB_TARGET}}:topics_page_2]

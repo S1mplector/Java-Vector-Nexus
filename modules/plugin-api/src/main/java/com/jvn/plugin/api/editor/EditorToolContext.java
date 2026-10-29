@@ -13,4 +13,12 @@ public record EditorToolContext(Path projectDirectory, Map<String, Object> servi
   public EditorToolContext {
     services = services == null ? Map.of() : Map.copyOf(services);
   }
+  /** Finds an optional typed host service without coupling plugins to a UI toolkit.
+   * @param <T> requested service type
+   * @param type service contract
+   * @return a matching host service, or an empty optional
+   */
+  public <T> java.util.Optional<T> service(Class<T> type) {
+    return services.values().stream().filter(type::isInstance).map(type::cast).findFirst();
+  }
 }

@@ -1,0 +1,73 @@
+# Tutorial 29 — Accessibility, Settings and Controls
+# Reference: docs/scripting/vns/runtime/vns-settings-modes.md
+# Read scripts/tutorial/README.md for the complete course and linked references.
+@scenario {{SCENARIO_PREFIX}}_tutorial_29
+@include {{CHARACTERS_INCLUDE}}
+{{BG_DECL}}@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[set ui.textBoxAsset none]
+[set ui.continueIndicator spinning_arrow]
+[if tutorial_still]
+[set ui.reduceMotion true]
+[else]
+[set ui.reduceMotion false]
+[endif]
+[if !tutorial_initialized]
+[set tutorial_count 0]
+[flag tutorial_initialized]
+[endif]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
+[set character.lavender.imageEffect none]
+{{BG_START}}
+[textspeed 28]
+[show lavender center talking]
+Lavender: A complete game gives players control over reading, sound, display, input, and motion. This workshop starts with a choice that changes the tutorial itself.
+@label lesson_menu
+> Use a still continue arrow -> still
+> Use the spinning continue arrow -> animated
+> Reading and audio preferences -> preferences
+> Input, display and testing -> practice
+> Checkpoint -> checkpoint
+> Finish and return to the hub -> return_hub
+@label still
+[flag tutorial_still]
+[set ui.reduceMotion true]
+[set character.lavender.imageEffect none]
+Lavender: The continue arrow will stay still in the tutorial hub and lessons. You can restore its rotation here or from the hub.
+[jump lesson_menu]
+@label animated
+[unflag tutorial_still]
+[set ui.reduceMotion false]
+[set character.lavender.imageEffect none]
+Lavender: The continue arrow spins again. Motion is a preference, not a requirement for understanding the lesson.
+[jump lesson_menu]
+@label preferences
+Lavender: The runtime settings include text speed, auto delay, skip rules, channel volumes, UI font scale, accessibility themes, and text-to-speech support where the platform provides it.
+Lavender: Try the largest font scale with long dialogue, speaker names, and choices. Keep essential information in text, and avoid conveying meaning only through color or sound.
+Lavender: Auto-play and skip are different modes. Read-only skip protects unseen text; auto delay gives a line time after it is revealed. Test voiced and unvoiced lines separately.
+Lavender: Preserve player choices. A story beat should not repeatedly reset volume or readability settings simply because it was revisited.
+[jump lesson_menu]
+@label practice
+Lavender: Test the full runtime using only the keyboard, then only the pointer. Remappable action bindings should remain coherent across dialogue, menus, history, and JES scenes.
+Lavender: Check windowed and fullscreen modes, aspect ratio, small windows, long translations, muted audio, and missing speech support. Confirm that a player can always leave a modal interface.
+Lavender: Exercise: finish three lessons with still drawings and large text, save, reload, and verify the experience remains understandable and controllable.
+[jump lesson_menu]
+@label checkpoint
+Lavender: A crucial clue is shown only by a flashing red effect. What should you add?
+> A readable, non-motion way to understand it -> correct
+> A stronger flash -> retry
+@label retry
+Lavender: More intensity does not make the information available to everyone. Give it a clear textual or static presentation too.
+[jump checkpoint]
+@label correct
+Lavender: Exactly. The story should survive changes in how it is presented.
+[jump return_hub]
+
+@label return_hub
+[if !tutorial_done_29]
+[flag tutorial_done_29]
+[inc tutorial_count]
+[endif]
+[goto {{HUB_TARGET}}:topics_page_6]

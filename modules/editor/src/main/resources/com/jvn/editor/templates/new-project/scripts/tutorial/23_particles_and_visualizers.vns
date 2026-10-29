@@ -1,0 +1,71 @@
+# Tutorial 23 — Particles and Audio Visualizers
+# Reference: docs/scripting/vns/language/vns-commands.md
+# Read scripts/tutorial/README.md for the complete course and linked references.
+@scenario {{SCENARIO_PREFIX}}_tutorial_23
+@include {{CHARACTERS_INCLUDE}}
+{{BG_DECL}}@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[set ui.textBoxAsset none]
+[set ui.continueIndicator spinning_arrow]
+[if tutorial_still]
+[set ui.reduceMotion true]
+[else]
+[set ui.reduceMotion false]
+[endif]
+[if !tutorial_initialized]
+[set tutorial_count 0]
+[flag tutorial_initialized]
+[endif]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
+[set character.lavender.imageEffect none]
+{{BG_START}}
+[textspeed 28]
+[show lavender center talking]
+Lavender: Particles add weather and atmosphere. A visualizer turns audio analysis into motion. Both should support a scene without obscuring its text.
+@label lesson_menu
+> Demonstrate a short particle effect -> particles
+> Demonstrate the music visualizer -> audio
+> Tune and clean up effects -> practice
+> Checkpoint -> checkpoint
+> Finish and return to the hub -> return_hub
+@label particles
+[particles sakura intensity=0.25 opacity=0.65 speed=0.5 wind=5 duration=2500]
+Lavender: These petals are a temporary effect over our white stage. Intensity, speed, size, wind, opacity, and layer each control a different part of the result.
+[particles stop]
+Lavender: Stop ends emission. Existing particles finish their fade; it is not an instant removal of every particle.
+[jump lesson_menu]
+@label audio
+{{BGM_START}}
+[visualizer on bars=24]
+[visualizer set color=#8b72b0]
+Lavender: With the bundled music enabled, the bars respond to sound. If this project omitted demo audio, add a local music file before trying the visualizer.
+[visualizer off]
+{{BGM_FADE}}
+[jump lesson_menu]
+@label practice
+Lavender: Snow, rain, sakura, fireflies, dust, and leaves are preset starting points. Texture and tint options let you supply your own visual language.
+Lavender: Continuous effects need explicit cleanup at scene exits. Timed effects need a duration that still makes sense when the player skips text.
+Lavender: Exercise: compare a sparse effect behind the actors with one in front. Test slow reading, skip, pause, rollback, and a low-powered machine.
+Lavender: Keep a still presentation available. Movement should never be the only way to learn a required fact.
+[jump lesson_menu]
+@label checkpoint
+Lavender: Does stopping emission necessarily erase all existing particles immediately?
+> No, they finish their normal fade -> correct
+> Yes, every particle vanishes at once -> retry
+@label retry
+Lavender: Stop prevents new emission; the existing particles can finish naturally.
+[jump checkpoint]
+@label correct
+Lavender: Right. Design your transition with that lifetime in mind.
+[jump return_hub]
+
+@label return_hub
+[particles stop]
+[visualizer off]
+[if !tutorial_done_23]
+[flag tutorial_done_23]
+[inc tutorial_count]
+[endif]
+[goto {{HUB_TARGET}}:topics_page_5]

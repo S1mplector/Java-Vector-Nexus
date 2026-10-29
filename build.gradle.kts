@@ -206,6 +206,7 @@ val jvnGameRuntimeProjectPaths = listOf(
   ":core",
   ":plugin-api",
   ":plugin-runtime",
+  ":plugin-pikupiku",
   ":fx",
   ":audio",
   ":scripting",

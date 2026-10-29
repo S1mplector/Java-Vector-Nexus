@@ -1,0 +1,69 @@
+# Tutorial 27 — Editor Workflows
+# Reference: docs/editor/core/editor.md
+# Read scripts/tutorial/README.md for the complete course and linked references.
+@scenario {{SCENARIO_PREFIX}}_tutorial_27
+@include {{CHARACTERS_INCLUDE}}
+{{BG_DECL}}@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[set ui.textBoxAsset none]
+[set ui.continueIndicator spinning_arrow]
+[if tutorial_still]
+[set ui.reduceMotion true]
+[else]
+[set ui.reduceMotion false]
+[endif]
+[if !tutorial_initialized]
+[set tutorial_count 0]
+[flag tutorial_initialized]
+[endif]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
+[set character.lavender.imageEffect none]
+{{BG_START}}
+[textspeed 28]
+[show lavender center talking]
+Lavender: The editor connects text, visual tools, diagnostics, assets, and the running game. Use each view to answer a concrete authoring question.
+@label lesson_menu
+> Navigate a project and its story -> navigation
+> Inspect and fix a scene -> diagnostics
+> Use visual authoring tools -> tools
+> Practice a complete edit cycle -> practice
+> Checkpoint -> checkpoint
+> Finish and return to the hub -> return_hub
+@label navigation
+Lavender: Project Explorer locates scripts, configuration, and assets. The text editor owns the source. Story Timeline shows arcs across files; Label Flow Map shows branches inside a script.
+Lavender: Open the generated story map and find this workshop's route from the hub. Follow its script path, entry label, and return route.
+Lavender: Asset Browser, image attributes, and the Inspector reveal what a selected resource or scene element actually contains. Clear names make all these views more useful.
+[jump lesson_menu]
+@label diagnostics
+Lavender: VNS Diagnostics catches authoring problems before you play. Use the Run Console for runtime logs, errors, and the command that launched the project.
+Lavender: Exercise: deliberately misspell a label in a copied script, find the diagnostic, repair it, and run the corrected path. Then try a missing asset path and compare the evidence.
+Lavender: A clean parse does not prove every branch is reachable or every asset looks right. Combine static diagnostics, flow inspection, and playtesting.
+[jump lesson_menu]
+@label tools
+Lavender: Puppeteer edits motion and exports timeline source. Layout Launcher opens dialogue and menu design. Layered Image Visualizer checks character compositions. Scene Lighting Studio prepares lighting presets.
+Lavender: Image Tint and image attributes help prepare resources. Plugin Tools hosts extensions such as Pikupiku. Version Control helps review what changed before you share it.
+Lavender: Treat generated source as part of your project. Inspect the export, keep meaningful names, and verify that re-opening the tool preserves the intended setup.
+[jump lesson_menu]
+@label practice
+Lavender: Change one expression, one line, and one choice in a copy of this lesson. Preview the result, run the full game, inspect the diff, and commit the three intentional changes together.
+Lavender: Use Git branches for experiments and keep build output out of source control. A review should make it clear which change affects story, assets, layout, or code.
+[jump lesson_menu]
+@label checkpoint
+Lavender: Which view answers whether a cross-file story route points at the intended arc?
+> Story Timeline and its story-map source -> correct
+> Only the image tint controls -> retry
+@label retry
+Lavender: Tint edits appearance. Story routes live in the story map and the scripts it references.
+[jump checkpoint]
+@label correct
+Lavender: Yes. Choose a tool based on the question you need answered.
+[jump return_hub]
+
+@label return_hub
+[if !tutorial_done_27]
+[flag tutorial_done_27]
+[inc tutorial_count]
+[endif]
+[goto {{HUB_TARGET}}:topics_page_6]

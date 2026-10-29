@@ -1,5 +1,21 @@
 # JVN Build And Release Docs
 
+```mermaid
+flowchart TD
+  accTitle: Release a tested project with matching documentation
+  accDescr: Validate source and assets, test the full runtime, confirm license acceptance, build the chosen target, verify the package, then publish notes and synchronize documentation.
+  Source["Scripts, configuration, assets"] --> Validate["Validate and test"]
+  Validate --> Runtime["Play full runtime and both routes"]
+  Runtime --> Terms["Required license acceptance"]
+  Terms --> Build["Build selected target"]
+  Build --> Verify["Verify package and target behavior"]
+  Verify --> Publish["Publish version and release notes"]
+  Publish --> Docs["Sync website from matching source"]
+```
+
+> [!IMPORTANT]
+> Native packages need their target environment and required acceptance evidence. Passing a source build is not evidence that every installer or backend has been verified.
+
 Use this hub when the question is "how do we ship this game?"
 
 ## Pick The Output First

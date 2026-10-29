@@ -1,0 +1,5 @@
+Tutorial music: Lofi Lofi Music 2 by Apalonbeats.
+Source: apalonbeats-lofi-lofi-music-2-566602.mp3, supplied by the project owner.
+Handwritten title: Caveat Brush, The Caveat Project Authors.
+https://github.com/google/fonts/tree/main/ofl/caveatbrush
+Distributed under the SIL Open Font License; see CaveatBrush-OFL.txt.

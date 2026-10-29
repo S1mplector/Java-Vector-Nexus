@@ -525,6 +525,7 @@ public class EditorApp extends Application {
         .build();
     pluginHost.discoverAndStart();
     com.jvn.core.animation.EasingExtensions.install(pluginHost.registries().animationEasings());
+    com.jvn.core.assets.ImageEffects.install(pluginHost.registries().imageEffects());
     refreshPluginToolsMenu();
   }
 
@@ -545,6 +546,8 @@ public class EditorApp extends Application {
           Map<String, Object> services = new LinkedHashMap<>();
           Window owner = dialogOwner();
           if (owner != null) services.put("window", owner);
+          services.put("imageEffectEditor", (com.jvn.plugin.api.image.ImageEffectEditor) effectId ->
+              com.jvn.editor.ui.ImageEffectStudio.open(owner, projectRoot == null ? null : projectRoot.toPath(), effectId));
           tool.open(new com.jvn.plugin.api.editor.EditorToolContext(
               projectRoot == null ? null : projectRoot.toPath(), services));
         } catch (Exception error) {

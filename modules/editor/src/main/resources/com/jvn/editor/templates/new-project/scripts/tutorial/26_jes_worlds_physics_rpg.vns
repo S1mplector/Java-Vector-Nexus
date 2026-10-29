@@ -1,0 +1,71 @@
+# Tutorial 26 — JES Worlds, Physics, RPG and AI
+# Reference: docs/guides/jes-by-example/07-tilemap-world.md
+# Read scripts/tutorial/README.md for the complete course and linked references.
+@scenario {{SCENARIO_PREFIX}}_tutorial_26
+@include {{CHARACTERS_INCLUDE}}
+{{BG_DECL}}@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[set ui.textBoxAsset none]
+[set ui.continueIndicator spinning_arrow]
+[if tutorial_still]
+[set ui.reduceMotion true]
+[else]
+[set ui.reduceMotion false]
+[endif]
+[if !tutorial_initialized]
+[set tutorial_count 0]
+[flag tutorial_initialized]
+[endif]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
+[set character.lavender.imageEffect none]
+{{BG_START}}
+[textspeed 28]
+[show lavender center talking]
+Lavender: JVN also has systems for interactive 2D worlds. This workshop maps those systems and gives you a practical build sequence; the linked guides contain complete runnable projects.
+@label lesson_menu
+> Tilemaps and movement -> maps
+> Physics and simulation -> physics
+> RPG state and AI -> rpg
+> Build a tiny exploration scene -> practice
+> Checkpoint -> checkpoint
+> Finish and return to the hub -> return_hub
+@label maps
+Lavender: A tilemap separates reusable tiles from their placement in layers. Collision data says where movement is blocked; it is not implied by a tile looking like a wall.
+Lavender: Use the Tilemap Editor to lay out a small room. Add a controllable actor, collision, and a camera before expanding the map.
+Lavender: Exercise: test each doorway and boundary, including diagonal movement. Then change the window size and check that the camera and input still agree.
+[jump lesson_menu]
+@label physics
+Lavender: Physics bodies and shapes describe simulation. Visual sprites describe appearance. Align them deliberately so a collision feels like it matches the drawing.
+Lavender: Fixed timestep and maximum substeps trade simulation consistency against work per frame. Test slow frames instead of assuming your development machine represents every player.
+Lavender: The physics guide introduces bodies, forces, collision behavior, and tuning. Start with one falling object and a floor; add interactions after that is predictable.
+[jump lesson_menu]
+@label rpg
+Lavender: RPG systems organize actors, stats, inventory, quests, and combat. Their state may need to cross the VNS/JES boundary and survive saving.
+Lavender: AI systems drive behavior such as patrol, pursuit, and action selection. These are game behavior systems, separate from image generation or language-model dialogue.
+Lavender: Use explicit state changes and observable goals. A patrol that can be inspected is easier to fix than an enemy that seems to change its mind without a reason.
+Lavender: Exercise: write down which state belongs to an entity, which belongs to the party or quest, and which must be handed back to VNS.
+[jump lesson_menu]
+@label practice
+Lavender: Build one room, one actor, one collectible, and one exit. Return to VNS with a collected-item result and branch the next conversation.
+Lavender: Then save, reload, and verify that the item cannot be collected twice accidentally. Test keyboard input, collision boundaries, and returning to the paused dialogue.
+Lavender: Follow the linked Tilemap World, RPG Systems, Physics Bodies, and VNS Bridge examples in order. This is an authoring exercise; no invisible RPG simulation is running behind this dialogue.
+[jump lesson_menu]
+@label checkpoint
+Lavender: What makes a painted wall block the player?
+> Collision data and movement or physics rules -> correct
+> Its appearance alone -> retry
+@label retry
+Lavender: Rendering does not automatically establish collision. Configure the interaction explicitly.
+[jump checkpoint]
+@label correct
+Lavender: Exactly. Verify both the visible world and the rules that govern it.
+[jump return_hub]
+
+@label return_hub
+[if !tutorial_done_26]
+[flag tutorial_done_26]
+[inc tutorial_count]
+[endif]
+[goto {{HUB_TARGET}}:topics_page_5]

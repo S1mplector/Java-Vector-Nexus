@@ -30,4 +30,10 @@ public interface PluginRegistries {
   default ExtensionRegistry<AnimationEasing> animationEasings() {
     throw new UnsupportedOperationException("This host does not provide animation easing extensions");
   }
+  /** Returns image effects; requires image.effect. Added in Plugin API 1.2.
+   * @return read-only registry for the host; owned registry for plugins
+   */
+  default ExtensionRegistry<com.jvn.plugin.api.image.ImageEffect> imageEffects() {
+    throw new UnsupportedOperationException("This host does not provide image effects");
+  }
 }

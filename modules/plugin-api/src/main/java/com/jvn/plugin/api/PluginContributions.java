@@ -9,4 +9,10 @@ public interface PluginContributions {
    * @return animation contributions
    */
   AnimationContributions animations();
+  /** Returns the image-effect authoring surface, added in Plugin API 1.2.
+   * @return image-effect contributions
+   */
+  default com.jvn.plugin.api.image.ImageEffectContributions images() {
+    throw new UnsupportedOperationException("This host does not provide image effects");
+  }
 }

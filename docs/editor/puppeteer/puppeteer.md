@@ -1,5 +1,21 @@
 # Puppeteer — Animation Timeline Editor
 
+```mermaid
+flowchart LR
+  accTitle: Puppeteer authoring round trip
+  accDescr: Import scene context, edit tracks and keyframes, preview the result, export source, and verify it in the consuming VNS or JES scene.
+  Scene["Scene and stage context"] --> Import["Launch / import"]
+  Import --> Edit["Tracks, keyframes, easing"]
+  Edit --> Preview["Preview and scrub"]
+  Preview --> Edit
+  Preview --> Export["Export timeline source"]
+  Export --> Runtime["Run in VNS or JES"]
+  Runtime --> Edit
+```
+
+> [!TIP]
+> Preview a named export at its actual calling site. Character groups, stage lighting, and camera context can change how the same motion reads in the finished scene.
+
 Puppeteer is JVN's visual keyframe animation editor. It allows authors to create entity animations by placing keyframes on a timeline, previewing them in real-time, and exporting the result as JES timeline code that can be embedded in both JES scenes and VNS scripts.
 
 This document covers the system architecture, the JES/VNS relationship, the data pipeline, and a usability guide.

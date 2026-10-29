@@ -165,3 +165,15 @@ with a link to the resolution. Avoid rewriting historical measurements to match 
 A new full audit is due when the last one is several months old or a status banner shows most
 findings resolved — stale audits stop being useful for spotting new drift. Run one before relying on
 an old report's remaining open items as the current punch list.
+
+## Annotated and visual explanations
+
+Write prerequisites and expected behavior before a long procedure. Use a compact annotated example with numbered comments and a matching explanation table when readers need to distinguish several moving parts. Keep the copied code executable; mark conceptual examples and required placeholder assets clearly.
+
+Use GFM annotations (`> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`, `> [!CAUTION]`) for specific context and contracts. Do not turn every paragraph into a callout. Put warnings beside the operation they describe.
+
+Use a fenced `mermaid` block when relationships, flow, or lifecycle are easier to understand visually. Include `accTitle` and `accDescr`, quote labels with punctuation, and keep diagrams small enough to read at a normal viewport width. Add a text explanation so the page remains useful without rendering. Do not embed executable links, HTML labels, or initialization directives in diagrams. The website uses a pinned Mermaid distribution and strict rendering.
+
+Prefer one useful overview diagram plus focused examples over a diagram for every paragraph. Link to the exact reference that owns a behavior instead of copying an entire command inventory into several guides. Verify diagram syntax and local links during the docs check; review at least one desktop and one narrow viewport after renderer changes.
+
+The [reading guide](guides/reading-the-docs.md) describes the website’s source views, heading links, annotations, and copy controls. Keep those descriptions synchronized with the website implementation.

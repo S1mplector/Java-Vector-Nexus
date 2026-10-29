@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 
 /** Discovers, validates, starts, and stops plugins for one JVN process. */
 public final class PluginHost implements AutoCloseable {
-  public static final String API_VERSION = "1.1.0";
+  public static final String API_VERSION = "1.2.0";
   private static final Logger log = LoggerFactory.getLogger(PluginHost.class);
 
   private final String jvnVersion;
@@ -45,6 +45,7 @@ public final class PluginHost implements AutoCloseable {
   private final Map<String, Active> active = new LinkedHashMap<>();
   private final List<PluginDiagnostic> diagnostics = new ArrayList<>();
   private boolean started;
+  private boolean closed;
 
   private PluginHost(Builder builder) {
     jvnVersion = builder.jvnVersion;
@@ -127,7 +128,8 @@ public final class PluginHost implements AutoCloseable {
 
   @Override
   public synchronized void close() {
-    if (!started && active.isEmpty()) return;
+    if (closed) return;
+    closed = true;
     RuntimeEvent event = new RuntimeEvent(jvnVersion, projectDirectory, Map.of("environment", environment.name()));
     dispatch(listener -> listener.onRuntimeStopping(event), "runtime-stop-listener");
     List<Active> reverse = new ArrayList<>(active.values());
@@ -143,6 +145,7 @@ public final class PluginHost implements AutoCloseable {
         closeLoader(loaded.candidate.loader);
       }
     }
+    candidates.values().forEach(candidate -> closeLoader(candidate.loader));
     started = false;
   }
 
@@ -295,6 +298,7 @@ public final class PluginHost implements AutoCloseable {
   }
 
   private void ensureNotStarted() {
+    if (closed) throw new IllegalStateException("Plugin host is closed; create a new host to reload");
     if (started) throw new IllegalStateException("Plugin host is already started");
   }
 

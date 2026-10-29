@@ -1,6 +1,6 @@
 # Plugin API reference
 
-This page defines the behavioral contract of Plugin API `1.1.0`. The generated Javadocs provide member-level details; this reference explains how the types work together.
+This page defines the behavioral contract of Plugin API `1.2.0`. The generated Javadocs provide member-level details; this reference explains how the types work together.
 
 ## Package map
 
@@ -12,6 +12,7 @@ This page defines the behavioral contract of Plugin API `1.1.0`. The generated J
 | `com.jvn.plugin.api.asset` | Explicit asset import requests and outcomes |
 | `com.jvn.plugin.api.runtime` | Runtime lifecycle events |
 | `com.jvn.plugin.api.animation` | Metadata-rich animation easing contributions |
+| `com.jvn.plugin.api.image` | Immutable pixels, validated controls, prepared frames, and optional editor service |
 
 Only packages under `com.jvn.plugin.api` form the compatibility contract. `com.jvn.plugin.runtime` is a host implementation and is intended for application embedding and tests, not ordinary plugin logic.
 
@@ -48,6 +49,8 @@ Do not retain contexts or host service objects in static fields. Doing so can pr
 
 The returned `Registration` is idempotent. Closing it removes that extension early. Regardless of whether a plugin retains the handle, the host removes all registrations owned by the plugin during rollback or shutdown.
 
+Host-level registry views reject registration. Plugin-owned registries are revoked after failure or stop, including previously retained handles. IDs are normalized with `Locale.ROOT`.
+
 Recommended IDs use the plugin namespace:
 
 ```text
@@ -78,6 +81,7 @@ JVN applies returned assignments after successful execution. Exceptions enter no
 | `initialize`, `start`, `stop` | Host lifecycle caller | Keep bounded; do not assume JavaFX |
 | `ScriptCommand.execute` | Runtime script-processing thread | Return quickly; avoid rendering waits |
 | `EditorTool.open` | JavaFX application thread | Create UI here; move expensive work off-thread |
+| `ImageEffect.prepare` | Host worker | Thread-safe, bounded, interruptible pixel preparation |
 | `AssetImporter.importAsset` | Calling importer workflow | Do not assume a specific thread |
 | `RuntimeListener` callbacks | Host lifecycle caller | Observe quickly; isolate long work |
 
@@ -99,9 +103,11 @@ Never catch `Throwable` in plugin code. The host does so only at the isolation b
 
 ## Contribution API
 
-`PluginContext.contribute()` is the author-focused entry point for metadata-rich extension families. In 1.1, `PluginContributions.animations()` exposes `AnimationContributions.easing(id, definition)`.
+`PluginContext.contribute()` is the author-focused entry point for metadata-rich extension families. `PluginContributions.animations()` exposes `AnimationContributions.easing(id, definition)`.
 
 `AnimationEasingDefinition` builds immutable easing definitions. `AnimationParameter` describes validated numeric inputs, and `AnimationEasingFrame` supplies clamped progress plus resolved parameter values to the evaluator. See [Animation Easing Extensions](animation-extensions.md) for the full behavioral contract.
+
+API 1.2 adds `PluginContributions.images()` and `ImageEffectContributions.effect(id, effect)`. The default interface methods preserve earlier host implementers; a host without image support throws `UnsupportedOperationException`. See [Image Effects](image-effects.md) for numeric validation, pixel limits, threading, and typed editor services.
 
 ## Generating Javadocs
 

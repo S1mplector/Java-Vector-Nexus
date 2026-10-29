@@ -1,5 +1,25 @@
 # JVN Documentation
 
+> [!TIP]
+> New to JVN? Start with [Lavender’s playable workshop](guides/lavender-workshop.md). Looking up one behavior? Use the [task index](INDEX.md). The [reading guide](guides/reading-the-docs.md) explains diagrams, annotations, and runnable examples.
+
+```mermaid
+flowchart LR
+  accTitle: Find the right JVN documentation
+  accDescr: New authors follow the workshop, project work uses editor and scripting guides, and reusable features use the plugin API. All paths lead to runtime testing and release.
+  Start["What are you making?"] --> Learn["Learn: Lavender workshop"]
+  Start --> Story["Story: VNS and presentation"]
+  Start --> World["Interactive scene: JES"]
+  Start --> Tool["Reusable feature: plugins"]
+  Learn --> Test["Preview and test"]
+  Story --> Test
+  World --> Test
+  Tool --> Test
+  Test --> Ship["Package and release"]
+```
+
+The diagram is a route map, not a required sequence. Use the reference pages alongside the tool or script you are editing.
+
 This directory is the source of truth for Java Vector Nexus editor, runtime, scripting, packaging, and workflow docs.
 
 Start with the public documentation website at [javavectornexus.com](https://javavectornexus.com)

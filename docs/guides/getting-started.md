@@ -1,5 +1,23 @@
 # Getting Started with JVN
 
+> [!NOTE]
+> **Prerequisite:** JDK 21 and a source checkout. **First result:** a project you can run, with an editable script and a known entry point. Choose Tutorial Workspace for the full 30-lesson course.
+
+```mermaid
+flowchart LR
+  accTitle: From checkout to a playable project
+  accDescr: Build the engine, open the editor, create a project, edit a scene, preview it, then test the full runtime before packaging.
+  A["Get source and JDK 21"] --> B["Build / open editor"]
+  B --> C["Create Tutorial Workspace"]
+  C --> D["Edit a VNS scene"]
+  D --> E["Preview the scene"]
+  E --> D
+  E --> F["Run the whole project"]
+  F --> G["Validate and package"]
+```
+
+**Checkpoint:** reach the workshop hub, open a lesson’s source, change one line, and see that change in the running project. A preview verifies the current scene; a full run also verifies menus, project entry, and runtime integration.
+
 This guide walks you through building JVN, creating your first project, and running it.
 
 Before you go deep:

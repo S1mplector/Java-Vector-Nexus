@@ -11,7 +11,9 @@ public enum PluginCapability {
   /** Permission to observe runtime lifecycle events. */
   RUNTIME_LISTENER("runtime.listener"),
   /** Permission to contribute named easing curves. */
-  ANIMATION_EASING("animation.easing");
+  ANIMATION_EASING("animation.easing"),
+  /** Permission to contribute prepared raster image effects. */
+  IMAGE_EFFECT("image.effect");
 
   private final String id;
 

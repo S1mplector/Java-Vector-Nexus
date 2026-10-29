@@ -1,5 +1,27 @@
 # Engine Lifecycle & Main Loop
 
+```mermaid
+sequenceDiagram
+  accTitle: A VNS conversation visits a JES scene
+  accDescr: Pushing a JES scene pauses the conversation. The top scene receives updates. Popping it exits the interaction and resumes the conversation at the agreed return point.
+  participant V as VNS conversation
+  participant S as Scene stack
+  participant J as JES interaction
+  V->>S: Push interaction with return label
+  S->>V: onPause
+  S->>J: onEnter
+  loop While interaction is active
+    S->>J: update and render
+  end
+  J->>S: Return / pop
+  S->>J: onExit
+  S->>V: onResume
+  V->>V: Continue at return label
+```
+
+> [!TIP]
+> When a timer, sound, or animation continues unexpectedly behind a menu, inspect its owning scene’s pause/resume and exit behavior before adding another global flag.
+
 **Module:** `modules/core` + `modules/runtime`  
 **Core Class:** `Engine` (`com.jvn.core.engine`)  
 **App Class:** `JvnApp` (`com.jvn.runtime`)  

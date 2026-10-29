@@ -146,6 +146,8 @@ public class VnRenderer {
   private static final int DEFAULT_CHOICE_FONT_SIZE = 20;
   private VnState currentState;
   private long animationTime = 0;
+  private final com.jvn.fx.image.FxImageEffectCache imageEffects = new com.jvn.fx.image.FxImageEffectCache();
+  private com.jvn.core.assets.CharacterImageEffect characterEffect = com.jvn.core.assets.CharacterImageEffect.NONE;
   private AudioFacade audioFacade;
   private VnUiLayoutSpec uiLayout;
   private VnUiStyleSpec uiStyle = VnUiStyleSpec.defaults();
@@ -300,6 +302,8 @@ public class VnRenderer {
     this.projectRoot = root;
     this.eyeFocusProfiles = null;
     imageCache.clear();
+    imageEffects.clear();
+    effectFrameIds.clear();
     compositeSpriteCache.clear();
     timelineLayerWorkingSet.clear();
     layerMetadataCache.clear();
@@ -373,6 +377,10 @@ public class VnRenderer {
   }
 
   public void render(VnState state, VnScenario scenario, double width, double height) {
+    renderFrame(state, scenario, width, height, Double.NaN, Double.NaN);
+  }
+
+  private void renderFrame(VnState state, VnScenario scenario, double width, double height, double mouseX, double mouseY) {
     RenderThreadGuard.requireFxThread("VnRenderer.render");
     drawCallStats.reset();
     this.currentState = state;
@@ -485,13 +493,15 @@ public class VnRenderer {
       }
       switch (currentNode.getType()) {
         case DIALOGUE:
-          renderDialogueWithFade(displayedDialogue, state, scenario, width, height, -1);
+          renderDialogueWithFade(displayedDialogue, state, scenario, width, height,
+              getHoveredTextBoxButtonIndex(state, width, height, mouseX, mouseY));
           break;
         case CHOICE:
           if (state.getDialoguePresentationMode() == DialoguePresentationMode.NVL) {
             renderNvlHistory(state, width, height);
           }
-          renderChoices(currentNode.getChoices(), width, height, -1);
+          renderChoices(currentNode.getChoices(), width, height,
+              getHoveredChoiceIndex(currentNode.getChoices(), width, height, mouseX, mouseY));
           break;
         case BACKGROUND:
         case TRANSITION:
@@ -515,7 +525,8 @@ public class VnRenderer {
           && currentNode.getType() != VnNodeType.END) {
         // A completed line stays on screen while an intervening scene action,
         // including a blocking timeline or wait, is playing.
-        renderDialogueWithFade(displayedDialogue, state, scenario, width, height, -1);
+        renderDialogueWithFade(displayedDialogue, state, scenario, width, height,
+              getHoveredTextBoxButtonIndex(state, width, height, mouseX, mouseY));
       }
     }
     if ((displayedDialogue == null || state.isUiHidden())
@@ -523,7 +534,7 @@ public class VnRenderer {
       renderDialogueWithFade(dialogueFadeLine, state, scenario, width, height, -1);
     }
 
-    renderOverlayScreens(state, width, height, null);
+    renderOverlayScreens(state, width, height, getHoveredOverlayButton(state, width, height, mouseX, mouseY));
 
     // Render mode indicators (always visible)
     renderModeIndicators(state, width, height);
@@ -574,27 +585,7 @@ public class VnRenderer {
    * Render with mouse hover support for choices
    */
   public void render(VnState state, VnScenario scenario, double width, double height, double mouseX, double mouseY) {
-    this.currentState = state;
-    render(state, scenario, width, height);
-    
-    // Re-render choices/buttons with hover effect (if UI not hidden)
-    VnNode currentNode = state.getCurrentNode();
-    if (currentNode != null && !state.isUiHidden()) {
-      if (currentNode.getType() == VnNodeType.CHOICE) {
-        int hoverIndex = getHoveredChoiceIndex(currentNode.getChoices(), width, height, mouseX, mouseY);
-        if (state.getDialoguePresentationMode() == DialoguePresentationMode.NVL) {
-          renderNvlHistory(state, width, height);
-        }
-        renderChoices(currentNode.getChoices(), width, height, hoverIndex);
-      } else if (currentNode.getType() == VnNodeType.DIALOGUE) {
-        int hoverButton = getHoveredTextBoxButtonIndex(state, width, height, mouseX, mouseY);
-        // Avoid double-compositing a partially transparent dialogue window.
-        if (dialogueFadeAlpha >= 0.999) {
-          renderDialogueWithFade(currentNode.getDialogue(), state, scenario, width, height, hoverButton);
-        }
-      }
-    }
-    renderOverlayScreens(state, width, height, getHoveredOverlayButton(state, width, height, mouseX, mouseY));
+    renderFrame(state, scenario, width, height, mouseX, mouseY);
   }
 
   private boolean prepareParticles(VnState state, double width, double height) {
@@ -936,6 +927,18 @@ public class VnRenderer {
       double width,
       double height) {
     if (entry == null) return;
+    try {
+      characterEffect = state == null || entry.slot() == null ? com.jvn.core.assets.CharacterImageEffect.NONE
+          : com.jvn.core.assets.CharacterImageEffect.from(state.getVariables(), entry.slot().getCharacterId());
+    } catch (IllegalArgumentException invalid) {
+      characterEffect = com.jvn.core.assets.CharacterImageEffect.NONE;
+    }
+    try { renderCharacterEntryWithEffect(entry, state, scenario, stage, width, height); }
+    finally { characterEffect = com.jvn.core.assets.CharacterImageEffect.NONE; }
+  }
+
+  private void renderCharacterEntryWithEffect(CharacterRenderEntry entry, VnState state,
+      VnScenario scenario, VnStagePreset stage, double width, double height) {
     CharacterPosition position = entry.position();
     VnState.CharacterSlot slot = entry.slot();
     if (slot == null) return;
@@ -1896,6 +1899,10 @@ public class VnRenderer {
     return image != null && !image.isError() && image.getWidth() > 0.0 && image.getHeight() > 0.0;
   }
 
+  private final java.util.Map<Image, Long> effectFrameIds = new java.util.WeakHashMap<>();
+  private long nextEffectFrameId;
+  private long effectFrameId(Image image) { return effectFrameIds.computeIfAbsent(image, ignored -> ++nextEffectFrameId); }
+
   private void drawCharacterImage(Image source,
                                   String spriteTag,
                                   double x,
@@ -1906,16 +1913,18 @@ public class VnRenderer {
                                   double canvasHeight,
                                   VnStagePreset stage) {
     if (source == null) return;
+    Image rendered = imageEffects.frame(source, characterEffect.id(), characterEffect.parameters(), animationTime);
     drawCallStats.incrementCharacterLayer();
     if (stage == null || stage.getLights().isEmpty()) {
-      gc.drawImage(source, x, y, drawWidth, drawHeight);
+      gc.drawImage(rendered, x, y, drawWidth, drawHeight);
       return;
     }
-    String key = stageCharacterCacheKey(spriteTag, stage.getCacheToken(), x, y, drawWidth, drawHeight, canvasWidth, canvasHeight);
+    String renderedTag = spriteTag + "|effect:" + effectFrameId(rendered);
+    String key = stageCharacterCacheKey(renderedTag, stage.getCacheToken(), x, y, drawWidth, drawHeight, canvasWidth, canvasHeight);
     boolean[] missed = {false};
     Image lit = stageCharacterCache.computeIfAbsent(key, unused -> {
       missed[0] = true;
-      return VnStageLightingSupport.buildLitCharacter(source, spriteTag, x, y, drawWidth, drawHeight, canvasWidth, canvasHeight, stage);
+      return VnStageLightingSupport.buildLitCharacter(rendered, renderedTag, x, y, drawWidth, drawHeight, canvasWidth, canvasHeight, stage);
     });
     if (missed[0]) drawCallStats.incrementStageLightingRecomposite();
     gc.drawImage(lit, x, y, drawWidth, drawHeight);
@@ -2565,7 +2574,7 @@ public class VnRenderer {
 
     // Parse and render dialogue text with effects
     String fullText = resolveRuntimeText(dialogue.getText());
-    List<TextSpan> spans = TextParser.parse(fullText);
+    List<TextSpan> spans = parsedText(fullText);
     int plainLength = TextParser.plainLength(fullText);
     int revealedLength = Math.min(state.getTextRevealProgress(), plainLength);
 
@@ -2659,7 +2668,7 @@ public class VnRenderer {
       gc.fillText(truncateText(speaker, Math.max(20.0, speakerW - 8.0), nameFont), speakerX, y);
 
       String text = entry.text() == null ? "" : entry.text();
-      List<TextSpan> spans = TextParser.parse(text);
+      List<TextSpan> spans = parsedText(text);
       int revealed = Math.min(entry.revealedChars(), TextParser.plainLength(text));
       double bodyTop = y;
       drawStyledText(spans, revealed, textX, bodyTop, textWidth, 0.0, dialogueFont, nvlTextFillColor);
@@ -2680,7 +2689,7 @@ public class VnRenderer {
     if (dialogue == null) return;
     String speaker = resolveRuntimeText(dialogue.getSpeakerName());
     String fullText = resolveRuntimeText(dialogue.getText());
-    List<TextSpan> spans = TextParser.parse(fullText);
+    List<TextSpan> spans = parsedText(fullText);
     int revealedChars = Math.min(state.getTextRevealProgress(), TextParser.plainLength(fullText));
 
     BubbleGeometry bubble = resolveBubbleGeometry(
@@ -2885,6 +2894,22 @@ public class VnRenderer {
     }
   }
 
+  private final Map<String, List<TextSpan>> parsedTextCache = new LinkedHashMap<>(32, .75f, true);
+  private record StyledLayoutKey(List<TextSpan> spans, int revealed, double width, Font font, Color color) {}
+  private final Map<StyledLayoutKey, List<StyledLine>> styledLayoutCache = new LinkedHashMap<>(32, .75f, true);
+
+  private List<TextSpan> parsedText(String text) {
+    List<TextSpan> cached = parsedTextCache.get(text);
+    if (cached != null) return cached;
+    List<TextSpan> parsed = List.copyOf(TextParser.parse(text));
+    // Very long author text is deliberately not retained.
+    if (text != null && text.length() <= 16_384) {
+      if (parsedTextCache.size() >= 64) parsedTextCache.remove(parsedTextCache.keySet().iterator().next());
+      parsedTextCache.put(text, parsed);
+    }
+    return parsed;
+  }
+
   private record StyledGlyph(
       char value,
       Font font,
@@ -2922,6 +2947,9 @@ public class VnRenderer {
       Font baseFont,
       Color defaultTextColor
   ) {
+    StyledLayoutKey key = new StyledLayoutKey(spans, revealedChars, maxWidth, baseFont, defaultTextColor);
+    List<StyledLine> cached = styledLayoutCache.get(key);
+    if (cached != null) return cached;
     gc.setFont(baseFont);
     List<StyledLine> lines = new ArrayList<>();
     List<StyledGlyph> currentLine = new ArrayList<>();
@@ -2988,7 +3016,12 @@ public class VnRenderer {
     if (!currentLine.isEmpty() || lines.isEmpty()) {
       lines.add(new StyledLine(List.copyOf(currentLine), currentLineWidth));
     }
-    return lines;
+    List<StyledLine> result = List.copyOf(lines);
+    if (spans.stream().mapToInt(TextSpan::length).sum() <= 16_384) {
+      if (styledLayoutCache.size() >= 96) styledLayoutCache.remove(styledLayoutCache.keySet().iterator().next());
+      styledLayoutCache.put(key, result);
+    }
+    return result;
   }
 
   private void drawStyledLines(
@@ -3006,7 +3039,23 @@ public class VnRenderer {
       double x = resolveAlignedTextX(startX, maxWidth, line.width(), xAlign);
       double y = startY + lineIndex * lineHeight;
 
-      for (StyledGlyph glyph : line.glyphs()) {
+      for (int glyphOffset = 0; glyphOffset < line.glyphs().size(); glyphOffset++) {
+        StyledGlyph glyph = line.glyphs().get(glyphOffset);
+        // Static text is painted in style runs. Animated effects keep per-glyph positions.
+        if (!animatedTextEffect(glyph.effect()) && !glyph.syntheticItalic()) {
+          StringBuilder run = new StringBuilder().append(glyph.value());
+          double runWidth = glyph.width();
+          while (glyphOffset + 1 < line.glyphs().size()) {
+            StyledGlyph next = line.glyphs().get(glyphOffset + 1);
+            if (animatedTextEffect(next.effect()) || next.syntheticItalic()
+                || !next.font().equals(glyph.font()) || !next.color().equals(glyph.color())) break;
+            run.append(next.value()); runWidth += next.width(); glyphOffset++;
+          }
+          gc.setFill(glyph.color()); gc.setFont(glyph.font());
+          gc.fillText(run.toString(), x, y);
+          x += runWidth;
+          continue;
+        }
         gc.setFill(glyph.color());
         gc.setFont(glyph.font());
 
@@ -3049,6 +3098,11 @@ public class VnRenderer {
     gc.setFill(defaultTextColor);
   }
 
+  private static boolean animatedTextEffect(TextEffect effect) {
+    return effect == TextEffect.SHAKE || effect == TextEffect.WAVE
+        || effect == TextEffect.BOUNCE || effect == TextEffect.RAINBOW;
+  }
+
   private void drawContinueIndicatorAfterText(
       List<StyledLine> lines,
       double startX,
@@ -3059,7 +3113,7 @@ public class VnRenderer {
       double fallbackX,
       double fallbackY
   ) {
-    if (continueIndicatorImage == null || lines == null || lines.isEmpty()) {
+    if (usesSpinningArrow() || continueIndicatorImage == null || lines == null || lines.isEmpty()) {
       drawContinueIndicator(fallbackX, fallbackY);
       return;
     }
@@ -3990,7 +4044,15 @@ public class VnRenderer {
     return VnVariableInterpolator.interpolate(translated, currentState.getVariables());
   }
 
+  private boolean usesSpinningArrow() {
+    return "spinning_arrow".equalsIgnoreCase(readStringVariable(currentState, "ui.continueIndicator"));
+  }
+
   private void drawContinueIndicator(double x, double y) {
+    if (usesSpinningArrow()) {
+      SpinningArrow.draw(gc, x, y, animationTime, Boolean.TRUE.equals(readBooleanVariable(currentState, "ui.reduceMotion")));
+      return;
+    }
     // Bounce animation: offset Y by sine wave
     double bounce = Math.sin(animationTime * 0.005) * 4;
     double animY = y + bounce;
@@ -4412,6 +4474,8 @@ public class VnRenderer {
 
   public void clearCache() {
     imageCache.clear();
+    imageEffects.clear();
+    effectFrameIds.clear();
     compositeSpriteCache.clear();
     timelineLayerWorkingSet.clear();
     layerMetadataCache.clear();
@@ -4421,14 +4485,19 @@ public class VnRenderer {
     layerPathCache.clear();
     particleBlitter.clearCache();
     textMetrics.clear();
+    parsedTextCache.clear();
+    styledLayoutCache.clear();
   }
 
   private boolean disposed = false;
 
   public void dispose() {
+    imageEffects.close();
     if (disposed) return;
     disposed = true;
     imageCache.clear();
+    imageEffects.clear();
+    effectFrameIds.clear();
     compositeSpriteCache.clear();
     timelineLayerWorkingSet.clear();
     layerMetadataCache.clear();
@@ -4438,6 +4507,8 @@ public class VnRenderer {
     layerPathCache.clear();
     particleBlitter.clearCache();
     textMetrics.clear();
+    parsedTextCache.clear();
+    styledLayoutCache.clear();
     timelineAccessor = null;
     currentState = null;
     projectRoot = null;

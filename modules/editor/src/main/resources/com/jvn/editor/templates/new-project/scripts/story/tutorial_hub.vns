@@ -1,5 +1,5 @@
 # {{PROJECT_NAME}} - Tutorial Hub
-# 17 interactive lessons covering VNS scripting from first dialogue line to release checklist.
+# 30 interactive lessons covering JVN from first dialogue line to release checklist.
 # Each lesson is a separate .vns file in scripts/tutorial/.
 # Lessons are self-contained — the player can take them in any order.
 # The tutorial_count variable (set to 0 in the prologue) tracks how many the player completes.
@@ -10,37 +10,73 @@
 
 {{BG_DECL}}@label start
 [mode dialogue standard]
-[set ui.dialogueUi default]
-[set ui.textBoxAsset default]
+[set ui.dialogueUi project]
+[set ui.textBoxAsset none]
+[set ui.continueIndicator spinning_arrow]
+[if tutorial_still]
+[set ui.reduceMotion true]
+[else]
+[set ui.reduceMotion false]
+[endif]
+[if !tutorial_initialized]
+[set tutorial_count 0]
+[flag tutorial_initialized]
+[endif]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
+[set character.lavender.imageEffect none]
 [textspeed 28]
 [autodelay 1700]
-[set ui.characterHeightFactor 0.82]
-[set ui.characterBaselineY 0.96]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
 {{BG_START}}
 [show lavender center happy]
 [wait 200]
 
 Lavender: Welcome! I'm Lavender, your guide through these tutorials.
 [show lavender center talking]
-Lavender: There are {b}17 lessons{/b} ahead. Each one teaches a specific part of VNS scripting — from writing your first dialogue line to shipping a finished game.
+Lavender: There are {b}30 lessons{/b} ahead. Each one teaches a part of JVN — from writing your first dialogue line to shipping a finished game.
 
 Lavender: Every lesson is a real {b}.vns{/b} file inside {b}scripts/tutorial/{/b}. You can open any of them in the editor right now, side by side with this hub.
 Lavender: They're designed to be modified. Change the code, break something, see what happens — that's how the syntax sticks.
 
 [show lavender center happy]
-Lavender: The lessons are grouped into three pages. Pick any topic — they're self-contained, so order doesn't matter.
-Lavender: Each lesson tracks a {b}tutorial_count{/b} variable. When you leave, I'll know how many you completed.
+Lavender: The lessons are grouped into six pages. Pick any topic — they're self-contained, so order doesn't matter.
+Lavender: Finish a lesson with its return-to-hub option to mark it complete. Replaying it never adds a second completion.
+Lavender: The stage is plain white, my drawing stays still, and the translucent textbox keeps our conversation readable.
+> Keep the spinning continue arrow -> topics_page_1
+> Use a still continue arrow -> set_still
+
+@label set_still
+[flag tutorial_still]
+[set ui.reduceMotion true]
+[set character.lavender.imageEffect none]
+[jump topics_page_1]
+
+@label set_motion
+[unflag tutorial_still]
+[set ui.reduceMotion false]
+[set character.lavender.imageEffect none]
+[jump topics_page_1]
 
 @label topics_page_1
 [show lavender far_left talking]
 [wait 120]
 Lavender: Writing and presenting — how text, characters, and visuals reach the screen.
+> Toggle the continue arrow animation -> toggle_motion
 > 01. Dialogue Basics — lines, narrator, text tags -> open_dialogue
 > 02. Narration and Pacing — textspeed, wait, autodelay -> open_narration
 > 03. Expressions and Characters — @character, sprites, [show]/[hide] -> open_expressions
 > 04. Images and Backgrounds — @background, [bg], composition -> open_images
 > More topics → -> topics_page_2
 > I'm done for now -> end_early
+
+@label toggle_motion
+[if tutorial_still == true]
+[jump set_motion]
+[else]
+[jump set_still]
+[endif]
 
 @label topics_page_2
 [show lavender far_left talking]
@@ -67,9 +103,82 @@ Lavender: Production — camera work, localization, UI customization, hybrid sce
 > 15. UI Layout and Theme — dialogue box, menu files, style properties -> open_ui_layout
 > 16. Testing and Release — validation, playtesting, release checklist -> open_testing_release
 > 17. VNS and JES Together — scene push, parameters, and return flow -> open_vns_jes
+> More: interfaces and plugins → -> topics_page_4
 > ← Back -> topics_page_1
 > ← Systems -> topics_page_2
 > I'm done for now -> end_early
+
+@label topics_page_4
+[show lavender far_left talking]
+Lavender: Completed ${tutorial_count} of 30 lessons. Pick a workshop.
+> 18. Plugins and Pikupiku — preview, presets, authoring -> open_plugins_and_line_boil
+> 19. Saves and Rollback — history, slots, persistence -> open_saves_rollback_persistence
+> 20. Dialogue Surfaces — ADV, NVL, bubbles -> open_dialogue_presentation
+> 21. Reactive UI and Facets — live data and return values -> open_reactive_ui_and_facets
+> 22. Phone Storytelling — contacts, threads, calls -> open_phone_storytelling
+> More workshops → -> topics_page_5
+> ← Back -> topics_page_3
+> I’m done for now -> end_early
+
+@label topics_page_5
+[show lavender far_left talking]
+Lavender: Completed ${tutorial_count} of 30 lessons. Pick a workshop.
+> 23. Particles and Visualizers — motion and music -> open_particles_and_visualizers
+> 24. Layer Groups and Lighting — stage, focus, display slots -> open_layer_groups_and_lighting
+> 25. JES Workshop — entities, input, widgets -> open_jes_entities_input_widgets
+> 26. JES Worlds — tilemaps, physics, RPG and AI -> open_jes_worlds_physics_rpg
+> More workshops → -> topics_page_6
+> ← Back -> topics_page_4
+> I’m done for now -> end_early
+
+@label topics_page_6
+[show lavender far_left talking]
+Lavender: Completed ${tutorial_count} of 30 lessons. Pick a workshop.
+> 27. Editor Workflows — maps, diagnostics, tooling -> open_editor_workflows
+> 28. Assets and Performance — catalogs, packs, profiling -> open_assets_and_performance
+> 29. Accessibility and Controls — readable, playable settings -> open_accessibility_and_controls
+> 30. Extensions and Capstone — Java, plugins, shipping -> open_java_extensions_and_capstone
+> ← Back -> topics_page_5
+> I’m done for now -> end_early
+
+@label open_plugins_and_line_boil
+[goto T18_Plugins:start]
+
+@label open_saves_rollback_persistence
+[goto T19_Saves:start]
+
+@label open_dialogue_presentation
+[goto T20_Presentation:start]
+
+@label open_reactive_ui_and_facets
+[goto T21_Facets:start]
+
+@label open_phone_storytelling
+[goto T22_Phone:start]
+
+@label open_particles_and_visualizers
+[goto T23_Particles:start]
+
+@label open_layer_groups_and_lighting
+[goto T24_Stage:start]
+
+@label open_jes_entities_input_widgets
+[goto T25_JesTools:start]
+
+@label open_jes_worlds_physics_rpg
+[goto T26_JesWorlds:start]
+
+@label open_editor_workflows
+[goto T27_Editor:start]
+
+@label open_assets_and_performance
+[goto T28_Assets:start]
+
+@label open_accessibility_and_controls
+[goto T29_Accessibility:start]
+
+@label open_java_extensions_and_capstone
+[goto T30_Extensions:start]
 
 @label open_dialogue
 [goto {{DIALOGUE_TARGET}}:start]
@@ -127,15 +236,15 @@ Lavender: Production — camera work, localization, UI customization, hybrid sce
 [wait 160]
 
 # ─── Progress-Aware Farewell ────────────────────────────────────
-# tutorial_count is incremented by each lesson's [inc tutorial_count] at the top.
+# Each lesson records completion only once, on return to this hub.
 # This [if] block reacts to how many the player actually completed.
 
-[if tutorial_count > 14]
-Lavender: You covered {b}nearly everything{/b}. You know dialogue, pacing, characters, audio, variables, branching, camera, timelines, UI, localization, and testing.
+[if tutorial_count >= 30]
+Lavender: You covered {b}the full workshop{/b}. You have explored story scripting, presentation, interfaces, game systems, authoring tools, extensions, and production.
 Lavender: That's not a tutorial anymore — that's a toolkit. You're ready to build a full game.
-[elif tutorial_count > 7]
+[elif tutorial_count >= 15]
 Lavender: Good depth — you've got the core scripting systems under your belt.
-Lavender: The remaining lessons cover production topics: camera staging, localization, UI customization, and release prep. Come back when your project reaches that stage.
+Lavender: The later workshops cover reactive interfaces, plugins, JES worlds, accessibility, and release preparation. Come back when your project reaches that stage.
 [elif tutorial_count > 2]
 Lavender: Solid start. You've seen how dialogue, characters, and a few engine systems work.
 Lavender: The lessons you skipped aren't going anywhere. Open them when a feature comes up — they work as standalone reference, not just sequential tutorials.
@@ -151,7 +260,7 @@ Lavender: Each lesson is a self-contained .vns file. Open any of them directly f
 Lavender: One more thing: every tutorial file is a real, runnable .vns script. They're not read-only documentation.
 Lavender: Copy code snippets into your own scenes. Add comments. Modify the practice sections. They're yours now.
 
-narrator: To return to these tutorials later, run this project and choose {b}Learn VNS scripting{/b} from the prologue.
+narrator: To return to these tutorials later, run this project and choose {b}Open Lavender’s complete JVN workshop{/b} from the prologue.
 narrator: Or open any file in {b}scripts/tutorial/{/b} directly in the editor — no need to play through the hub.
 
 Lavender: Go build something.

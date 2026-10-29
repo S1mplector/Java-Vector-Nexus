@@ -1,0 +1,77 @@
+# Tutorial 22 — Phone Storytelling
+# Reference: docs/guides/vns-by-example/12-phone-storytelling.md
+# Read scripts/tutorial/README.md for the complete course and linked references.
+@scenario {{SCENARIO_PREFIX}}_tutorial_22
+@include {{CHARACTERS_INCLUDE}}
+{{BG_DECL}}@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[set ui.textBoxAsset none]
+[set ui.continueIndicator spinning_arrow]
+[if tutorial_still]
+[set ui.reduceMotion true]
+[else]
+[set ui.reduceMotion false]
+[endif]
+[if !tutorial_initialized]
+[set tutorial_count 0]
+[flag tutorial_initialized]
+[endif]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
+[set character.lavender.imageEffect none]
+{{BG_START}}
+[textspeed 28]
+[show lavender center talking]
+Lavender: The phone is a story model with contacts, apps, threads, messages, unread state, media, and calls. The UI presents that model.
+@label lesson_menu
+> Receive a workshop message -> message
+> Contacts, apps and calls -> structure
+> Save and replay phone events -> practice
+> Checkpoint -> checkpoint
+> Finish and return to the hub -> return_hub
+@label message
+[phone contact lavender name="Lavender"]
+[phone thread workshop title="Workshop" participants=player,lavender]
+[if !tutorial_phone_sent]
+[phone message workshop lavender "A small message from the white page." time=10:20]
+[flag tutorial_phone_sent]
+[endif]
+[phone unread workshop true]
+Lavender: Open the thread, read the message, then close the phone with its back control.
+[phone open chat workshop]
+Lavender: A guarded story event sends the message once per state history. Reopening this lesson does not duplicate it.
+[phone close]
+[phone unread workshop false]
+[jump lesson_menu]
+@label structure
+Lavender: The seed file is {b}config/phone/phone.properties{/b}. Put stable contacts and app structure there; put new story events in VNS commands.
+narrator: [phone message workshop type=image asset="assets/phone/clue.png" caption="A clue"]
+Lavender: That media command is an example. Add the actual image before executing it. Audio and video messages likewise need real assets and a supported runtime.
+narrator: [phone call workshop_call title="Lavender" participant=lavender video=false]
+narrator: [phone open call workshop_call]
+Lavender: Defining a call record and opening it are separate operations. Use stable record IDs even when display names are translated.
+[jump lesson_menu]
+@label practice
+Lavender: Exercise: add a second contact and thread, send a text clue, and branch after the player reads it. Then add an image you created yourself.
+Lavender: Save before and after receiving the clue. Load both saves, roll back, and check message ordering, unread badges, and which event flags were restored.
+Lavender: A plain dialogue line that says a phone rang is still useful when an overlay would interrupt the scene's pace.
+[jump lesson_menu]
+@label checkpoint
+Lavender: Where does an incoming message at a specific story beat belong?
+> In a VNS phone command -> correct
+> Only in the permanent seed file -> retry
+@label retry
+Lavender: Seed files establish initial structure. A story-time message should be driven by the story.
+[jump checkpoint]
+@label correct
+Lavender: Yes. Separate initial data from events that depend on player progress.
+[jump return_hub]
+
+@label return_hub
+[phone close]
+[if !tutorial_done_22]
+[flag tutorial_done_22]
+[inc tutorial_count]
+[endif]
+[goto {{HUB_TARGET}}:topics_page_4]

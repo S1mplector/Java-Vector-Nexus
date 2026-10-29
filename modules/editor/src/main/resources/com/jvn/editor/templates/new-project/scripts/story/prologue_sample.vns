@@ -7,31 +7,38 @@
 
 {{BG_DECL}}@label start
 {{BG_START}}{{BG_TRANSITION}}[mode dialogue standard]
-[set ui.dialogueUi default]
-[set ui.textBoxAsset default]
-[set ui.characterHeightFactor 0.82]
-[set ui.characterBaselineY 0.96]
+[set ui.dialogueUi project]
+[set ui.textBoxAsset none]
+[set ui.continueIndicator spinning_arrow]
+[if tutorial_still]
+[set ui.reduceMotion true]
+[else]
+[set ui.reduceMotion false]
+[endif]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
 [textspeed 26]
 [autodelay 1500]
 [set visit_count 0]
-[show lavender desk_left idle]
+[set character.lavender.imageEffect none]
+[show lavender left idle]
 [wait 250]
 
-narrator: Late sunlight rests across an unfinished page.
-[show lavender desk_left talking]
+narrator: A white page. A familiar pencil drawing.
+[show lavender left talking]
 Lavender: There you are. I was beginning to think this project would stay blank forever.
 Lavender: I'm Lavender. This studio—and the story inside it—belongs to you now.
-[show lavender desk_left happy]
+[show lavender left happy]
 Lavender: We only need one honest first line. The second line is always easier.
 
 > Write the first line with Lavender -> write_first_line
-> Open the interactive VNS tutorials -> route_tutorial
+> Open Lavender’s complete JVN workshop -> route_tutorial
 > Preview a JES scene -> open_jes
 > Explore a branching story example -> route_branch
 
 @label write_first_line
 [inc visit_count]
-[show lavender desk_left talking]
+[show lavender left talking]
 Lavender: Good. Let's keep it simple: what should a new project promise?
 > A place to tell a story -> promise_story
 > A place to experiment -> promise_experiment
@@ -53,10 +60,10 @@ narrator: {i}A project I can actually finish.{/i}
 [jump promise_kept]
 
 @label promise_kept
-[show lavender desk_left happy]
+[show lavender left happy]
 Lavender: That's a real beginning. The variable {b}project_promise{/b} now remembers your choice.
 Lavender: Open this file beside the running game. Change a line, add a choice, and run it again.
-> Learn the language one feature at a time -> route_tutorial
+> Explore JVN one feature at a time -> route_tutorial
 > See the multi-file story route -> route_branch
 > Visit the JES studio overlay -> open_jes
 
@@ -67,14 +74,17 @@ Lavender: The next screen is authored in {b}scripts/scenes/studio_tour.jes{/b}. 
 [jes push {{JES_SCENE_PATH}} label jes_returned with source=starter]
 
 @label jes_returned
-[show lavender desk_left happy]
+[show lavender left happy]
 Lavender: Welcome back. That was a real VNS to JES scene transition, not a mock-up.
 > Continue to the tutorials -> route_tutorial
 > Continue to the branch demo -> route_branch
 > Return to the opening choices -> start
 
 @label route_tutorial
+[if !tutorial_initialized]
 [set tutorial_count 0]
+[flag tutorial_initialized]
+[endif]
 [goto {{TUTORIAL_TARGET}}:start]
 
 @label route_branch

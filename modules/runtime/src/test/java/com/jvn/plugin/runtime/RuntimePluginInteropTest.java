@@ -1,4 +1,10 @@
-package com.jvn.runtime;
+package com.jvn.plugin.runtime;
+
+import com.jvn.runtime.RuntimeVnInterop;
+import com.jvn.plugin.api.PluginDescriptor;
+import com.jvn.plugin.api.PluginCapability;
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -16,7 +22,9 @@ class RuntimePluginInteropTest {
   @Test
   void executesRegisteredCommandAndAppliesVariableUpdates() {
     DefaultPluginRegistries registries = new DefaultPluginRegistries();
-    registries.view().scriptCommands().register("test.greet", invocation -> {
+    PluginDescriptor descriptor = new PluginDescriptor("test.commands", "Commands", "1.0.0",
+        ">=1.2.0 <2.0.0", "test.Commands", "", "", List.of(), Set.of(PluginCapability.SCRIPT_COMMAND));
+    registries.forPlugin(descriptor).scriptCommands().register("test.greet", invocation -> {
       assertEquals("vns", invocation.language());
       assertEquals(java.util.List.of("Ada", "Lovelace"), invocation.arguments());
       return new ScriptCommandResult(true, "ok", Map.of("greeted", true));

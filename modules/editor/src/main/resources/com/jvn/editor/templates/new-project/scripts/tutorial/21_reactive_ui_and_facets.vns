@@ -1,0 +1,73 @@
+# Tutorial 21 — Reactive UI and Facets
+# Reference: docs/guides/vns-by-example/11-reactive-ui-and-facets.md
+# Read scripts/tutorial/README.md for the complete course and linked references.
+@scenario {{SCENARIO_PREFIX}}_tutorial_21
+@include {{CHARACTERS_INCLUDE}}
+{{BG_DECL}}@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[set ui.textBoxAsset none]
+[set ui.continueIndicator spinning_arrow]
+[if tutorial_still]
+[set ui.reduceMotion true]
+[else]
+[set ui.reduceMotion false]
+[endif]
+[if !tutorial_initialized]
+[set tutorial_count 0]
+[flag tutorial_initialized]
+[endif]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
+[set character.lavender.imageEffect none]
+{{BG_START}}
+[textspeed 28]
+[show lavender center talking]
+Lavender: Menus handle navigation. Facets and overlay screens handle story-facing interfaces such as a status card, inventory view, or confirmation panel.
+@label lesson_menu
+> Open a live workshop card -> demo
+> Understand bindings and return values -> model
+> Build your own interface -> practice
+> Checkpoint -> checkpoint
+> Finish and return to the hub -> return_hub
+@label demo
+[set workshop_energy 0.4]
+[set workshop_name Lavender]
+[screen show tutorial_card]
+Lavender: The card reads variables while it renders. Its bar currently shows 40 percent.
+[set workshop_energy 0.8]
+Lavender: Now the same card shows 80 percent. I changed a variable; I did not rebuild the interface.
+[screen hide tutorial_card]
+Lavender: Next is a modal call. Use a button on the card to return to this conversation.
+[screen call tutorial_card]
+Lavender: The return value was {b}${screen.return.tutorial_card}{/b}.
+[jump lesson_menu]
+@label model
+Lavender: Open {b}config/facets/tutorial_card.facet{/b}. Its text and bar read variables; its buttons return stable IDs.
+Lavender: {b}screen show{/b} leaves the story running. {b}screen call{/b} waits for a return action. A called screen needs an exit, including when an optional button is disabled.
+Lavender: Nodes can be text, images, bars, or groups. Parent groups establish coordinates; paint order, visibility conditions, and enabled conditions determine what the player can use.
+Lavender: Keep state in VNS variables and appearance in the facet. That makes save/load, localization, and testing easier to reason about.
+[jump lesson_menu]
+@label practice
+Lavender: Add a second bar and a warning that appears only when energy is low. Add a conditional button, but keep Close available in every state.
+Lavender: Exercise: set energy below and above the threshold, use the screen with keyboard and pointer, then test a long translated label and large font scale.
+Lavender: For reusable visual patterns, explore facets and motifs in the guide linked from the workshop README.
+[jump lesson_menu]
+@label checkpoint
+Lavender: Which command waits for a modal screen to return a result?
+> screen call -> correct
+> screen show -> retry
+@label retry
+Lavender: Show is non-blocking. Call waits for the screen's return action.
+[jump checkpoint]
+@label correct
+Lavender: Right. Always make that return action reachable.
+[jump return_hub]
+
+@label return_hub
+[screen hide tutorial_card]
+[if !tutorial_done_21]
+[flag tutorial_done_21]
+[inc tutorial_count]
+[endif]
+[goto {{HUB_TARGET}}:topics_page_4]

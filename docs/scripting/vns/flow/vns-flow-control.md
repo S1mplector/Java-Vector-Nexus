@@ -1,5 +1,22 @@
 # VNS Subroutines & Flow Control
 
+```mermaid
+flowchart TD
+  accTitle: Branch, merge, and return are distinct operations
+  accDescr: A choice selects a route, jumps merge routes in the current script, while a subroutine call saves a return point for a later return.
+  Choice["Choice"] --> A["Route A label"]
+  Choice --> B["Route B label"]
+  A --> Merge["Shared label"]
+  B --> Merge
+  Merge --> Call["Call helper"]
+  Call --> Helper["Helper dialogue / commands"]
+  Helper --> Return["Return to caller"]
+  Return --> Continue["Continue story"]
+```
+
+> [!NOTE]
+> Use a jump when the current path is finished. Use a subroutine when you must return to the instruction after the call. Cross-file story routes also need a valid script or story-map target.
+
 Complete reference for labels, jumps, subroutine calls, script switching, and structural flow patterns in VNS.
 
 ---

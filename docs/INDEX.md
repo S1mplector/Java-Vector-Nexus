@@ -375,3 +375,7 @@ source of truth for docs changes.
 - [What's New in JVN 0.7.0](project-setup/release/whats-new-0.7.0.md) — licensing, Settings credit, and release verification
 
 - [What's New in JVN 0.8.0](project-setup/release/whats-new-0.8.0.md) — authoring, asset loading, persistence, and live-reload reliability
+
+- [Lavender’s 30-lesson workshop](guides/lavender-workshop.md) — the built-in course across JVN systems
+
+- [Reading annotated examples and diagrams](guides/reading-the-docs.md)

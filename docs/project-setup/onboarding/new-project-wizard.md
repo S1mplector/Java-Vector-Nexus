@@ -29,7 +29,7 @@ Wizard class:
 
 3. **Feature Modules**
    - playable Lavender starter story
-   - optional 17-lesson tutorial workspace
+   - optional 30-lesson tutorial workspace
    - VNS/JES integration scene
    - main menu profile pack
    - save/load profile files
@@ -258,14 +258,14 @@ Wizard packages and copies demo-ready starter assets so installed-editor builds 
 produce the same playable result:
 
 - layered character sprites: `assets/demo/characters/lavender/*`
-- monochrome sketch backgrounds: `assets/demo/backgrounds/game.png` and `menu.png`
+- procedurally generated plain-white backgrounds: `assets/demo/backgrounds/game.png` and `menu.png`
 - sample BGM plus its license document under `assets/demo/audio/`
 
 Default main-menu style points to the bundled background asset so new projects do not boot into an empty-color title screen.
 
 ### Tutorial workspace
 
-The Tutorial Workspace adds 17 runnable VNS lessons under `scripts/tutorial/`. Each generated lesson
+The Tutorial Workspace adds 30 VNS lessons and authoring workshops under `scripts/tutorial/`. Each generated lesson
 is rendered from the same templates tested in the editor build, then parsed by the runtime VNS parser.
 The final lesson uses the current VNS/JES bridge rather than treating inline Java as the primary
 extension path. The bundled `studio_tour.jes` fixture is also loaded through `JesLoader` in tests.
@@ -321,3 +321,11 @@ When enabled, creates:
 - Use module toggles consistently across team templates to avoid layout drift.
 - If Git is enabled, the wizard writes managed blocks into `.gitignore` and `.gitattributes`.
 - Re-running Git setup from editor is safe; managed blocks are replaced in place.
+
+## Lavender’s complete workshop
+
+The Tutorial Workspace uses a six-page hub with 30 lessons covering VNS, presentation, animation, audio, state and branching, localization, menus, saves and rollback, reactive UI and facets, phone storytelling, particles, stage lighting, JES entities and gameplay systems, editor tools, assets and performance, accessibility, Java extensions, and release preparation.
+
+Lavender appears waist-up on a plain white stage, with a translucent black textbox and spinning 3D continue arrow. The main menu uses a handwritten title and animated button dock. The supplied Apalonbeats track plays by default. Pikupiku remains an optional editor tool and is not applied to the tutorial. Choose a still arrow in the hub or accessibility lesson. Lesson completion is counted once on return to the hub and follows ordinary save/rollback state. Each lesson remains runnable from its `start` label. The generated `scripts/tutorial/README.md` maps the whole course to reference guides and distinguishes live demonstrations from authoring exercises.
+
+New projects include a working facet and phone seed file. Existing projects are not rewritten. To adopt the new course, create a Tutorial Workspace and deliberately copy the lessons/configuration you want into your project. See the [workshop guide](../../guides/lavender-workshop.md) and [Pikupiku documentation](../../plugins/image-effects.md).

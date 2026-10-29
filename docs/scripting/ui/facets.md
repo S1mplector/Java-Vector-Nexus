@@ -1,5 +1,23 @@
 # JVN Facets
 
+```mermaid
+sequenceDiagram
+  accTitle: A modal facet returns a story decision
+  accDescr: VNS variables feed live facet nodes. A screen call waits for a button return, which writes a return variable and allows the story to continue.
+  participant V as VNS state
+  participant F as Facet
+  participant P as Player
+  V->>F: screen call companion_card
+  F->>V: Resolve text, bar, conditions
+  F->>P: Present available actions
+  P->>F: Choose an enabled button
+  F->>V: Write screen.return.companion_card
+  V->>V: Branch on returned value
+```
+
+> [!TIP]
+> A modal facet needs a reachable return action in every state. Keep a Close button available while experimenting with visibility and enabled conditions.
+
 JVN Facets are composable, reactive user interfaces stored in `.facet` properties files. A Facet defines a tree of visual nodes whose content and visibility are resolved from the live visual-novel state every time the overlay is rendered.
 
 Use a Facet when a normal menu row list or a single-title/single-body reactive screen is not enough—for example:

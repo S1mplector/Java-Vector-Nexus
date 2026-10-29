@@ -53,6 +53,7 @@ public class MenuRenderer {
   private static final String LOAD_SLOT_FAVORITE_ICON_ASSET = "assets/ui/load/controls/slot_favorite_icon.png";
 
   private final GraphicsContext gc;
+  private final DockMenuPresentation dock = new DockMenuPresentation();
   private MenuTheme theme;
   private static final long IMAGE_CACHE_BUDGET_BYTES = 48L * 1024L * 1024L;
   private final BoundedImageCache<Image> imageCache =
@@ -80,17 +81,20 @@ public class MenuRenderer {
   public void setTheme(MenuTheme t) {
     this.theme = (t == null ? MenuTheme.defaults() : t);
     textMetrics.clear();
+    dock.clear();
   }
   public MenuTheme getTheme() { return theme; }
   public void setProjectRoot(File root) {
     if (!java.util.Objects.equals(projectRoot, root)) imageCache.clear();
     this.projectRoot = root;
     textMetrics.clear();
+    dock.clear();
   }
   public void setUiFontScale(double scale) {
     if (!Double.isFinite(scale)) scale = 1.0;
     activeUiFontScale = Math.max(0.75, Math.min(2.0, scale));
     textMetrics.clear();
+    dock.clear();
   }
 
   public void renderMainMenu(MainMenuScene scene, double w, double h) {
@@ -99,6 +103,11 @@ public class MenuRenderer {
     MenuStyleSpec screenStyle = scene != null ? scene.getDefaultMenuStyle() : null;
     String screenBg = scene != null && scene.getMenuScreen() != null ? scene.getMenuScreen().backgroundAsset() : null;
     drawScreenBackground(w, h, screenStyle, true, screenBg);
+
+    if (usesDock(scene)) {
+      dock.render(gc, scene, theme, projectRoot, w, h, activeUiFontScale);
+      return;
+    }
 
     // Draw logo if configured, otherwise draw text title
     if (theme.getLogoImagePath() != null) {
@@ -723,10 +732,12 @@ public class MenuRenderer {
 
   public void clearImageCache() {
     imageCache.clear();
+    dock.clear();
   }
 
   public void clearTextMeasureCache() {
     textMetrics.clear();
+    dock.clear();
   }
 
   private boolean disposed = false;
@@ -734,8 +745,10 @@ public class MenuRenderer {
   public void dispose() {
     if (disposed) return;
     disposed = true;
+    dock.close();
     imageCache.clear();
     textMetrics.clear();
+    dock.clear();
   }
 
   private void drawTitle(String text, double w, double y) {
@@ -986,7 +999,13 @@ public class MenuRenderer {
     return hoverIndex(count, null, null, 0, w, h, mouseX, mouseY);
   }
 
+  private boolean usesDock(MainMenuScene scene) {
+    return scene != null && theme.isDockPresentation()
+        && scene.getMenuId().equals(scene.getMenuProfile().defaultScreenId());
+  }
+
   public int getHoverIndexForMainMenu(MainMenuScene scene, double w, double h, double mouseX, double mouseY) {
+    if (usesDock(scene)) return dock.hover(scene, w, h, mouseX, mouseY);
     if (scene == null) return -1;
     MenuItemSpec[] specs = new MenuItemSpec[scene.getItemCount()];
     for (int i = 0; i < specs.length; i++) specs[i] = scene.getMenuItemSpec(i);

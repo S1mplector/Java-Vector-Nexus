@@ -1,5 +1,24 @@
 # Save System
 
+```mermaid
+flowchart LR
+  accTitle: Session snapshots and persistent progress have different lifetimes
+  accDescr: Live state produces rollback checkpoints and disk saves. Loading restores a snapshot. Persistent unlocks live in a separate store across playthroughs.
+  Live["Live VN / game state"] --> Roll["Rollback checkpoint"]
+  Roll --> Live
+  Live --> Save["Save snapshot"]
+  Save --> Temp["Unique temporary file"]
+  Temp --> Disk["Replace save file"]
+  Disk --> Load["Read and migrate"]
+  Load --> Live
+  Story["Explicit persistent command"] --> Unlock["Cross-playthrough unlock store"]
+```
+
+> [!IMPORTANT]
+> Save/load, rollback, and persistent unlocks are separate contracts. External side effects are not automatically reversed when story state rewinds.
+
+**Verification:** save before and after a choice, change character presentation, then load both snapshots. Check variables, visible characters, settings, phone data, and any game-specific state you registered.
+
 JVN save/load is schema-versioned, migration-aware, and write-failure-safe.
 
 Primary classes:

@@ -1,6 +1,6 @@
 # Plugins
 
-JVN plugins add scripting commands, editor tools, asset importers, and runtime observers through a versioned public API. Plugins are ordinary JAR files with a `jvn-plugin.json` manifest at the archive root.
+JVN plugins add scripting commands, editor tools, asset importers, animation easing curves, image effects, and runtime observers through a versioned public API. Plugins are ordinary JAR files with a `jvn-plugin.json` manifest at the archive root.
 
 ## Start here
 
@@ -8,12 +8,13 @@ JVN plugins add scripting commands, editor tools, asset importers, and runtime o
 - [Manifest reference](manifest.md)
 - [Extension-point reference](extension-points.md)
 - [Animation easing extensions](animation-extensions.md)
+- [Image effects and Pikupiku](image-effects.md)
 - [Plugin API reference](api-reference.md)
 - [Host and lifecycle reference](host-reference.md)
 - [Packaging and distribution](distribution.md)
 - [Compatibility and security](compatibility-security.md)
 
-The buildable [example plugin](../../modules/plugin-example/README.md) is the canonical source sample.
+The buildable [example plugin](../../modules/plugin-example/README.md) covers commands and tools. The bundled [Pikupiku plugin](../../modules/plugin-pikupiku/README.md) demonstrates image effects and typed editor services.
 
 ## Installation locations
 

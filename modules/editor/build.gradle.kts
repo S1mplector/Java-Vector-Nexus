@@ -1,3 +1,5 @@
+import java.awt.image.BufferedImage
+import java.awt.Color
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -19,6 +21,7 @@ dependencies {
   implementation(project(":licensing"))
   implementation(project(":core"))
   implementation(project(":plugin-runtime"))
+  implementation(project(":plugin-pikupiku"))
   implementation(project(":fx"))
   implementation(project(":audio"))
   implementation(project(":scripting"))
@@ -56,8 +59,25 @@ tasks.register("printRuntimeCp") {
   }
 }
 
+val whiteTutorialBackgrounds = tasks.register("generateWhiteTutorialBackgrounds") {
+  val output = layout.buildDirectory.dir("generated/tutorial-backgrounds")
+  outputs.dir(output)
+  doLast {
+    val folder = output.get().asFile.resolve("com/jvn/editor/templates/new-project/demo-assets/demo_bg")
+    folder.mkdirs()
+    val image = BufferedImage(1920, 1080, BufferedImage.TYPE_INT_RGB)
+    val graphics = image.createGraphics()
+    graphics.color = Color.WHITE
+    graphics.fillRect(0, 0, image.width, image.height)
+    graphics.dispose()
+    listOf("game.png", "menu.png").forEach { javax.imageio.ImageIO.write(image, "png", folder.resolve(it)) }
+  }
+}
+
 tasks.named<ProcessResources>("processResources") {
+  from(whiteTutorialBackgrounds)
   from(rootProject.file("misc/demo-assets")) {
+    exclude("demo_bg/**")
     into("com/jvn/editor/templates/new-project/demo-assets")
   }
 }

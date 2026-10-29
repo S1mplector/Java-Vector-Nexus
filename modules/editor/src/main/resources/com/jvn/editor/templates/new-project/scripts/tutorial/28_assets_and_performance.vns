@@ -1,0 +1,65 @@
+# Tutorial 28 — Assets and Performance
+# Reference: docs/runtime/systems/asset-management.md
+# Read scripts/tutorial/README.md for the complete course and linked references.
+@scenario {{SCENARIO_PREFIX}}_tutorial_28
+@include {{CHARACTERS_INCLUDE}}
+{{BG_DECL}}@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[set ui.textBoxAsset none]
+[set ui.continueIndicator spinning_arrow]
+[if tutorial_still]
+[set ui.reduceMotion true]
+[else]
+[set ui.reduceMotion false]
+[endif]
+[if !tutorial_initialized]
+[set tutorial_count 0]
+[flag tutorial_initialized]
+[endif]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
+[set character.lavender.imageEffect none]
+{{BG_START}}
+[textspeed 28]
+[show lavender center talking]
+Lavender: A scene can be correct and still be expensive. Good asset organization and measured performance make the same story work on more machines.
+@label lesson_menu
+> Paths, catalogs and packs -> assets
+> Images, audio and memory -> memory
+> Measure before optimizing -> practice
+> Checkpoint -> checkpoint
+> Finish and return to the hub -> return_hub
+@label assets
+Lavender: Keep project-relative asset paths stable. Use consistent case, meaningful folders, and license records. A path that works on one filesystem can fail on another.
+Lavender: The runtime supports file assets, catalogs, and ZIP asset packs. Pack directory listings and streamed reads let content be discovered without inflating the entire archive into memory.
+Lavender: Package every resource your scripts and menus reference. Test from the exported directory, without the source checkout beside it, so missing dependencies cannot hide.
+[jump lesson_menu]
+@label memory
+Lavender: Compressed file size is not decoded image size. A large transparent layer still occupies a large pixel buffer when loaded.
+Lavender: Character composites, lighting variants, and plugin drawings multiply that cost. Use sensible source dimensions and bounded caches; keep expensive preparation off the render thread.
+Lavender: Pikupiku's preview host limits its working image to 1080 pixels on the longest edge and caches prepared drawings. Exported preview frames use that same working resolution.
+Lavender: Audio loading, decoding, device support, and simultaneous channels also cost resources. Avoid repeatedly restarting the same track or loading large media at every line.
+[jump lesson_menu]
+@label practice
+Lavender: Use the performance HUD and profiler to observe frame time, draw calls, and memory during a representative scene. Include expression changes, lighting, effects, and a scene transition.
+Lavender: Exercise: record a baseline, change one expensive asset or effect, and measure again. Test a cold start as well as a warmed cache.
+Lavender: Missing assets, failed plugin preparation, and malformed packs should produce useful diagnostics and a recoverable result. Test those paths in a disposable copy.
+[jump lesson_menu]
+@label checkpoint
+Lavender: Does a tiny compressed PNG always mean a tiny runtime memory cost?
+> No, decoded dimensions determine pixel storage -> correct
+> Yes, only file size matters -> retry
+@label retry
+Lavender: Compression saves disk space. The renderer still needs decoded pixels.
+[jump checkpoint]
+@label correct
+Lavender: Exactly. Measure the resource in the form the runtime actually uses.
+[jump return_hub]
+
+@label return_hub
+[if !tutorial_done_28]
+[flag tutorial_done_28]
+[inc tutorial_count]
+[endif]
+[goto {{HUB_TARGET}}:topics_page_6]

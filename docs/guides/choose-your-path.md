@@ -1,5 +1,26 @@
 # Choose Your Path in JVN
 
+```mermaid
+flowchart TD
+  accTitle: Choose an authoring layer by the behavior you need
+  accDescr: Story sequencing uses VNS; entity interaction uses JES; reusable animation uses Puppeteer; story overlays use facets; executable reusable extensions use plugins.
+  Goal["What behavior do you need?"] --> V["Dialogue and choices → VNS"]
+  Goal --> J["Entities and gameplay → JES"]
+  Goal --> P["Authored motion → Puppeteer"]
+  Goal --> U["Story-facing status or choice UI → Facets"]
+  Goal --> M["Title, settings, save/load → Menus"]
+  Goal --> X["Reusable executable extension → Plugin API"]
+  V <--> J
+  P --> V
+  P --> J
+  U --> V
+  X --> V
+  X --> P
+```
+
+> [!TIP]
+> Combine layers at explicit boundaries. A VNS scene can push a JES interaction and resume at a label; a plugin can add an image effect without owning the story or window.
+
 If you are new to JVN, the biggest early mistake is starting in the wrong layer. This page tells you which part of the engine to use first.
 
 ## The Short Version

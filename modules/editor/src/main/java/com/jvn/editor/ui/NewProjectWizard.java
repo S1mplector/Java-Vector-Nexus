@@ -51,7 +51,7 @@ import javafx.stage.*;
 public class NewProjectWizard extends Stage {
   private enum ProjectTemplate {
     STARTER_STORY("Starter Story", "A lean starter project with a playable story flow, menu pack, and demo assets."),
-    TUTORIAL_WORKSPACE("Tutorial Workspace", "A full learning scaffold with the starter story, 17 tutorial scripts, and demo content."),
+    TUTORIAL_WORKSPACE("Tutorial Workspace", "A full learning scaffold with the starter story, 30 tutorial scripts, and demo content."),
     BLANK_SANDBOX("Blank Sandbox", "A stripped-down project for custom pipelines, no demo assets, and blank menu wiring."),
     CUSTOM("Custom", "A manual combination of modules and starter content.");
 
@@ -347,7 +347,7 @@ public class NewProjectWizard extends Stage {
     tags.setVgap(6);
     tags.getChildren().addAll(
         detailTag("Starter Story", "Sample prologue, branch, and epilogue scripts."),
-        detailTag("Tutorial Pack", "Optional 16-topic learning set wired from tutorial_hub.vns."),
+        detailTag("Tutorial Pack", "Optional 30-topic learning set wired from tutorial_hub.vns."),
         detailTag("Blank Sandbox", "Minimal story content with blank menu registry wiring."),
         detailTag("Manual Override", "Selecting Custom preserves your checkbox choices.")
     );
@@ -630,7 +630,7 @@ public class NewProjectWizard extends Stage {
 
     chkStarterStory = createCheckBox("Starter Story Flow", true);
     chkTutorialPack = createCheckBox("Guided Tutorial Pack (16 scripts)", false);
-    chkBundledDemoAssets = createCheckBox("Bundled Demo Assets (Lavender/Field/BGM)", true);
+    chkBundledDemoAssets = createCheckBox("Bundled Demo Assets (Lavender/White Stage/BGM)", true);
     chkTitleScreen = createCheckBox("Main Menu Profile Pack", true);
     chkSaveSystem = createCheckBox("Load/Save Menu Profiles", true);
     chkSettingsMenu = createCheckBox("Settings Menu Profile", true);
@@ -699,8 +699,8 @@ public class NewProjectWizard extends Stage {
     details.setHgap(16);
     details.getChildren().addAll(
         detailTag("Starter Story", "Sample prologue, route split, and epilogue scripts."),
-        detailTag("Tutorial Pack", "Sixteen focused VNS examples linked from the tutorial hub."),
-        detailTag("Demo Assets", "Copies bundled field/lavender/audio starter assets."),
+        detailTag("Tutorial Pack", "Thirty lessons across JVN linked from the tutorial hub."),
+        detailTag("Demo Assets", "Copies bundled lavender/audio and plain white stage starter assets."),
         detailTag("Menu Profiles", "Creates config/menu registry, screens, layout and style."),
         detailTag("Save/Load", "Adds load.menu and save.menu defaults."),
         detailTag("Settings", "Adds settings.menu profile entries."),
@@ -970,7 +970,7 @@ public class NewProjectWizard extends Stage {
         : cmbProjectTemplate.getValue();
     String summary = switch (template) {
       case STARTER_STORY -> "Recommended default. Creates a playable story skeleton, demo assets, and ready-to-run menu profiles without the larger tutorial pack.";
-      case TUTORIAL_WORKSPACE -> "Creates the starter story plus the full 17-script guided tutorial pack and tutorial hub routes.";
+      case TUTORIAL_WORKSPACE -> "Creates the starter story plus the full 30-script guided tutorial pack and tutorial hub routes.";
       case BLANK_SANDBOX -> "Creates the runtime/config skeleton with blank story scripts, no bundled assets, and blank menu wiring.";
       case CUSTOM -> "Custom combination detected. The wizard will scaffold exactly what your current checkboxes describe.";
     };
@@ -1246,6 +1246,7 @@ public class NewProjectWizard extends Stage {
       sb.append("\u2502   \u2502   \u251c\u2500\u2500 15_ui_layout_and_theme.vns\n");
       sb.append("\u2502   \u2502   \u251c\u2500\u2500 16_testing_and_release.vns\n");
       sb.append("\u2502   \u2502   \u2514\u2500\u2500 17_vns_jes_integration.vns\n");
+      sb.append("│   │   └── 18–30: plugins, systems, tools and production\n");
     } else {
       sb.append("\u2502   \u2502   \u2514\u2500\u2500 (empty until tutorial pack is added)\n");
     }
@@ -1505,6 +1506,8 @@ public class NewProjectWizard extends Stage {
       createBlankMenuScaffold(dir);
     }
 
+    if (includeTutorialPack) configureTutorialPresentation(dir, includeMenuPack);
+
     if (gitRequested) {
       GitVcsService vcs = new GitVcsService();
       String commitMessage = "Initialize " + displayName + " project scaffold";
@@ -1549,6 +1552,78 @@ public class NewProjectWizard extends Stage {
         gitEnabled,
         gitInitialCommit
     );
+  }
+
+  private void configureTutorialPresentation(File dir, boolean menus) throws Exception {
+    for (String name : List.of("lofi-music-2.mp3", "CaveatBrush-Regular.ttf", "CaveatBrush-OFL.txt", "CREDITS.txt")) {
+      String path = "assets/tutorial/" + name;
+      Path target = dir.toPath().resolve(path);
+      Files.createDirectories(target.getParent());
+      try (var input = getClass().getResourceAsStream("/com/jvn/editor/templates/new-project/" + path)) {
+        if (input == null) throw new java.io.IOException("Missing tutorial asset: " + path);
+        Files.copy(input, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+      }
+    }
+    // Each entry remains independently previewable; shared story variables keep the loop uninterrupted.
+    try (var scripts = Files.walk(dir.toPath().resolve("scripts"))) {
+      for (Path script : scripts.filter(p -> p.toString().endsWith(".vns")).toList()) {
+        String source = Files.readString(script);
+        source = source.replace("assets/demo/audio/03 - Definitely Our Town.mp3", "assets/tutorial/lofi-music-2.mp3");
+        source = source.replace("@label start\n", "@label start\n[if !tutorial_music_started]\n[bgm \"assets/tutorial/lofi-music-2.mp3\"]\n[flag tutorial_music_started]\n[endif]\n");
+        Files.writeString(script, source);
+      }
+    }
+    Files.writeString(dir.toPath().resolve(DIALOGUE_LAYOUT_PATH), """
+
+        # Lavender workshop: translucent black panel, clear white text, waist-up framing.
+        textBoxColor=#000000B8
+        textBoxOpacity=0.72
+        nameBoxColor=#000000B8
+        nameTextColor=#E3D2F4
+        dialogueTextColor=#FFFFFF
+        dialogueTextRightPadding=54
+        characterHeightFactor=1.5
+        characterBaselineY=1.5
+        """, java.nio.file.StandardOpenOption.APPEND);
+    double uiScale = getScaledResolution()[1] / 720.0;
+    Files.writeString(dir.toPath().resolve(DIALOGUE_LAYOUT_PATH), String.format(Locale.ROOT, """
+        textBoxHeight=0.22
+        textBoxY=0.74
+        dialogueTextFontSize=%d
+        nameTextFontSize=%d
+        nameBoxHeight=%d
+        nameBoxYOffset=-%d
+        nameBoxWidth=%d
+        nameTextBaselineOffset=%d
+        dialogueTextHorizontalPadding=%d
+        dialogueTextTopPadding=%d
+        choiceFontSize=%d
+        choiceHeight=%d
+        """, Math.max(18, (int) Math.round(24 * uiScale)), Math.max(14, (int) Math.round(18 * uiScale)),
+        (int) Math.round(32 * uiScale), (int) Math.round(32 * uiScale), (int) Math.round(160 * uiScale),
+        (int) Math.round(22 * uiScale), (int) Math.round(24 * uiScale), (int) Math.round(24 * uiScale),
+        Math.max(15, (int) Math.round(20 * uiScale)), Math.max(32, (int) Math.round(44 * uiScale))),
+        java.nio.file.StandardOpenOption.APPEND);
+    if (!menus) return;
+    Files.writeString(dir.toPath().resolve(MENU_THEME_PATH), """
+
+        # Tutorial presentation: animated dock and still handwritten title.
+        mainMenuPresentation=dock
+        titleFontFamily=assets/tutorial/CaveatBrush-Regular.ttf
+        titleFontSize=108
+        titleColor=#27242d
+        itemColor=#332d40
+        itemSelectedColor=#64478b
+        hintColor=#716779
+        accentColor=#a88ac5
+        bgm=assets/tutorial/lofi-music-2.mp3
+        bgmVolume=0.55
+        """, java.nio.file.StandardOpenOption.APPEND);
+    Path main = dir.toPath().resolve(MENU_MAIN_PATH);
+    String menu = Files.readString(main).replaceAll("(?m)^titleText=.*$", "titleText=JVN v0.8.0 Tutorial");
+    menu = menu.replace("item.new_game.label=Start New Game", "item.new_game.label=Begin");
+    menu = menu.replace("hintsText=Enter/Click: Select    Esc: Back", "hintsText=Arrow keys to explore  /  Enter or click to open");
+    Files.writeString(main, menu + "\nsubtitleText=A white page. Thirty lessons. One curious Lavender.\n");
   }
 
   private void cleanupFailedProjectCreation(File projectDir, File baseLocation, boolean createdBaseLocation) {
@@ -1662,10 +1737,7 @@ public class NewProjectWizard extends Stage {
     File sourceRoot = resolveBundledDemoAssetsRoot();
     if (sourceRoot == null || !sourceRoot.isDirectory()) return false;
 
-    copyDirectoryContents(
-        new File(sourceRoot, BUNDLED_DEMO_BG_DIR),
-        new File(projectRoot, "assets/demo/backgrounds")
-    );
+    writeWhiteTutorialBackgrounds(projectRoot);
     boolean copiedLayeredLavender = false;
     File layeredSource = new File(sourceRoot, BUNDLED_DEMO_SPRITE_LAYERED_DIR);
     if (layeredSource.isDirectory()) {
@@ -1681,6 +1753,16 @@ public class NewProjectWizard extends Stage {
         new File(projectRoot, "assets/demo/audio")
     );
     return copiedLayeredLavender;
+  }
+
+  static void writeWhiteTutorialBackgrounds(File projectRoot) throws java.io.IOException {
+    Path folder = projectRoot.toPath().resolve("assets/demo/backgrounds");
+    Files.createDirectories(folder);
+    var image = new java.awt.image.BufferedImage(1920, 1080, java.awt.image.BufferedImage.TYPE_INT_RGB);
+    var graphics = image.createGraphics();
+    try { graphics.setColor(java.awt.Color.WHITE); graphics.fillRect(0, 0, 1920, 1080); }
+    finally { graphics.dispose(); }
+    for (String name : List.of("game.png", "menu.png")) javax.imageio.ImageIO.write(image, "png", folder.resolve(name).toFile());
   }
 
   private boolean copyBundledDemoAssetsFromResources(File projectRoot) throws Exception {
@@ -1956,10 +2038,10 @@ public class NewProjectWizard extends Stage {
   private void createTutorialHubScript(File dir, String name, boolean includeDemoAssets) throws Exception {
     String scenarioPrefix = sanitizeName(name).toLowerCase(Locale.ROOT);
     String backgroundDecl = includeDemoAssets
-        ? "@background field_day assets/demo/backgrounds/game.png\n"
-            + "@background field_evening assets/demo/backgrounds/game.png\n\n"
+        ? "@background white_stage assets/demo/backgrounds/game.png\n"
+            + "@background white_stage_alt assets/demo/backgrounds/game.png\n\n"
         : "";
-    String backgroundStart = includeDemoAssets ? "[bg field_day]\n[transition fade 450]\n" : "";
+    String backgroundStart = includeDemoAssets ? "[bg white_stage]\n[transition fade 450]\n" : "";
 
     java.util.Map<String, String> tokens = new java.util.LinkedHashMap<>();
     tokens.put("PROJECT_NAME", name);
@@ -2002,11 +2084,11 @@ public class NewProjectWizard extends Stage {
     String scenarioPrefix = sanitizeName(name).toLowerCase(Locale.ROOT);
     String hubTarget = ARC_TUTORIAL_HUB;
     String tutorialBgDecl = includeDemoAssets
-        ? "@background field_day assets/demo/backgrounds/game.png\n"
-            + "@background field_evening assets/demo/backgrounds/game.png\n\n"
+        ? "@background white_stage assets/demo/backgrounds/game.png\n"
+            + "@background white_stage_alt assets/demo/backgrounds/game.png\n\n"
         : "";
-    String tutorialBgStart = includeDemoAssets ? "[bg field_day]\n[transition fade 350]\n" : "";
-    String tutorialBgCrossfade = includeDemoAssets ? "[transition crossfade 600 field_evening]\n" : "";
+    String tutorialBgStart = includeDemoAssets ? "[bg white_stage]\n[transition fade 350]\n" : "";
+    String tutorialBgCrossfade = includeDemoAssets ? "[transition crossfade 600 white_stage_alt]\n" : "";
     String tutorialBgmStart = includeDemoAssets ? "[bgm \"assets/demo/audio/03 - Definitely Our Town.mp3\"]\n" : "";
     String tutorialBgmFade = includeDemoAssets ? "[bgm_fadeout 1200]\n[wait 1300]\n" : "";
     String expressionHint = useLayeredLavenderDemo
@@ -2026,23 +2108,14 @@ public class NewProjectWizard extends Stage {
     baseTokens.put("EXPRESSION_HINT", expressionHint);
     baseTokens.put("JES_SCENE_PATH", JES_STUDIO_SCENE_PATH);
 
-    writeScaffoldTemplateScript(dir, TUTORIAL_DIALOGUE_SCRIPT_PATH, "scripts/tutorial/01_dialogue_basics.vns", baseTokens);
-    writeScaffoldTemplateScript(dir, TUTORIAL_NARRATION_SCRIPT_PATH, "scripts/tutorial/02_narration_and_pacing.vns", baseTokens);
-    writeScaffoldTemplateScript(dir, TUTORIAL_EXPRESSIONS_SCRIPT_PATH, "scripts/tutorial/03_expressions_and_characters.vns", baseTokens);
-    writeScaffoldTemplateScript(dir, TUTORIAL_IMAGES_SCRIPT_PATH, "scripts/tutorial/04_images_and_backgrounds.vns", baseTokens);
-    writeScaffoldTemplateScript(dir, TUTORIAL_TRANSITIONS_SCRIPT_PATH, "scripts/tutorial/05_transitions_and_effects.vns", baseTokens);
-    writeScaffoldTemplateScript(dir, TUTORIAL_AUDIO_SCRIPT_PATH, "scripts/tutorial/06_audio_and_music.vns", baseTokens);
-    writeScaffoldTemplateScript(dir, TUTORIAL_VARIABLES_SCRIPT_PATH, "scripts/tutorial/07_variables_and_conditions.vns", baseTokens);
-    writeScaffoldTemplateScript(dir, TUTORIAL_MOVEMENT_SCRIPT_PATH, "scripts/tutorial/08_character_movement.vns", baseTokens);
-    writeScaffoldTemplateScript(dir, TUTORIAL_PUPPETEER_SCRIPT_PATH, "scripts/tutorial/09_puppeteer_timeline.vns", baseTokens);
-    writeScaffoldTemplateScript(dir, TUTORIAL_MENUS_SCRIPT_PATH, "scripts/tutorial/10_choices_and_menus.vns", baseTokens);
-    writeScaffoldTemplateScript(dir, TUTORIAL_SUBROUTINES_SCRIPT_PATH, "scripts/tutorial/11_subroutines_and_flow.vns", baseTokens);
-    writeScaffoldTemplateScript(dir, TUTORIAL_BEST_PRACTICES_SCRIPT_PATH, "scripts/tutorial/12_best_practices.vns", baseTokens);
-    writeScaffoldTemplateScript(dir, TUTORIAL_CAMERA_SCRIPT_PATH, "scripts/tutorial/13_camera_and_staging.vns", baseTokens);
-    writeScaffoldTemplateScript(dir, TUTORIAL_LOCALIZATION_SCRIPT_PATH, "scripts/tutorial/14_localization_and_textkeys.vns", baseTokens);
-    writeScaffoldTemplateScript(dir, TUTORIAL_UI_LAYOUT_SCRIPT_PATH, "scripts/tutorial/15_ui_layout_and_theme.vns", baseTokens);
-    writeScaffoldTemplateScript(dir, TUTORIAL_TESTING_RELEASE_SCRIPT_PATH, "scripts/tutorial/16_testing_and_release.vns", baseTokens);
-    writeScaffoldTemplateScript(dir, TUTORIAL_VNS_JES_SCRIPT_PATH, "scripts/tutorial/17_vns_jes_integration.vns", baseTokens);
+    for (TutorialCatalog.Lesson lesson : TutorialCatalog.LESSONS) {
+      writeScaffoldTemplateScript(dir, lesson.path(), lesson.path(), baseTokens);
+    }
+    for (String path : List.of("config/facets/tutorial_card.facet", "config/phone/phone.properties",
+        "scripts/tutorial/README.md")) {
+      Files.createDirectories(dir.toPath().resolve(path).getParent());
+      writeScaffoldTemplateScript(dir, path, path, baseTokens);
+    }
   }
 
   private void createJesStudioScene(File dir, boolean includeDemoAssets) throws Exception {
@@ -2128,7 +2201,8 @@ public class NewProjectWizard extends Stage {
     tokens.put("STORY_EPILOGUE_SCRIPT_PATH", STORY_EPILOGUE_SCRIPT_PATH);
 
     writeScaffoldTemplateScript(dir, ENTRY_SCRIPT_PATH, "scripts/story/prologue_blank.vns", tokens);
-    writeScaffoldTemplateScript(dir, STORY_TUTORIAL_SCRIPT_PATH, "scripts/story/tutorial_hub_blank.vns", tokens);
+    if (!new File(dir, STORY_TUTORIAL_SCRIPT_PATH).isFile())
+      writeScaffoldTemplateScript(dir, STORY_TUTORIAL_SCRIPT_PATH, "scripts/story/tutorial_hub_blank.vns", tokens);
     writeScaffoldTemplateScript(dir, STORY_BRANCH_SCRIPT_PATH, "scripts/story/branch_demo_blank.vns", tokens);
     writeScaffoldTemplateScript(dir, STORY_EPILOGUE_SCRIPT_PATH, "scripts/story/epilogue_blank.vns", tokens);
   }
@@ -2139,8 +2213,8 @@ public class NewProjectWizard extends Stage {
     String branchTarget = ARC_BRANCH_DEMO;
     String epilogueTarget = ARC_EPILOGUE;
     String lavenderExpr = "idle";
-    String backgroundDecl = includeDemoAssets ? "@background field_day assets/demo/backgrounds/game.png\n\n" : "";
-    String backgroundStart = includeDemoAssets ? "[bg field_day]\n" : "";
+    String backgroundDecl = includeDemoAssets ? "@background white_stage assets/demo/backgrounds/game.png\n\n" : "";
+    String backgroundStart = includeDemoAssets ? "[bg white_stage]\n" : "";
     String backgroundTransition = includeDemoAssets ? "[transition fade 400]\n" : "";
     java.util.Map<String, String> tokens = new java.util.LinkedHashMap<>();
     tokens.put("PROJECT_NAME", name);
@@ -2175,23 +2249,13 @@ public class NewProjectWizard extends Stage {
       fw.write("arc \"" + ARC_EPILOGUE + "\" script \"" + STORY_EPILOGUE_SCRIPT_PATH + "\" entry \"start\" cluster \"Main\" priority 9 color \"#d6a8ee\" tags \"ending,main\" at 760,120\n\n");
 
       if (includeTutorialPack) {
-        fw.write("arc " + ARC_T01_DIALOGUE + " script \"" + TUTORIAL_DIALOGUE_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 6 color \"#84c7ff\" tags \"tutorial,dialogue\" at 760,-180\n");
-        fw.write("arc " + ARC_T02_NARRATION + " script \"" + TUTORIAL_NARRATION_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 6 color \"#9ad6ff\" tags \"tutorial,narration\" at 980,-180\n");
-        fw.write("arc " + ARC_T03_EXPRESSIONS + " script \"" + TUTORIAL_EXPRESSIONS_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 6 color \"#9ce3d7\" tags \"tutorial,characters\" at 1200,-180\n");
-        fw.write("arc " + ARC_T04_IMAGES + " script \"" + TUTORIAL_IMAGES_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 6 color \"#93ddaa\" tags \"tutorial,images\" at 1420,-180\n");
-        fw.write("arc " + ARC_T05_TRANSITIONS + " script \"" + TUTORIAL_TRANSITIONS_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 6 color \"#f0c48a\" tags \"tutorial,fx\" at 760,20\n");
-        fw.write("arc " + ARC_T06_AUDIO + " script \"" + TUTORIAL_AUDIO_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 6 color \"#f3b27a\" tags \"tutorial,audio\" at 980,20\n");
-        fw.write("arc " + ARC_T07_VARIABLES + " script \"" + TUTORIAL_VARIABLES_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 6 color \"#efb3c8\" tags \"tutorial,logic\" at 1200,20\n");
-        fw.write("arc " + ARC_T08_MOVEMENT + " script \"" + TUTORIAL_MOVEMENT_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 6 color \"#d6a8ee\" tags \"tutorial,motion\" at 1420,20\n");
-        fw.write("arc " + ARC_T09_PUPPETEER + " script \"" + TUTORIAL_PUPPETEER_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 7 color \"#c4a4ff\" tags \"tutorial,puppeteer\" at 760,220\n");
-        fw.write("arc " + ARC_T10_MENUS + " script \"" + TUTORIAL_MENUS_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 6 color \"#84c7ff\" tags \"tutorial,menus\" at 980,220\n");
-        fw.write("arc " + ARC_T11_SUBROUTINES + " script \"" + TUTORIAL_SUBROUTINES_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 6 color \"#9ad6ff\" tags \"tutorial,flow\" at 1200,220\n");
-        fw.write("arc " + ARC_T12_BEST_PRACTICES + " script \"" + TUTORIAL_BEST_PRACTICES_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 8 color \"#93ddaa\" tags \"tutorial,best_practice\" at 1420,220\n");
-        fw.write("arc " + ARC_T13_CAMERA + " script \"" + TUTORIAL_CAMERA_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 7 color \"#f0c48a\" tags \"tutorial,camera\" at 760,420\n");
-        fw.write("arc " + ARC_T14_LOCALIZATION + " script \"" + TUTORIAL_LOCALIZATION_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 7 color \"#f3b27a\" tags \"tutorial,localization\" at 980,420\n");
-        fw.write("arc " + ARC_T15_UI_LAYOUT + " script \"" + TUTORIAL_UI_LAYOUT_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 7 color \"#efb3c8\" tags \"tutorial,ui\" at 1200,420\n");
-        fw.write("arc " + ARC_T16_TESTING_RELEASE + " script \"" + TUTORIAL_TESTING_RELEASE_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 8 color \"#d6a8ee\" tags \"tutorial,testing\" at 1420,420\n");
-        fw.write("arc " + ARC_T17_VNS_JES + " script \"" + TUTORIAL_VNS_JES_SCRIPT_PATH + "\" entry \"start\" cluster \"Tutorial\" priority 8 color \"#c4a4ff\" tags \"tutorial,interop\" at 1640,420\n\n");
+        int index = 0;
+        for (TutorialCatalog.Lesson lesson : TutorialCatalog.LESSONS) {
+          int x = 760 + (index % 5) * 240, y = -180 + (index / 5) * 200;
+          fw.write("arc " + lesson.arc() + " script \"" + lesson.path()
+              + "\" entry \"start\" cluster \"Tutorial\" priority 6 color \"#b5a0d6\" tags \"tutorial\" at " + x + "," + y + "\n");
+          index++;
+        }
       }
 
       fw.write("link " + ARC_PROLOGUE + ":route_tutorial -> " + ARC_TUTORIAL_HUB + ":start\n");
@@ -2199,23 +2263,9 @@ public class NewProjectWizard extends Stage {
       fw.write("link " + ARC_BRANCH_DEMO + ":end -> " + ARC_EPILOGUE + ":start\n");
 
       if (includeTutorialPack) {
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_dialogue -> " + ARC_T01_DIALOGUE + ":start\n");
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_narration -> " + ARC_T02_NARRATION + ":start\n");
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_expressions -> " + ARC_T03_EXPRESSIONS + ":start\n");
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_images -> " + ARC_T04_IMAGES + ":start\n");
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_transitions -> " + ARC_T05_TRANSITIONS + ":start\n");
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_audio -> " + ARC_T06_AUDIO + ":start\n");
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_variables -> " + ARC_T07_VARIABLES + ":start\n");
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_movement -> " + ARC_T08_MOVEMENT + ":start\n");
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_puppeteer -> " + ARC_T09_PUPPETEER + ":start\n");
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_menus -> " + ARC_T10_MENUS + ":start\n");
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_subroutines -> " + ARC_T11_SUBROUTINES + ":start\n");
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_best_practices -> " + ARC_T12_BEST_PRACTICES + ":start\n");
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_camera -> " + ARC_T13_CAMERA + ":start\n");
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_localization -> " + ARC_T14_LOCALIZATION + ":start\n");
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_ui_layout -> " + ARC_T15_UI_LAYOUT + ":start\n");
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_testing_release -> " + ARC_T16_TESTING_RELEASE + ":start\n");
-        fw.write("link " + ARC_TUTORIAL_HUB + ":open_vns_jes -> " + ARC_T17_VNS_JES + ":start\n");
+        for (TutorialCatalog.Lesson lesson : TutorialCatalog.LESSONS) {
+          fw.write("link " + ARC_TUTORIAL_HUB + ":" + lesson.hubLabel() + " -> " + lesson.arc() + ":start\n");
+        }
       }
     }
   }

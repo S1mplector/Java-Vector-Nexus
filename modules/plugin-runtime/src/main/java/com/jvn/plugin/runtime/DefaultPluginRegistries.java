@@ -19,6 +19,8 @@ public final class DefaultPluginRegistries {
   private final OwnedExtensionRegistry<RuntimeListener> listeners = new OwnedExtensionRegistry<>();
   private final OwnedExtensionRegistry<AnimationEasing> easings = new OwnedExtensionRegistry<>();
 
+  private final OwnedExtensionRegistry<com.jvn.plugin.api.image.ImageEffect> images = new OwnedExtensionRegistry<>();
+
   PluginRegistries forPlugin(PluginDescriptor descriptor) {
     String pluginId = descriptor.id();
     return new PluginRegistries() {
@@ -41,6 +43,23 @@ public final class DefaultPluginRegistries {
           @Override public java.util.List<com.jvn.plugin.api.ExtensionEntry<AnimationEasing>> entries() { return owned.entries(); }
         };
       }
+      @Override public ExtensionRegistry<com.jvn.plugin.api.image.ImageEffect> imageEffects() {
+        require(PluginCapability.IMAGE_EFFECT);
+        var owned = images.forPlugin(pluginId);
+        return new ExtensionRegistry<>() {
+          @Override public com.jvn.plugin.api.Registration register(String id, com.jvn.plugin.api.image.ImageEffect effect) {
+            if (id == null || !id.matches("[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+"))
+              throw new IllegalArgumentException("Image effect id must be qualified: " + id);
+            if (effect == null || effect.label() == null || effect.label().isBlank())
+              throw new IllegalArgumentException("Image effect label is required");
+            effect.resolve(java.util.Map.of());
+            effect.presets().values().forEach(effect::resolve);
+            return owned.register(id, effect);
+          }
+          @Override public java.util.Optional<com.jvn.plugin.api.image.ImageEffect> find(String id) { return owned.find(id); }
+          @Override public java.util.List<com.jvn.plugin.api.ExtensionEntry<com.jvn.plugin.api.image.ImageEffect>> entries() { return owned.entries(); }
+        };
+      }
       private void require(PluginCapability capability) {
         if (!descriptor.capabilities().contains(capability)) {
           throw new IllegalStateException("Plugin " + pluginId + " did not declare capability " + capability.id());
@@ -51,17 +70,25 @@ public final class DefaultPluginRegistries {
 
   public PluginRegistries view() {
     return new PluginRegistries() {
-      @Override public ExtensionRegistry<ScriptCommand> scriptCommands() { return commands.forPlugin("host"); }
-      @Override public ExtensionRegistry<EditorTool> editorTools() { return tools.forPlugin("host"); }
-      @Override public ExtensionRegistry<AssetImporter> assetImporters() { return importers.forPlugin("host"); }
-      @Override public ExtensionRegistry<RuntimeListener> runtimeListeners() { return listeners.forPlugin("host"); }
-      @Override public ExtensionRegistry<AnimationEasing> animationEasings() { return easings.forPlugin("host"); }
+      @Override public ExtensionRegistry<ScriptCommand> scriptCommands() { return commands.view(); }
+      @Override public ExtensionRegistry<EditorTool> editorTools() { return tools.view(); }
+      @Override public ExtensionRegistry<AssetImporter> assetImporters() { return importers.view(); }
+      @Override public ExtensionRegistry<RuntimeListener> runtimeListeners() { return listeners.view(); }
+      @Override public ExtensionRegistry<AnimationEasing> animationEasings() { return easings.view(); }
+      @Override public ExtensionRegistry<com.jvn.plugin.api.image.ImageEffect> imageEffects() { return images.view(); }
     };
   }
 
   PluginContributions contributionsFor(PluginDescriptor descriptor) {
     PluginRegistries owned = forPlugin(descriptor);
-    return () -> (id, easing) -> owned.animationEasings().register(id, easing);
+    return new PluginContributions() {
+      @Override public com.jvn.plugin.api.animation.AnimationContributions animations() {
+        return (id, easing) -> owned.animationEasings().register(id, easing);
+      }
+      @Override public com.jvn.plugin.api.image.ImageEffectContributions images() {
+        return (id, effect) -> owned.imageEffects().register(id, effect);
+      }
+    };
   }
 
   void removePlugin(String pluginId) {
@@ -70,6 +97,7 @@ public final class DefaultPluginRegistries {
     importers.removePlugin(pluginId);
     listeners.removePlugin(pluginId);
     easings.removePlugin(pluginId);
+    images.removePlugin(pluginId);
   }
 
   private static void validateEasing(AnimationEasing easing) {

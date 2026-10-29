@@ -1,0 +1,77 @@
+# Tutorial 19 — Saves, Rollback and Persistence
+# Reference: docs/scripting/vns/runtime/vns-save-system.md
+# Read scripts/tutorial/README.md for the complete course and linked references.
+@scenario {{SCENARIO_PREFIX}}_tutorial_19
+@include {{CHARACTERS_INCLUDE}}
+{{BG_DECL}}@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[set ui.textBoxAsset none]
+[set ui.continueIndicator spinning_arrow]
+[if tutorial_still]
+[set ui.reduceMotion true]
+[else]
+[set ui.reduceMotion false]
+[endif]
+[if !tutorial_initialized]
+[set tutorial_count 0]
+[flag tutorial_initialized]
+[endif]
+[set ui.characterHeightFactor 1.5]
+[set ui.characterBaselineY 1.5]
+[set character.lavender.imageEffect none]
+{{BG_START}}
+[textspeed 28]
+[show lavender center talking]
+Lavender: There are three different timelines to think about: this session, a saved snapshot, and persistent progress shared across playthroughs.
+@label lesson_menu
+> Try a reversible story variable -> experiment
+> Save and load from the player menus -> saves
+> History and rollback -> history
+> Persistent unlocks -> persistent
+> Checkpoint -> checkpoint
+> Finish and return to the hub -> return_hub
+@label experiment
+[set tutorial_token 10]
+Lavender: We have ${tutorial_token} workshop tokens. Advance, then try the runtime's rollback action to revisit the earlier state.
+[inc tutorial_token 5]
+Lavender: Now we have ${tutorial_token}. The variable belongs to VN state, alongside dialogue position and character presentation.
+[jump lesson_menu]
+@label saves
+Lavender: Run the full game to test its Save and Load menus. Choose a spare named slot, save with my expression visible, advance, then reload it.
+Lavender: F5 and F9 are the default quick-save and quick-load shortcuts; bindings can be changed. A quick save overwrites the quick slot, so use the menus for a durable test checkpoint.
+narrator: [save] performs a quick save. [quickload] restores the quick save. [menu save] and [menu load] open runtime slot menus.
+Lavender: Test choices, scene changes, phone mutations, and your presentation settings after loading. Also test a fresh install and missing or old saves.
+Lavender: The editor's embedded preview is not a substitute for the full runtime's disk and menu workflow.
+[jump lesson_menu]
+@label history
+Lavender: History is the reading backlog. Rollback restores a previous story state. Re-reading a line and rewinding the simulation are different operations.
+[history show]
+Lavender: Close the backlog with its back control to continue. Inspect the previous token lines, then test rollback in the full game.
+[history hide]
+Lavender: External effects such as file writes or online calls need special care: rewinding dialogue cannot magically undo them. Keep those actions outside replayable story beats where possible.
+[jump lesson_menu]
+@label persistent
+Lavender: Persistent variables are for things such as a gallery unlock or an ending the player has seen. They deliberately outlive a single save.
+narrator: [persistent flag ending_lavender_seen]
+narrator: [persistent load ending_lavender_seen]
+Lavender: Those two lines are examples, not executed here. A tutorial should not silently change your game's permanent unlocks.
+Lavender: Exercise: add a namespaced test unlock in a disposable project, restart the game, read it back, and clear only that test key. Never use a blanket reset in normal story flow.
+[jump lesson_menu]
+@label checkpoint
+Lavender: Which state should remember that the player has ever reached an ending?
+> A persistent unlock -> correct
+> Only a temporary dialogue variable -> retry
+@label retry
+Lavender: A normal variable belongs to the current session or save. Use a persistent key for progress across playthroughs.
+[jump checkpoint]
+@label correct
+Lavender: Yes. Keep current-route state in the save, and cross-playthrough achievements in persistent storage.
+[jump return_hub]
+
+@label return_hub
+[if !tutorial_done_19]
+[flag tutorial_done_19]
+[inc tutorial_count]
+[endif]
+[goto {{HUB_TARGET}}:topics_page_4]
