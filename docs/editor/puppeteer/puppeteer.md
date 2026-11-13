@@ -1150,3 +1150,26 @@ draft.
 - [Puppeteer Launcher Panel](../sidebars/right/sidebar-puppeteer-launcher.md) — VNS snapshot resolution details
 - [VNS Characters](../../scripting/vns/presentation/vns-characters.md) — character positions and layering (the VNS context Puppeteer launches from)
 - [VNS Interop](../../scripting/vns/integration/vns-interop.md) — inline timelines and `[call jes_timeline]` from VNS
+
+### Reopen, update, and reuse timelines
+
+Use **File → Workflow** in Puppeteer:
+
+- **Open Timeline File…** opens a saved JES timeline in a new window, restoring
+  Puppeteer metadata when present.
+- **Open Scene in New Puppeteer Window…** loads a JES scene without replacing the
+  animation you are currently editing.
+- **Load Scene from Script Cursor** uses the active VNS script's scene snapshot.
+- **Copy Editable Timeline Block** includes editor metadata inside the block.
+  Paste the complete block into VNS, place the cursor inside it, and open
+  Puppeteer from the editor to resume editing.
+- **Update Original Script Block** replaces the linked block in the editor buffer.
+  Save the script afterward; the editor's Undo can revert the replacement.
+  If that block was changed, removed, or duplicated while Puppeteer was open,
+  reopen it from the script to establish a fresh link.
+- **Export Reusable Timeline File…** saves a metadata-rich JES file to a chosen
+  location and backs up an existing destination under .backups. This exports
+  the timeline, not its image/audio assets; asset paths remain project-relative.
+
+Commit or discard a staged code preview before using these export actions.
+Save & Register remains the way to register a named timeline for runtime use.

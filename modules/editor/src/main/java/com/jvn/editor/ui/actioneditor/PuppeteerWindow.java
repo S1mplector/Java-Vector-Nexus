@@ -239,6 +239,80 @@ public class PuppeteerWindow extends Stage {
     public final PuppeteerCommand.Stack commandStack = new PuppeteerCommand.Stack();
     private final KeyframeSelectionModel selectionModel;
     Consumer<String> onCopyCode;
+    private Consumer<String> onUpdateSource;
+    private Runnable onOpenTimelineFile;
+    private Runnable onOpenSceneFile;
+
+    public void setOnUpdateSource(Consumer<String> action) { onUpdateSource = action; }
+    public void setOnOpenTimelineFile(Runnable action) { onOpenTimelineFile = action; }
+    public void setOnOpenSceneFile(Runnable action) { onOpenSceneFile = action; }
+
+    public Menu buildWorkflowMenu() {
+        Menu menu = new Menu("Workflow");
+        MenuItem open = new MenuItem("Open Timeline File…");
+        open.setOnAction(e -> { if (onOpenTimelineFile != null) onOpenTimelineFile.run(); });
+        MenuItem scene = new MenuItem("Open Scene in New Puppeteer Window…");
+        scene.setOnAction(e -> { if (onOpenSceneFile != null) onOpenSceneFile.run(); });
+        MenuItem sync = new MenuItem("Load Scene from Script Cursor");
+        sync.setOnAction(e -> requestSyncSnapshot());
+        MenuItem copy = new MenuItem("Copy Editable Timeline Block");
+        copy.setOnAction(e -> exportWorkflow(false, false));
+        MenuItem save = new MenuItem("Export Reusable Timeline File…");
+        save.setOnAction(e -> exportWorkflow(true, false));
+        MenuItem update = new MenuItem("Update Original Script Block");
+        update.setOnAction(e -> exportWorkflow(false, true));
+        menu.getItems().addAll(open, scene, sync, new SeparatorMenuItem(), copy, save, update);
+        menu.setOnShowing(e -> {
+            open.setDisable(onOpenTimelineFile == null);
+            scene.setDisable(onOpenSceneFile == null);
+            sync.setDisable(onSyncSnapshotRequested == null);
+            update.setDisable(onUpdateSource == null || previewStaged);
+            copy.setDisable(previewStaged);
+            save.setDisable(previewStaged);
+        });
+        return menu;
+    }
+
+    private void exportWorkflow(boolean file, boolean update) {
+        try {
+            if (previewStaged) throw new IllegalStateException("Commit or discard the staged code preview first.");
+            String name = tfTimelineName.getText().trim();
+            if (name.isBlank()) name = "timeline";
+            String code = file ? CodeExporter.exportNamed(project, name, exportNestedBlocks)
+                : CodeExporter.exportEditableInline(project, exportNestedBlocks);
+            var context = resolveCharacterForDiagnostics();
+            List<TimelineDiagnostic.Message> findings = new ArrayList<>(PuppeteerVerification.diagnose(
+                project, knownSceneEntities(), projectRoot, PuppeteerVerification.Mode.EXPORT_CODE,
+                context.character(), context.characterId()));
+            findings.addAll(TimelineDiagnostic.diagnoseDsl(code));
+            if (findings.stream().anyMatch(m -> m.severity() == TimelineDiagnostic.Severity.ERROR)) {
+                showVerificationOverlay("Export Blocked", "Resolve timeline errors before exporting.", findings, null, null);
+                return;
+            }
+            if (update) {
+                if (onUpdateSource == null) throw new IllegalStateException("Open this timeline from its script first.");
+                onUpdateSource.accept(code);
+                statusBar.setText("Original script block updated · save the script in the editor");
+            } else if (file) {
+                javafx.stage.FileChooser chooser = new javafx.stage.FileChooser();
+                chooser.setTitle("Export Reusable Timeline");
+                chooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("JES timeline", "*.jes"));
+                chooser.setInitialFileName(name.replaceAll("[^a-zA-Z0-9_-]", "_") + ".jes");
+                if (projectRoot != null && projectRoot.isDirectory()) chooser.setInitialDirectory(projectRoot);
+                File target = chooser.showSaveDialog(this);
+                if (target == null) return;
+                PuppeteerPersistenceCoordinator.backupExistingTimelineFile(target.toPath());
+                java.nio.file.Files.writeString(target.toPath(), code);
+                statusBar.setText("Exported " + target.getName() + " · includes editable timeline and scene metadata");
+            } else {
+                copyToClipboard(code);
+                statusBar.setText("Editable timeline block copied · paste into a VNS script to reopen later");
+            }
+        } catch (Exception ex) {
+            showOverlayError(PuppeteerErrorType.EXPORT, "Timeline Workflow", ex.getMessage(), ex.getMessage(), ex);
+        }
+    }
+
     public final TextField tfTimelineName;
     private Runnable onSyncSnapshotRequested;
     public final Map<String, CollapsibleToolbarCluster> toolbarClusters = new LinkedHashMap<>();
@@ -2062,6 +2136,7 @@ public class PuppeteerWindow extends Stage {
         miClose.setOnAction(e -> requestWindowClose());
 
         Menu fileMenu = new Menu("File");
+        fileMenu.getItems().add(buildWorkflowMenu());
         fileMenu.getItems().addAll(
             miSaveRegister,
             miClose

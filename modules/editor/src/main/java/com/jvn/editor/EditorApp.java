@@ -7386,6 +7386,24 @@ public class EditorApp extends Application {
       puppeteer.setSourceScriptFile(ft.getFile());
     }
 
+    if (!newFromSnapshot && selectedTimelineName == null && imported != null
+        && snapshot != null && snapshot.hasInlineTimeline() && ft != null && ft.getVnsEditor() != null) {
+      try {
+        var link = new com.jvn.editor.ui.actioneditor.TimelineSourceLink(
+            ft.getCurrentTextSnapshot(), snapshot.inlineTimelineStartLine);
+        final FileEditorTab sourceTab = ft;
+        puppeteer.setOnUpdateSource(code -> {
+          var area = sourceTab.getVnsEditor().getCodeArea();
+          var edit = link.prepare(area.getText(), code);
+          area.replaceText(edit.start(), edit.end(), edit.text());
+          link.applied(edit);
+          status.setText("Updated timeline in " + sourceTab.getFile().getName() + " — save the script to keep changes");
+        });
+      } catch (IllegalArgumentException ex) {
+        status.setText("Timeline opened without source update: " + ex.getMessage());
+      }
+    }
+
     boolean treatImportedTimelineAsVnOffsets = shouldTreatImportedTimelineAsVnOffsets(
         selectedTimelineName,
         snapshot,
@@ -7444,6 +7462,7 @@ public class EditorApp extends Application {
       title += " (line " + (snapshot.atLine + 1) + ")";
       puppeteer.setTitle(title);
     }
+    configurePuppeteerWorkflow(puppeteer);
     puppeteer.show();
     if (puppeteerLauncherPanel != null && preferredTimelineName != null && !preferredTimelineName.isBlank()) {
       puppeteerLauncherPanel.setActiveEditingTimeline(preferredTimelineName);
@@ -8733,7 +8752,44 @@ public class EditorApp extends Application {
     return out.toString();
   }
 
+  private void configurePuppeteerWorkflow(PuppeteerWindow window) {
+    window.setOnOpenTimelineFile(() -> openPuppeteerFile(window, false));
+    window.setOnOpenSceneFile(() -> openPuppeteerFile(window, true));
+  }
+
+  private void openPuppeteerFile(PuppeteerWindow owner, boolean sceneFile) {
+    javafx.stage.FileChooser chooser = new javafx.stage.FileChooser();
+    chooser.setTitle(sceneFile ? "Open JES Scene in Puppeteer" : "Open Timeline in Puppeteer");
+    chooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("JES files", "*.jes"));
+    if (projectRoot != null && projectRoot.isDirectory()) chooser.setInitialDirectory(projectRoot);
+    File file = chooser.showOpenDialog(owner);
+    if (file == null) return;
+    try {
+      String code = java.nio.file.Files.readString(file.toPath());
+      String name = file.getName().replaceFirst("\\.jes$", "");
+      AnimationProject imported = sceneFile ? null : CodeImporter.importCode(name, code);
+      JesScene2D scene = sceneFile ? com.jvn.scripting.jes.JesLoader.load(code) : new JesScene2D();
+      if (imported != null) ensureSceneEntitiesForProject(scene, imported, null);
+      PuppeteerWindow window = imported == null ? new PuppeteerWindow() : new PuppeteerWindow(imported);
+      if (projectRoot != null) window.setProjectRoot(projectRoot);
+      window.setScene(scene);
+      window.setTimelineName(name);
+      window.setTitle("Puppeteer — " + file.getName());
+      configurePuppeteerWorkflow(window);
+      window.show();
+    } catch (Exception ex) {
+      showTimelineImportWarning(file.getName(), ex);
+    }
+  }
+
   private void openActionEditor() {
+    FileEditorTab active = getActiveFileTab();
+    if (active != null && active.getVnsEditor() != null) {
+      var snapshot = PuppeteerLauncherPanel.resolveProjectSnapshot(
+          active.getCurrentTextSnapshot(), active.getVnsCaretLine(), active.getFile(), projectRoot);
+      launchPuppeteerFromLauncher(new PuppeteerLauncherPanel.LaunchRequest(snapshot, null));
+      return;
+    }
     AnimationProject imported = discoverAndImportTimeline();
     PuppeteerWindow puppeteer = imported != null
         ? new PuppeteerWindow(imported)
@@ -8756,6 +8812,7 @@ public class EditorApp extends Application {
     if (launchScene != null) {
       puppeteer.setScene(launchScene);
     }
+    configurePuppeteerWorkflow(puppeteer);
     puppeteer.show();
   }
 

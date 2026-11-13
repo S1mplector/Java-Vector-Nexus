@@ -43,6 +43,19 @@ public class CodeExporter {
         return sb.toString();
     }
 
+    /** Keeps reopen metadata inside the block so copying a VNS block preserves it. */
+    public static String exportEditableInline(AnimationProject project, boolean nested) {
+        StringBuilder metadata = new StringBuilder();
+        appendSceneEntityMetadata(metadata, project);
+        appendStageMetadata(metadata, project);
+        appendEditorProjectMetadata(metadata, project);
+        appendDialogueCueMetadata(metadata, project);
+        String body = export(project, nested);
+        int opening = body.indexOf('{');
+        if (opening < 0) throw new IllegalStateException("Export has no timeline block.");
+        return body.substring(0, opening + 1) + "\n" + metadata + body.substring(opening + 1);
+    }
+
     private static void appendSceneEntityMetadata(StringBuilder sb, AnimationProject project) {
         if (sb == null || project == null || project.getSceneEntitySnapshotsView().isEmpty()) return;
         sb.append("// Puppeteer scene metadata. Runtime parsers ignore these comments.\n");

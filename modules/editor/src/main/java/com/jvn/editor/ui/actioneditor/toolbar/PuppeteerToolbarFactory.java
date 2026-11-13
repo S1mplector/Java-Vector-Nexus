@@ -62,6 +62,7 @@ public final class PuppeteerToolbarFactory {
     miClose.setOnAction(e -> w.requestWindowClose());
 
     Menu fileMenu = new Menu("File");
+    fileMenu.getItems().add(w.buildWorkflowMenu());
     fileMenu.getItems().addAll(
         miSaveRegister,
         miVerifyRuntime,

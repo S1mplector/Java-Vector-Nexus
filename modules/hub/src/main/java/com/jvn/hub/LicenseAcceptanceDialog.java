@@ -46,17 +46,20 @@ public final class LicenseAcceptanceDialog {
       JLabel status = new JLabel();
       Runnable refresh = () -> status.setText(store.status(terms).detail());
       refresh.run();
-      JPanel heading = new JPanel(new GridLayout(0, 1, 0, 6));
-      JLabel title = new JLabel("JVN License & Terms — review before accepting", aero("DOCUMENTATION", 32), JLabel.LEADING);
+      JPanel heading = new JPanel(new BorderLayout(0, 10));
+      JLabel title = new JLabel("License & Terms", aero("DOCUMENTATION", 28), JLabel.LEADING);
       title.setFont(title.getFont().deriveFont(java.awt.Font.BOLD, 19f));
-      heading.add(title);
-      heading.add(status);
+      JPanel titleRow = new JPanel(new BorderLayout(16, 0));
+      titleRow.add(title, BorderLayout.WEST);
+      status.setName("legalStatus");
+      titleRow.add(status, BorderLayout.EAST);
+      heading.add(titleRow, BorderLayout.NORTH);
       heading.add(new JLabel(required ? "Accept the current license and terms to use JVN. Declining closes this application."
-          : "Current acceptance is required for developer tools and game exports. Closing this page does not accept."));
+          : "Review the documents below. Closing this page does not record acceptance."), BorderLayout.SOUTH);
       content.add(heading, BorderLayout.NORTH);
       JTabbedPane documents = new JTabbedPane();
-      documents.addTab("License " + terms.licenseVersion(), aero("DOCUMENTATION", 20), text(terms.license()));
-      documents.addTab("Terms " + terms.termsVersion(), aero("DOCUMENTATION", 20), text(terms.terms()));
+      documents.addTab("License " + terms.licenseVersion(), aero("DOCUMENTATION", 20), LegalMarkdown.view(terms.license(), scale));
+      documents.addTab("Terms " + terms.termsVersion(), aero("DOCUMENTATION", 20), LegalMarkdown.view(terms.terms(), scale));
       documents.addTab("Receipt details", text("Storage: " + store.root() + "\n\nBundle SHA-256:\n" + terms.bundleHash()
           + "\n\nReceipts contain your supplied name, optional organization, local time, document copies and a local signature."
           + "\nNothing is uploaded. Local signatures do not verify identity or provide a trusted timestamp."
@@ -64,24 +67,26 @@ public final class LicenseAcceptanceDialog {
           + "\nExports include your supplied name. The private signing key is never exported."));
       content.add(documents, BorderLayout.CENTER);
       JPanel actions = new JPanel(new BorderLayout(8, 8));
-      JPanel fields = new JPanel(new GridLayout(0, 2, 8, 8));
+      JPanel fields = new JPanel(new GridLayout(1, 2, 16, 0));
       JTextField name = new JTextField(24);
       name.setName("acceptanceName");
       JTextField organization = new JTextField(24);
-      fields.add(new JLabel("Your name (required, self-declared)")); fields.add(name);
-      fields.add(new JLabel("Organization (optional)")); fields.add(organization);
+      fields.add(field("Your name · required, self-declared", name));
+      fields.add(field("Organization · optional", organization));
       actions.add(fields, BorderLayout.NORTH);
       JPanel consentPanel = new JPanel(new BorderLayout(4, 4));
       JCheckBox consent = new JCheckBox("I agree to the License and Terms of Use");
       consent.setName("acceptanceConsent");
       JTextArea consentText = new JTextArea(LicenseTerms.CONSENT);
       consentText.setEditable(false); consentText.setLineWrap(true); consentText.setWrapStyleWord(true);
-      consentText.setOpaque(false); consentText.setRows(3);
+      consentText.setOpaque(false); consentText.setRows(2);
+      consentText.setName("legalMuted");
       consentPanel.add(consentText, BorderLayout.NORTH);
       consentPanel.add(consent, BorderLayout.SOUTH);
       actions.add(consentPanel, BorderLayout.CENTER);
-      JPanel buttons = new JPanel(new GridLayout(0, 2, 8, 8));
-      JButton save = new JButton("Save documents…", aero("DOCUMENTATION", 22));
+      JPanel buttons = new JPanel(new BorderLayout(12, 0));
+      buttons.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+      JButton save = new JButton("Save documents…");
       save.addActionListener(event -> {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -93,7 +98,7 @@ public final class LicenseAcceptanceDialog {
           JOptionPane.showMessageDialog(dialog, "Documents saved to " + folder);
         } catch (Exception e) { error(dialog, e); }
       });
-      JButton export = new JButton("Export receipt…", aero("SHORTCUT", 22));
+      JButton export = new JButton("Export receipt…");
       export.setEnabled(store.status(terms).receipt() != null);
       export.addActionListener(event -> {
         var current = store.status(terms);
@@ -107,7 +112,7 @@ public final class LicenseAcceptanceDialog {
           JOptionPane.showMessageDialog(dialog, "Receipt exported. Keep your copy secure.");
         } catch (Exception e) { error(dialog, e); }
       });
-      JButton accept = new JButton("Accept and save receipt", aero("SAFE_ACTIVE", 22));
+      JButton accept = new JButton("Accept and save receipt");
       accept.setName("acceptanceSave");
       accept.setEnabled(false);
       Runnable enable = () -> accept.setEnabled(consent.isSelected() && !name.getText().isBlank());
@@ -126,9 +131,13 @@ public final class LicenseAcceptanceDialog {
           else JOptionPane.showMessageDialog(dialog, "Acceptance saved locally. You can now export your receipt.");
         } catch (Exception e) { error(dialog, e); }
       });
-      JButton close = new JButton(required ? "Decline and exit" : "Close", aero("CANCEL", 20));
+      JButton close = new JButton(required ? "Decline and exit" : "Close");
       close.addActionListener(event -> dialog.dispose());
-      buttons.add(save); buttons.add(export); buttons.add(close); buttons.add(accept);
+      JPanel utilities = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+      utilities.add(save); utilities.add(export);
+      JPanel decisions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+      decisions.add(close); decisions.add(accept);
+      buttons.add(utilities, BorderLayout.WEST); buttons.add(decisions, BorderLayout.EAST);
       actions.add(buttons, BorderLayout.SOUTH);
       content.add(actions, BorderLayout.SOUTH);
       graphite(content);
@@ -166,12 +175,15 @@ public final class LicenseAcceptanceDialog {
   private static void scaleComponents(java.awt.Component component, double scale) {
     // Explicit base sizes avoid multiplying fonts already scaled by Hub defaults.
     if (component.getFont() != null) {
-      float base = component instanceof JLabel label && label.getIcon() != null ? 19f : 14f;
+      float base = component instanceof JLabel label && label.getIcon() != null ? 21f : 13f;
       component.setFont(component.getFont().deriveFont((float) (base * scale)));
     }
     if (component instanceof JButton button) {
       button.setMargin(new java.awt.Insets(px(9, scale), px(12, scale), px(9, scale), px(12, scale)));
       button.setIcon(scaleIcon(button.getIcon(), scale));
+      button.setBorder(BorderFactory.createEmptyBorder(px(10, scale), px(14, scale), px(10, scale), px(14, scale)));
+    } else if (component instanceof JCheckBox box) {
+      box.setIcon(scaleIcon(box.getIcon(), scale));
     } else if (component instanceof JLabel label) {
       label.setIcon(scaleIcon(label.getIcon(), scale));
     }
@@ -211,7 +223,7 @@ public final class LicenseAcceptanceDialog {
   private static void graphite(java.awt.Component component) {
     component.setBackground(java.awt.Color.decode("#242424"));
     component.setForeground(java.awt.Color.decode("#e7e7e7"));
-    if (component instanceof JTextArea || component instanceof JTextField) {
+    if (component instanceof JTextArea || component instanceof JTextField || component instanceof JEditorPane) {
       component.setBackground(java.awt.Color.decode("#1c1c1c"));
       if (component instanceof javax.swing.text.JTextComponent text) {
         text.setCaretColor(java.awt.Color.WHITE);
@@ -235,19 +247,96 @@ public final class LicenseAcceptanceDialog {
         }
       });
     }
-    if (component instanceof JScrollPane pane)
+    if (component instanceof JScrollPane pane) {
       pane.setBorder(BorderFactory.createLineBorder(java.awt.Color.decode("#414141")));
+      for (JScrollBar bar : new JScrollBar[] {pane.getVerticalScrollBar(), pane.getHorizontalScrollBar()}) {
+        bar.setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
+          @Override protected void configureScrollBarColors() {
+            thumbColor = java.awt.Color.decode("#555555");
+            trackColor = java.awt.Color.decode("#1c1c1c");
+          }
+          @Override protected JButton createDecreaseButton(int direction) { return emptyScrollButton(); }
+          @Override protected JButton createIncreaseButton(int direction) { return emptyScrollButton(); }
+        });
+        bar.setUnitIncrement(24);
+      }
+    }
     if (component instanceof JTextField field)
       field.setBorder(BorderFactory.createCompoundBorder(
           BorderFactory.createLineBorder(java.awt.Color.decode("#484848")),
           BorderFactory.createEmptyBorder(5, 8, 5, 8)));
     if (component instanceof JButton button) {
-      button.setBackground(java.awt.Color.decode("#363636"));
-      button.setMargin(new java.awt.Insets(9, 12, 9, 12));
-      button.setFocusPainted(true);
+      button.setUI(new javax.swing.plaf.basic.BasicButtonUI() {
+        @Override public void paint(java.awt.Graphics graphics, JComponent c) {
+          boolean primary = "acceptanceSave".equals(button.getName());
+          var g = (java.awt.Graphics2D) graphics.create();
+          g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
+              java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+          String fill = !button.isEnabled() ? "#2c2c2c" : button.getModel().isPressed()
+              ? "#484848" : button.getModel().isRollover() ? "#505050" : primary ? "#525252" : "#363636";
+          g.setColor(java.awt.Color.decode(fill));
+          g.fillRoundRect(0, 0, c.getWidth() - 1, c.getHeight() - 1, 8, 8);
+          g.setColor(java.awt.Color.decode(button.hasFocus() ? "#aaaaaa" : "#484848"));
+          g.drawRoundRect(0, 0, c.getWidth() - 1, c.getHeight() - 1, 8, 8);
+          g.dispose();
+          super.paint(graphics, c);
+        }
+        @Override protected void paintText(java.awt.Graphics g, AbstractButton b,
+            java.awt.Rectangle rect, String value) {
+          g.setColor(java.awt.Color.decode(b.isEnabled() ? "#ededed" : "#858585"));
+          var metrics = g.getFontMetrics();
+          javax.swing.plaf.basic.BasicGraphicsUtils.drawStringUnderlineCharAt(
+              g, value, b.getDisplayedMnemonicIndex(), rect.x, rect.y + metrics.getAscent());
+        }
+      });
+      button.setContentAreaFilled(false);
+      button.setOpaque(false);
+      button.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
+      button.setRolloverEnabled(true);
+      if ("acceptanceSave".equals(button.getName()))
+        button.setFont(button.getFont().deriveFont(java.awt.Font.BOLD));
     }
+    if (component instanceof JCheckBox box) {
+      box.setUI(new javax.swing.plaf.basic.BasicCheckBoxUI());
+      box.setOpaque(false);
+      box.setIcon(new Icon() {
+        public int getIconWidth() { return 20; }
+        public int getIconHeight() { return 20; }
+        public void paintIcon(java.awt.Component c, java.awt.Graphics graphics, int x, int y) {
+          var g = (java.awt.Graphics2D) graphics.create();
+          g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+          g.setColor(java.awt.Color.decode(box.isSelected() ? "#666666" : "#1c1c1c"));
+          g.fillRoundRect(x + 1, y + 1, 17, 17, 4, 4);
+          g.setColor(java.awt.Color.decode(box.hasFocus() ? "#dddddd" : "#888888"));
+          g.drawRoundRect(x + 1, y + 1, 17, 17, 4, 4);
+          if (box.isSelected()) {
+            g.setColor(java.awt.Color.WHITE); g.setStroke(new java.awt.BasicStroke(2));
+            g.drawLine(x + 5, y + 10, x + 8, y + 13);
+            g.drawLine(x + 8, y + 13, x + 14, y + 6);
+          }
+          g.dispose();
+        }
+      });
+      box.setIconTextGap(8);
+    }
+    if ("legalMuted".equals(component.getName()) || "legalStatus".equals(component.getName()))
+      component.setForeground(java.awt.Color.decode("#aaaaaa"));
     if (component instanceof java.awt.Container container)
       for (var child : container.getComponents()) graphite(child);
+  }
+
+  private static JButton emptyScrollButton() {
+    JButton button = new JButton();
+    button.setPreferredSize(new Dimension(0, 0));
+    return button;
+  }
+
+  private static JPanel field(String label, JTextField input) {
+    JPanel panel = new JPanel(new BorderLayout(0, 6));
+    panel.add(new JLabel(label), BorderLayout.NORTH);
+    panel.add(input, BorderLayout.CENTER);
+    input.getAccessibleContext().setAccessibleName(label);
+    return panel;
   }
 
   private static JScrollPane text(String value) {
