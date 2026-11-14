@@ -72,6 +72,7 @@ public class VnsCodeEditor extends BorderPane {
   private int highlightedIssueLine = -1;
   private Issue.Severity highlightedIssueSeverity = Issue.Severity.ERROR;
   private Consumer<String> onTextChanged;
+  private IntConsumer onEditTimelineRequested;
   private Consumer<String> onLaunchFromHere;
   private IntConsumer onLaunchFromCursor;
   private EditorSearchBar searchBar;
@@ -295,6 +296,10 @@ public class VnsCodeEditor extends BorderPane {
       boolean hasFoldedTimelineBlocks = hasFoldedTimelineBlocks();
       if (timelineRegion != null || hasFoldedTimelineBlocks) {
         if (timelineRegion != null) {
+          MenuItem editTimeline = new MenuItem("Edit Timeline in Puppeteer");
+          editTimeline.setDisable(onEditTimelineRequested == null);
+          editTimeline.setOnAction(a -> editTimelineAtCaret());
+          menu.getItems().add(editTimeline);
           MenuItem foldTimeline = new MenuItem(foldedRegionStarts.contains(timelineRegion.startLine())
               ? "Unfold Timeline Block"
               : "Fold Timeline Block");
@@ -729,6 +734,18 @@ public class VnsCodeEditor extends BorderPane {
     int caret = Math.max(0, Math.min(prevCaret, len));
     int anchor = Math.max(0, Math.min(prevAnchor, len));
     codeArea.selectRange(anchor, caret);
+  }
+
+  public void setOnEditTimelineRequested(IntConsumer listener) {
+    onEditTimelineRequested = listener;
+  }
+
+  /** Opens the containing block only; never silently selects an earlier timeline. */
+  public boolean editTimelineAtCaret() {
+    FoldRegion region = findTimelineRegionForParagraph(codeArea.getCurrentParagraph());
+    if (region == null || onEditTimelineRequested == null) return false;
+    onEditTimelineRequested.accept(region.startLine());
+    return true;
   }
 
   public void setOnTextChanged(Consumer<String> listener) {
@@ -3407,6 +3424,7 @@ public class VnsCodeEditor extends BorderPane {
       {"Go to Symbol", "Jump to @label (Ctrl+Shift+O)"},
       {"Go to Line", "Jump to line number (Ctrl+G)"},
       {"Toggle Timeline Fold", "Collapse/expand timeline block under caret (Ctrl+Shift+[)"},
+      {"Edit Timeline in Puppeteer", "Reopen the timeline containing the cursor for visual editing"},
       {"Unfold All Timeline Blocks", "Expand folded timeline blocks (Ctrl+Shift+])"},
       {"Toggle Comment", "Comment/uncomment lines (Ctrl+/)"},
       {"Duplicate Line", "Duplicate current line (Ctrl+D)"},
@@ -3492,6 +3510,7 @@ public class VnsCodeEditor extends BorderPane {
       case "Go to Symbol" -> showGoToSymbol();
       case "Go to Line" -> showGoToLineDialog();
       case "Toggle Timeline Fold" -> toggleTimelineBlockAtCaret();
+      case "Edit Timeline in Puppeteer" -> editTimelineAtCaret();
       case "Unfold All Timeline Blocks" -> unfoldAllTimelineBlocks();
       case "Toggle Comment" -> toggleLineComment();
       case "Duplicate Line" -> duplicateLine();

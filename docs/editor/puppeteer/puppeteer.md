@@ -1162,11 +1162,16 @@ Use **File → Workflow** in Puppeteer:
 - **Load Scene from Script Cursor** uses the active VNS script's scene snapshot.
 - **Copy Editable Timeline Block** includes editor metadata inside the block.
   Paste the complete block into VNS, place the cursor inside it, and open
-  Puppeteer from the editor to resume editing.
+  Puppeteer from the editor to resume editing. You can also right-click inside
+  the block and choose **Edit Timeline in Puppeteer**, or use that command in
+  the script editor command palette. Folded blocks support the same action.
 - **Update Original Script Block** replaces the linked block in the editor buffer.
   Save the script afterward; the editor's Undo can revert the replacement.
   If that block was changed, removed, or duplicated while Puppeteer was open,
   reopen it from the script to establish a fresh link.
+- **Go to Original Script Block** returns to the linked script, following the
+  block if lines were inserted above it. Keep that source tab open while editing;
+  if it is closed, reopen the timeline to reconnect before updating it.
 - **Export Reusable Timeline File…** saves a metadata-rich JES file to a chosen
   location and backs up an existing destination under .backups. This exports
   the timeline, not its image/audio assets; asset paths remain project-relative.

@@ -4271,6 +4271,14 @@ public class EditorApp extends Application {
       refreshVnsToolPanels(editor, text);
     });
     if (editor.getKind() == FileEditorTab.Kind.VNS) {
+      editor.getVnsEditor().setOnEditTimelineRequested(line -> {
+        for (Tab candidate : filesTabs.getTabs()) {
+          if (candidate.getContent() == editor) filesTabs.getSelectionModel().select(candidate);
+        }
+        var snapshot = PuppeteerLauncherPanel.resolveProjectSnapshot(
+            editor.getCurrentTextSnapshot(), line, editor.getFile(), projectRoot);
+        launchPuppeteerFromLauncher(new PuppeteerLauncherPanel.LaunchRequest(snapshot, null));
+      });
       editor.setOnVnsTextChanged(text -> {
         if (editor != getActiveFileTab()) return;
         if (puppeteerLauncherPanel != null) {
@@ -7392,7 +7400,19 @@ public class EditorApp extends Application {
         var link = new com.jvn.editor.ui.actioneditor.TimelineSourceLink(
             ft.getCurrentTextSnapshot(), snapshot.inlineTimelineStartLine);
         final FileEditorTab sourceTab = ft;
+        puppeteer.setOnRevealSource(() -> {
+          Tab sourceEditorTab = requireOpenPuppeteerSource(sourceTab);
+          var area = sourceTab.getVnsEditor().getCodeArea();
+          int offset = link.locate(area.getText());
+          int line = (int) area.getText().substring(0, offset).chars().filter(c -> c == '\n').count();
+          filesTabs.getSelectionModel().select(sourceEditorTab);
+          sourceTab.navigateToLine(line + 1);
+          var editorWindow = filesTabs.getScene().getWindow();
+          if (editorWindow instanceof Stage stage) { stage.toFront(); stage.requestFocus(); }
+          area.requestFocus();
+        });
         puppeteer.setOnUpdateSource(code -> {
+          requireOpenPuppeteerSource(sourceTab);
           var area = sourceTab.getVnsEditor().getCodeArea();
           var edit = link.prepare(area.getText(), code);
           area.replaceText(edit.start(), edit.end(), edit.text());
@@ -8750,6 +8770,13 @@ public class EditorApp extends Application {
       out.append(resolveProjectPath(part));
     }
     return out.toString();
+  }
+
+  private Tab requireOpenPuppeteerSource(FileEditorTab source) {
+    for (Tab tab : filesTabs.getTabs()) {
+      if (tab.getContent() == source) return tab;
+    }
+    throw new IllegalStateException("The source script tab was closed. Reopen the script and launch its timeline again.");
   }
 
   private void configurePuppeteerWorkflow(PuppeteerWindow window) {

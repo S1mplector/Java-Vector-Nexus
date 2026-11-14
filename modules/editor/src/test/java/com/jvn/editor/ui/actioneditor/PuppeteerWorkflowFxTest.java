@@ -18,12 +18,18 @@ class PuppeteerWorkflowFxTest {
                 menu.getOnShowing().handle(new Event(Menu.ON_SHOWING));
                 assertTrue(menu.getItems().get(0).isDisable());
                 assertTrue(menu.getItems().get(6).isDisable());
+                assertTrue(menu.getItems().get(7).isDisable());
                 boolean[] opened = {false};
                 window.setOnOpenTimelineFile(() -> opened[0] = true);
                 window.setOnUpdateSource(code -> {});
+                boolean[] revealed = {false};
+                window.setOnRevealSource(() -> revealed[0] = true);
                 menu.getOnShowing().handle(new Event(Menu.ON_SHOWING));
                 assertFalse(menu.getItems().get(0).isDisable());
                 assertFalse(menu.getItems().get(6).isDisable());
+                assertFalse(menu.getItems().get(7).isDisable());
+                menu.getItems().get(7).fire();
+                assertTrue(revealed[0]);
                 menu.getItems().get(0).fire();
                 assertTrue(opened[0]);
                 window.previewStaged = true;

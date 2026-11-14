@@ -37,10 +37,15 @@ public final class TimelineSourceLink {
 
     public record Edit(int start, int end, String text) {}
 
-    public Edit prepare(String source, String replacement) {
+    public int locate(String source) {
         int start = source.indexOf(expected);
         if (start < 0 || source.indexOf(expected, start + 1) >= 0)
             throw new IllegalStateException("The original timeline was changed, removed, or duplicated. Reopen it from the script before updating.");
+        return start;
+    }
+
+    public Edit prepare(String source, String replacement) {
+        int start = locate(source);
         String newline = expected.contains("\r\n") ? "\r\n" : "\n";
         String indent = expected.substring(0, expected.length() - expected.stripLeading().length());
         String text = indent + replacement.strip().replace("\r\n", "\n").replace("\n", newline + indent);

@@ -11,6 +11,7 @@ class TimelineWorkflowTest {
         String source = "before\n" + block + "\nafter";
         TimelineSourceLink link = new TimelineSourceLink(source, 1);
         String moved = "new line\n" + source;
+        assertEquals(moved.indexOf(block), link.locate(moved));
         var edit = link.prepare(moved, "timeline {\n  wait 100\n}");
         String updated = moved.substring(0, edit.start()) + edit.text() + moved.substring(edit.end());
         link.applied(edit);

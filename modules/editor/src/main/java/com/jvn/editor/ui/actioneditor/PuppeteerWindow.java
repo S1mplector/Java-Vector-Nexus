@@ -242,6 +242,9 @@ public class PuppeteerWindow extends Stage {
     private Consumer<String> onUpdateSource;
     private Runnable onOpenTimelineFile;
     private Runnable onOpenSceneFile;
+    private Runnable onRevealSource;
+
+    public void setOnRevealSource(Runnable action) { onRevealSource = action; }
 
     public void setOnUpdateSource(Consumer<String> action) { onUpdateSource = action; }
     public void setOnOpenTimelineFile(Runnable action) { onOpenTimelineFile = action; }
@@ -261,12 +264,22 @@ public class PuppeteerWindow extends Stage {
         save.setOnAction(e -> exportWorkflow(true, false));
         MenuItem update = new MenuItem("Update Original Script Block");
         update.setOnAction(e -> exportWorkflow(false, true));
-        menu.getItems().addAll(open, scene, sync, new SeparatorMenuItem(), copy, save, update);
+        MenuItem reveal = new MenuItem("Go to Original Script Block");
+        reveal.setOnAction(e -> {
+            try {
+                if (onRevealSource != null) onRevealSource.run();
+            } catch (Exception ex) {
+                showOverlayError(PuppeteerErrorType.EXPORT, "Source Unavailable",
+                    ex.getMessage(), ex.getMessage(), ex);
+            }
+        });
+        menu.getItems().addAll(open, scene, sync, new SeparatorMenuItem(), copy, save, update, reveal);
         menu.setOnShowing(e -> {
             open.setDisable(onOpenTimelineFile == null);
             scene.setDisable(onOpenSceneFile == null);
             sync.setDisable(onSyncSnapshotRequested == null);
             update.setDisable(onUpdateSource == null || previewStaged);
+            reveal.setDisable(onRevealSource == null);
             copy.setDisable(previewStaged);
             save.setDisable(previewStaged);
         });
