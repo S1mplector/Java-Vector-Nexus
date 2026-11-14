@@ -25,7 +25,11 @@ final class AssetLabelRegistry {
     if (!Files.isRegularFile(file)) return Snapshot.empty();
     Properties properties = new Properties();
     try (InputStream input = Files.newInputStream(file)) {
-      properties.load(input);
+      try {
+        properties.load(input);
+      } catch (IllegalArgumentException error) {
+        throw new IOException("Asset label registry is malformed; repair it before saving labels", error);
+      }
     }
     boolean initialized = Boolean.parseBoolean(
         properties.getProperty("registry.initialized", "false"));
@@ -76,11 +80,15 @@ final class AssetLabelRegistry {
       properties.setProperty(prefix + "reason", entry.reason());
       properties.setProperty(prefix + "updated", entry.updated());
     }
-    Path temporary = target.resolveSibling(target.getFileName() + ".tmp");
-    try (OutputStream output = Files.newOutputStream(temporary)) {
-      properties.store(output, "JVN editor asset auto-label registry");
+    Path temporary = Files.createTempFile(target.getParent(), "asset-labels-", ".tmp");
+    try {
+      try (OutputStream output = Files.newOutputStream(temporary)) {
+        properties.store(output, "JVN editor asset auto-label registry");
+      }
+      AssetDeclarationWriter.moveAtomically(temporary, target);
+    } finally {
+      Files.deleteIfExists(temporary);
     }
-    AssetDeclarationWriter.moveAtomically(temporary, target);
   }
 
   private static String encodeKey(String path) {
@@ -110,7 +118,7 @@ final class AssetLabelRegistry {
       String reason, String updated) {
     Entry {
       kind = kind == null ? AssetKind.UNKNOWN : kind;
-      owner = AssetPathHeuristics.sanitizeId(owner);
+      owner = kind.usesCharacterDeclaration() ? AssetPathHeuristics.sanitizeId(owner) : "";
       label = AssetPathHeuristics.sanitizeId(label);
       status = status == null ? LabelStatus.SUGGESTED : status;
       reason = Objects.requireNonNullElse(reason, "");

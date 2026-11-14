@@ -351,6 +351,212 @@ class AssetAutoLabelServiceTest {
     assertTrue(suggestion.confidence() < 0.80);
   }
 
+  @Test
+  void conflictingAndMissingSiblingsCannotAuthorizeAutomaticLabels() throws Exception {
+    Path project = createProject();
+    touch(project.resolve("assets/props/item_01.png"));
+    touch(project.resolve("assets/props/item_02.png"));
+    touch(project.resolve("assets/props/item_03.png"));
+    Files.writeString(project.resolve("scripts/definitions/visuals.vns"), """
+        @charlayer wrong idle assets/props/item_01.png
+        @charlayer wrong idle assets/props/item_02.png
+        @charlayer ghost other assets/props/item_04.png
+        """);
+    var suggestion = byPath(new AssetAutoLabelService().preview(project), "assets/props/item_03.png");
+    assertTrue(suggestion.confidence() < 0.80);
+    assertFalse(suggestion.reason().contains("declared sibling"));
+  }
+
+  @Test
+  void sharedAncestorDoesNotAssignMajorityOwnerToUnrelatedSubfolder() throws Exception {
+    Path project = createProject();
+    touch(project.resolve("assets/characters/shared/first/a.png"));
+    touch(project.resolve("assets/characters/shared/second/b.png"));
+    touch(project.resolve("assets/characters/shared/third/c.png"));
+    Files.writeString(project.resolve("scripts/definitions/visuals.vns"), """
+        @charlayer alice a assets/characters/shared/first/a.png
+        @charlayer bob b assets/characters/shared/second/b.png
+        """);
+    var suggestion = byPath(new AssetAutoLabelService().preview(project),
+        "assets/characters/shared/third/c.png");
+    assertEquals("shared", suggestion.owner());
+    assertTrue(suggestion.confidence() < 0.80);
+  }
+
+  @Test
+  void deletedReviewedAssetsRemainVisibleAndRecoverWhenRestored() throws Exception {
+    Path project = createProject();
+    Path audio = touch(project.resolve("assets/audio/theme.ogg"));
+    AssetAutoLabelService service = new AssetAutoLabelService();
+    service.saveDecision(project, service.scan(project).assets().getFirst(), LabelStatus.LABELED);
+    Files.delete(audio);
+    var missing = service.scan(project);
+    assertEquals(1, missing.missingCount());
+    assertEquals(0, missing.currentAssetCount());
+    touch(audio);
+    assertEquals(LabelStatus.LABELED, service.scan(project).assets().getFirst().status());
+  }
+
+  @Test
+  void retryRepairsMissingEntryIncludeWithoutDuplicatingDeclarations() throws Exception {
+    Path project = createProject();
+    touch(project.resolve("assets/backgrounds/room.png"));
+    AssetAutoLabelService service = new AssetAutoLabelService();
+    var suggestion = service.preview(project).assets().getFirst();
+    service.applyDeclaration(project, suggestion);
+    Path entry = project.resolve("scripts/story/main.vns");
+    Files.writeString(entry, "@scenario test\n");
+    assertTrue(service.applyDeclaration(project, suggestion).entryIncludeAdded());
+    Files.writeString(entry, "@scenario test\n");
+    var batch = service.applyDeclarations(project, java.util.List.of(suggestion));
+    assertTrue(batch.entryIncludeAdded());
+    assertEquals(0, batch.declarationsGenerated());
+    assertEquals(1, occurrences(Files.readString(project.resolve(
+        AssetAutoLabelService.AUTO_DECLARATIONS_PATH)), "@background room"));
+  }
+
+  @Test
+  void malformedRegistryAndNullBatchFailBeforeScriptChanges() throws Exception {
+    Path project = createProject();
+    touch(project.resolve("assets/backgrounds/room.png"));
+    AssetAutoLabelService service = new AssetAutoLabelService();
+    var suggestion = service.preview(project).assets().getFirst();
+    assertThrows(java.io.IOException.class, () -> service.applyDeclarations(project,
+        java.util.Arrays.asList(suggestion, null)));
+    Path registry = project.resolve(AssetAutoLabelService.REGISTRY_PATH);
+    Files.createDirectories(registry.getParent());
+    String malformed = "broken=" + (char) 92 + "uZZZZ";
+    Files.writeString(registry, malformed);
+    assertThrows(java.io.IOException.class, () -> service.applyDeclaration(project, suggestion));
+    assertThrows(java.io.IOException.class, () -> service.applyDeclarations(project, java.util.List.of(suggestion)));
+    assertFalse(Files.exists(project.resolve(AssetAutoLabelService.AUTO_DECLARATIONS_PATH)));
+    assertEquals("@scenario test\n", Files.readString(project.resolve("scripts/story/main.vns")));
+    assertEquals(malformed, Files.readString(registry));
+  }
+
+  @Test
+  void savedLabelCollisionsAreVisibleAndResolveAfterReview() throws Exception {
+    Path project = createProject();
+    touch(project.resolve("assets/backgrounds/day.png"));
+    touch(project.resolve("assets/backgrounds/night.png"));
+    AssetAutoLabelService service = new AssetAutoLabelService();
+    var scan = service.preview(project);
+    var day = byPath(scan, "assets/backgrounds/day.png").reviewed(AssetKind.BACKGROUND, "", "room");
+    var night = byPath(scan, "assets/backgrounds/night.png").reviewed(AssetKind.BACKGROUND, "", "room");
+    service.saveDecision(project, day, LabelStatus.LABELED);
+    service.saveDecision(project, night, LabelStatus.LABELED);
+    assertEquals(2, service.preview(project).byStatus().get(LabelStatus.CONFLICT));
+    service.saveDecision(project, night.reviewed(AssetKind.BACKGROUND, "", "night"), LabelStatus.LABELED);
+    assertEquals(2, service.preview(project).labeledCount());
+    Files.writeString(project.resolve("scripts/definitions/visuals.vns"),
+        "@background room assets/backgrounds/night.png\n");
+    assertEquals(LabelStatus.CONFLICT, byPath(service.preview(project), "assets/backgrounds/day.png").status());
+  }
+
+  @Test
+  void backgroundReviewAlwaysUsesGlobalLabelScope() throws Exception {
+    Path project = createProject();
+    touch(project.resolve("assets/backgrounds/day.png"));
+    AssetAutoLabelService service = new AssetAutoLabelService();
+    var suggestion = service.preview(project).assets().getFirst().reviewed(AssetKind.BACKGROUND, "unused", "room");
+    assertEquals("", suggestion.owner());
+    service.saveDecision(project, suggestion, LabelStatus.LABELED);
+    Path external = touch(tempDir.resolve("outside/backgrounds/room.png"));
+    assertEquals("room_2", service.suggestDroppedAsset(project, external).label());
+  }
+
+  @Test
+  void rejectsSymlinkEscapesAndControlCharactersBeforeWrites() throws Exception {
+    Path project = createProject();
+    Path external = touch(tempDir.resolve("outside/room.png"));
+    Path link = project.resolve("assets/backgrounds/room.png");
+    Files.createDirectories(link.getParent());
+    Files.createSymbolicLink(link, external);
+    AssetAutoLabelService service = new AssetAutoLabelService();
+    var suggestion = service.preview(project).assets().getFirst();
+    assertThrows(java.io.IOException.class, () -> service.applyDeclaration(project, suggestion));
+    Path newline = touch(project.resolve("assets/backgrounds/room\nnight.png"));
+    var invalid = new AssetSuggestion(newline, project.relativize(newline).toString(),
+        AssetKind.BACKGROUND, "", "night", LabelStatus.LABELED, 1, "", null, -1, false);
+    assertThrows(java.io.IOException.class, () -> service.applyDeclaration(project, invalid));
+    assertFalse(Files.exists(project.resolve(AssetAutoLabelService.AUTO_DECLARATIONS_PATH)));
+    assertFalse(Files.exists(project.resolve(AssetAutoLabelService.REGISTRY_PATH)));
+  }
+
+  @Test
+  void emptyBatchIsANoOp() throws Exception {
+    Path project = createProject();
+    AssetAutoLabelService service = new AssetAutoLabelService();
+    assertEquals(0, service.applyDeclarations(project, null).declarationsGenerated());
+    assertEquals(0, service.applyDeclarations(project, java.util.List.of()).labelsSaved());
+    assertFalse(Files.exists(project.resolve(AssetAutoLabelService.REGISTRY_PATH)));
+    assertFalse(Files.exists(project.resolve(AssetAutoLabelService.AUTO_DECLARATIONS_PATH)));
+  }
+
+  @Test
+  void rejectsContradictoryReviewsForSameAssetBeforeWriting() throws Exception {
+    Path project = createProject();
+    touch(project.resolve("assets/characters/ari/idle.png"));
+    AssetAutoLabelService service = new AssetAutoLabelService();
+    var layer = service.preview(project).assets().getFirst()
+        .reviewed(AssetKind.CHARACTER_LAYER, "ari", "idle");
+    var sprite = layer.reviewed(AssetKind.CHARACTER_SPRITE, "ari", "idle");
+    assertThrows(java.io.IOException.class,
+        () -> service.applyDeclarations(project, java.util.List.of(layer, sprite)));
+    assertFalse(Files.exists(project.resolve(AssetAutoLabelService.AUTO_DECLARATIONS_PATH)));
+    service.applyDeclaration(project, layer);
+    assertThrows(java.io.IOException.class, () -> service.applyDeclaration(project, sprite));
+  }
+
+  @Test
+  void repeatedNonVnsReviewsAreSavedAndCountedOnce() throws Exception {
+    Path project = createProject();
+    touch(project.resolve("assets/audio/theme.ogg"));
+    AssetAutoLabelService service = new AssetAutoLabelService();
+    var audio = service.preview(project).assets().getFirst();
+    assertEquals(1, service.applyDeclarations(project, java.util.List.of(audio, audio)).labelsSaved());
+  }
+
+  @Test
+  void generatedFileAsEntryNeverIncludesItself() throws Exception {
+    Path project = createProject();
+    touch(project.resolve("assets/backgrounds/room.png"));
+    Files.writeString(project.resolve("jvn.project"),
+        "entryVns=" + AssetAutoLabelService.AUTO_DECLARATIONS_PATH + "\n");
+    AssetAutoLabelService service = new AssetAutoLabelService();
+    service.applyDeclaration(project, service.preview(project).assets().getFirst());
+    assertFalse(Files.readString(project.resolve(AssetAutoLabelService.AUTO_DECLARATIONS_PATH))
+        .contains("@include"));
+  }
+
+  @Test
+  void entryIncludePreservesWindowsLineEndings() throws Exception {
+    Path project = createProject();
+    touch(project.resolve("assets/backgrounds/room.png"));
+    Path entry = project.resolve("scripts/story/main.vns");
+    Files.writeString(entry, "@scenario test\r\n# Keep this comment\r\n");
+    AssetAutoLabelService service = new AssetAutoLabelService();
+    service.applyDeclaration(project, service.preview(project).assets().getFirst());
+    assertEquals("@scenario test\r\n# Keep this comment\r\n@include /definitions/auto_labels.vns\r\n",
+        Files.readString(entry));
+  }
+
+  @Test
+  void externalDropsLearnFromProjectSiblingsInsteadOfSourceDirectory() throws Exception {
+    Path project = createProject();
+    touch(project.resolve("assets/backgrounds/bg_room_day.png"));
+    touch(project.resolve("assets/backgrounds/bg_room_night.png"));
+    Files.writeString(project.resolve("scripts/definitions/visuals.vns"), """
+        @background room_day assets/backgrounds/bg_room_day.png
+        @background room_night assets/backgrounds/bg_room_night.png
+        """);
+    Path dropped = touch(tempDir.resolve("outside/backgrounds/bg_room_evening.png"));
+    var suggestion = new AssetAutoLabelService().suggestDroppedAsset(project, dropped);
+    assertEquals("room_evening", suggestion.label());
+    assertTrue(suggestion.confidence() >= 0.80);
+    assertTrue(suggestion.reason().contains("2 declared siblings"));
+  }
+
   private Path createProject() throws Exception {
     Path project = tempDir.resolve("project");
     Files.createDirectories(project.resolve("scripts/story"));

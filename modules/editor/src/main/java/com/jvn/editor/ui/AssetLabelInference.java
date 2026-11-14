@@ -64,13 +64,15 @@ final class AssetLabelInference {
   }
 
   AssetSuggestion infer(
-      Path file, String relativePath, AssetDeclarationCatalog.Index catalog,
+      Path root, Path file, String relativePath, AssetDeclarationCatalog.Index catalog,
       Set<String> usedScopedLabels, boolean isNew) {
     AssetKind pathKind = AssetPathHeuristics.kindFromPath(Path.of(relativePath));
     String directory = AssetPathHeuristics.parentPath(relativePath);
     List<AssetDeclarationCatalog.Declaration> siblings =
         catalog.byDirectory().getOrDefault(directory, List.of()).stream()
             .filter(value -> pathKind.isVnsDeclarable() || pathKind == AssetKind.UNKNOWN)
+            .filter(value -> !catalog.conflictingPaths().contains(value.relativePath()))
+            .filter(value -> Files.isRegularFile(root.resolve(value.relativePath())))
             .toList();
     List<AssetDeclarationCatalog.Declaration> nearest = nearestSiblings(relativePath, siblings);
     if (!nearest.isEmpty()) siblings = nearest;

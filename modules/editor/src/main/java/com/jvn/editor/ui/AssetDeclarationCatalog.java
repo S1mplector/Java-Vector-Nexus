@@ -42,7 +42,7 @@ final class AssetDeclarationCatalog {
     List<Path> files;
     try (Stream<Path> stream = Files.walk(scripts)) {
       files = stream.filter(Files::isRegularFile)
-          .filter(path -> path.getFileName().toString().toLowerCase().endsWith(".vns"))
+          .filter(path -> path.getFileName().toString().toLowerCase(java.util.Locale.ROOT).endsWith(".vns"))
           .sorted().toList();
     }
     for (Path script : files) {
@@ -85,9 +85,10 @@ final class AssetDeclarationCatalog {
     }
     Map<String, String> ownerByDirectory = new HashMap<>();
     for (Map.Entry<String, Map<String, Integer>> entry : ownerVotes.entrySet()) {
-      entry.getValue().entrySet().stream()
-          .max(Map.Entry.<String, Integer>comparingByValue().thenComparing(Map.Entry::getKey))
-          .ifPresent(winner -> ownerByDirectory.put(entry.getKey(), winner.getKey()));
+      // A shared ancestor is not evidence that an unrelated child belongs to its majority owner.
+      if (entry.getValue().size() == 1) {
+        ownerByDirectory.put(entry.getKey(), entry.getValue().keySet().iterator().next());
+      }
     }
     Map<String, List<Declaration>> immutableDirectories = new HashMap<>();
     byDirectory.forEach((key, value) -> immutableDirectories.put(key, List.copyOf(value)));

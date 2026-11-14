@@ -47,7 +47,9 @@ final class AssetDeclarationWriter {
     if (declaration.isBlank()) return new AppliedDeclaration(null, "", false, false);
     AssetDeclarationCatalog.Declaration found = existing.byPath().get(suggestion.relativePath());
     if (found != null) {
-      return new AppliedDeclaration(found.sourceFile(), found.sourceLineText(), false, false);
+      return new AppliedDeclaration(found.sourceFile(), found.sourceLineText(), false,
+          found.sourceFile().equals(root.resolve(AssetAutoLabelService.AUTO_DECLARATIONS_PATH))
+              && ensureEntryIncludesAutoDeclarations(root));
     }
 
     Path target = root.resolve(AssetAutoLabelService.AUTO_DECLARATIONS_PATH).normalize();
@@ -100,7 +102,14 @@ final class AssetDeclarationWriter {
       addition.append(declaration).append('\n');
       generated++;
     }
-    if (generated == 0) return new BatchWriteResult(target, 0, 0, false);
+    if (generated == 0) {
+      boolean usesGenerated = suggestions.stream().anyMatch(suggestion -> {
+        var found = existing.byPath().get(suggestion.relativePath());
+        return found != null && found.sourceFile().equals(target);
+      });
+      return new BatchWriteResult(target, 0, 0,
+          usesGenerated && ensureEntryIncludesAutoDeclarations(root));
+    }
     Files.createDirectories(target.getParent());
     writeAtomically(target, ensureTrailingNewline(current) + addition);
     return new BatchWriteResult(
@@ -114,8 +123,12 @@ final class AssetDeclarationWriter {
     java.util.Map<String, String> paths = new java.util.LinkedHashMap<>();
     for (AssetSuggestion suggestion : suggestions) {
       if (suggestion == null) throw new IOException("No asset selected");
+      if (suggestion.relativePath().chars().anyMatch(Character::isISOControl)) {
+        throw new IOException("Asset path contains unsupported control characters");
+      }
       Path file = root.resolve(suggestion.relativePath()).normalize();
-      if (!file.startsWith(root) || !Files.isRegularFile(file)) {
+      if (!file.startsWith(root) || !Files.isRegularFile(file)
+          || !file.toRealPath().startsWith(root.toRealPath())) {
         throw new IOException("Asset is missing or outside the project: " + suggestion.relativePath());
       }
       if (suggestion.label().isBlank()) throw new IOException("A label is required");
@@ -132,10 +145,16 @@ final class AssetDeclarationWriter {
       }
       AssetDeclarationCatalog.Declaration declared = existing.byPath().get(suggestion.relativePath());
       if (declared != null && (existing.conflictingPaths().contains(suggestion.relativePath())
-          || !existing.byScopedLabel().containsKey(key))) {
+          || !existing.byScopedLabel().containsKey(key)
+          || declarationType(existing.byScopedLabel().get(key).kind()) != declarationType(suggestion.kind()))) {
         throw new IOException("Edit the existing VNS declaration for " + suggestion.relativePath());
       }
     }
+  }
+
+  private int declarationType(AssetKind kind) {
+    if (kind == AssetKind.BACKGROUND) return 0;
+    return kind == AssetKind.CHARACTER_SPRITE ? 1 : 2;
   }
 
   String declarationFor(AssetSuggestion suggestion) {
@@ -173,9 +192,12 @@ final class AssetDeclarationWriter {
     String configured = properties.getProperty("entryVns", "scripts/main.vns").trim();
     if (configured.isBlank()) configured = "scripts/main.vns";
     Path entry = root.resolve(configured).normalize();
-    if (!entry.startsWith(root) || !Files.isRegularFile(entry)) return false;
+    if (!entry.startsWith(root) || !Files.isRegularFile(entry)
+        || entry.equals(root.resolve(AssetAutoLabelService.AUTO_DECLARATIONS_PATH))) return false;
     String include = "@include /definitions/auto_labels.vns";
-    List<String> lines = new ArrayList<>(Files.readAllLines(entry, StandardCharsets.UTF_8));
+    String source = Files.readString(entry, StandardCharsets.UTF_8);
+    String newline = source.contains("\r\n") ? "\r\n" : "\n";
+    List<String> lines = new ArrayList<>(source.lines().toList());
     if (lines.stream().map(String::strip).anyMatch(include::equalsIgnoreCase)) return false;
     int insertion = 0;
     while (insertion < lines.size()) {
@@ -188,7 +210,7 @@ final class AssetDeclarationWriter {
       }
     }
     lines.add(insertion, include);
-    writeAtomically(entry, String.join("\n", lines) + "\n");
+    writeAtomically(entry, String.join(newline, lines) + newline);
     return true;
   }
 
@@ -213,9 +235,13 @@ final class AssetDeclarationWriter {
 
   private void writeAtomically(Path target, String content) throws IOException {
     Files.createDirectories(target.getParent());
-    Path temporary = target.resolveSibling(target.getFileName() + ".tmp");
-    Files.writeString(temporary, content, StandardCharsets.UTF_8);
-    moveAtomically(temporary, target);
+    Path temporary = Files.createTempFile(target.getParent(), "auto-labels-", ".tmp");
+    try {
+      Files.writeString(temporary, content, StandardCharsets.UTF_8);
+      moveAtomically(temporary, target);
+    } finally {
+      Files.deleteIfExists(temporary);
+    }
   }
 
   static void moveAtomically(Path source, Path target) throws IOException {

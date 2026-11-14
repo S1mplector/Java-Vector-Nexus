@@ -52,6 +52,16 @@ public final class AssetAutoLabelService {
         .filter(entry -> !entry.label().isBlank()).forEach(entry ->
         usedLabels.add(AssetPathHeuristics.scopeKey(entry.owner(), entry.label())));
 
+    Map<String, Set<String>> labelPaths = new LinkedHashMap<>();
+    catalog.byScopedLabel().forEach((key, declaration) ->
+        labelPaths.computeIfAbsent(key, ignored -> new LinkedHashSet<>()).add(declaration.relativePath()));
+    saved.entries().forEach((path, entry) -> {
+      if (entry.status() == LabelStatus.LABELED && !catalog.byPath().containsKey(path)) {
+        labelPaths.computeIfAbsent(AssetPathHeuristics.scopeKey(entry.owner(), entry.label()),
+            ignored -> new LinkedHashSet<>()).add(path);
+      }
+    });
+
     boolean hasBaseline = saved.initialized();
     List<AssetSuggestion> suggestions = new ArrayList<>();
     Set<String> seenNow = new LinkedHashSet<>();
@@ -70,9 +80,18 @@ public final class AssetAutoLabelService {
               catalog.aliasCounts().getOrDefault(relativePath, 1)));
         } else if (decision != null && decision.status() != LabelStatus.SUGGESTED
             && decision.status() != LabelStatus.DECLARED) {
-          suggestions.add(inference.fromRegistry(file, relativePath, decision, false));
+          AssetSuggestion reviewed = inference.fromRegistry(file, relativePath, decision, false);
+          Set<String> claimedPaths = labelPaths.getOrDefault(
+              AssetPathHeuristics.scopeKey(reviewed.owner(), reviewed.label()), Set.of());
+          if (decision.status() == LabelStatus.LABELED && claimedPaths.size() > 1) {
+            reviewed = new AssetSuggestion(file, relativePath, reviewed.kind(), reviewed.owner(),
+                reviewed.label(), LabelStatus.CONFLICT, reviewed.confidence(),
+                "Saved label also points to another asset; review the label before generating VNS",
+                null, -1, false);
+          }
+          suggestions.add(reviewed);
         } else {
-          suggestions.add(inference.infer(file, relativePath, catalog, usedLabels, isNew));
+          suggestions.add(inference.infer(root, file, relativePath, catalog, usedLabels, isNew));
         }
       } catch (RuntimeException error) {
         scanIssues++;
@@ -83,6 +102,16 @@ public final class AssetAutoLabelService {
       suggestions.add(inference.fromMissingDeclaration(
           root, declaration, catalog.conflictingPaths().contains(declaration.relativePath()),
           catalog.aliasCounts().getOrDefault(declaration.relativePath(), 1)));
+    }
+    for (Map.Entry<String, AssetLabelRegistry.Entry> item : saved.entries().entrySet()) {
+      if (seenNow.contains(item.getKey()) || catalog.byPath().containsKey(item.getKey())) continue;
+      AssetLabelRegistry.Entry entry = item.getValue();
+      if (entry.status() != LabelStatus.LABELED) continue;
+      Path missing = root.resolve(item.getKey()).normalize();
+      if (!missing.startsWith(root) || Files.isRegularFile(missing)) continue;
+      suggestions.add(new AssetSuggestion(missing, item.getKey(), entry.kind(), entry.owner(),
+          entry.label(), LabelStatus.MISSING, entry.confidence(),
+          "Saved editor label points to a missing asset", null, -1, false));
     }
     suggestions.sort(Comparator
         .comparing(AssetSuggestion::isNew).reversed()
@@ -131,7 +160,7 @@ public final class AssetAutoLabelService {
           && decision.status() != LabelStatus.SUGGESTED && decision.status() != LabelStatus.DECLARED) {
         result.add(inference.fromRegistry(file, relativePath, decision, false));
       } else {
-        result.add(inference.infer(file, relativePath, catalog, used, true));
+        result.add(inference.infer(root, file, relativePath, catalog, used, true));
       }
     }
     return List.copyOf(result);
@@ -162,6 +191,8 @@ public final class AssetAutoLabelService {
       throws IOException {
     Path root = AssetPathHeuristics.requireProjectRoot(projectRoot);
     if (suggestion == null) throw new IOException("No asset selected");
+    // Fail before editing scripts when the saved review state cannot be read.
+    registry.load(root);
     AppliedDeclaration result = writer.apply(root, suggestion);
     saveDecision(root, suggestion, result.declaration().isBlank()
         ? LabelStatus.LABELED : LabelStatus.DECLARED);
@@ -172,9 +203,19 @@ public final class AssetAutoLabelService {
   public synchronized BatchAppliedDeclarations applyDeclarations(
       Path projectRoot, List<AssetSuggestion> suggestions) throws IOException {
     Path root = AssetPathHeuristics.requireProjectRoot(projectRoot);
-    List<AssetSuggestion> batch = suggestions == null ? List.of() : List.copyOf(suggestions);
-    AssetDeclarationWriter.BatchWriteResult written = writer.applyAll(root, batch);
+    List<AssetSuggestion> batch = suggestions == null ? List.of() : new ArrayList<>(suggestions);
+    if (batch.stream().anyMatch(java.util.Objects::isNull)) throw new IOException("No asset selected");
+    Map<String, AssetSuggestion> unique = new LinkedHashMap<>();
+    for (AssetSuggestion suggestion : batch) {
+      AssetSuggestion prior = unique.putIfAbsent(suggestion.relativePath(), suggestion);
+      if (prior != null && (prior.kind() != suggestion.kind()
+          || !prior.owner().equals(suggestion.owner()) || !prior.label().equals(suggestion.label()))) {
+        throw new IOException("Conflicting reviews for asset: " + suggestion.relativePath());
+      }
+    }
+    batch = List.copyOf(unique.values());
     AssetLabelRegistry.Snapshot saved = registry.load(root);
+    AssetDeclarationWriter.BatchWriteResult written = writer.applyAll(root, batch);
     Map<String, AssetLabelRegistry.Entry> entries = new LinkedHashMap<>(saved.entries());
     int labelsSaved = 0;
     for (AssetSuggestion suggestion : batch) {
@@ -294,7 +335,7 @@ public final class AssetAutoLabelService {
     public AssetSuggestion {
       relativePath = AssetPathHeuristics.normalizeRelative(relativePath);
       kind = kind == null ? AssetKind.UNKNOWN : kind;
-      owner = sanitizeId(owner);
+      owner = kind.usesCharacterDeclaration() ? sanitizeId(owner) : "";
       label = sanitizeId(label);
       status = status == null ? LabelStatus.SUGGESTED : status;
       confidence = Double.isFinite(confidence) ? Math.max(0.0, Math.min(1.0, confidence)) : 0.0;

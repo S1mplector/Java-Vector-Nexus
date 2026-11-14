@@ -72,6 +72,16 @@ The dashboard opens on the **Unlabeled** queue, with new files first and ready s
 
 The editor checks project asset metadata every four seconds in the background, including when the Assets panel is closed. An **unlabeled assets detected** banner offers **Review & auto-label**. **Later** dismisses the current offer until additional unlabeled paths arrive or the project is reopened. Discovery does not write labels or declarations.
 
+Reliability safeguards:
+
+- Conflicting declarations and missing sibling files do not teach new label suggestions. Shared folders with multiple owners do not assign a majority owner to unrelated subfolders.
+- Deleted assets with saved labels remain visible as **Missing file**, and recover their saved decision when restored. Saved labels that collide with other saved labels or VNS declarations appear as **Conflict**.
+- Generation checks the saved registry before editing scripts, rejects missing/outside-project assets and paths containing control characters, and validates the entire batch before writing declarations.
+- Repeated batch selections are counted once; contradictory reviews of the same file and changes between sprite and layer declarations require correction before generation.
+- Entry-script updates preserve Windows line endings and never add an include of the generated file to itself.
+- Retrying generation repairs a missing entry-script include without duplicating declarations. Registry and declaration writes use unique temporary files with cleanup. Each file is replaced atomically where supported; generation across multiple files is not a single filesystem transaction.
+
+
 The **New only** filter includes files discovered after the first saved scan. Their **NEW** status survives rescans and reopening until they are labeled, declared, or ignored. The first scan still offers all existing unlabeled files. `AssetAutoLabelService.preview` offers a read-only audit that does not update the baseline. Automatic panel refresh preserves an unsaved label edit.
 
 ---
