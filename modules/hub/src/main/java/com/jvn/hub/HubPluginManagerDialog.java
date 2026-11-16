@@ -24,10 +24,10 @@ import javax.swing.plaf.basic.BasicSplitPaneUI;
 /** Mature, code-free plugin bundle manager launched by the Engine Hub. */
 final class HubPluginManagerDialog extends JDialog {
   private static final Color BG = Color.decode("#101010");
-  private static final Color PANEL = Color.decode("#1c1c1c");
-  private static final Color RAISED = Color.decode("#242424");
-  private static final Color HOVER = Color.decode("#303030");
-  private static final Color BORDER = Color.decode("#3a3a3a");
+  private static final Color PANEL = JvnHub.PANEL_BG;
+  private static final Color RAISED = JvnHub.PANEL_BG_TOP;
+  private static final Color SELECTED = JvnHub.SELECTION_BG;
+  private static final Color BORDER = JvnHub.BORDER_NEUTRAL;
   private static final Color TEXT = Color.decode("#f0f0f0");
   private static final Color SOFT = Color.decode("#c5c5c5");
   private static final Color MUTED = Color.decode("#9a9a9a");
@@ -645,9 +645,9 @@ final class HubPluginManagerDialog extends JDialog {
   private final class PluginRenderer implements ListCellRenderer<PluginRow> {
     @Override public Component getListCellRendererComponent(JList<? extends PluginRow> source, PluginRow row,
         int index, boolean selected, boolean focus) {
-      JPanel card = panel(new BorderLayout(10, 0), selected ? HOVER : PANEL);
+      JPanel card = panel(new BorderLayout(10, 0), selected ? SELECTED : PANEL);
       card.setBorder(BorderFactory.createCompoundBorder(
-          BorderFactory.createMatteBorder(0, selected ? 3 : 0, 1, 0, selected ? ACCENT : BORDER),
+          BorderFactory.createMatteBorder(0, selected ? 3 : 0, 1, 0, selected ? JvnHub.FOCUS_RING : BORDER),
           empty(12, selected ? 9 : 12, 12, 12)));
       JLabel icon = label(row.kind().symbol, row.kind().color, 15, true);
       icon.setHorizontalAlignment(SwingConstants.CENTER); icon.setOpaque(true); icon.setBackground(dark(row.kind().color));

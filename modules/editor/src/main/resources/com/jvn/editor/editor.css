@@ -1,3 +1,6 @@
+@import "editor-aero.css";
+@import "editor-code.css";
+
 /*
 The editor.css file defines the visual styling for the editor module, including icons, runtime console, and version control system (VCS) components. It establishes a cohesive dark theme with specific color schemes for various UI elements, ensuring a consistent and polished user experience across the editor's interface. The styles include base settings for icons, buttons, text fields, lists, and specialized components like the runtime console and VCS panels, with attention to states such as hover, pressed, disabled, and focused.
 */
@@ -140,18 +143,18 @@ The editor.css file defines the visual styling for the editor module, including 
 
 /* Runtime console palette hardening (aligned to editor black theme) */
 .run-console-root {
-  -fx-background-color: #0f0f0f;
+  -fx-background-color: #131313;
 }
 
 .run-console-top {
-  -fx-background-color: #121212;
-  -fx-border-color: #2c2c2c;
+  -fx-background-color: #161616;
+  -fx-border-color: #303030;
   -fx-border-width: 0 0 1 0;
 }
 
 .run-console-menubar {
-  -fx-background-color: #121212;
-  -fx-border-color: #282828;
+  -fx-background-color: -jvn-aero-chrome;
+  -fx-border-color: #2c2c2c;
   -fx-border-width: 0 0 1 0;
   -fx-padding: 2 6 2 6;
 }
@@ -164,22 +167,22 @@ The editor.css file defines the visual styling for the editor module, including 
 .run-console-menubar .menu-button:hover,
 .run-console-menubar .menu-button:showing,
 .run-console-menubar .menu-button:focused {
-  -fx-background-color: #232323;
+  -fx-background-color: #272727;
   -fx-background-radius: 6;
 }
 
 .run-console-toolbar {
-  -fx-background-color: #121212;
-  -fx-border-color: #2b2b2b;
+  -fx-background-color: -jvn-aero-surface;
+  -fx-border-color: #2f2f2f;
   -fx-border-width: 0 0 1 0;
   -fx-padding: 8 10 8 10;
 }
 
 .run-console-perf-graph-shell {
   -fx-padding: 4 6 4 6;
-  -fx-background-color: #131313;
+  -fx-background-color: #171717;
   -fx-background-radius: 10;
-  -fx-border-color: #343434;
+  -fx-border-color: #383838;
   -fx-border-radius: 10;
   -fx-border-width: 1;
   -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.24), 6, 0.18, 0, 1);
@@ -208,7 +211,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .run-console-toolbar .separator:vertical .line {
-  -fx-border-color: #313131;
+  -fx-border-color: #353535;
   -fx-border-width: 0 1 0 0;
 }
 
@@ -218,9 +221,9 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-letter-spacing: 0.4px;
   -fx-text-fill: #c5c5c5;
   -fx-padding: 4 10 4 10;
-  -fx-background-color: #222222;
+  -fx-background-color: #262626;
   -fx-background-radius: 999;
-  -fx-border-color: #393939;
+  -fx-border-color: #3d3d3d;
   -fx-border-radius: 999;
   -fx-border-width: 1;
 }
@@ -233,20 +236,20 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .run-console-state-starting {
   -fx-text-fill: #c0c0c0;
-  -fx-background-color: #292929;
-  -fx-border-color: #4f4f4f;
+  -fx-background-color: #2d2d2d;
+  -fx-border-color: #535353;
 }
 
 .run-console-state-running {
   -fx-text-fill: #9fe0b1;
   -fx-background-color: #1b3126;
-  -fx-border-color: #4f4f4f;
+  -fx-border-color: #535353;
 }
 
 .run-console-state-stopped {
   -fx-text-fill: #bdbdbd;
-  -fx-background-color: #2b2b2b;
-  -fx-border-color: #494949;
+  -fx-background-color: #2f2f2f;
+  -fx-border-color: #4d4d4d;
 }
 
 .run-console-state-failed {
@@ -263,18 +266,18 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .run-console-output-flow {
   -fx-padding: 10;
-  -fx-background-color: #0c0c0c;
+  -fx-background-color: #101010;
 }
 
 .run-console-content {
-  -fx-background-color: #0f0f0f;
+  -fx-background-color: #131313;
   -fx-padding: 10;
 }
 
 /* ListView-based console output */
 .run-console-output {
-  -fx-background-color: #0c0c0c;
-  -fx-border-color: #252525;
+  -fx-background-color: #101010;
+  -fx-border-color: #292929;
   -fx-border-width: 1;
   -fx-border-radius: 8;
   -fx-background-radius: 8;
@@ -289,7 +292,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .run-console-output .list-cell:selected {
-  -fx-background-color: rgba(255, 255, 255, 0.06);
+  -fx-background-color: -jvn-aero-selected;
 }
 
 /* Per-line log level coloring */
@@ -326,8 +329,8 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-padding: 0;
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.018), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #131313 0%, #101010 100%);
-  -fx-border-color: #2a2a2a;
+      linear-gradient(to bottom, #171717 0%, #141414 100%);
+  -fx-border-color: #2e2e2e;
   -fx-border-width: 1;
   -fx-border-radius: 8;
   -fx-background-radius: 8;
@@ -377,16 +380,16 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .run-console-output-scroll {
-  -fx-background: #0c0c0c;
-  -fx-background-color: #0c0c0c;
-  -fx-border-color: #252525;
+  -fx-background: #101010;
+  -fx-background-color: #101010;
+  -fx-border-color: #292929;
   -fx-border-width: 1;
   -fx-border-radius: 8;
   -fx-background-radius: 8;
 }
 
 .run-console-output-scroll > .viewport {
-  -fx-background-color: #0c0c0c;
+  -fx-background-color: #101010;
   -fx-background-radius: 8;
 }
 
@@ -422,10 +425,10 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .run-console-search-field {
-  -fx-background-color: #1c1c1c;
+  -fx-background-color: #202020;
   -fx-text-fill: #e6e6e6;
   -fx-prompt-text-fill: #7b7b7b;
-  -fx-border-color: #3c3c3c;
+  -fx-border-color: #404040;
   -fx-border-width: 1;
   -fx-border-radius: 7;
   -fx-background-radius: 7;
@@ -439,8 +442,8 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .run-console-filter-combo {
   -fx-font-size: 11px;
-  -fx-background-color: #1c1c1c;
-  -fx-border-color: #3c3c3c;
+  -fx-background-color: #202020;
+  -fx-border-color: #404040;
   -fx-border-width: 1;
   -fx-border-radius: 7;
   -fx-background-radius: 7;
@@ -448,12 +451,12 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .run-console-filter-combo .list-cell {
-  -fx-background-color: #1c1c1c;
+  -fx-background-color: #202020;
   -fx-text-fill: #e6e6e6;
 }
 
 .run-console-filter-combo .arrow-button {
-  -fx-background-color: #1c1c1c;
+  -fx-background-color: #202020;
 }
 
 .run-console-filter-combo .arrow {
@@ -461,18 +464,18 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .run-console-filter-combo .combo-box-popup .list-view {
-  -fx-background-color: #1c1c1c;
-  -fx-border-color: #3c3c3c;
+  -fx-background-color: #202020;
+  -fx-border-color: #404040;
 }
 
 .run-console-filter-combo .combo-box-popup .list-cell {
-  -fx-background-color: #1c1c1c;
+  -fx-background-color: #202020;
   -fx-text-fill: #e6e6e6;
 }
 
 .run-console-status-bar {
-  -fx-background-color: #121212;
-  -fx-border-color: #2c2c2c;
+  -fx-background-color: -jvn-aero-chrome;
+  -fx-border-color: #303030;
   -fx-border-width: 1 0 0 0;
   -fx-padding: 7 10 7 10;
 }
@@ -489,9 +492,9 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .run-console-meta-chip {
   -fx-padding: 3 9 3 9;
-  -fx-background-color: #1c1c1c;
+  -fx-background-color: #202020;
   -fx-background-radius: 999;
-  -fx-border-color: #383838;
+  -fx-border-color: #3c3c3c;
   -fx-border-radius: 999;
   -fx-border-width: 1;
 }
@@ -544,17 +547,17 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .version-control-root {
-  -fx-background-color: #0f0f0f;
+  -fx-background-color: #131313;
 }
 
 .vcs-top {
-  -fx-background-color: #121212;
-  -fx-border-color: #2a2a2a;
+  -fx-background-color: #161616;
+  -fx-border-color: #2e2e2e;
   -fx-border-width: 0 0 1 0;
 }
 
 .vcs-center {
-  -fx-background-color: #0f0f0f;
+  -fx-background-color: #131313;
 }
 
 .vcs-title {
@@ -586,9 +589,9 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .vcs-status-stack {
   -fx-padding: 8 10 8 10;
-  -fx-background-color: #141414;
+  -fx-background-color: #181818;
   -fx-background-radius: 8;
-  -fx-border-color: #2d2d2d;
+  -fx-border-color: #313131;
   -fx-border-radius: 8;
   -fx-border-width: 1;
 }
@@ -599,7 +602,7 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .vcs-status-chip {
   -fx-padding: 2 8 2 8;
-  -fx-background-color: #1c1c1c;
+  -fx-background-color: #202020;
   -fx-background-radius: 999;
   -fx-text-fill: #cfd3d8;
   -fx-font-size: 11px;
@@ -669,8 +672,8 @@ The editor.css file defines the visual styling for the editor module, including 
 .vcs-text-button {
   -fx-font-size: 10px;
   -fx-padding: 3 9 3 9;
-  -fx-background-color: #202020;
-  -fx-border-color: #383838;
+  -fx-background-color: #242424;
+  -fx-border-color: #3c3c3c;
   -fx-text-fill: #e6e6e6;
 }
 
@@ -696,8 +699,8 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .vcs-action-button-neutral {
-  -fx-background-color: #242424;
-  -fx-border-color: #444444;
+  -fx-background-color: #282828;
+  -fx-border-color: #484848;
   -fx-text-fill: #e8e8e8;
 }
 
@@ -837,9 +840,9 @@ The editor.css file defines the visual styling for the editor module, including 
 .vcs-view-toggle {
   -fx-min-height: 28px;
   -fx-padding: 5 12 5 12;
-  -fx-background-color: #171717;
+  -fx-background-color: #1b1b1b;
   -fx-text-fill: #b8b8b8;
-  -fx-border-color: #343434;
+  -fx-border-color: #383838;
   -fx-border-width: 1;
   -fx-font-size: 11px;
   -fx-font-weight: 800;
@@ -871,7 +874,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .sidebar-tool-split > .split-pane-divider {
-  -fx-background-color: #2a2a2a;
+  -fx-background-color: #2e2e2e;
   -fx-padding: 0 0 3 0;
 }
 
@@ -1013,8 +1016,8 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .vcs-sync-neutral {
   -fx-text-fill: #b8b8b8;
-  -fx-background-color: #1e1e1e;
-  -fx-border-color: #3c3c3c;
+  -fx-background-color: #222222;
+  -fx-border-color: #404040;
 }
 
 .vcs-sync-success {
@@ -1039,8 +1042,8 @@ The editor.css file defines the visual styling for the editor module, including 
 .vcs-combo,
 .vcs-log,
 .vcs-list {
-  -fx-background-color: #141414;
-  -fx-border-color: #303030;
+  -fx-background-color: #181818;
+  -fx-border-color: #343434;
   -fx-border-radius: 7;
   -fx-background-radius: 7;
 }
@@ -1058,19 +1061,19 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .combo-box.vcs-combo {
-  -fx-background-color: #1c1c1c;
-  -fx-border-color: #373737;
+  -fx-background-color: #202020;
+  -fx-border-color: #3b3b3b;
   -fx-border-radius: 6;
   -fx-background-radius: 6;
 }
 
 .combo-box.vcs-combo .list-cell {
-  -fx-background-color: #1c1c1c;
+  -fx-background-color: #202020;
   -fx-text-fill: #f2f2f2;
 }
 
 .combo-box.vcs-combo:editable > .text-field {
-  -fx-background-color: #1c1c1c;
+  -fx-background-color: #202020;
   -fx-text-fill: #f2f2f2;
   -fx-prompt-text-fill: #9a9a9a;
   -fx-highlight-fill: #365d86;
@@ -1079,7 +1082,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .combo-box.vcs-combo .arrow-button {
-  -fx-background-color: #282828;
+  -fx-background-color: #2c2c2c;
   -fx-background-radius: 0 6 6 0;
 }
 
@@ -1089,13 +1092,13 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .vcs-combo .combo-box-popup > .list-view,
 .vcs-combo-popup .list-view {
-  -fx-background-color: #1c1c1c;
-  -fx-border-color: #373737;
+  -fx-background-color: #202020;
+  -fx-border-color: #3b3b3b;
 }
 
 .vcs-combo .combo-box-popup > .list-view .list-cell,
 .vcs-combo-popup .list-cell {
-  -fx-background-color: #1c1c1c;
+  -fx-background-color: #202020;
   -fx-text-fill: #f2f2f2;
 }
 
@@ -1103,7 +1106,7 @@ The editor.css file defines the visual styling for the editor module, including 
 .vcs-combo .combo-box-popup > .list-view .list-cell:filled:selected,
 .vcs-combo-popup .list-cell:hover,
 .vcs-combo-popup .list-cell:filled:selected {
-  -fx-background-color: #2f2f2f;
+  -fx-background-color: #333333;
   -fx-text-fill: #f2f2f2;
 }
 
@@ -1113,7 +1116,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .vcs-log .content {
-  -fx-background-color: #141414;
+  -fx-background-color: #181818;
 }
 
 .vcs-danger-zone {
@@ -1131,13 +1134,13 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .vcs-list .list-cell {
-  -fx-background-color: #141414;
+  -fx-background-color: #181818;
   -fx-text-fill: #e6e6e6;
 }
 
 .vcs-list .list-cell:filled:selected,
 .vcs-list .list-cell:filled:selected:hover {
-  -fx-background-color: #282828;
+  -fx-background-color: #2c2c2c;
 }
 
 .vcs-status-untracked,
@@ -1215,72 +1218,33 @@ The editor.css file defines the visual styling for the editor module, including 
 
  /* Code editors (RichTextFX CodeArea) */
 .text-editor-root {
-  -fx-background-color: #101010;
+  -fx-background-color: -jvn-aero-field;
 }
 
  .code-area {
-   -fx-background-color: #121212;
-   -fx-highlight-fill: #2a2a2a;          /* selection background */
-   -fx-highlight-text-fill: #e6e6e6;      /* selection text */
-   -rtfx-caret-color: #e6e6e6;            /* caret color */
    -fx-caret-blink-rate: 700ms;
-   caret-color: #e6e6e6;                  /* compatibility hint */
  }
- .code-area .text { -fx-fill: #e6e6e6; }
 
  /* Typography polish: clearer insertion caret + active line */
  .code-area .caret {
-   -fx-stroke: #f7f7f7;
    -fx-stroke-width: 1.25;
- }
-
- .code-area .paragraph-box:has-caret {
-   -fx-background-color: rgba(151, 151, 151, 0.10);
  }
 
  .code-area .paragraph-box {
    -fx-padding: 1 0 1 0;
  }
 
- /* ── Shared token classes ── */
- .code-area .keyword { -fx-fill: #979797; -fx-font-weight: bold; }
- .code-area .string { -fx-fill: #c3e88d; }
- .code-area .number { -fx-fill: #f78c6c; }
- .code-area .comment { -fx-fill: #6f6f6f; -fx-font-style: italic; }
- .code-area .punct { -fx-fill: #cecece; }
+  .code-area .keyword { -fx-font-weight: bold; }
+ .code-area .comment { -fx-font-style: italic; }
 
- /* ── VNS script token classes ── */
- .code-area .vns-directive { -fx-fill: #a4a4a4; -fx-font-weight: bold; }
- .code-area .vns-command { -fx-fill: #a8a8a8; }
- .code-area .vns-speaker { -fx-fill: #ffcb6b; }
- .code-area .vns-choice { -fx-fill: #c3e88d; -fx-font-weight: bold; }
- .code-area .vns-arrow { -fx-fill: #f78c6c; -fx-font-weight: bold; }
- .code-area .vns-format { -fx-fill: #cecece; }
- .code-area .vns-value { -fx-fill: #f78c6c; }
+  .code-area .vns-directive { -fx-font-weight: bold; }
+ .code-area .vns-choice { -fx-font-weight: bold; }
+ .code-area .vns-arrow { -fx-font-weight: bold; }
 
- /* ── DSL properties token classes ── */
- .code-area .prop-key { -fx-fill: #a4a4a4; }
- .code-area .dsl-bool { -fx-fill: #f78c6c; }
- .code-area .dsl-action { -fx-fill: #a8a8a8; }
- .code-area .dsl-color { -fx-fill: #cecece; }
- .code-area .dsl-section { -fx-fill: #ffcb6b; }
+  .code-area .jes-struct { -fx-font-weight: bold; }
 
- /* ── JES scripting token classes ── */
- .code-area .jes-struct { -fx-fill: #a4a4a4; -fx-font-weight: bold; }
- .code-area .jes-comptype { -fx-fill: #ffcb6b; }
- .code-area .jes-action { -fx-fill: #a8a8a8; }
- .code-area .jes-builtin { -fx-fill: #cecece; }
- .code-area .jes-bool { -fx-fill: #f78c6c; }
- .code-area .jes-prop { -fx-fill: #b5b5b5; }
-
- /* ── Timeline DSL token classes ── */
- .code-area .tl-keyword { -fx-fill: #a4a4a4; -fx-font-weight: bold; }
- .code-area .tl-arrow { -fx-fill: #f78c6c; -fx-font-weight: bold; }
-
- /* ── Java token classes ── */
- .code-area .annotation { -fx-fill: #bbb529; }
- .code-area .type { -fx-fill: #ffcb6b; }
- .code-area .constant { -fx-fill: #f78c6c; }
+  .code-area .tl-keyword { -fx-font-weight: bold; }
+ .code-area .tl-arrow { -fx-font-weight: bold; }
 
 .code-area .error {
   -fx-underline: true;
@@ -1315,30 +1279,22 @@ The editor.css file defines the visual styling for the editor module, including 
 .lint-label {
   -fx-padding: 4 8 4 8;
   -fx-font-size: 11px;
-  -fx-text-fill: #e6e6e6;
-  -fx-background-color: #1a1a1a;
-  -fx-border-color: #2a2a2a;
   -fx-border-width: 1 0 0 0;
 }
 
  /* Line numbers (RichTextFX LineNumberFactory) */
  .lineno {
-   -fx-background-color: #151515;
    -fx-background-insets: -2 -24 -2 0;
    -fx-view-order: -1;
-   -fx-border-color: rgba(255,255,255,0.06);
    -fx-border-width: 0 1 0 0;
    -fx-padding: 0 8 0 6;
    -fx-min-width: 64;
    -fx-alignment: center-right;
  }
- .lineno .text { -fx-fill: #a0a0a0; }
  .lineno-text {
    -fx-min-width: 30;
    -fx-alignment: center-right;
-   -fx-text-fill: #a0a0a0;
  }
- .lineno-text .text { -fx-fill: #a0a0a0; }
  .code-fold-toggle {
    -fx-min-width: 12;
    -fx-alignment: center;
@@ -1411,10 +1367,6 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .code-editor-status-bar {
-  -fx-background-color:
-      linear-gradient(to bottom, rgba(255,255,255,0.025), rgba(255,255,255,0.0)),
-      #151515;
-  -fx-border-color: #2b2b2b;
   -fx-border-width: 1 0 0 0;
 }
 
@@ -1425,45 +1377,27 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .code-editor-status-primary {
-  -fx-text-fill: #d4d4d4;
   -fx-font-size: 11px;
   -fx-font-weight: 700;
 }
 
 .code-editor-status-secondary {
-  -fx-text-fill: #8f8f8f;
   -fx-font-size: 11px;
 }
 
 .code-editor-diagnostics-list {
-  -fx-background-color: #141414;
-  -fx-control-inner-background: #141414;
-  -fx-border-color: #2d2d2d;
   -fx-border-width: 1 0 0 0;
   -fx-font-size: 11px;
 }
 
 .code-editor-diagnostics-list .list-cell {
   -fx-background-color: transparent;
-  -fx-text-fill: #d0d0d0;
   -fx-padding: 5 10 5 10;
 }
 
-.code-editor-diagnostics-list .list-cell:filled:selected,
-.code-editor-diagnostics-list .list-cell:filled:selected:hover {
-  -fx-background-color: #2a2a2a;
-  -fx-text-fill: #f0f0f0;
-}
-
 .code-editor-minimap {
-  -fx-background-color: #08090b;
-  -fx-border-color: rgba(255,180,90,0.12);
   -fx-border-width: 0 0 0 1;
   -fx-cursor: hand;
-}
-
-.code-editor-minimap-separator {
-  -fx-background-color: #1b1f27;
 }
 
 /* Ensure virtualized scroll pane and content are transparent to show editor bg */
@@ -1475,12 +1409,12 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 /* TabPane dark styling */
-.tab-pane *.tab-header-area, .tab-pane .tab-header-background { -fx-background-color: #1a1a1a; }
-.tab-pane .tab { -fx-background-color: #1a1a1a; }
-.tab-pane .tab:selected { -fx-background-color: #2a2a2a; }
+.tab-pane *.tab-header-area, .tab-pane .tab-header-background { -fx-background-color: #1e1e1e; }
+.tab-pane .tab { -fx-background-color: #1e1e1e; }
+.tab-pane .tab:selected { -fx-background-color: #2e2e2e; }
 .tab-pane .tab-label { -fx-text-fill: #e6e6e6; }
 .tab-pane .tab:selected .tab-label { -fx-text-fill: #e6e6e6; }
-.tab-pane .tab-content-area { -fx-background-color: #121212; }
+.tab-pane .tab-content-area { -fx-background-color: #161616; }
 
 /* Scrollbars — thin, accent-colored, IDE-style */
 .scroll-bar {
@@ -1490,19 +1424,19 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-padding: 1;
 }
 .scroll-bar .track {
-  -fx-background-color: rgba(26, 26, 26, 0.5);
+  -fx-background-color: -jvn-aero-surface;
   -fx-background-radius: 5;
 }
 .scroll-bar .thumb {
-  -fx-background-color: rgba(151, 151, 151, 0.28);
+  -fx-background-color: -jvn-aero-button;
   -fx-background-insets: 1;
   -fx-background-radius: 5;
 }
 .scroll-bar .thumb:hover {
-  -fx-background-color: rgba(151, 151, 151, 0.50);
+  -fx-background-color: -jvn-aero-hover;
 }
 .scroll-bar .thumb:pressed {
-  -fx-background-color: rgba(151, 151, 151, 0.70);
+  -fx-background-color: -jvn-aero-pressed;
 }
 .scroll-bar .increment-button,
 .scroll-bar .decrement-button {
@@ -1525,11 +1459,44 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 /* Root and common containers */
-.root, .border-pane, .pane, .vbox, .hbox { -fx-background-color: #121212; }
+.root, .border-pane, .pane, .vbox, .hbox { -fx-background-color: #161616; }
+.root, .text-editor-root, .code-area {
+  /* Graphite Aero paints for the shared chrome. */
+  -jvn-aero-surface: #2a2a2a;
+  -jvn-aero-field: #212121;
+  -jvn-aero-text: #efefef;
+  -jvn-aero-muted: #b9b9b9;
+  -jvn-aero-edge: #5b5b5b;
+  -jvn-aero-control-edge: #727272;
+  -jvn-aero-highlight: #5e5e5e;
+  -jvn-aero-focus: #b1b1b1;
+  -jvn-aero-focus-halo: rgba(177, 177, 177, 0.58);
+  -jvn-aero-chrome: linear-gradient(to bottom, #4a4a4a, #3c3c3c 49%, #333333 51%, #3d3d3d);
+  -jvn-aero-menubar: linear-gradient(to bottom, #444444, #383838 49%, #313131 51%, #3d3d3d);
+  -jvn-aero-button: linear-gradient(to bottom, #545454, #464646 48%, #3a3a3a 50%, #464646);
+  -jvn-aero-hover: linear-gradient(to bottom, #5a5a5a, #4f4f4f 49%, #454545 51%, #4f4f4f);
+  -jvn-aero-selected: linear-gradient(to bottom, #595959, #4e4e4e 49%, #434343 51%, #545454);
+  -jvn-aero-pressed: linear-gradient(to bottom, #393939, #474747 55%, #595959);
+
+  -jvn-aero-healthy: #9adca9;
+  -jvn-aero-warning: #f4c38b;
+
+  -jvn-status-icon-normal: #a5a5a5;
+  -jvn-status-icon-red: #f391a0;
+
+  -jvn-code-command: #b5d3ec;
+  -jvn-code-string: #c3e88d;
+  -jvn-code-number: #f5ab91;
+  -jvn-code-comment: #adadad;
+  -jvn-code-name: #ffcc77;
+  -jvn-code-selection: #464646;
+  -jvn-code-current-line: #313131;
+}
+
 .root {
-  -fx-accent: #808080;
-  -fx-focus-color: #808080;
-  -fx-faint-focus-color: rgba(128, 128, 128, 0.25);
+  -fx-accent: -jvn-aero-focus;
+  -fx-focus-color: -jvn-aero-focus;
+  -fx-faint-focus-color: -jvn-aero-focus-halo;
   -fx-selection-bar: #3a3a3a;
   -fx-selection-bar-non-focused: #2f2f2f;
 
@@ -1542,58 +1509,38 @@ The editor.css file defines the visual styling for the editor module, including 
   -jvn-studio-text-soft: #bebebe;
   -jvn-studio-accent: #d1d1d1;
 }
-.scroll-pane { -fx-background: #121212; -fx-background-color: #121212; }
-.scroll-pane > .viewport { -fx-background-color: #121212; }
-.split-pane { -fx-background-color: #121212; }
-.split-pane-divider { -fx-background-color: #2a2a2a; -fx-padding: 0.25em; }
+.scroll-pane { -fx-background: #161616; -fx-background-color: #161616; }
+.scroll-pane > .viewport { -fx-background-color: #161616; }
+.split-pane { -fx-background-color: #161616; }
+.split-pane-divider { -fx-background-color: #2e2e2e; -fx-padding: 0.25em; }
 
 /* Menu bar */
-.menu-bar { -fx-background-color: #000000; }
 .menu-bar .label { -fx-text-fill: #e6e6e6; }
-.menu-bar .menu-button:hover,
-.menu-bar .menu-button:focused,
-.menu-bar .menu-button:showing {
-  -fx-background-color: #2a2a2a;
-  -fx-background-radius: 6;
-}
-.context-menu { -fx-background-color: #1a1a1a; }
-.menu-item:focused { -fx-background-color: #2a2a2a; }
 .menu-item .label { -fx-text-fill: #e6e6e6; }
-
-/* Buttons */
-.button {
-  -fx-background-color: #2a2a2a;
-  -fx-text-fill: #e6e6e6;
-  -fx-background-radius: 6;
-  -fx-border-color: transparent;
-}
-.button:hover { -fx-background-color: #3a3a3a; }
-.button:armed { -fx-background-color: #4a4a4a; }
-.button:focused { -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.12), 8, 0, 0, 0); }
 
 /* Labels */
 .label { -fx-text-fill: #d6d6d6; }
 
 /* Text inputs */
 .text-input, .text-field, .text-area {
-  -fx-background-color: #1a1a1a;
+  -fx-background-color: #1e1e1e;
   -fx-text-fill: #e6e6e6;
   -fx-highlight-fill: #2a2a2a;
   -fx-highlight-text-fill: #e6e6e6;
   -fx-background-insets: 0;
   -fx-background-radius: 6;
 }
-.text-area .content { -fx-background-color: #1a1a1a; }
+.text-area .content { -fx-background-color: #1e1e1e; }
 .text-input:focused, .text-field:focused, .text-area:focused {
-  -fx-border-color: #979797;
+  -fx-border-color: -jvn-aero-focus;
   -fx-border-radius: 6;
   -fx-border-width: 1;
 }
 .text-input .prompt-text, .text-field .prompt-text, .text-area .prompt-text { -fx-fill: #777777; }
 
 .editor-search-bar {
-  -fx-background-color: #1f1f1f;
-  -fx-border-color: #343434;
+  -fx-background-color: #232323;
+  -fx-border-color: #383838;
   -fx-border-width: 0 0 1 0;
 }
 
@@ -1604,19 +1551,19 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .editor-search-field {
-  -fx-background-color: #121212;
+  -fx-background-color: #161616;
   -fx-text-fill: #f0f0f0;
   -fx-prompt-text-fill: #858585;
   -fx-highlight-fill: #555555;
   -fx-highlight-text-fill: #ffffff;
-  -fx-border-color: #3a3a3a;
+  -fx-border-color: #3e3e3e;
   -fx-border-radius: 6;
   -fx-background-radius: 6;
   -fx-padding: 5 8 5 8;
 }
 
 .editor-search-field:focused {
-  -fx-background-color: #171717;
+  -fx-background-color: #1b1b1b;
   -fx-border-color: #8a8a8a;
   -fx-effect: none;
 }
@@ -1632,17 +1579,17 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 /* ListView */
-.list-view { -fx-background-color: #121212; }
-.list-cell { -fx-background-color: #121212; -fx-text-fill: #e6e6e6; }
-.list-cell:filled:selected, .list-cell:filled:selected:hover { -fx-background-color: #2a2a2a; -fx-text-fill: #e6e6e6; }
-.list-cell:even { -fx-background-color: #121212; }
-.list-cell:odd { -fx-background-color: #121212; }
-.virtual-flow, .virtual-flow .clipped-container, .virtual-flow .sheet { -fx-background-color: #121212; }
+.list-view { -fx-background-color: #161616; }
+.list-cell { -fx-background-color: #161616; -fx-text-fill: #e6e6e6; }
+.list-cell:filled:selected, .list-cell:filled:selected:hover { -fx-background-color: #2e2e2e; -fx-text-fill: #e6e6e6; }
+.list-cell:even { -fx-background-color: #161616; }
+.list-cell:odd { -fx-background-color: #161616; }
+.virtual-flow, .virtual-flow .clipped-container, .virtual-flow .sheet { -fx-background-color: #161616; }
 
 /* TreeView */
-.tree-view { -fx-background-color: #121212; }
-.tree-cell { -fx-background-color: #121212; -fx-text-fill: #e6e6e6; }
-.tree-cell:filled:selected, .tree-cell:filled:selected:hover { -fx-background-color: #2a2a2a; -fx-text-fill: #e6e6e6; }
+.tree-view { -fx-background-color: #161616; }
+.tree-cell { -fx-background-color: #161616; -fx-text-fill: #e6e6e6; }
+.tree-cell:filled:selected, .tree-cell:filled:selected:hover { -fx-background-color: #2e2e2e; -fx-text-fill: #e6e6e6; }
 
 /* CheckBox — global dark override */
 .check-box {
@@ -1650,16 +1597,16 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-font-size: 11px;
 }
 .check-box .box {
-  -fx-background-color: #1c1c1c;
-  -fx-border-color: #404040;
+  -fx-background-color: #202020;
+  -fx-border-color: #444444;
   -fx-border-radius: 4;
   -fx-background-radius: 4;
 }
 .check-box:hover .box {
-  -fx-border-color: #606060;
+  -fx-border-color: #646464;
 }
 .check-box:selected .box {
-  -fx-background-color: #252525;
+  -fx-background-color: #292929;
   -fx-border-color: #888888;
 }
 .check-box:selected .mark {
@@ -1701,7 +1648,6 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .project-explorer-root {
-  -fx-background-color: #0f0f0f;
   -fx-padding: 8;
 }
 
@@ -1712,20 +1658,10 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .project-explorer-filter {
-  -fx-background-color: #151515;
-  -fx-text-fill: #e8e8e8;
-  -fx-prompt-text-fill: #777777;
-  -fx-border-color: #303030;
-  -fx-border-radius: 7;
-  -fx-background-radius: 7;
   -fx-padding: 7 10 7 10;
 }
 
 .project-explorer-tree {
-  -fx-background-color: #111111;
-  -fx-border-color: #2a2a2a;
-  -fx-border-radius: 8;
-  -fx-background-radius: 8;
   -fx-padding: 4;
 }
 
@@ -1749,13 +1685,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .project-explorer-tree .tree-cell {
-  -fx-background-color: #111111;
-  -fx-text-fill: #dcdcdc;
   -fx-padding: 5 6 5 6;
-}
-
-.project-explorer-tree .tree-cell:selected {
-  -fx-background-color: #282828;
 }
 
 .project-explorer-root-row {
@@ -1768,11 +1698,11 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 /* TitledPane/Accordion */
-.titled-pane > .title { -fx-background-color: #1a1a1a; }
-.titled-pane > .content { -fx-background-color: #121212; }
+.titled-pane > .title { -fx-background-color: #1e1e1e; }
+.titled-pane > .content { -fx-background-color: #161616; }
 
 /* Separator */
-.separator .line { -fx-background-color: #2a2a2a; -fx-border-color: #2a2a2a; }
+.separator .line { -fx-background-color: #2e2e2e; -fx-border-color: #2e2e2e; }
 
 /* Default text color safety */
 .root, .label, .text { -fx-text-fill: #e6e6e6; }
@@ -2222,22 +2152,22 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .layout-studio-toolbar-button,
 .layout-studio-toolbar-toggle {
-  -fx-background-color: #2f2f2f;
+  -fx-background-color: #333333;
   -fx-text-fill: #ebebeb;
 }
 
 .layout-studio-toolbar-button:hover,
 .layout-studio-toolbar-toggle:hover {
-  -fx-background-color: #3e3e3e;
+  -fx-background-color: #424242;
 }
 
 .layout-studio-toolbar-toggle:selected {
-  -fx-background-color: #5d5d5d;
+  -fx-background-color: #616161;
   -fx-text-fill: #ffffff;
 }
 
 .layout-studio-utility-button {
-  -fx-background-color: #2f2f2f;
+  -fx-background-color: #333333;
 }
 
 .layout-studio-action-bar {
@@ -2288,7 +2218,7 @@ The editor.css file defines the visual styling for the editor module, including 
 .layout-launcher-root {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #151515 0%, #0f0f0f 100%);
+      linear-gradient(to bottom, #191919 0%, #131313 100%);
 }
 
 .layout-launcher-header {
@@ -2342,9 +2272,9 @@ The editor.css file defines the visual styling for the editor module, including 
 .layout-launcher-panel {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #1a1a1a 0%, #141414 100%);
+      linear-gradient(to bottom, #1e1e1e 0%, #181818 100%);
   -fx-background-radius: 8;
-  -fx-border-color: #2d2d2d;
+  -fx-border-color: #313131;
   -fx-border-radius: 8;
   -fx-border-width: 1;
   -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.22), 10, 0.22, 0, 2);
@@ -2431,12 +2361,12 @@ The editor.css file defines the visual styling for the editor module, including 
 .layout-launcher-button {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.04), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #252525, #1b1b1b);
+      linear-gradient(to bottom, #292929, #1f1f1f);
   -fx-text-fill: #ededed;
   -fx-font-size: 11px;
   -fx-font-weight: 700;
   -fx-background-radius: 8;
-  -fx-border-color: #383838;
+  -fx-border-color: #3c3c3c;
   -fx-border-radius: 8;
   -fx-border-width: 1;
   -fx-padding: 6 12 6 12;
@@ -2448,12 +2378,12 @@ The editor.css file defines the visual styling for the editor module, including 
 .layout-launcher-button:hover {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.05), rgba(255,255,255,0.01)),
-      linear-gradient(to bottom, #2c2c2c, #202020);
-  -fx-border-color: #525252;
+      linear-gradient(to bottom, #303030, #242424);
+  -fx-border-color: #565656;
 }
 
 .layout-launcher-button:pressed {
-  -fx-background-color: linear-gradient(to bottom, #1d1d1d, #161616);
+  -fx-background-color: linear-gradient(to bottom, #212121, #1a1a1a);
 }
 
 .layout-launcher-button:disabled {
@@ -2469,10 +2399,10 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .layout-launcher-field,
 .combo-box-base.layout-launcher-field {
-  -fx-background-color: #121212;
+  -fx-background-color: #161616;
   -fx-text-fill: #ededed;
   -fx-prompt-text-fill: #707070;
-  -fx-border-color: #303030;
+  -fx-border-color: #343434;
   -fx-border-radius: 8;
   -fx-background-radius: 8;
   -fx-font-size: 11px;
@@ -2485,7 +2415,7 @@ The editor.css file defines the visual styling for the editor module, including 
 .layout-launcher-field:focused,
 .combo-box-base.layout-launcher-field:focused {
   -fx-border-color: #7a7a7a;
-  -fx-background-color: #171717;
+  -fx-background-color: #1b1b1b;
   -fx-effect: dropshadow(gaussian, rgba(160, 160, 160, 0.12), 8, 0.2, 0, 0);
 }
 
@@ -2494,9 +2424,9 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .combo-box-base.layout-launcher-field > .arrow-button {
-  -fx-background-color: #1a1a1a;
+  -fx-background-color: #1e1e1e;
   -fx-background-radius: 0 8 8 0;
-  -fx-border-color: #303030;
+  -fx-border-color: #343434;
   -fx-border-width: 0 0 0 1;
 }
 
@@ -2532,20 +2462,20 @@ The editor.css file defines the visual styling for the editor module, including 
 .script-editor-workspace-root {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #171717 0%, #101010 100%);
+      linear-gradient(to bottom, #1b1b1b 0%, #141414 100%);
 }
 
 .script-editor-launcher-pane,
 .script-editor-workspace-content {
-  -fx-background-color: #151515;
+  -fx-background-color: #191919;
 }
 
 .script-editor-card {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #1b1b1b 0%, #141414 100%);
+      linear-gradient(to bottom, #1f1f1f 0%, #181818 100%);
   -fx-background-radius: 12;
-  -fx-border-color: #2f2f2f;
+  -fx-border-color: #333333;
   -fx-border-radius: 12;
   -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.16), 8, 0.18, 0, 1);
 }
@@ -2553,7 +2483,7 @@ The editor.css file defines the visual styling for the editor module, including 
 .script-editor-launcher-header {
   -fx-spacing: 8;
   -fx-background-color: rgba(16, 16, 16, 0.9);
-  -fx-border-color: #2b2b2b;
+  -fx-border-color: #2f2f2f;
   -fx-border-width: 0 0 1 0;
 }
 
@@ -2565,7 +2495,7 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .script-editor-launcher-meta-chip {
   -fx-background-color: rgba(22, 22, 22, 0.96);
-  -fx-border-color: #343434;
+  -fx-border-color: #383838;
   -fx-background-radius: 10;
   -fx-border-radius: 10;
   -fx-padding: 6 10 6 10;
@@ -2573,7 +2503,7 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .script-editor-stat-chip {
   -fx-background-color: rgba(24, 24, 24, 0.98);
-  -fx-border-color: #383838;
+  -fx-border-color: #3c3c3c;
   -fx-background-radius: 999;
   -fx-border-radius: 999;
   -fx-padding: 4 10 4 10;
@@ -2636,10 +2566,10 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .script-editor-field {
-  -fx-background-color: #121212;
+  -fx-background-color: #161616;
   -fx-text-fill: #ececec;
   -fx-prompt-text-fill: #7a7a7a;
-  -fx-border-color: #343434;
+  -fx-border-color: #383838;
   -fx-border-radius: 10;
   -fx-background-radius: 10;
   -fx-font-size: 11px;
@@ -2648,7 +2578,7 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .script-editor-field:focused {
   -fx-border-color: #717171;
-  -fx-background-color: #171717;
+  -fx-background-color: #1b1b1b;
   -fx-effect: none;
 }
 
@@ -2656,12 +2586,12 @@ The editor.css file defines the visual styling for the editor module, including 
 .script-editor-toolbar-button {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.04), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #202020, #181818);
+      linear-gradient(to bottom, #242424, #1c1c1c);
   -fx-text-fill: #ededed;
   -fx-font-size: 11px;
   -fx-font-weight: 700;
   -fx-background-radius: 10;
-  -fx-border-color: #3b3b3b;
+  -fx-border-color: #3f3f3f;
   -fx-border-radius: 10;
   -fx-cursor: hand;
 }
@@ -2685,14 +2615,14 @@ The editor.css file defines the visual styling for the editor module, including 
 .script-editor-toolbar-button:hover {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.05), rgba(255,255,255,0.01)),
-      linear-gradient(to bottom, #2b2b2b, #212121);
-  -fx-border-color: #565656;
+      linear-gradient(to bottom, #2f2f2f, #252525);
+  -fx-border-color: #5a5a5a;
   -fx-text-fill: #f4f4f4;
 }
 
 .script-editor-action-button:pressed,
 .script-editor-toolbar-button:pressed {
-  -fx-background-color: linear-gradient(to bottom, #181818, #141414);
+  -fx-background-color: linear-gradient(to bottom, #1c1c1c, #181818);
 }
 
 .script-editor-action-button:focused,
@@ -2707,8 +2637,8 @@ The editor.css file defines the visual styling for the editor module, including 
 .script-editor-toolbar-button-primary {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.07), rgba(255,255,255,0.02)),
-      linear-gradient(to bottom, #2a2a2a, #202020);
-  -fx-border-color: #5b5b5b;
+      linear-gradient(to bottom, #2e2e2e, #242424);
+  -fx-border-color: #5f5f5f;
   -fx-text-fill: #f1f1f1;
 }
 
@@ -2716,7 +2646,7 @@ The editor.css file defines the visual styling for the editor module, including 
 .script-editor-toolbar-button-primary:hover {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.09), rgba(255,255,255,0.03)),
-      linear-gradient(to bottom, #313131, #252525);
+      linear-gradient(to bottom, #353535, #292929);
   -fx-border-color: #6a6a6a;
 }
 
@@ -2742,7 +2672,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .script-editor-tree .tree-cell:selected {
-  -fx-background-color: linear-gradient(to bottom, #3a3a3a, #303030);
+  -fx-background-color: linear-gradient(to bottom, #3e3e3e, #343434);
   -fx-background-radius: 9;
 }
 
@@ -2760,7 +2690,7 @@ The editor.css file defines the visual styling for the editor module, including 
 .script-editor-tree-badge {
   -fx-text-fill: #d2d2d2;
   -fx-font-size: 10px;
-  -fx-background-color: #2a2a2a;
+  -fx-background-color: #2e2e2e;
   -fx-padding: 1 6 1 6;
   -fx-background-radius: 999;
 }
@@ -2769,8 +2699,8 @@ The editor.css file defines the visual styling for the editor module, including 
 .script-editor-workspace-toolbar {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #151515, #101010);
-  -fx-border-color: #2b2b2b;
+      linear-gradient(to bottom, #191919, #141414);
+  -fx-border-color: #2f2f2f;
   -fx-border-width: 0 0 1 0;
   -fx-alignment: center-left;
 }
@@ -2782,8 +2712,8 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .script-editor-window-status {
   -fx-padding: 7 12 7 12;
-  -fx-background-color: #101010;
-  -fx-border-color: #2b2b2b;
+  -fx-background-color: #141414;
+  -fx-border-color: #2f2f2f;
   -fx-border-width: 1 0 0 0;
   -fx-text-fill: #979797;
 }
@@ -2821,7 +2751,7 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .script-editor-launcher-split > .split-pane-divider > .vertical-grabber,
 .script-editor-window-split > .split-pane-divider > .horizontal-grabber {
-  -fx-background-color: #343434;
+  -fx-background-color: #383838;
   -fx-background-radius: 999;
 }
 
@@ -2834,7 +2764,7 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-font-size: 10px;
   -fx-font-weight: 800;
   -fx-background-color: rgba(28, 28, 28, 0.96);
-  -fx-border-color: #3d3d3d;
+  -fx-border-color: #414141;
   -fx-background-radius: 999;
   -fx-border-radius: 999;
   -fx-padding: 5 10 5 10;
@@ -2846,15 +2776,15 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .script-editor-tabs > .tab-header-area > .headers-region > .tab {
-  -fx-background-color: linear-gradient(to bottom, #1d1d1d, #161616);
+  -fx-background-color: linear-gradient(to bottom, #212121, #1a1a1a);
   -fx-background-radius: 10 10 0 0;
-  -fx-border-color: #353535;
+  -fx-border-color: #393939;
   -fx-border-radius: 10 10 0 0;
 }
 
 .script-editor-tabs > .tab-header-area > .headers-region > .tab:selected {
-  -fx-background-color: linear-gradient(to bottom, #2d2d2d, #222222);
-  -fx-border-color: #5f5f5f;
+  -fx-background-color: linear-gradient(to bottom, #313131, #262626);
+  -fx-border-color: #636363;
 }
 
 .script-editor-tabs > .tab-header-area > .headers-region > .tab .tab-label {
@@ -2864,20 +2794,20 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .script-editor-tabs > .tab-content-area {
-  -fx-background-color: #121212;
-  -fx-border-color: #2d2d2d;
+  -fx-background-color: #161616;
+  -fx-border-color: #313131;
   -fx-border-width: 1 0 0 0;
 }
 
 .vns-diagnostics-root {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #171717 0%, #101010 100%);
+      linear-gradient(to bottom, #1b1b1b 0%, #141414 100%);
 }
 
 .vns-diagnostics-header {
   -fx-background-color: rgba(16, 16, 16, 0.9);
-  -fx-border-color: #2c2c2c;
+  -fx-border-color: #303030;
   -fx-border-width: 0 0 1 0;
 }
 
@@ -2976,10 +2906,10 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .vns-diagnostics-filter {
-  -fx-background-color: #121212;
+  -fx-background-color: #161616;
   -fx-text-fill: #ececec;
   -fx-prompt-text-fill: #7a7a7a;
-  -fx-border-color: #343434;
+  -fx-border-color: #383838;
   -fx-border-radius: 10;
   -fx-background-radius: 10;
   -fx-font-size: 11px;
@@ -2988,14 +2918,14 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .vns-diagnostics-filter:focused {
   -fx-border-color: #717171;
-  -fx-background-color: #171717;
+  -fx-background-color: #1b1b1b;
   -fx-effect: none;
 }
 
 .vns-diagnostics-severity-filter {
   -fx-font-size: 11px;
-  -fx-background-color: #1a1a1a;
-  -fx-border-color: #343434;
+  -fx-background-color: #1e1e1e;
+  -fx-border-color: #383838;
   -fx-border-width: 1;
   -fx-border-radius: 10;
   -fx-background-radius: 10;
@@ -3007,12 +2937,12 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .vns-diagnostics-severity-filter .list-cell {
-  -fx-background-color: #1a1a1a;
+  -fx-background-color: #1e1e1e;
   -fx-text-fill: #ededed;
 }
 
 .vns-diagnostics-severity-filter .arrow-button {
-  -fx-background-color: #1a1a1a;
+  -fx-background-color: #1e1e1e;
   -fx-background-radius: 0 10 10 0;
 }
 
@@ -3021,19 +2951,19 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .vns-diagnostics-severity-filter .combo-box-popup .list-view {
-  -fx-background-color: #181818;
-  -fx-control-inner-background: #181818;
-  -fx-border-color: #343434;
+  -fx-background-color: #1c1c1c;
+  -fx-control-inner-background: #1c1c1c;
+  -fx-border-color: #383838;
 }
 
 .vns-diagnostics-severity-filter .combo-box-popup .list-cell {
-  -fx-background-color: #181818;
+  -fx-background-color: #1c1c1c;
   -fx-text-fill: #ebebeb;
 }
 
 .vns-diagnostics-severity-filter .combo-box-popup .list-cell:hover,
 .vns-diagnostics-severity-filter .combo-box-popup .list-cell:selected {
-  -fx-background-color: #262626;
+  -fx-background-color: #2a2a2a;
 }
 
 .vns-diagnostics-list {
@@ -3067,19 +2997,19 @@ The editor.css file defines the visual styling for the editor module, including 
 .vns-diagnostics-row {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #1a1a1a 0%, #131313 100%);
+      linear-gradient(to bottom, #1e1e1e 0%, #171717 100%);
   -fx-background-radius: 12;
-  -fx-border-color: #2f2f2f;
+  -fx-border-color: #333333;
   -fx-border-radius: 12;
   -fx-border-width: 1;
   -fx-padding: 10;
 }
 
 .vns-diagnostics-cell:hover .vns-diagnostics-row {
-  -fx-border-color: #474747;
+  -fx-border-color: #4b4b4b;
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.04), rgba(255,255,255,0.01)),
-      linear-gradient(to bottom, #1d1d1d 0%, #161616 100%);
+      linear-gradient(to bottom, #212121 0%, #1a1a1a 100%);
 }
 
 .vns-timeline-outline-list {
@@ -3103,16 +3033,16 @@ The editor.css file defines the visual styling for the editor module, including 
 .vns-timeline-outline-row {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #1a1a1a 0%, #131313 100%);
+      linear-gradient(to bottom, #1e1e1e 0%, #171717 100%);
   -fx-background-radius: 10;
-  -fx-border-color: #2f2f2f;
+  -fx-border-color: #333333;
   -fx-border-radius: 10;
   -fx-border-width: 1;
   -fx-padding: 8 10;
 }
 
 .vns-timeline-outline-list-cell:hover .vns-timeline-outline-row {
-  -fx-border-color: #474747;
+  -fx-border-color: #4b4b4b;
 }
 
 .vns-timeline-outline-location {
@@ -3127,10 +3057,10 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .vns-diagnostics-cell:selected .vns-diagnostics-row {
-  -fx-border-color: #666666;
+  -fx-border-color: #6a6a6a;
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.04), rgba(255,255,255,0.01)),
-      linear-gradient(to bottom, #202020 0%, #181818 100%);
+      linear-gradient(to bottom, #242424 0%, #1c1c1c 100%);
 }
 
 .vns-diagnostics-row-error {
@@ -3166,7 +3096,7 @@ The editor.css file defines the visual styling for the editor module, including 
 .vns-diagnostics-badge-kind {
   -fx-text-fill: #d2d2d2;
   -fx-background-color: rgba(33, 33, 33, 0.94);
-  -fx-border-color: #444444;
+  -fx-border-color: #484848;
 }
 
 .vns-diagnostics-message {
@@ -3212,9 +3142,9 @@ The editor.css file defines the visual styling for the editor module, including 
 .editor-dialog-card {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #181818 0%, #121212 100%);
+      linear-gradient(to bottom, #1c1c1c 0%, #161616 100%);
   -fx-background-radius: 14;
-  -fx-border-color: #2f2f2f;
+  -fx-border-color: #333333;
   -fx-border-radius: 14;
   -fx-border-width: 1;
   -fx-effect: none;
@@ -3273,9 +3203,9 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .editor-dialog-error-details > .title {
-  -fx-background-color: #111111;
+  -fx-background-color: #151515;
   -fx-background-radius: 9;
-  -fx-border-color: #303030;
+  -fx-border-color: #343434;
   -fx-border-radius: 9;
   -fx-padding: 7 9 7 9;
 }
@@ -3303,10 +3233,10 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .editor-dialog-text-field {
-  -fx-background-color: #111111;
+  -fx-background-color: #151515;
   -fx-text-fill: #ededed;
   -fx-prompt-text-fill: #707070;
-  -fx-border-color: #303030;
+  -fx-border-color: #343434;
   -fx-border-radius: 10;
   -fx-background-radius: 10;
   -fx-font-size: 11px;
@@ -3315,15 +3245,15 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .editor-dialog-text-field:focused {
   -fx-border-color: #7e7e7e;
-  -fx-background-color: #161616;
+  -fx-background-color: #1a1a1a;
   -fx-effect: dropshadow(gaussian, rgba(170, 170, 170, 0.12), 8, 0.2, 0, 0);
 }
 
 .editor-dialog-choice-list,
 .editor-dialog-text-area {
-  -fx-background-color: #111111;
-  -fx-control-inner-background: #111111;
-  -fx-border-color: #303030;
+  -fx-background-color: #151515;
+  -fx-control-inner-background: #151515;
+  -fx-border-color: #343434;
   -fx-border-radius: 10;
   -fx-background-radius: 10;
   -fx-text-fill: #ededed;
@@ -3337,7 +3267,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .editor-dialog-choice-list .list-cell:selected {
-  -fx-background-color: linear-gradient(to bottom, #313131, #262626);
+  -fx-background-color: linear-gradient(to bottom, #353535, #2a2a2a);
   -fx-background-radius: 8;
 }
 
@@ -3363,24 +3293,24 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .editor-dialog-button-neutral {
-  -fx-background-color: linear-gradient(to bottom, #252525, #1b1b1b);
+  -fx-background-color: linear-gradient(to bottom, #292929, #1f1f1f);
   -fx-text-fill: #dddddd;
-  -fx-border-color: #3b3b3b;
+  -fx-border-color: #3f3f3f;
 }
 
 .editor-dialog-button-neutral:hover {
-  -fx-background-color: linear-gradient(to bottom, #2e2e2e, #212121);
-  -fx-border-color: #555555;
+  -fx-background-color: linear-gradient(to bottom, #323232, #252525);
+  -fx-border-color: #595959;
 }
 
 .editor-dialog-button-accent {
-  -fx-background-color: linear-gradient(to bottom, #3e3e3e, #2d2d2d);
+  -fx-background-color: linear-gradient(to bottom, #424242, #313131);
   -fx-text-fill: #f2f2f2;
   -fx-border-color: #7d7d7d;
 }
 
 .editor-dialog-button-accent:hover {
-  -fx-background-color: linear-gradient(to bottom, #4a4a4a, #353535);
+  -fx-background-color: linear-gradient(to bottom, #4e4e4e, #393939);
   -fx-border-color: #979797;
 }
 
@@ -3513,7 +3443,7 @@ The editor.css file defines the visual styling for the editor module, including 
 .combo-box.expression-keyframe-combo > .arrow-button {
   -fx-min-width: 36px;
   -fx-pref-width: 36px;
-  -fx-background-color: linear-gradient(to bottom, #2a3036, #22272c);
+  -fx-background-color: linear-gradient(to bottom, #2a3036, #262626);
   -fx-background-radius: 0 6 6 0;
   -fx-border-color: transparent transparent transparent #3b4249;
   -fx-border-width: 0 0 0 1;
@@ -3656,7 +3586,7 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .script-editor-workspace-toggle:selected,
 .script-editor-workspace-menu-button:showing {
-  -fx-background-color: #353535;
+  -fx-background-color: #393939;
   -fx-border-color: #6b6b6b;
 }
 
@@ -3665,8 +3595,8 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-padding: 3 8 3 8;
   -fx-background-color:
     linear-gradient(to bottom, rgba(255,255,255,0.025), transparent 50%),
-    linear-gradient(to bottom, #181818, #121212);
-  -fx-border-color: transparent transparent #2b2b2b transparent;
+    linear-gradient(to bottom, #1c1c1c, #161616);
+  -fx-border-color: transparent transparent #2f2f2f transparent;
 }
 
 .vns-tools-aero-button {
@@ -3694,8 +3624,8 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .vns-tools-aero-button:selected {
   -fx-background-color:
-    linear-gradient(to bottom, #3a3a3a, #292929);
-  -fx-border-color: #616161;
+    linear-gradient(to bottom, #3e3e3e, #2d2d2d);
+  -fx-border-color: #656565;
 }
 
 .vns-tools-separator > .line {
@@ -3717,19 +3647,19 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .image-tool-workspace > .split-pane-divider {
-  -fx-background-color: #2a2a2a;
+  -fx-background-color: #2e2e2e;
   -fx-padding: 0 2 0 2;
 }
 
 .image-tool-sidebar-scroll {
-  -fx-background: #1a1a1a;
-  -fx-background-color: #1a1a1a;
-  -fx-border-color: #333333;
+  -fx-background: #1e1e1e;
+  -fx-background-color: #1e1e1e;
+  -fx-border-color: #373737;
   -fx-border-width: 0 0 0 1;
 }
 
 .image-tool-sidebar-scroll > .viewport {
-  -fx-background-color: #1a1a1a;
+  -fx-background-color: #1e1e1e;
 }
 
 .image-tool-preview-host {
@@ -3762,13 +3692,13 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .puppeteer-toolbar-shell {
   -fx-background-color: #0a0a0a;
-  -fx-border-color: #2a2a2a;
+  -fx-border-color: #2e2e2e;
   -fx-border-width: 0 0 1 0;
 }
 
 .puppeteer-toolbar-dock {
   -fx-background-color: #0a0a0a;
-  -fx-border-color: #242424;
+  -fx-border-color: #282828;
   -fx-border-width: 0 0 1 0;
 }
 
@@ -3778,7 +3708,7 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-alignment: center-left;
   -fx-background-color:
       linear-gradient(to right, rgba(168,106,40,0.20), rgba(10,10,10,0.0)),
-      #0d0d0d;
+      #111111;
   -fx-border-color: #24201a;
   -fx-border-width: 0 0 1 0;
   -fx-cursor: v-resize;
@@ -3837,10 +3767,10 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .puppeteer-toolbar-mode-button {
-  -fx-background-color: #161616;
+  -fx-background-color: #1a1a1a;
   -fx-text-fill: #d4d4d4;
   -fx-background-radius: 999;
-  -fx-border-color: #474747;
+  -fx-border-color: #4b4b4b;
   -fx-border-width: 1;
   -fx-border-radius: 999;
   -fx-padding: 3 10 3 10;
@@ -3849,12 +3779,12 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .puppeteer-toolbar-mode-button:hover {
-  -fx-background-color: #202020;
+  -fx-background-color: #242424;
   -fx-border-color: #676767;
 }
 
 .puppeteer-toolbar-mode-button:selected {
-  -fx-background-color: linear-gradient(to bottom, #505050, #3d3d3d);
+  -fx-background-color: linear-gradient(to bottom, #545454, #414141);
   -fx-text-fill: #f3f3f3;
   -fx-border-color: #8a8a8a;
 }
@@ -4000,7 +3930,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .puppeteer-preview-viewport-host {
-  -fx-background-color: #121212;
+  -fx-background-color: #161616;
 }
 
 .puppeteer-preview-overlay-button {
@@ -4090,10 +4020,10 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .puppeteer-preview-fullscreen-exit-button {
-  -fx-background-color: linear-gradient(to bottom, #2f2f2f, #232323);
+  -fx-background-color: linear-gradient(to bottom, #333333, #272727);
   -fx-text-fill: #f0f0f0;
   -fx-background-radius: 999;
-  -fx-border-color: #5a5a5a;
+  -fx-border-color: #5e5e5e;
   -fx-border-radius: 999;
   -fx-padding: 7 14;
   -fx-font-size: 11px;
@@ -4101,7 +4031,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .puppeteer-preview-fullscreen-exit-button:hover {
-  -fx-background-color: linear-gradient(to bottom, #3a3a3a, #2b2b2b);
+  -fx-background-color: linear-gradient(to bottom, #3e3e3e, #2f2f2f);
   -fx-border-color: #7b7b7b;
 }
 
@@ -4118,17 +4048,17 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .layout-studio-table {
-  -fx-background-color: #171717;
+  -fx-background-color: #1b1b1b;
   -fx-table-cell-border-color: #323232;
-  -fx-control-inner-background: #171717;
+  -fx-control-inner-background: #1b1b1b;
   -fx-control-inner-background-alt: #1d1d1d;
 }
 
 .layout-studio-table .column-header-background,
 .layout-studio-table .filler,
 .layout-studio-table .column-header {
-  -fx-background-color: #222222;
-  -fx-border-color: #323232;
+  -fx-background-color: #262626;
+  -fx-border-color: #363636;
 }
 
 .layout-studio-table .column-header .label {
@@ -4142,11 +4072,11 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .layout-studio-table .table-row-cell:selected {
-  -fx-background-color: #3d3d3d;
+  -fx-background-color: #414141;
 }
 
 .layout-studio-table .table-row-cell:filled:hover {
-  -fx-background-color: #2b2b2b;
+  -fx-background-color: #2f2f2f;
 }
 
 .jvn-wordmark-version {
@@ -4160,85 +4090,7 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-text-fill: #7f7f7f;
 }
 
-/* Master top toolbar: pure black */
-.master-toolbar {
-  -fx-background-color: #000000;
-  -fx-padding: 5 8 5 8;
-  -fx-border-color: #1a1a1a;
-  -fx-border-width: 0 0 1 0;
-}
-
-.master-toolbar-shell {
-  -fx-background-color: #000000;
-  -fx-border-color: #1a1a1a;
-  -fx-border-width: 0 0 1 0;
-}
-
-.editor-perf-chip-row {
-  -fx-alignment: center-left;
-  -fx-padding: 0 4 0 4;
-}
-
-.editor-perf-chip {
-  -fx-padding: 3 8 3 8;
-  -fx-background-color: #141414;
-  -fx-background-radius: 999;
-  -fx-border-color: #2f2f2f;
-  -fx-border-radius: 999;
-  -fx-border-width: 1;
-  -fx-font-size: 11px;
-  -fx-font-weight: 800;
-  -fx-text-fill: #d8d8d8;
-}
-
-.editor-perf-chip.perf-chip-cpu {
-  -fx-text-fill: #ff8b45;
-  -fx-border-color: rgba(242, 115, 51, 0.48);
-  -fx-background-color: rgba(242, 115, 51, 0.10);
-}
-
-.editor-perf-chip.perf-chip-heap {
-  -fx-text-fill: #c084fc;
-  -fx-border-color: rgba(168, 85, 247, 0.46);
-  -fx-background-color: rgba(168, 85, 247, 0.10);
-}
-
-.editor-perf-chip.perf-chip-jvm {
-  -fx-text-fill: #62b6ff;
-  -fx-border-color: rgba(73, 165, 255, 0.44);
-  -fx-background-color: rgba(73, 165, 255, 0.10);
-}
-
-.editor-perf-chip.perf-chip-fps {
-  -fx-text-fill: #eeeeee;
-}
-
-.editor-perf-chip.perf-chip-graphics {
-  -fx-text-fill: #8ee8ac;
-  -fx-border-color: rgba(76, 196, 120, 0.48);
-  -fx-background-color: rgba(76, 196, 120, 0.09);
-}
-
-.editor-perf-chip.perf-chip-graphics-fallback {
-  -fx-text-fill: #ff9a62;
-  -fx-border-color: rgba(242, 115, 51, 0.58);
-  -fx-background-color: rgba(242, 115, 51, 0.10);
-}
-
-.editor-perf-chip.perf-chip-java {
-  -fx-text-fill: #99e6ae;
-  -fx-border-color: rgba(126, 211, 154, 0.42);
-  -fx-background-color: rgba(126, 211, 154, 0.09);
-}
-
-.editor-perf-chip.perf-chip-build {
-  -fx-text-fill: #e4c378;
-  -fx-border-color: rgba(213, 179, 106, 0.44);
-  -fx-background-color: rgba(213, 179, 106, 0.10);
-}
-
 .main-editor-command-bar {
-  -fx-background-color: #050505;
   -fx-padding: 6 10 0 10;
   -fx-alignment: center-left;
   -fx-spacing: 10;
@@ -4268,8 +4120,8 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .toolbar-status-panel {
-  -fx-background-color: #131313;
-  -fx-border-color: #2a2a2a;
+  -fx-background-color: #171717;
+  -fx-border-color: #2e2e2e;
   -fx-border-width: 1;
   -fx-background-radius: 8;
   -fx-border-radius: 8;
@@ -4295,8 +4147,8 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .timeline-toolbar {
-  -fx-background-color: linear-gradient(to bottom, #1a1a1a, #131313);
-  -fx-border-color: #272727;
+  -fx-background-color: linear-gradient(to bottom, #1e1e1e, #171717);
+  -fx-border-color: #2b2b2b;
   -fx-border-width: 0 0 1 0;
 }
 
@@ -4305,17 +4157,17 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .timeline-toolbar .separator:vertical .line {
-  -fx-border-color: #313131;
+  -fx-border-color: #353535;
   -fx-border-width: 0 1 0 0;
 }
 
 .timeline-primary-button {
-  -fx-background-color: #3c3c3c;
+  -fx-background-color: #404040;
   -fx-text-fill: #f1f1f1;
 }
 
 .timeline-primary-button:hover {
-  -fx-background-color: #4d4d4d;
+  -fx-background-color: #515151;
 }
 
 .timeline-toolbar-button {
@@ -4332,15 +4184,15 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .timeline-graph-pane {
-  -fx-background-color: #101010;
-  -fx-border-color: #272727;
+  -fx-background-color: #141414;
+  -fx-border-color: #2b2b2b;
   -fx-border-width: 1 0 1 0;
 }
 
 .timeline-empty-hint {
   -fx-text-fill: #acacac;
   -fx-background-color: rgba(24, 24, 24, 0.9);
-  -fx-border-color: #333333;
+  -fx-border-color: #373737;
   -fx-border-width: 1;
   -fx-padding: 10 14 10 14;
   -fx-background-radius: 8;
@@ -4348,7 +4200,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .timeline-lists-tabs .tab-content-area {
-  -fx-background-color: #121212;
+  -fx-background-color: #161616;
 }
 
 .timeline-list .placeholder .label {
@@ -4359,14 +4211,12 @@ The editor.css file defines the visual styling for the editor module, including 
 /* Dialogs */
 .dialog-pane,
 .dialog-pane.jvn-dialog {
-  -fx-background-color: #101010;
-  -fx-border-color: #2a2a2a;
+  -fx-background-color: #141414;
+  -fx-border-color: #2e2e2e;
   -fx-border-width: 1;
 }
 
 .dialog-pane:header .header-panel {
-  -fx-background-color: #151515;
-  -fx-border-color: #2a2a2a;
   -fx-border-width: 0 0 1 0;
 }
 
@@ -4377,28 +4227,22 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .dialog-pane > .content {
-  -fx-background-color: #101010;
-}
-
-.dialog-pane .button-bar .container {
-  -fx-background-color: #151515;
-  -fx-border-color: #2a2a2a;
-  -fx-border-width: 1 0 0 0;
+  -fx-background-color: #141414;
 }
 
 /* Puppeteer record-preview dialog form */
 .puppeteer-record-form .text-field {
-  -fx-background-color: #1c1c1c;
+  -fx-background-color: #202020;
   -fx-text-fill: #f2f2f2;
   -fx-prompt-text-fill: #7c7c7c;
-  -fx-border-color: #373737;
+  -fx-border-color: #3b3b3b;
   -fx-border-radius: 4;
   -fx-background-radius: 4;
   -fx-padding: 4 8 4 8;
 }
 
 .puppeteer-record-form .text-field:focused {
-  -fx-border-color: #5a5a5a;
+  -fx-border-color: #5e5e5e;
 }
 
 .puppeteer-record-form .label {
@@ -4411,8 +4255,8 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .puppeteer-record-form .check-box .box {
-  -fx-background-color: #1c1c1c;
-  -fx-border-color: #444444;
+  -fx-background-color: #202020;
+  -fx-border-color: #484848;
   -fx-border-radius: 3;
   -fx-background-radius: 3;
 }
@@ -4422,8 +4266,8 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .puppeteer-record-form .spinner {
-  -fx-background-color: #1c1c1c;
-  -fx-border-color: #373737;
+  -fx-background-color: #202020;
+  -fx-border-color: #3b3b3b;
   -fx-border-radius: 4;
   -fx-background-radius: 4;
 }
@@ -4437,14 +4281,14 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .puppeteer-record-form .spinner .increment-arrow-button,
 .puppeteer-record-form .spinner .decrement-arrow-button {
-  -fx-background-color: #2a2a2a;
+  -fx-background-color: #2e2e2e;
   -fx-background-radius: 0;
   -fx-border-color: transparent;
 }
 
 .puppeteer-record-form .spinner .increment-arrow-button:hover,
 .puppeteer-record-form .spinner .decrement-arrow-button:hover {
-  -fx-background-color: #3a3a3a;
+  -fx-background-color: #3e3e3e;
 }
 
 .puppeteer-record-form .spinner .increment-arrow,
@@ -4453,7 +4297,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .puppeteer-record-form .progress-bar > .track {
-  -fx-background-color: #232323;
+  -fx-background-color: #272727;
   -fx-background-radius: 4;
 }
 
@@ -4467,7 +4311,7 @@ The editor.css file defines the visual styling for the editor module, including 
 /* === Puppeteer dark-theme overrides for JavaFX controls === */
 
 /* TreeView */
-.tree-view { -fx-background-color: #1a1a1a; }
+.tree-view { -fx-background-color: #1e1e1e; }
 .tree-view .tree-cell {
   -fx-background-color: transparent;
   -fx-text-fill: #e6e6e6;
@@ -4475,14 +4319,14 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-padding: 3 4;
 }
 .tree-view .tree-cell:selected {
-  -fx-background-color: #393939;
+  -fx-background-color: #3d3d3d;
   -fx-text-fill: #e6e6e6;
 }
 .tree-view .tree-cell:hover:filled {
   -fx-background-color: #222;
 }
 .tree-view .tree-cell:selected:hover {
-  -fx-background-color: #434343;
+  -fx-background-color: #474747;
 }
 .tree-view .tree-cell:empty {
   -fx-background-color: transparent;
@@ -4490,42 +4334,28 @@ The editor.css file defines the visual styling for the editor module, including 
 
 /* ComboBox */
 .combo-box {
-  -fx-background-color: #1a1a1a;
-  -fx-border-color: #3a3a3a;
   -fx-border-radius: 3;
   -fx-background-radius: 3;
 }
 .combo-box .list-cell {
   -fx-text-fill: #e6e6e6;
   -fx-font-size: 11px;
-  -fx-background-color: #1a1a1a;
-}
-.combo-box-popup .list-view {
-  -fx-background-color: #1a1a1a;
-  -fx-border-color: #3a3a3a;
 }
 .combo-box-popup .list-cell {
   -fx-text-fill: #e6e6e6;
-  -fx-background-color: #1a1a1a;
   -fx-font-size: 11px;
-}
-.combo-box-popup .list-cell:hover {
-  -fx-background-color: #393939;
-}
-.combo-box-popup .list-cell:selected {
-  -fx-background-color: #393939;
 }
 
 /* ScrollBar (dark theme) */
 .scroll-bar {
-  -fx-background-color: #1a1a1a;
+  -fx-background-color: transparent;
 }
 .scroll-bar .thumb {
-  -fx-background-color: #3a3a3a;
+  -fx-background-color: -jvn-aero-button;
   -fx-background-radius: 4;
 }
 .scroll-bar .thumb:hover {
-  -fx-background-color: #555;
+  -fx-background-color: -jvn-aero-hover;
 }
 .scroll-bar .increment-button,
 .scroll-bar .decrement-button {
@@ -4540,20 +4370,18 @@ The editor.css file defines the visual styling for the editor module, including 
 
 /* SplitPane divider */
 .split-pane > .split-pane-divider {
-  -fx-background-color: #2a2a2a;
+  -fx-background-color: #2e2e2e;
   -fx-padding: 0 1 0 1;
 }
 
 /* Main editor sidebars: easier-to-find resize rail with subtle hover glow */
 .editor-main-split-pane:horizontal > .split-pane-divider {
-  -fx-background-color: #2b2722;
   -fx-padding: 0 2 0 2;
   -fx-background-insets: 0;
 }
 
 .editor-main-split-pane:horizontal > .split-pane-divider:hover {
-  -fx-background-color: #3a3024;
-  -fx-effect: dropshadow(gaussian, rgba(232, 146, 42, 0.24), 12, 0.28, 0, 0);
+  -fx-effect: dropshadow(gaussian, -jvn-aero-focus-halo, 7, 0.25, 0, 0);
 }
 
 .editor-main-split-pane:horizontal > .split-pane-divider .sidebar-hidden-drag-arrow {
@@ -4563,13 +4391,13 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-pref-height: 16px;
   -fx-max-width: 10px;
   -fx-max-height: 16px;
-  -fx-background-color: rgba(232, 146, 42, 0.9);
-  -fx-effect: dropshadow(gaussian, rgba(232, 146, 42, 0.36), 9, 0.2, 0, 0);
+  -fx-background-color: -jvn-aero-focus;
+  -fx-effect: none;
   -fx-opacity: 0;
 }
 
 .editor-main-split-pane:horizontal > .split-pane-divider:hover .sidebar-hidden-drag-arrow {
-  -fx-background-color: rgba(245, 167, 73, 0.95);
+  -fx-background-color: -jvn-aero-focus;
 }
 
 .editor-main-split-pane:horizontal > .split-pane-divider .sidebar-hidden-drag-arrow.left {
@@ -4581,7 +4409,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .puppeteer-split-pane > .split-pane-divider {
-  -fx-background-color: #2b2722;
+  -fx-background-color: -jvn-aero-edge;
   -fx-background-insets: 0;
 }
 
@@ -4607,7 +4435,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .puppeteer-dock-slot {
-  -fx-background-color: #121212;
+  -fx-background-color: #161616;
 }
 
 .puppeteer-dock-slot.drop-target {
@@ -4618,7 +4446,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .puppeteer-dock-slot-header {
-  -fx-background-color: linear-gradient(to bottom, #24201b, #171717);
+  -fx-background-color: linear-gradient(to bottom, #24201b, #1b1b1b);
   -fx-border-color: #3b3329;
   -fx-border-width: 0 0 1 0;
   -fx-padding: 0 8 0 8;
@@ -4656,11 +4484,11 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .puppeteer-dock-slot-body {
-  -fx-background-color: #121212;
+  -fx-background-color: #161616;
 }
 
 .puppeteer-dock-slot-tab-bar {
-  -fx-background-color: #151515;
+  -fx-background-color: #191919;
   -fx-border-color: #2b241d;
   -fx-border-width: 0 0 1 0;
   -fx-padding: 3 5 3 5;
@@ -4694,7 +4522,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .puppeteer-floating-docker {
-  -fx-background-color: #121212;
+  -fx-background-color: #161616;
   -fx-border-color: #4a3726;
   -fx-border-width: 1;
   -fx-background-radius: 7;
@@ -4703,7 +4531,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .puppeteer-floating-docker-header {
-  -fx-background-color: linear-gradient(to bottom, #2a2118, #171717);
+  -fx-background-color: linear-gradient(to bottom, #2a2118, #1b1b1b);
   -fx-border-color: #4d3a27;
   -fx-border-width: 0 0 1 0;
   -fx-background-radius: 7 7 0 0;
@@ -4743,17 +4571,17 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .puppeteer-control-dock-rows {
-  -fx-background-color: #101010;
+  -fx-background-color: #141414;
   -fx-padding: 3 3 2 3;
 }
 
 .puppeteer-control-dock-row {
-  -fx-background-color: #101010;
+  -fx-background-color: #141414;
 }
 
 /* Slider */
 .slider .track {
-  -fx-background-color: #2a2a2a;
+  -fx-background-color: #2e2e2e;
   -fx-background-radius: 4;
 }
 .slider .thumb {
@@ -4764,17 +4592,17 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-background-color: #a6a6a6;
 }
 .slider:disabled .thumb {
-  -fx-background-color: #3a3a3a;
+  -fx-background-color: #3e3e3e;
 }
 .slider:disabled .track {
-  -fx-background-color: #1a1a1a;
+  -fx-background-color: #1e1e1e;
 }
 
 /* Tooltip */
 .tooltip {
   -fx-background-color: #222;
   -fx-text-fill: #e6e6e6;
-  -fx-border-color: #3a3a3a;
+  -fx-border-color: #3e3e3e;
   -fx-border-radius: 4;
   -fx-background-radius: 4;
   -fx-font-size: 11px;
@@ -4795,10 +4623,6 @@ The editor.css file defines the visual styling for the editor module, including 
 .preview-toolbar-icon-menu > .arrow-button > .arrow {
   -fx-background-color: transparent;
 }
-.context-menu {
-  -fx-background-color: #1e1e1e;
-  -fx-border-color: #3a3a3a;
-}
 .context-menu .menu-item {
   -fx-background-color: transparent;
 }
@@ -4806,12 +4630,8 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-text-fill: #e6e6e6;
   -fx-font-size: 11px;
 }
-.context-menu .menu-item:hover,
-.context-menu .menu-item:focused {
-  -fx-background-color: #393939;
-}
 .context-menu .separator .line {
-  -fx-border-color: #2a2a2a;
+  -fx-border-color: #2e2e2e;
 }
 
 /* TitledPane dark theme for layout studio collapsible sections */
@@ -4819,50 +4639,39 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-text-fill: #e6e6e6;
 }
 .titled-pane > .title {
-  -fx-background-color: #1a1a1a;
-  -fx-border-color: #2a2a2a;
+  -fx-background-color: #1e1e1e;
+  -fx-border-color: #2e2e2e;
   -fx-border-width: 0 0 1 0;
 }
 .titled-pane > .title > .arrow-button .arrow {
   -fx-background-color: #a0a0a0;
 }
 .titled-pane > .title:hover {
-  -fx-background-color: #222222;
+  -fx-background-color: #262626;
 }
 .titled-pane > *.content {
-  -fx-background-color: #121212;
-  -fx-border-color: #2a2a2a;
+  -fx-background-color: #161616;
+  -fx-border-color: #2e2e2e;
   -fx-border-width: 0 0 1 0;
 }
 
 /* ColorPicker dark theme */
 .color-picker {
-  -fx-background-color: #2a2a2a;
-  -fx-border-color: #3a3a3a;
+  -fx-background-color: #2e2e2e;
+  -fx-border-color: #3e3e3e;
 }
 .color-picker > .label {
   -fx-text-fill: #e6e6e6;
 }
 
 /* Welcome center */
-.welcome-center-root {
-  -fx-background-color:
-      linear-gradient(to bottom, rgba(255,255,255,0.015), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #101010 0%, #0b0b0b 100%);
-}
 
 .welcome-center-body {
   -fx-spacing: 12;
 }
 
 .welcome-hero-card {
-  -fx-background-color:
-      linear-gradient(to bottom, rgba(255,255,255,0.025), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #171717 0%, #121212 100%);
-  -fx-border-color: #2b2b2b;
   -fx-border-width: 1;
-  -fx-border-radius: 14;
-  -fx-background-radius: 14;
 }
 
 .welcome-heading {
@@ -4878,7 +4687,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .welcome-status-text {
-  -fx-text-fill: #6e6e6e;
+  -fx-text-fill: -jvn-aero-muted;
   -fx-font-size: 10px;
   -fx-font-weight: 700;
 }
@@ -4888,21 +4697,19 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-font-size: 10px;
   -fx-font-weight: 800;
   -fx-padding: 4 9 4 9;
-  -fx-background-color: #171717;
-  -fx-border-color: #323232;
+  -fx-background-color: #1b1b1b;
+  -fx-border-color: #363636;
   -fx-background-radius: 999;
   -fx-border-radius: 999;
 }
 
 .editor-workspace-panel {
-  -fx-background-color:
-      linear-gradient(to bottom, rgba(255,255,255,0.028), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #171717 0%, #111111 100%);
-  -fx-border-color: #303030;
+  -fx-background-color: -jvn-aero-chrome;
+  -fx-border-color: -jvn-aero-edge;
   -fx-border-width: 1 1 1 3;
   -fx-border-insets: 0;
-  -fx-border-radius: 10;
-  -fx-background-radius: 10;
+  -fx-border-radius: 4;
+  -fx-background-radius: 4;
 }
 
 .editor-workspace-title-block {
@@ -4910,7 +4717,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .editor-workspace-kicker {
-  -fx-text-fill: #b77a3c;
+  -fx-text-fill: -jvn-aero-muted;
   -fx-font-size: 10px;
   -fx-font-weight: 900;
 }
@@ -4948,8 +4755,8 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .editor-workspace-health-info {
   -fx-text-fill: #c9c9c9;
-  -fx-background-color: #222222;
-  -fx-border-color: #424242;
+  -fx-background-color: #262626;
+  -fx-border-color: #464646;
 }
 
 .editor-workspace-summary-grid {
@@ -4958,11 +4765,11 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .editor-workspace-context-panel {
   -fx-padding: 16;
-  -fx-background-color: rgba(255,255,255,0.018);
-  -fx-border-color: #292929;
+  -fx-background-color: -jvn-aero-field;
+  -fx-border-color: -jvn-aero-edge;
   -fx-border-width: 1;
-  -fx-border-radius: 10;
-  -fx-background-radius: 10;
+  -fx-border-radius: 4;
+  -fx-background-radius: 4;
 }
 
 .editor-workspace-context-title {
@@ -4974,7 +4781,7 @@ The editor.css file defines the visual styling for the editor module, including 
 .editor-workspace-summary-card {
   -fx-padding: 8 12 8 12;
   -fx-background-color: transparent;
-  -fx-border-color: transparent transparent transparent #3a3a3a;
+  -fx-border-color: transparent transparent transparent #3e3e3e;
   -fx-border-width: 0 0 0 2;
 }
 
@@ -5002,11 +4809,11 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .editor-workspace-setup-panel {
   -fx-padding: 14 16 14 16;
-  -fx-background-color: linear-gradient(to bottom, #171717, #121212);
-  -fx-border-color: #303030;
+  -fx-background-color: -jvn-aero-surface;
+  -fx-border-color: -jvn-aero-edge;
   -fx-border-width: 1 1 1 3;
-  -fx-border-radius: 10;
-  -fx-background-radius: 10;
+  -fx-border-radius: 4;
+  -fx-background-radius: 4;
 }
 
 .editor-workspace-setup-title {
@@ -5023,8 +4830,8 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .editor-workspace-setup-item {
   -fx-padding: 9 10 9 10;
-  -fx-background-color: #141414;
-  -fx-border-color: #2a2a2a;
+  -fx-background-color: #181818;
+  -fx-border-color: #2e2e2e;
   -fx-border-radius: 8;
   -fx-background-radius: 8;
 }
@@ -5052,8 +4859,8 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .editor-workspace-setup-info {
   -fx-text-fill: #c9c9c9;
-  -fx-background-color: #222222;
-  -fx-border-color: #424242;
+  -fx-background-color: #262626;
+  -fx-border-color: #464646;
 }
 
 .editor-workspace-setup-item-title {
@@ -5081,12 +4888,7 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .welcome-overview-card {
   -fx-padding: 12 14 12 14;
-  -fx-background-color:
-      linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #121212 0%, #0f0f0f 100%);
-  -fx-border-color: #2a2a2a;
-  -fx-background-radius: 12;
-  -fx-border-radius: 12;
+
   -fx-border-width: 1;
   -fx-min-height: 88;
 }
@@ -5127,7 +4929,7 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .welcome-health-toggle-button {
   -fx-background-color: transparent;
-  -fx-border-color: #343434;
+  -fx-border-color: #383838;
   -fx-border-width: 1;
   -fx-border-radius: 999;
   -fx-background-radius: 999;
@@ -5139,8 +4941,8 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .welcome-health-toggle-button:hover {
-  -fx-background-color: #1e1e1e;
-  -fx-border-color: #565656;
+  -fx-background-color: #222222;
+  -fx-border-color: #5a5a5a;
   -fx-text-fill: #ededed;
 }
 
@@ -5158,8 +4960,8 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-padding: 14;
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #121212 0%, #0d0d0d 100%);
-  -fx-border-color: #333333;
+      linear-gradient(to bottom, #161616 0%, #111111 100%);
+  -fx-border-color: #373737;
   -fx-border-width: 1;
   -fx-border-radius: 10;
   -fx-background-radius: 10;
@@ -5174,7 +4976,7 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .welcome-health-popup-close {
   -fx-background-color: transparent;
-  -fx-border-color: #3f3f3f;
+  -fx-border-color: #434343;
   -fx-border-width: 1;
   -fx-border-radius: 999;
   -fx-background-radius: 999;
@@ -5186,8 +4988,8 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .welcome-health-popup-close:hover {
-  -fx-background-color: #222222;
-  -fx-border-color: #5a5a5a;
+  -fx-background-color: #262626;
+  -fx-border-color: #5e5e5e;
   -fx-text-fill: #f0f0f0;
 }
 
@@ -5206,35 +5008,11 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-font-size: 11px;
   -fx-font-weight: 800;
   -fx-padding: 0 14 0 14;
-  -fx-background-radius: 10;
-  -fx-border-radius: 10;
-  -fx-border-width: 1;
+
   -fx-content-display: left;
   -fx-graphic-text-gap: 8;
   -fx-alignment: center-left;
   -fx-cursor: hand;
-}
-
-.welcome-action-button-primary {
-  -fx-background-color: linear-gradient(to bottom, #4a4a4a, #373737);
-  -fx-text-fill: #f4f4f4;
-  -fx-border-color: #7d7d7d;
-}
-
-.welcome-action-button-primary:hover {
-  -fx-background-color: linear-gradient(to bottom, #565656, #404040);
-  -fx-border-color: #969696;
-}
-
-.welcome-action-button-secondary {
-  -fx-background-color: linear-gradient(to bottom, #262626, #1c1c1c);
-  -fx-text-fill: #dddddd;
-  -fx-border-color: #3a3a3a;
-}
-
-.welcome-action-button-secondary:hover {
-  -fx-background-color: linear-gradient(to bottom, #303030, #222222);
-  -fx-border-color: #575757;
 }
 
 .welcome-action-button-primary:disabled,
@@ -5243,8 +5021,8 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .welcome-settings-button {
-  -fx-background-color: linear-gradient(to bottom, #262626, #1c1c1c);
-  -fx-border-color: #3a3a3a;
+  -fx-background-color: linear-gradient(to bottom, #2a2a2a, #202020);
+  -fx-border-color: #3e3e3e;
   -fx-border-width: 1;
   -fx-background-radius: 10;
   -fx-border-radius: 10;
@@ -5253,8 +5031,8 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .welcome-settings-button:hover {
-  -fx-background-color: linear-gradient(to bottom, #303030, #222222);
-  -fx-border-color: #575757;
+  -fx-background-color: linear-gradient(to bottom, #343434, #262626);
+  -fx-border-color: #5b5b5b;
 }
 
 .welcome-settings-button:disabled {
@@ -5264,8 +5042,8 @@ The editor.css file defines the visual styling for the editor module, including 
 .welcome-section-card {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #131313 0%, #0f0f0f 100%);
-  -fx-border-color: #2a2a2a;
+      linear-gradient(to bottom, #171717 0%, #131313 100%);
+  -fx-border-color: #2e2e2e;
   -fx-border-width: 1;
   -fx-border-radius: 14;
   -fx-background-radius: 14;
@@ -5284,10 +5062,10 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .welcome-filter-field {
-  -fx-background-color: #101010;
+  -fx-background-color: #141414;
   -fx-text-fill: #dfdfdf;
   -fx-prompt-text-fill: #5d5d5d;
-  -fx-border-color: #303030;
+  -fx-border-color: #343434;
   -fx-border-radius: 10;
   -fx-background-radius: 10;
   -fx-font-size: 12px;
@@ -5295,12 +5073,12 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .welcome-filter-field:focused {
-  -fx-background-color: #141414;
+  -fx-background-color: #181818;
   -fx-border-color: #7a7a7a;
 }
 
 .new-project-wizard-root {
-  -fx-background-color: #0f0f0f;
+  -fx-background-color: #131313;
 }
 
 .new-project-wizard-header {
@@ -5336,7 +5114,7 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .new-project-wizard-section .separator .line,
 .new-project-wizard-footer .separator .line {
-  -fx-border-color: #2a2a2a;
+  -fx-border-color: #2e2e2e;
 }
 
 .new-project-wizard-form-label {
@@ -5361,8 +5139,8 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-padding: 8 10 8 10;
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #151515 0%, #111111 100%);
-  -fx-border-color: #2d2d2d;
+      linear-gradient(to bottom, #191919 0%, #151515 100%);
+  -fx-border-color: #313131;
   -fx-border-width: 1;
   -fx-border-radius: 8;
   -fx-background-radius: 8;
@@ -5394,8 +5172,8 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .text-area.new-project-wizard-preview,
 .text-area.new-project-wizard-description {
-  -fx-background-color: #111111;
-  -fx-border-color: #2d2d2d;
+  -fx-background-color: #151515;
+  -fx-border-color: #313131;
   -fx-border-width: 1;
   -fx-border-radius: 8;
   -fx-background-radius: 8;
@@ -5409,7 +5187,7 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .text-area.new-project-wizard-preview .content,
 .text-area.new-project-wizard-description .content {
-  -fx-background-color: #111111;
+  -fx-background-color: #151515;
   -fx-background-radius: 8;
 }
 
@@ -5421,8 +5199,8 @@ The editor.css file defines the visual styling for the editor module, including 
 .new-project-wizard-structure-tree {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #111111 0%, #0d0d0d 100%);
-  -fx-border-color: #2d2d2d;
+      linear-gradient(to bottom, #151515 0%, #111111 100%);
+  -fx-border-color: #313131;
   -fx-border-width: 1;
   -fx-border-radius: 8;
   -fx-background-radius: 8;
@@ -5443,7 +5221,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .new-project-wizard-structure-tree .tree-cell:selected {
-  -fx-background-color: linear-gradient(to bottom, #313131, #272727);
+  -fx-background-color: linear-gradient(to bottom, #353535, #2b2b2b);
   -fx-background-radius: 9;
 }
 
@@ -5476,8 +5254,8 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .new-project-wizard-checkbox .box {
-  -fx-background-color: #151515;
-  -fx-border-color: #343434;
+  -fx-background-color: #191919;
+  -fx-border-color: #383838;
   -fx-border-radius: 4;
   -fx-background-radius: 4;
 }
@@ -5487,15 +5265,15 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .new-project-wizard-spinner {
-  -fx-background-color: #121212;
-  -fx-border-color: #303030;
+  -fx-background-color: #161616;
+  -fx-border-color: #343434;
   -fx-border-width: 1;
   -fx-border-radius: 8;
   -fx-background-radius: 8;
 }
 
 .new-project-wizard-spinner .text-field {
-  -fx-background-color: #121212;
+  -fx-background-color: #161616;
   -fx-text-fill: #ededed;
   -fx-prompt-text-fill: #707070;
   -fx-background-radius: 8 0 0 8;
@@ -5504,7 +5282,7 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .new-project-wizard-spinner .increment-arrow-button,
 .new-project-wizard-spinner .decrement-arrow-button {
-  -fx-background-color: #1a1a1a;
+  -fx-background-color: #1e1e1e;
   -fx-background-radius: 0 8 8 0;
 }
 
@@ -5521,8 +5299,8 @@ The editor.css file defines the visual styling for the editor module, including 
 .new-project-wizard-footer {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #121212 0%, #101010 100%);
-  -fx-border-color: #2a2a2a;
+      linear-gradient(to bottom, #161616 0%, #141414 100%);
+  -fx-border-color: #2e2e2e;
   -fx-border-width: 1 0 0 0;
 }
 
@@ -5581,29 +5359,12 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .welcome-project-cell {
   -fx-padding: 12 14 12 14;
-  -fx-background-color:
-      linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #121212 0%, #101010 100%);
-  -fx-border-color: #292929;
+
   -fx-border-width: 1;
-  -fx-background-radius: 12;
-  -fx-border-radius: 12;
 }
 
 .welcome-project-list .list-cell:hover .welcome-project-cell {
-  -fx-background-color:
-      radial-gradient(center 8% 94%, radius 84%, rgba(230, 140, 58, 0.32) 0%, rgba(230, 140, 58, 0.16) 26%, rgba(230, 140, 58, 0.05) 48%, rgba(230, 140, 58, 0.0) 72%),
-      linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #151515 0%, #111111 100%);
-  -fx-border-color: #3c3c3c;
-}
-
-.welcome-project-list .list-cell:selected .welcome-project-cell {
-  -fx-background-color:
-      radial-gradient(center 8% 94%, radius 86%, rgba(230, 140, 58, 0.36) 0%, rgba(230, 140, 58, 0.18) 27%, rgba(230, 140, 58, 0.06) 50%, rgba(230, 140, 58, 0.0) 74%),
-      linear-gradient(to bottom, rgba(255,255,255,0.035), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #171717 0%, #121212 100%);
-  -fx-border-color: #525252;
+  -fx-border-color: #404040;
 }
 
 .welcome-project-name {
@@ -5613,13 +5374,13 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .welcome-project-path {
-  -fx-text-fill: #8b8b8b;
+  -fx-text-fill: -jvn-aero-muted;
   -fx-font-size: 11px;
   -fx-font-weight: 600;
 }
 
 .welcome-project-time {
-  -fx-text-fill: #6f6f6f;
+  -fx-text-fill: -jvn-aero-muted;
   -fx-font-size: 10px;
   -fx-font-weight: 700;
 }
@@ -5635,8 +5396,8 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .welcome-project-badge-current {
   -fx-text-fill: #e6e6e6;
-  -fx-background-color: #262626;
-  -fx-border-color: #4d4d4d;
+  -fx-background-color: #2a2a2a;
+  -fx-border-color: #515151;
 }
 
 .welcome-project-badge-current-icon {
@@ -5666,14 +5427,14 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .welcome-project-badge-tracked {
   -fx-text-fill: #d8d8d8;
-  -fx-background-color: #242424;
-  -fx-border-color: #454545;
+  -fx-background-color: #282828;
+  -fx-border-color: #494949;
 }
 
 .welcome-open-button {
-  -fx-background-color: linear-gradient(to bottom, #252525, #1b1b1b);
+  -fx-background-color: linear-gradient(to bottom, #292929, #1f1f1f);
   -fx-text-fill: #dfdfdf;
-  -fx-border-color: #3b3b3b;
+  -fx-border-color: #3f3f3f;
   -fx-border-radius: 999;
   -fx-background-radius: 999;
   -fx-padding: 4 8 4 8;
@@ -5686,8 +5447,8 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .welcome-open-button:hover {
-  -fx-background-color: linear-gradient(to bottom, #2f2f2f, #222222);
-  -fx-border-color: #565656;
+  -fx-background-color: linear-gradient(to bottom, #333333, #262626);
+  -fx-border-color: #5a5a5a;
 }
 
 .welcome-open-button:disabled {
@@ -5703,8 +5464,8 @@ The editor.css file defines the visual styling for the editor module, including 
 .welcome-health-card {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #121212 0%, #101010 100%);
-  -fx-border-color: #2a2a2a;
+      linear-gradient(to bottom, #161616 0%, #141414 100%);
+  -fx-border-color: #2e2e2e;
   -fx-border-width: 1;
   -fx-border-radius: 12;
   -fx-background-radius: 12;
@@ -5734,8 +5495,8 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-padding: 10 12 10 12;
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.018), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #111111 0%, #0e0e0e 100%);
-  -fx-border-color: #272727;
+      linear-gradient(to bottom, #151515 0%, #121212 100%);
+  -fx-border-color: #2b2b2b;
   -fx-border-width: 1;
   -fx-border-radius: 10;
   -fx-background-radius: 10;
@@ -5754,12 +5515,12 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .welcome-spotlight-link-button {
-  -fx-background-color: linear-gradient(to bottom, #262626, #1c1c1c);
+  -fx-background-color: linear-gradient(to bottom, #2a2a2a, #202020);
   -fx-text-fill: #dddddd;
   -fx-font-size: 10px;
   -fx-font-weight: 800;
   -fx-padding: 4 10 4 10;
-  -fx-border-color: #3a3a3a;
+  -fx-border-color: #3e3e3e;
   -fx-border-width: 1;
   -fx-border-radius: 999;
   -fx-background-radius: 999;
@@ -5767,8 +5528,8 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .welcome-spotlight-link-button:hover {
-  -fx-background-color: linear-gradient(to bottom, #303030, #222222);
-  -fx-border-color: #575757;
+  -fx-background-color: linear-gradient(to bottom, #343434, #262626);
+  -fx-border-color: #5b5b5b;
 }
 
 .welcome-spotlight-link-button:disabled {
@@ -5786,8 +5547,8 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .welcome-health-badge-ok {
   -fx-text-fill: #d8d8d8;
-  -fx-background-color: #262626;
-  -fx-border-color: #4b4b4b;
+  -fx-background-color: #2a2a2a;
+  -fx-border-color: #4f4f4f;
 }
 
 .welcome-health-badge-warn {
@@ -5804,8 +5565,8 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .welcome-health-badge-info {
   -fx-text-fill: #bfbfbf;
-  -fx-background-color: #222222;
-  -fx-border-color: #444444;
+  -fx-background-color: #262626;
+  -fx-border-color: #484848;
 }
 
 .welcome-placeholder-text {
@@ -5825,19 +5586,14 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .welcome-center-split > .split-pane-divider > .vertical-grabber {
-  -fx-background-color: #2c2c2c;
+  -fx-background-color: #303030;
   -fx-background-radius: 999;
 }
 
 /* Sidebar tab panes */
-.sidebar-tab-pane > .tab-header-area,
-.sidebar-tab-pane > .tab-header-area > .tab-header-background {
-  -fx-background-color: #171717;
-}
 
 .sidebar-tab-pane > .tab-header-area {
   -fx-padding: 4 8 0 8;
-  -fx-border-color: #2b2b2b;
   -fx-border-width: 0 0 1 0;
 }
 
@@ -5857,12 +5613,8 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .sidebar-tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button {
-  -fx-background-color: #232323;
   -fx-background-insets: 0;
-  -fx-background-radius: 8 8 0 0;
-  -fx-border-color: #383838;
   -fx-border-width: 1 1 0 1;
-  -fx-border-radius: 8 8 0 0;
   -fx-padding: 0 8 0 8;
   -fx-min-width: 34px;
   -fx-pref-width: 34px;
@@ -5871,19 +5623,7 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-cursor: hand;
 }
 
-.sidebar-tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button:hover {
-  -fx-background-color: #2b2b2b;
-  -fx-border-color: #4a4a4a;
-}
-
-.sidebar-tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button:pressed,
-.sidebar-tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button:showing {
-  -fx-background-color: linear-gradient(to bottom, #2c2723 0%, #25211d 55%, #1f1c19 100%);
-  -fx-border-color: #8d6c4f #715740 transparent #715740;
-}
-
 .sidebar-tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button > .arrow {
-  -fx-background-color: #dfd3c6;
   -fx-background-insets: 0;
   -fx-padding: 4 5 4 5;
   -fx-shape: "M0 0 L8 0 L4 5 Z";
@@ -5891,30 +5631,10 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .sidebar-tab-pane .tab {
-  -fx-background-color: #232323;
   -fx-background-insets: 0;
-  -fx-background-radius: 8 8 0 0;
   -fx-padding: 0 4 0 10;
-  -fx-border-color: #383838;
   -fx-border-width: 1 1 0 1;
-  -fx-border-radius: 8 8 0 0;
   -fx-cursor: hand;
-}
-
-.sidebar-tab-pane .tab:hover {
-  -fx-background-color: #2b2b2b;
-  -fx-border-color: #4a4a4a;
-}
-
-.sidebar-tab-pane .tab:selected {
-  -fx-background-color: linear-gradient(to bottom, #2c2723 0%, #25211d 55%, #1f1c19 100%);
-  -fx-border-color: #8d6c4f #715740 transparent #715740;
-  -fx-effect: none;
-}
-
-.sidebar-tab-pane .tab:selected:hover {
-  -fx-background-color: linear-gradient(to bottom, #312b26 0%, #29231f 55%, #221e1b 100%);
-  -fx-border-color: #9a7656 #7a5f46 transparent #7a5f46;
 }
 
 .sidebar-tab-pane .tab .tab-container {
@@ -5930,36 +5650,12 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-border-width: 0;
 }
 
-.sidebar-tab-pane .tab:selected .focus-indicator {
-  -fx-border-color: transparent;
-}
-
-.sidebar-tab-pane .tab .tab-close-button {
-  -fx-opacity: 0;
-  -fx-padding: 0;
-  -fx-min-width: 14px;
-  -fx-pref-width: 14px;
-  -fx-max-width: 14px;
-  -fx-min-height: 14px;
-  -fx-pref-height: 14px;
-  -fx-max-height: 14px;
-  -fx-background-color: #888888;
-  -fx-background-insets: 0;
-  -fx-background-radius: 4;
-  -fx-shape: "M2 0 L5 3 L8 0 L10 2 L7 5 L10 8 L8 10 L5 7 L2 10 L0 8 L3 5 L0 2 Z";
-}
-
 .sidebar-tab-pane .tab .tab-label {
   -fx-padding: 0 14 0 0;
   -fx-text-fill: #c2c2c2;
   -fx-font-size: 12px;
   -fx-font-weight: 600;
   -fx-graphic-text-gap: 8px;
-}
-
-.sidebar-tab-pane .tab:hover .tab-close-button,
-.sidebar-tab-pane .tab:selected .tab-close-button {
-  -fx-opacity: 0.5;
 }
 
 .sidebar-tab-pane .tab:hover .tab-label {
@@ -5973,11 +5669,6 @@ The editor.css file defines the visual styling for the editor module, including 
 .sidebar-tab-pane .tab:hover .sidebar-tab-icon,
 .sidebar-tab-pane .tab:selected .sidebar-tab-icon {
   -fx-opacity: 1;
-}
-
-.sidebar-tab-pane .tab .tab-close-button:hover {
-  -fx-opacity: 1;
-  -fx-background-color: #c0c0c0;
 }
 
 /* Full Aero icons provide their own dimensional surface and hover feedback. */
@@ -5998,11 +5689,6 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .button.aero-icon-button:pressed {
   -fx-opacity: 0.92;
-}
-
-.sidebar-tab-pane .tab .tab-close-button:pressed {
-  -fx-opacity: 1;
-  -fx-background-color: #f06070;
 }
 
 .sidebar-tab-pane .tab.sidebar-add-tab {
@@ -6142,15 +5828,15 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .panel-chooser-row {
-  -fx-background-color: #222222;
+  -fx-background-color: #262626;
   -fx-background-radius: 6;
-  -fx-border-color: #2c2c2c;
+  -fx-border-color: #303030;
   -fx-border-radius: 6;
 }
 
 .panel-chooser-row:hover {
-  -fx-background-color: #292929;
-  -fx-border-color: #3b3b3b;
+  -fx-background-color: #2d2d2d;
+  -fx-border-color: #3f3f3f;
 }
 
 .panel-chooser-maintenance-shell {
@@ -6160,14 +5846,14 @@ The editor.css file defines the visual styling for the editor module, including 
 .panel-chooser-row-maintenance {
   -fx-background-color:
       linear-gradient(to right, rgba(255, 130, 0, 0.10), rgba(34, 34, 34, 0.92)),
-      #222222;
+      #262626;
   -fx-border-color: rgba(255, 130, 0, 0.48);
 }
 
 .panel-chooser-row-maintenance:hover {
   -fx-background-color:
       linear-gradient(to right, rgba(255, 130, 0, 0.15), rgba(41, 41, 41, 0.94)),
-      #292929;
+      #2d2d2d;
   -fx-border-color: rgba(255, 130, 0, 0.70);
 }
 
@@ -6282,10 +5968,10 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .panel-chooser-filter {
-  -fx-background-color: #171717;
+  -fx-background-color: #1b1b1b;
   -fx-text-fill: #e6e6e6;
   -fx-prompt-text-fill: #737373;
-  -fx-border-color: #333333;
+  -fx-border-color: #373737;
   -fx-background-radius: 6;
   -fx-border-radius: 6;
 }
@@ -6303,7 +5989,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .panel-chooser-placement-hidden {
-  -fx-background-color: #4a4a4a;
+  -fx-background-color: #4e4e4e;
 }
 
 .panel-chooser-placement-left {
@@ -6315,56 +6001,56 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .editor-settings-view {
-  -fx-background-color: #0f0f0f;
+  -fx-background-color: #131313;
   -fx-padding: 0;
 }
 
 .editor-settings-toolbar {
-  -fx-background-color: #121212;
-  -fx-border-color: #2a2a2a;
+  -fx-background-color: #161616;
+  -fx-border-color: #2e2e2e;
   -fx-border-width: 0 0 1 0;
   -fx-padding: 8 10 8 10;
 }
 
 .editor-settings-toolbar > .container {
-  -fx-background-color: #121212;
+  -fx-background-color: #161616;
 }
 
 .editor-settings-content {
-  -fx-background-color: #0f0f0f;
+  -fx-background-color: #131313;
   -fx-padding: 12;
 }
 
 .editor-settings-scroll {
-  -fx-background: #0f0f0f;
-  -fx-background-color: #0f0f0f;
+  -fx-background: #131313;
+  -fx-background-color: #131313;
   -fx-border-color: transparent;
 }
 
 .editor-settings-scroll > .viewport {
-  -fx-background-color: #0f0f0f;
+  -fx-background-color: #131313;
 }
 
 .editor-settings-scroll > .corner {
-  -fx-background-color: #0f0f0f;
+  -fx-background-color: #131313;
 }
 
 .editor-settings-button {
-  -fx-background-color: linear-gradient(to bottom, #262626, #1c1c1c);
+  -fx-background-color: linear-gradient(to bottom, #2a2a2a, #202020);
   -fx-text-fill: #dfdfdf;
-  -fx-border-color: #383838;
+  -fx-border-color: #3c3c3c;
   -fx-border-radius: 8;
   -fx-background-radius: 8;
   -fx-padding: 6 14 6 14;
 }
 
 .editor-settings-button:hover {
-  -fx-background-color: linear-gradient(to bottom, #303030, #222222);
-  -fx-border-color: #575757;
+  -fx-background-color: linear-gradient(to bottom, #343434, #262626);
+  -fx-border-color: #5b5b5b;
 }
 
 .editor-settings-button:pressed {
-  -fx-background-color: linear-gradient(to bottom, #1b1b1b, #121212);
+  -fx-background-color: linear-gradient(to bottom, #1f1f1f, #161616);
 }
 
 .editor-settings-header {
@@ -6381,8 +6067,8 @@ The editor.css file defines the visual styling for the editor module, including 
 .editor-settings-section {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.018), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #131313 0%, #101010 100%);
-  -fx-border-color: #2b2b2b;
+      linear-gradient(to bottom, #171717 0%, #141414 100%);
+  -fx-border-color: #2f2f2f;
   -fx-border-radius: 8;
   -fx-background-radius: 8;
   -fx-padding: 12;
@@ -6402,8 +6088,8 @@ The editor.css file defines the visual styling for the editor module, including 
 .editor-settings-status {
   -fx-text-fill: #a7a7a7;
   -fx-font-size: 11px;
-  -fx-background-color: #121212;
-  -fx-border-color: #2a2a2a;
+  -fx-background-color: #161616;
+  -fx-border-color: #2e2e2e;
   -fx-border-width: 1 0 0 0;
   -fx-padding: 8 12 8 12;
 }
@@ -6413,7 +6099,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .vn-settings-editor-view {
-  -fx-background-color: #0f0f0f;
+  -fx-background-color: #131313;
 }
 
 .vn-settings-editor-grid {
@@ -6421,7 +6107,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .vn-settings-editor-slider .track {
-  -fx-background-color: #2e2e2e;
+  -fx-background-color: #323232;
   -fx-background-radius: 999;
   -fx-pref-height: 4;
 }
@@ -6443,24 +6129,24 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .editor-settings-view .spinner {
-  -fx-background-color: #1c1c1c;
-  -fx-border-color: #373737;
+  -fx-background-color: #202020;
+  -fx-border-color: #3b3b3b;
   -fx-border-radius: 6;
   -fx-background-radius: 6;
 }
 
 .editor-settings-view .spinner .text-field {
-  -fx-background-color: #1c1c1c;
+  -fx-background-color: #202020;
   -fx-text-fill: #f2f2f2;
   -fx-prompt-text-fill: #7c7c7c;
   -fx-background-radius: 6 0 0 6;
 }
 
 .editor-settings-text-field {
-  -fx-background-color: #1c1c1c;
+  -fx-background-color: #202020;
   -fx-text-fill: #f2f2f2;
   -fx-prompt-text-fill: #7c7c7c;
-  -fx-border-color: #373737;
+  -fx-border-color: #3b3b3b;
   -fx-border-radius: 6;
   -fx-background-radius: 6;
 }
@@ -6475,7 +6161,7 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .editor-settings-view .spinner .increment-arrow-button,
 .editor-settings-view .spinner .decrement-arrow-button {
-  -fx-background-color: #282828;
+  -fx-background-color: #2c2c2c;
   -fx-background-radius: 0;
 }
 
@@ -6489,8 +6175,8 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .editor-settings-view .check-box .box {
-  -fx-background-color: #1c1c1c;
-  -fx-border-color: #373737;
+  -fx-background-color: #202020;
+  -fx-border-color: #3b3b3b;
   -fx-border-radius: 4;
   -fx-background-radius: 4;
 }
@@ -6500,19 +6186,19 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .editor-settings-view .combo-box {
-  -fx-background-color: #1c1c1c;
-  -fx-border-color: #373737;
+  -fx-background-color: #202020;
+  -fx-border-color: #3b3b3b;
   -fx-border-radius: 6;
   -fx-background-radius: 6;
 }
 
 .editor-settings-view .combo-box .list-cell {
-  -fx-background-color: #1c1c1c;
+  -fx-background-color: #202020;
   -fx-text-fill: #f2f2f2;
 }
 
 .editor-settings-view .combo-box .arrow-button {
-  -fx-background-color: #282828;
+  -fx-background-color: #2c2c2c;
   -fx-background-radius: 0 6 6 0;
 }
 
@@ -6521,18 +6207,18 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .editor-settings-view .combo-box-popup > .list-view {
-  -fx-background-color: #1c1c1c;
-  -fx-border-color: #373737;
+  -fx-background-color: #202020;
+  -fx-border-color: #3b3b3b;
 }
 
 .editor-settings-view .combo-box-popup > .list-view .list-cell {
-  -fx-background-color: #1c1c1c;
+  -fx-background-color: #202020;
   -fx-text-fill: #f2f2f2;
 }
 
 .editor-settings-view .combo-box-popup > .list-view .list-cell:hover,
 .editor-settings-view .combo-box-popup > .list-view .list-cell:filled:selected {
-  -fx-background-color: #2f2f2f;
+  -fx-background-color: #333333;
   -fx-text-fill: #f2f2f2;
 }
 
@@ -6545,42 +6231,19 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 /* Selection occurrence highlight */
-.code-area .sel-highlight {
-  -fx-fill: #e6e6e6;
-  -rtfx-background-color: rgba(151, 151, 151, 0.25);
-}
 
 /* Standalone launcher */
-.jvn-launcher-root {
-  -fx-background-color: linear-gradient(to bottom, #151515 0%, #101010 100%);
-}
 
 .jvn-launcher-menubar {
   -fx-padding: 2 10 2 10;
-  -fx-background-color: linear-gradient(to bottom, #131313 0%, #0f0f0f 100%);
-  -fx-border-color: transparent transparent #2f2f2f transparent;
+  -fx-border-color: transparent transparent #333333 transparent;
   -fx-border-width: 0 0 1 0;
-}
-
-.jvn-launcher-menubar .menu-button {
-  -fx-background-radius: 6;
-}
-
-.jvn-launcher-menubar .menu-button:hover,
-.jvn-launcher-menubar .menu-button:focused,
-.jvn-launcher-menubar .menu-button:showing {
-  -fx-background-color: #2a2a2a;
 }
 
 .jvn-launcher-header {
   -fx-padding: 10 12 10 12;
-  -fx-background-color:
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.0)),
-      linear-gradient(to bottom, #181818 0%, #131313 100%);
-  -fx-border-color: #2f2f2f;
+
   -fx-border-width: 1;
-  -fx-background-radius: 14;
-  -fx-border-radius: 14;
 }
 
 .jvn-launcher-title {
@@ -6597,7 +6260,7 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .jvn-launcher-workspace,
 .jvn-launcher-project {
-  -fx-text-fill: #8a8a8a;
+  -fx-text-fill: -jvn-aero-muted;
   -fx-font-size: 11px;
   -fx-font-weight: 600;
 }
@@ -6607,43 +6270,13 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-content-display: left;
   -fx-graphic-text-gap: 7;
   -fx-padding: 0 12 0 12;
-  -fx-background-color: linear-gradient(to bottom, #2a2a2a, #212121);
-  -fx-border-color: #4a4a4a;
-  -fx-border-width: 1;
-  -fx-background-radius: 10;
-  -fx-border-radius: 10;
-  -fx-text-fill: #e2e2e2;
+
   -fx-font-size: 12px;
   -fx-font-weight: 700;
 }
 
-.jvn-launcher-action-button:hover {
-  -fx-background-color: linear-gradient(to bottom, #353535, #282828);
-  -fx-border-color: #626262;
-}
-
-.jvn-launcher-action-button:pressed {
-  -fx-background-color: linear-gradient(to bottom, #202020, #181818);
-  -fx-border-color: #4f4f4f;
-}
-
-.jvn-launcher-action-button-primary {
-  -fx-background-color: linear-gradient(to bottom, #3a2a1a, #2c2016);
-  -fx-border-color: #8e673e;
-}
-
-.jvn-launcher-action-button-primary:hover {
-  -fx-background-color: linear-gradient(to bottom, #46311d, #332418);
-  -fx-border-color: #ab7b49;
-}
-
 .jvn-launcher-theme-button {
   -fx-padding: 0 11 0 11;
-}
-
-.jvn-launcher-status-bar {
-  -fx-border-color: #2b2b2b transparent transparent transparent;
-  -fx-border-width: 1 0 0 0;
 }
 
 .jvn-launcher-status {
@@ -6653,20 +6286,11 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 /* Application status bar */
-.jvn-status-bar {
-  -fx-background-color: #191919;
-  -fx-border-color: #303030 transparent transparent transparent;
-  -fx-border-width: 1 0 0 0;
-}
 
 .jvn-status-segment {
   -fx-padding: 0 7 0 7;
   -fx-min-height: 24px;
   -fx-alignment: center-left;
-}
-
-.jvn-status-segment:hover {
-  -fx-background-color: #252525;
 }
 
 .puppeteer-status-bar .jvn-status-segment {
@@ -6715,17 +6339,12 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-background-color: rgba(158, 54, 75, 0.18);
 }
 
-.jvn-status-segment-strong {
-  -fx-background-color: #2a2a2a;
-}
-
 .jvn-status-segment-strong .jvn-status-label,
 .jvn-status-version .jvn-status-label {
   -fx-text-fill: #f4f4f4;
 }
 
 .jvn-status-separator {
-  -fx-background-color: #353535;
   -fx-min-height: 14px;
   -fx-pref-height: 14px;
   -fx-max-height: 14px;
@@ -6733,7 +6352,7 @@ The editor.css file defines the visual styling for the editor module, including 
 
 /* Build & publish */
 .build-publisher-root {
-  -fx-background-color: linear-gradient(to bottom, #141414 0%, #0f0f0f 100%);
+  -fx-background-color: linear-gradient(to bottom, #181818 0%, #131313 100%);
 }
 
 .build-publisher-scroll,
@@ -6751,9 +6370,9 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-spacing: 12;
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.035), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #181818 0%, #121212 100%);
+      linear-gradient(to bottom, #1c1c1c 0%, #161616 100%);
   -fx-background-radius: 8;
-  -fx-border-color: #2f2f2f;
+  -fx-border-color: #333333;
   -fx-border-radius: 8;
   -fx-border-width: 1;
 }
@@ -7091,16 +6710,16 @@ The editor.css file defines the visual styling for the editor module, including 
 .build-publisher-button-secondary {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.04), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #252525, #1b1b1b);
+      linear-gradient(to bottom, #292929, #1f1f1f);
   -fx-text-fill: #ededed;
-  -fx-border-color: #383838;
+  -fx-border-color: #3c3c3c;
 }
 
 .build-publisher-button-secondary:hover {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.05), rgba(255,255,255,0.01)),
-      linear-gradient(to bottom, #2d2d2d, #212121);
-  -fx-border-color: #555555;
+      linear-gradient(to bottom, #313131, #252525);
+  -fx-border-color: #595959;
 }
 
 .build-publisher-button-primary {
@@ -7163,20 +6782,20 @@ The editor.css file defines the visual styling for the editor module, including 
 
 /* Centralized Sidebar Tool Styles */
 .sidebar-tool-root {
-  -fx-background-color: #0f0f0f;
-  -fx-control-inner-background: #111111;
+  -fx-background-color: -jvn-aero-surface;
+  -fx-control-inner-background: #151515;
 }
 
 .sidebar-tool-root .text-input,
 .sidebar-tool-root .text-field,
 .sidebar-tool-root .text-area,
 .sidebar-tool-search-field {
-  -fx-background-color: #151515;
+  -fx-background-color: #191919;
   -fx-text-fill: #ededed;
   -fx-prompt-text-fill: #7b7b7b;
   -fx-highlight-fill: #555555;
   -fx-highlight-text-fill: #ffffff;
-  -fx-border-color: #343434;
+  -fx-border-color: #383838;
   -fx-border-radius: 8;
   -fx-background-radius: 8;
 }
@@ -7185,18 +6804,18 @@ The editor.css file defines the visual styling for the editor module, including 
 .sidebar-tool-root .text-field:focused,
 .sidebar-tool-root .text-area:focused,
 .sidebar-tool-search-field:focused {
-  -fx-background-color: #181818;
+  -fx-background-color: #1c1c1c;
   -fx-border-color: #777777;
 }
 
 .sidebar-tool-root .text-area .content {
-  -fx-background-color: #151515;
+  -fx-background-color: #191919;
 }
 
 .sidebar-tool-scroll,
 .sidebar-tool-scroll > .viewport {
-  -fx-background: #0f0f0f;
-  -fx-background-color: #0f0f0f;
+  -fx-background: #131313;
+  -fx-background-color: #131313;
 }
 
 .sidebar-tool-header,
@@ -7204,13 +6823,13 @@ The editor.css file defines the visual styling for the editor module, including 
 .script-editor-launcher-header,
 .vns-diagnostics-header,
 .vcs-top {
-  -fx-background-color: #121212;
-  -fx-border-color: #2a2a2a;
+  -fx-background-color: -jvn-aero-chrome;
+  -fx-border-color: -jvn-aero-edge;
   -fx-border-width: 0 0 1 0;
 }
 
 .sidebar-tool-footer {
-  -fx-border-color: #2a2a2a;
+  -fx-border-color: #2e2e2e;
   -fx-border-width: 1 0 0 0;
 }
 
@@ -7257,9 +6876,9 @@ The editor.css file defines the visual styling for the editor module, including 
 .sidebar-tool-root .menu-button,
 .sidebar-tool-btn,
 .sidebar-tool-toggle-btn {
-  -fx-background-color: linear-gradient(to bottom, #262626, #1c1c1c);
+  -fx-background-color: linear-gradient(to bottom, #2a2a2a, #202020);
   -fx-text-fill: #ededed;
-  -fx-border-color: #383838;
+  -fx-border-color: #3c3c3c;
   -fx-border-width: 1;
   -fx-border-radius: 8;
   -fx-background-radius: 8;
@@ -7278,8 +6897,8 @@ The editor.css file defines the visual styling for the editor module, including 
 .sidebar-tool-root .menu-button:hover,
 .sidebar-tool-btn:hover,
 .sidebar-tool-toggle-btn:hover {
-  -fx-background-color: linear-gradient(to bottom, #303030, #222222);
-  -fx-border-color: #565656;
+  -fx-background-color: linear-gradient(to bottom, #343434, #262626);
+  -fx-border-color: #5a5a5a;
   -fx-text-fill: #f4f4f4;
 }
 
@@ -7288,7 +6907,7 @@ The editor.css file defines the visual styling for the editor module, including 
 .sidebar-tool-root .menu-button:pressed,
 .sidebar-tool-btn:pressed,
 .sidebar-tool-toggle-btn:pressed {
-  -fx-background-color: linear-gradient(to bottom, #1b1b1b, #141414);
+  -fx-background-color: linear-gradient(to bottom, #1f1f1f, #181818);
   -fx-border-color: #707070;
 }
 
@@ -7345,18 +6964,18 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .sidebar-tool-root .check-box .box {
-  -fx-background-color: #1c1c1c;
-  -fx-border-color: #404040;
+  -fx-background-color: #202020;
+  -fx-border-color: #444444;
   -fx-border-radius: 4;
   -fx-background-radius: 4;
 }
 
 .sidebar-tool-root .check-box:hover .box {
-  -fx-border-color: #606060;
+  -fx-border-color: #646464;
 }
 
 .sidebar-tool-root .check-box:selected .box {
-  -fx-background-color: #252525;
+  -fx-background-color: #292929;
   -fx-border-color: #888888;
 }
 
@@ -7373,9 +6992,9 @@ The editor.css file defines the visual styling for the editor module, including 
 .vns-diagnostics-row {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #1a1a1a 0%, #141414 100%);
+      linear-gradient(to bottom, #1e1e1e 0%, #181818 100%);
   -fx-background-radius: 8;
-  -fx-border-color: #2f2f2f;
+  -fx-border-color: #333333;
   -fx-border-radius: 8;
   -fx-border-width: 1;
   -fx-effect: none;
@@ -7391,8 +7010,8 @@ The editor.css file defines the visual styling for the editor module, including 
 .sidebar-tool-card-suggested:hover {
   -fx-background-color:
       linear-gradient(to bottom, rgba(255,255,255,0.04), rgba(255,255,255,0.01)),
-      linear-gradient(to bottom, #202020 0%, #171717 100%);
-  -fx-border-color: #4f4f4f;
+      linear-gradient(to bottom, #242424 0%, #1b1b1b 100%);
+  -fx-border-color: #535353;
   -fx-cursor: hand;
 }
 
@@ -7403,13 +7022,13 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .trashman-root {
-  -fx-background-color: #0f0f0f;
+  -fx-background-color: #131313;
 }
 
 .trashman-header {
   -fx-padding: 12 12 10 12;
-  -fx-background-color: #121212;
-  -fx-border-color: #2a2a2a;
+  -fx-background-color: #161616;
+  -fx-border-color: #2e2e2e;
   -fx-border-width: 0 0 1 0;
 }
 
@@ -7525,14 +7144,14 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .trashman-spinner {
   -fx-pref-width: 84px;
-  -fx-background-color: #1c1c1c;
-  -fx-border-color: #373737;
+  -fx-background-color: #202020;
+  -fx-border-color: #3b3b3b;
   -fx-border-radius: 6;
   -fx-background-radius: 6;
 }
 
 .trashman-spinner .text-field {
-  -fx-background-color: #1c1c1c;
+  -fx-background-color: #202020;
   -fx-text-fill: #f2f2f2;
   -fx-prompt-text-fill: #7c7c7c;
   -fx-background-radius: 6 0 0 6;
@@ -7540,14 +7159,14 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .trashman-spinner .increment-arrow-button,
 .trashman-spinner .decrement-arrow-button {
-  -fx-background-color: #282828;
+  -fx-background-color: #2c2c2c;
   -fx-background-radius: 0;
   -fx-border-color: transparent;
 }
 
 .trashman-spinner .increment-arrow-button:hover,
 .trashman-spinner .decrement-arrow-button:hover {
-  -fx-background-color: #343434;
+  -fx-background-color: #383838;
 }
 
 .trashman-spinner .increment-arrow,

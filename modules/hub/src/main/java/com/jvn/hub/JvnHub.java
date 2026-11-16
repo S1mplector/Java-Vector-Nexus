@@ -114,8 +114,8 @@ import javax.swing.plaf.basic.BasicSpinnerUI;
  * launcher, or runtime, run common Gradle tasks, and pull-rebase the repository
  * without touching the {@code jvnw} wrapper CLI.
  *
- * <p>Visually mirrors the launcher/editor palette: dark charcoal neutral-gray
- * background, light text, compact header, and simple activity panel.</p>
+ * <p>Shares the editor's Graphite Aero palette, with beveled chrome,
+ * solid work surfaces, and a compact activity panel.</p>
  *
  * <p>Shells out to {@code ./gradlew} and {@code git}. The hub remains responsive while
  * a task runs; only one task at a time is allowed and the buttons disable for the
@@ -132,18 +132,17 @@ public final class JvnHub {
   private static final String ENGINE_UPDATE_FETCH_REFSPEC =
       "refs/heads/" + ENGINE_UPDATE_BRANCH + ":refs/remotes/" + ENGINE_UPDATE_REMOTE_REF;
 
-  // --- Editor dark neutral-gray palette -------------------------------------
-  // Mirrors the dark editor/launcher CSS: neutral graphite surfaces, no blue
-  // cast, and very subtle gradients instead of flat pure black.
+  // Graphite Aero palette shared by the Hub and its dialogs.
   private static final Color BG             = Color.decode("#101010");
-  private static final Color BG_TOP         = Color.decode("#151515");
-  private static final Color BG_BOTTOM      = Color.decode("#101010");
-  private static final Color PANEL_BG       = Color.decode("#1c1c1c");
-  private static final Color PANEL_BG_TOP   = Color.decode("#262626");
-  private static final Color PANEL_BG_BOTTOM = Color.decode("#1c1c1c");
+  private static final Color BG_TOP         = Color.decode("#2a2a2a");
+  private static final Color BG_BOTTOM      = Color.decode("#1e1e1e");
+  static final Color PANEL_BG              = Color.decode("#212121");
+  static final Color PANEL_BG_TOP          = Color.decode("#3c3c3c");
   private static final Color HOVER_BG       = Color.decode("#303030");
-  private static final Color PRESSED_BG     = Color.decode("#181818");
-  private static final Color BORDER_NEUTRAL = Color.decode("#3a3a3a");
+  private static final Color PRESSED_BG     = Color.decode("#303030");
+  static final Color BORDER_NEUTRAL        = Color.decode("#5b5b5b");
+  static final Color SELECTION_BG          = Color.decode("#494949");
+  static final Color FOCUS_RING            = Color.decode("#b1b1b1");
   private static final Color TEXT_PRIMARY   = Color.decode("#f0f0f0");
   private static final Color TEXT_MUTED     = Color.decode("#9a9a9a");
   private static final Color TEXT_SOFT      = Color.decode("#c5c5c5");
@@ -157,8 +156,8 @@ public final class JvnHub {
   private static final Color ACCENT_ERROR   = Color.decode("#f38ba8");
   private static final Color ACCENT_MAINTENANCE = Color.decode("#ff9933");
   private static final Color LOG_TEXT       = Color.decode("#cfcfcf");
-  private static final Color SCROLL_THUMB   = Color.decode("#2a2a2a");
-  private static final Color SCROLL_THUMB_HOVER = Color.decode("#3a3a3a");
+  private static final Color SCROLL_THUMB   = Color.decode("#3f3f3f");
+  private static final Color SCROLL_THUMB_HOVER = Color.decode("#5d5d5d");
   private static final int PROCESS_OUTPUT_PREFIX_LIMIT = 8192;
   private static final int PROCESS_OUTPUT_TAIL_LINES = 40;
 
@@ -355,20 +354,22 @@ public final class JvnHub {
     UIManager.put("MenuBar.foreground", TEXT_PRIMARY);
     UIManager.put("Menu.background", BG_TOP);
     UIManager.put("Menu.foreground", TEXT_PRIMARY);
-    UIManager.put("Menu.selectionBackground", HOVER_BG);
+    UIManager.put("Menu.selectionBackground", SELECTION_BG);
     UIManager.put("Menu.selectionForeground", TEXT_PRIMARY);
     UIManager.put("MenuItem.background", PANEL_BG);
     UIManager.put("MenuItem.foreground", TEXT_PRIMARY);
-    UIManager.put("MenuItem.selectionBackground", HOVER_BG);
+    UIManager.put("MenuItem.selectionBackground", SELECTION_BG);
     UIManager.put("MenuItem.selectionForeground", TEXT_PRIMARY);
+    UIManager.put("MenuItem.acceleratorForeground", TEXT_SOFT);
+    UIManager.put("MenuItem.acceleratorSelectionForeground", TEXT_PRIMARY);
     UIManager.put("CheckBoxMenuItem.background", PANEL_BG);
     UIManager.put("CheckBoxMenuItem.foreground", TEXT_PRIMARY);
-    UIManager.put("CheckBoxMenuItem.selectionBackground", HOVER_BG);
+    UIManager.put("CheckBoxMenuItem.selectionBackground", SELECTION_BG);
     UIManager.put("CheckBoxMenuItem.selectionForeground", TEXT_PRIMARY);
     UIManager.put("CheckBoxMenuItem.checkIcon", new HubMenuSelectionIcon(false));
     UIManager.put("RadioButtonMenuItem.background", PANEL_BG);
     UIManager.put("RadioButtonMenuItem.foreground", TEXT_PRIMARY);
-    UIManager.put("RadioButtonMenuItem.selectionBackground", HOVER_BG);
+    UIManager.put("RadioButtonMenuItem.selectionBackground", SELECTION_BG);
     UIManager.put("RadioButtonMenuItem.selectionForeground", TEXT_PRIMARY);
     UIManager.put("RadioButtonMenuItem.checkIcon", new HubMenuSelectionIcon(true));
     UIManager.put("CheckBox.background", PANEL_BG);
@@ -633,7 +634,7 @@ public final class JvnHub {
 
     frame.setContentPane(root);
     frame.setJMenuBar(buildMenuBar());
-    // Keep frame/root chrome aligned with the custom charcoal-neutral surface.
+    // Keep the host frame aligned with the custom chrome.
     frame.setBackground(BG);
     frame.getRootPane().setBackground(BG);
     frame.getRootPane().setOpaque(true);
@@ -675,8 +676,10 @@ public final class JvnHub {
     JMenuBar bar = new JMenuBar() {
       @Override
       protected void paintComponent(Graphics graphics) {
-        graphics.setColor(BG_TOP);
-        graphics.fillRect(0, 0, getWidth(), getHeight());
+        Graphics2D chrome = (Graphics2D) graphics.create();
+        chrome.setPaint(chromePaint(getHeight(), PANEL_BG_TOP, BG_TOP));
+        chrome.fillRect(0, 0, getWidth(), getHeight());
+        chrome.dispose();
       }
     };
     bar.setOpaque(true);
@@ -1036,6 +1039,11 @@ public final class JvnHub {
     if (safeModeEnabled) bar.add(buildSafeModeMenu());
     bar.add(view);
     bar.add(help);
+    for (int index = 0; index < bar.getMenuCount(); index++) {
+      JMenu heading = bar.getMenu(index);
+      heading.setOpaque(false);
+      heading.setForeground(TEXT_PRIMARY);
+    }
     return bar;
   }
 
@@ -2626,10 +2634,9 @@ public final class JvnHub {
   }
 
   private JPanel buildFooter() {
-    JPanel footer = new JPanel(new GridBagLayout());
-    footer.setBackground(Color.decode("#191919"));
+    JPanel footer = new GradientPanel(new GridBagLayout(), PANEL_BG_TOP, BG_TOP);
     footer.setBorder(BorderFactory.createCompoundBorder(
-        BorderFactory.createMatteBorder(1, 0, 0, 0, Color.decode("#303030")),
+        BorderFactory.createMatteBorder(1, 0, 0, 0, BORDER_NEUTRAL),
         uiPadding(3, 8, 3, 8)));
 
     statusLabel.setForeground(TEXT_SOFT);
@@ -7093,6 +7100,12 @@ public final class JvnHub {
     return new Color(r, g, b, color.getAlpha());
   }
 
+  private static LinearGradientPaint chromePaint(int height, Color upper, Color lower) {
+    return new LinearGradientPaint(0f, 0f, 0f, Math.max(1f, height),
+        new float[] {0f, 0.47f, 0.51f, 1f},
+        new Color[] {lighten(upper, 0.07f), upper, lower, lighten(lower, 0.035f)});
+  }
+
   private static Color alpha(Color color, float alpha) {
     return new Color(
         color.getRed(),
@@ -7702,7 +7715,7 @@ public final class JvnHub {
     protected void paintComponent(Graphics g) {
       Graphics2D g2 = (Graphics2D) g.create();
       g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-      int arc = ui(8);
+      int arc = ui(6);
       int w = getWidth();
       int h = getHeight();
 
@@ -7712,21 +7725,16 @@ public final class JvnHub {
       } else if (getModel().isPressed()) {
         fill = PRESSED_BG;
       } else if (getModel().isRollover()) {
-        fill = HOVER_BG;
+        fill = SELECTION_BG;
       } else {
-        fill = PANEL_BG;
+        fill = BG_TOP;
       }
-      Color topFill = fill.equals(PANEL_BG) ? PANEL_BG_TOP : lighten(fill, 0.035f);
-      g2.setPaint(new LinearGradientPaint(
-          0f,
-          0f,
-          0f,
-          Math.max(1f, h),
-          new float[] {0f, 1f},
-          new Color[] {topFill, fill}));
+      Color upper = fill.equals(BG_TOP) ? PANEL_BG_TOP : lighten(fill, 0.035f);
+      g2.setPaint(chromePaint(h, upper, fill));
       g2.fillRoundRect(0, 0, w, h, arc, arc);
 
       Color borderColor = accent != null ? accent : BORDER_NEUTRAL;
+      if (isFocusOwner() || (accent == null && getModel().isRollover())) borderColor = FOCUS_RING;
       if (!isEnabled()) borderColor = BORDER_NEUTRAL;
       g2.setColor(borderColor);
       g2.setStroke(new BasicStroke(uiStroke(1f)));

@@ -1,0 +1,137 @@
+/* Code editors also attach CSS locally. Resolve their paints from the active scene. */
+.code-area,
+.virtualized-scroll-pane .code-area {
+  -fx-background-color: -jvn-aero-field;
+  -fx-highlight-fill: -jvn-code-selection;
+  -fx-highlight-text-fill: -jvn-aero-text;
+  -rtfx-caret-color: -jvn-aero-text;
+  caret-color: -jvn-aero-text;
+}
+
+.code-area .virtual-flow,
+.code-area .virtual-flow .clipped-container,
+.code-area .virtual-flow .sheet {
+  -fx-background-color: transparent;
+}
+
+.code-area .caret {
+  -fx-stroke: -jvn-aero-text;
+}
+
+.code-area .paragraph-box:has-caret {
+  -fx-background-color: -jvn-code-current-line;
+}
+
+.lineno {
+  -fx-background-color: -jvn-aero-surface;
+  -fx-border-color: -jvn-aero-edge;
+}
+
+.lineno .text {
+  -fx-fill: -jvn-aero-muted;
+}
+
+.lineno-text {
+  -fx-text-fill: -jvn-aero-muted;
+}
+
+.lineno-text .text {
+  -fx-fill: -jvn-aero-muted;
+}
+
+.lint-label {
+  -fx-text-fill: -jvn-aero-text;
+  -fx-background-color: -jvn-aero-surface;
+  -fx-border-color: -jvn-aero-edge;
+}
+
+.code-editor-status-bar {
+  -fx-background-color: -jvn-aero-chrome;
+  -fx-border-color: -jvn-aero-edge;
+}
+
+.code-editor-status-bar .code-editor-status-primary,
+.code-editor-status-bar .lint-label {
+  -fx-text-fill: -jvn-aero-text;
+}
+
+.code-editor-status-bar .code-editor-status-secondary {
+  -fx-text-fill: -jvn-aero-muted;
+}
+
+.code-editor-diagnostics-list {
+  -fx-background-color: -jvn-aero-field;
+  -fx-control-inner-background: -jvn-aero-field;
+  -fx-border-color: -jvn-aero-edge;
+}
+
+.code-editor-diagnostics-list .list-cell {
+  -fx-text-fill: -jvn-aero-text;
+}
+
+.code-editor-diagnostics-list .list-cell:filled:selected,
+.code-editor-diagnostics-list .list-cell:filled:selected:hover {
+  -fx-background-color: -jvn-aero-selected;
+  -fx-text-fill: -jvn-aero-text;
+}
+
+.code-editor-minimap {
+  -fx-background-color: -jvn-aero-surface;
+  -fx-border-color: -jvn-aero-edge;
+}
+
+.code-editor-minimap-separator {
+  -fx-background-color: -jvn-aero-edge;
+}
+
+.code-area .punct,
+.code-area .vns-format,
+.code-area .dsl-color,
+.code-area .jes-builtin,
+.code-area .text {
+  -fx-fill: -jvn-aero-text;
+}
+
+.code-area .keyword,
+.code-area .vns-directive,
+.code-area .vns-command,
+.code-area .prop-key,
+.code-area .dsl-action,
+.code-area .jes-struct,
+.code-area .jes-action,
+.code-area .jes-prop,
+.code-area .tl-keyword {
+  -fx-fill: -jvn-code-command;
+}
+
+.code-area .string,
+.code-area .vns-choice {
+  -fx-fill: -jvn-code-string;
+}
+
+.code-area .number,
+.code-area .vns-arrow,
+.code-area .vns-value,
+.code-area .dsl-bool,
+.code-area .jes-bool,
+.code-area .tl-arrow,
+.code-area .constant {
+  -fx-fill: -jvn-code-number;
+}
+
+.code-area .comment {
+  -fx-fill: -jvn-code-comment;
+}
+
+.code-area .vns-speaker,
+.code-area .dsl-section,
+.code-area .jes-comptype,
+.code-area .annotation,
+.code-area .type {
+  -fx-fill: -jvn-code-name;
+}
+
+.code-area .sel-highlight {
+  -fx-fill: -jvn-aero-text;
+  -rtfx-background-color: -jvn-code-selection;
+}

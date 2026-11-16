@@ -1,0 +1,384 @@
+/* Shared Aero controls. The light and dark stylesheets supply the paints. */
+
+/* Window chrome */
+.master-toolbar-shell {
+  -fx-background-color: -jvn-aero-chrome;
+}
+
+.master-toolbar {
+  -fx-background-color: -jvn-aero-chrome;
+  -fx-padding: 5 8 5 8;
+  -fx-border-color: -jvn-aero-highlight transparent -jvn-aero-edge transparent;
+  -fx-border-width: 1 0 1 0;
+}
+
+.main-editor-command-bar {
+  -fx-background-color: -jvn-aero-menubar;
+  -fx-border-color: -jvn-aero-highlight transparent -jvn-aero-edge transparent;
+  -fx-border-width: 1 0 1 0;
+}
+
+.menu-bar,
+.jvn-launcher-menubar {
+  -fx-background-color: -jvn-aero-menubar;
+}
+
+.main-editor-command-bar .menu-bar > .container > .menu-button > .label,
+.jvn-launcher-menubar > .container > .menu-button > .label {
+  -fx-text-fill: -jvn-aero-text;
+}
+
+.menu-bar .menu-button:hover,
+.menu-bar .menu-button:focused,
+.menu-bar .menu-button:showing,
+.jvn-launcher-menubar .menu-button:hover,
+.jvn-launcher-menubar .menu-button:focused,
+.jvn-launcher-menubar .menu-button:showing {
+  -fx-background-color: -jvn-aero-hover;
+  -fx-background-radius: 3;
+}
+
+.context-menu {
+  -fx-background-color: -jvn-aero-field;
+  -fx-border-color: -jvn-aero-edge;
+}
+
+.menu-item:focused,
+.context-menu .menu-item:hover,
+.context-menu .menu-item:focused {
+  -fx-background-color: -jvn-aero-selected;
+}
+
+.main-editor-command-bar .menu-bar > .container > .menu-button:showing,
+.jvn-launcher-menubar > .container > .menu-button:showing {
+  -fx-background-color: -jvn-aero-selected;
+}
+
+/* Recessed Task Manager-style finish around the performance canvas. */
+.master-toolbar Canvas {
+  -fx-effect: innershadow(gaussian, #071b13, 4, 0.25, 0, 1);
+}
+
+/* Performance metrics share one readout above the graph. */
+.editor-perf-chip-row {
+  -fx-alignment: center-left;
+  -fx-padding: 1 1 1 1;
+  -fx-background-color: -jvn-aero-surface;
+  -fx-border-color: -jvn-aero-highlight transparent -jvn-aero-edge transparent;
+  -fx-border-width: 1 0 1 0;
+}
+
+.editor-perf-chip {
+  -fx-padding: 3 8;
+  -fx-background-color: transparent;
+  -fx-border-color: transparent -jvn-aero-edge transparent transparent;
+  -fx-border-width: 0 1 0 0;
+  -fx-font-size: 11px;
+  -fx-font-weight: normal;
+  -fx-text-fill: -jvn-aero-text;
+}
+
+.editor-perf-chip.perf-chip-graphics {
+  -fx-text-fill: -jvn-aero-healthy;
+}
+
+.editor-perf-chip.perf-chip-graphics-fallback {
+  -fx-text-fill: -jvn-aero-warning;
+}
+
+.editor-main-split-pane:horizontal > .split-pane-divider {
+  -fx-background-color: -jvn-aero-edge;
+}
+
+.editor-main-split-pane:horizontal > .split-pane-divider:hover {
+  -fx-background-color: -jvn-aero-focus;
+}
+
+.jvn-status-bar,
+.jvn-launcher-status-bar,
+.dialog-pane .button-bar .container {
+  -fx-background-color: -jvn-aero-chrome;
+  -fx-border-color: -jvn-aero-edge transparent transparent transparent;
+  -fx-border-width: 1 0 0 0;
+}
+
+.jvn-status-segment:hover,
+.jvn-status-segment-strong {
+  -fx-background-color: -jvn-aero-hover;
+}
+
+.jvn-status-separator {
+  -fx-background-color: -jvn-aero-edge;
+}
+
+/* Status glyphs sit directly on the chrome, with enamel color inside the artwork. */
+.jvn-status-bar .jvn-status-segment {
+  -jvn-status-icon-tint: -jvn-status-icon-normal;
+}
+
+.jvn-status-bar .jvn-status-clean,
+.jvn-status-bar .jvn-status-diagnostics-ok {
+  -jvn-status-icon-tint: -jvn-aero-healthy;
+}
+
+.jvn-status-bar .jvn-status-dirty,
+.jvn-status-bar .jvn-status-diagnostics-warn {
+  -jvn-status-icon-tint: -jvn-aero-warning;
+}
+
+.jvn-status-bar .jvn-status-diagnostics-error {
+  -jvn-status-icon-tint: -jvn-status-icon-red;
+}
+
+.jvn-status-bar .jvn-status-segment > .jvn-fx-icon {
+  -fx-background-color: transparent;
+  -fx-effect: none;
+  -fx-opacity: 1;
+}
+
+.jvn-status-bar .jvn-compact-aero-icon > .jvn-fx-icon-shape,
+.jvn-status-bar .jvn-status-segment > .jvn-alert-icon {
+  -fx-background-color: linear-gradient(to bottom,
+      derive(-jvn-status-icon-tint, 37%) 0%,
+      derive(-jvn-status-icon-tint, 16%) 35%,
+      -jvn-status-icon-tint 51%,
+      derive(-jvn-status-icon-tint, -18%) 100%) !important;
+  -fx-effect: dropshadow(gaussian, rgba(14, 28, 42, 0.42), 1.5, 0.20, 0, 0.65);
+}
+
+.jvn-status-bar .jvn-compact-aero-icon > Circle,
+.jvn-status-bar .jvn-alert-icon > Group {
+  -fx-opacity: 0;
+}
+
+.jvn-status-bar .jvn-status-segment > .jvn-alert-icon {
+  -fx-background-insets: 1;
+  -fx-shape: "M7 0 L14 13 H0 Z M6.35 4.4 L6.55 8.25 H7.45 L7.65 4.4 Z M6.35 9.55 V10.85 H7.65 V9.55 Z";
+}
+
+.jvn-status-bar .jvn-status-diagnostics-ok > .jvn-alert-icon {
+  -fx-background-insets: 1.5;
+  -fx-shape: "M7 0 A7 7 0 1 1 7 14 A7 7 0 1 1 7 0 Z M2.8 7.2 L5.85 10.18 L11.28 4.76 L10.13 3.62 L5.83 7.92 L3.94 6.06 Z";
+}
+
+/* Command buttons and fields */
+.button,
+.jvn-launcher-action-button,
+.welcome-action-button-primary,
+.welcome-action-button-secondary {
+  -fx-background-color: -jvn-aero-highlight, -jvn-aero-button;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 3, 2;
+  -fx-border-color: -jvn-aero-control-edge;
+  -fx-border-width: 1;
+  -fx-border-radius: 3;
+  -fx-text-fill: -jvn-aero-text;
+}
+
+.button:default,
+.jvn-launcher-action-button-primary,
+.welcome-action-button-primary {
+  -fx-background-color: -jvn-aero-highlight, -jvn-aero-selected;
+  -fx-border-color: -jvn-aero-focus;
+}
+
+.button:hover,
+.jvn-launcher-action-button:hover,
+.jvn-launcher-action-button-primary:hover,
+.welcome-action-button-primary:hover,
+.welcome-action-button-secondary:hover {
+  -fx-background-color: -jvn-aero-highlight, -jvn-aero-hover;
+  -fx-border-color: -jvn-aero-focus;
+}
+
+.button:armed,
+.jvn-launcher-action-button:pressed,
+.welcome-action-button-primary:pressed,
+.welcome-action-button-secondary:pressed {
+  -fx-background-color: -jvn-aero-highlight, -jvn-aero-pressed;
+  -fx-border-color: -jvn-aero-focus;
+}
+
+.button:focused,
+.jvn-launcher-action-button:focused,
+.welcome-action-button-primary:focused,
+.welcome-action-button-secondary:focused {
+  -fx-effect: dropshadow(gaussian, -jvn-aero-focus-halo, 4, 0.45, 0, 0);
+  -fx-border-color: -jvn-aero-focus;
+}
+
+.combo-box {
+  -fx-background-color: -jvn-aero-button;
+  -fx-border-color: -jvn-aero-control-edge;
+}
+
+.combo-box:hover {
+  -fx-background-color: -jvn-aero-hover;
+}
+
+.combo-box:focused,
+.text-field.project-explorer-filter:focused {
+  -fx-border-color: -jvn-aero-focus;
+  -fx-border-radius: 3;
+}
+
+.combo-box > .list-cell {
+  -fx-background-color: transparent;
+}
+
+.combo-box-popup .list-view,
+.combo-box-popup .list-cell {
+  -fx-background-color: -jvn-aero-field;
+}
+
+.combo-box-popup .list-view {
+  -fx-border-color: -jvn-aero-control-edge;
+}
+
+.combo-box-popup .list-cell:filled:hover,
+.combo-box-popup .list-cell:filled:selected {
+  -fx-background-color: -jvn-aero-selected;
+}
+
+/* Document and sidebar tabs */
+.tab-pane.sidebar-tab-pane > .tab-header-area,
+.tab-pane.sidebar-tab-pane > .tab-header-area > .tab-header-background {
+  -fx-background-color: -jvn-aero-chrome;
+}
+
+.tab-pane.sidebar-tab-pane > .tab-header-area {
+  -fx-border-color: -jvn-aero-edge;
+}
+
+.tab-pane.sidebar-tab-pane .tab,
+.tab-pane.sidebar-tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button {
+  -fx-background-color: -jvn-aero-button;
+  -fx-background-radius: 4 4 0 0;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-border-radius: 4 4 0 0;
+}
+
+.tab-pane.sidebar-tab-pane .tab:hover,
+.tab-pane.sidebar-tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button:hover {
+  -fx-background-color: -jvn-aero-chrome;
+}
+
+.tab-pane.sidebar-tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button:pressed,
+.tab-pane.sidebar-tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button:showing {
+  -fx-background-color: -jvn-aero-surface;
+}
+
+.tab-pane.sidebar-tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button > .arrow {
+  -fx-background-color: -jvn-aero-muted;
+}
+
+.tab-pane.sidebar-tab-pane .tab:selected,
+.tab-pane.sidebar-tab-pane .tab:selected:hover {
+  -fx-background-color: -jvn-aero-surface;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-effect: none;
+}
+
+.tab-pane.sidebar-tab-pane:focused .tab:selected .focus-indicator {
+  -fx-border-color: -jvn-aero-muted;
+  -fx-border-style: dotted;
+  -fx-border-width: 1;
+  -fx-border-radius: 2;
+  -fx-border-insets: 3;
+}
+
+.sidebar-tab-pane .tab .tab-close-button {
+  -fx-padding: 0;
+  -fx-min-width: 14px;
+  -fx-pref-width: 14px;
+  -fx-max-width: 14px;
+  -fx-min-height: 14px;
+  -fx-pref-height: 14px;
+  -fx-max-height: 14px;
+  -fx-background-color: -jvn-aero-muted;
+  -fx-background-insets: 3;
+  -fx-scale-shape: true;
+  -fx-center-shape: true;
+  -fx-shape: "M1 0 L4 3 L7 0 L8 1 L5 4 L8 7 L7 8 L4 5 L1 8 L0 7 L3 4 L0 1 Z";
+}
+
+.sidebar-tab-pane .tab .tab-close-button:hover {
+  -fx-background-color: -jvn-aero-focus;
+}
+
+.sidebar-tab-pane .tab .tab-close-button:pressed {
+  -fx-background-color: -jvn-aero-text;
+}
+
+.tab-pane.sidebar-tab-pane > .tab-content-area {
+  -fx-background-color: -jvn-aero-surface;
+}
+
+/* Project browser and startup surfaces */
+.project-explorer-root,
+.welcome-center-root,
+.jvn-launcher-root {
+  -fx-background-color: -jvn-aero-surface;
+}
+
+.project-explorer-tree,
+.project-explorer-filter {
+  -fx-background-color: -jvn-aero-field;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-background-radius: 3;
+  -fx-border-radius: 3;
+  -fx-text-fill: -jvn-aero-text;
+}
+
+.project-explorer-filter {
+  -fx-prompt-text-fill: -jvn-aero-muted;
+}
+
+.project-explorer-tree .tree-cell {
+  -fx-background-color: transparent;
+  -fx-text-fill: -jvn-aero-text;
+}
+
+.tree-view.project-explorer-tree .tree-cell:filled:hover,
+.welcome-project-list .list-cell:hover .welcome-project-cell {
+  -fx-background-color: -jvn-aero-hover;
+}
+
+/* Layer the row outline so selection never changes the tree's cell geometry. */
+.tree-view.project-explorer-tree .tree-cell:filled:selected,
+.tree-view.project-explorer-tree .tree-cell:filled:selected:hover {
+  -fx-background-color: -jvn-aero-edge, -jvn-aero-selected;
+  -fx-background-insets: 0 1, 1 2;
+  -fx-background-radius: 3, 2;
+}
+
+.tree-view.project-explorer-tree:focused .tree-cell:filled:selected {
+  -fx-background-color: -jvn-aero-focus, -jvn-aero-selected;
+}
+
+.welcome-hero-card,
+.jvn-launcher-header,
+.dialog-pane:header .header-panel {
+  -fx-background-color: -jvn-aero-chrome;
+  -fx-border-color: -jvn-aero-edge;
+}
+
+.welcome-hero-card,
+.jvn-launcher-header,
+.welcome-overview-card,
+.welcome-project-cell {
+  -fx-background-radius: 4;
+  -fx-border-radius: 4;
+}
+
+.welcome-overview-card,
+.welcome-project-cell {
+  -fx-background-color: -jvn-aero-field;
+  -fx-border-color: -jvn-aero-edge;
+}
+
+.welcome-project-list .list-cell:selected .welcome-project-cell,
+.welcome-project-list .list-cell:selected:hover .welcome-project-cell {
+  -fx-background-color: -jvn-aero-selected;
+  -fx-border-color: -jvn-aero-focus;
+}
