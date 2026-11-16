@@ -2615,7 +2615,7 @@ public final class JvnHub {
     return activityPanel;
   }
 
-  private static void styleScrollBar(JScrollBar bar) {
+  static void styleScrollBar(JScrollBar bar) {
     if (bar == null) return;
     bar.setUI(new NeutralScrollBarUI());
     bar.setOpaque(true);
@@ -7672,7 +7672,7 @@ public final class JvnHub {
    * Custom-painted button that stays free of L&F chrome and paints its own
    * 1px border with optional accent color. Text + icon render via {@code super.paintComponent}.
    */
-  private static class FlatButton extends JButton {
+  static class FlatButton extends JButton {
     private final Color accent;
 
     FlatButton(String text, Icon icon, Color accentOrNull) {
@@ -8759,7 +8759,7 @@ public final class JvnHub {
    * {@link #renderToImage(int, int)} exposes the same artwork as a raster so
    * the OS window/dock icon stays in sync.
    */
-  private static final class JvnLogoIcon implements Icon {
+  static final class JvnLogoIcon implements Icon {
     private static final Color WORDMARK_TOP = Color.decode("#ffffff");
     private static final Color WORDMARK_HIGH = Color.decode("#cfd8df");
     private static final Color WORDMARK_DARK = Color.decode("#7c8791");

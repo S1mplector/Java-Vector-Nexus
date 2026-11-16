@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.plaf.basic.BasicButtonUI;
+import javax.swing.plaf.basic.BasicSplitPaneUI;
 
 /** Mature, code-free plugin bundle manager launched by the Engine Hub. */
 final class HubPluginManagerDialog extends JDialog {
@@ -39,7 +39,7 @@ final class HubPluginManagerDialog extends JDialog {
       .ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
       .withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault());
 
-  private final Path userPlugins = Path.of(System.getProperty("user.home", "."), ".jvn", "plugins");
+  private final Path userPlugins;
   private final Path projectPlugins;
   private final Runnable onPluginsChanged;
   private final HubPluginBundleVerifier verifier = new HubPluginBundleVerifier();
@@ -50,9 +50,6 @@ final class HubPluginManagerDialog extends JDialog {
   private final JComboBox<String> scope = new JComboBox<>();
   private final JComboBox<String> health = new JComboBox<>(new String[] {
       "Any status", "Verified", "Disabled", "Needs attention"});
-  private final JLabel installedCount = countLabel();
-  private final JLabel enabledCount = countLabel();
-  private final JLabel issueCount = countLabel();
   private final JLabel visibleCount = label("0 plugins", MUTED, 11, false);
   private final JLabel status = label("Scanning plugin folders…", MUTED, 11, false);
   private final JButton refreshButton = button("Refresh", false, this::refresh);
@@ -68,11 +65,20 @@ final class HubPluginManagerDialog extends JDialog {
   private final JButton reveal = button("Show in Folder", false, this::revealSelected);
   private final JButton copy = button("Copy Details", false, this::copySelected);
   private final JButton remove = button("Move to Trash", false, this::removeSelected);
+  private final CardLayout inventoryLayout = new CardLayout();
+  private final JPanel inventoryCards = new JPanel(inventoryLayout);
+  private final JLabel emptyTitle = label("Your plugin library is empty", TEXT, 15, true);
+  private final JLabel emptyHint = label("Install a plugin JAR to add tools to JVN.", MUTED, 12, false);
   private int scanGeneration;
   private Notice postScanNotice;
 
   HubPluginManagerDialog(Window owner, Path projectRoot, Runnable onPluginsChanged) {
+    this(owner, projectRoot, Path.of(System.getProperty("user.home", "."), ".jvn", "plugins"), onPluginsChanged);
+  }
+
+  HubPluginManagerDialog(Window owner, Path projectRoot, Path userPlugins, Runnable onPluginsChanged) {
     super(owner, "JVN Plugin Manager", ModalityType.MODELESS);
+    this.userPlugins = userPlugins;
     projectPlugins = projectRoot == null ? null : projectRoot.resolve("plugins");
     this.onPluginsChanged = onPluginsChanged == null ? () -> { } : onPluginsChanged;
     buildUi();
@@ -82,8 +88,8 @@ final class HubPluginManagerDialog extends JDialog {
 
   private void buildUi() {
     setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-    setMinimumSize(new Dimension(900, 620));
-    setSize(1060, 700);
+    setMinimumSize(new Dimension(1040, 680));
+    setSize(1180, 760);
     JPanel root = panel(new BorderLayout(), BG);
     root.add(header(), BorderLayout.NORTH);
     root.add(workspace(), BorderLayout.CENTER);
@@ -96,24 +102,13 @@ final class HubPluginManagerDialog extends JDialog {
     JPanel bar = panel(new BorderLayout(16, 0), RAISED);
     bar.setBorder(BorderFactory.createCompoundBorder(
         BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER), empty(17, 21, 17, 21)));
-    JLabel mark = label("P", Color.decode("#eadcff"), 22, true);
-    mark.setHorizontalAlignment(SwingConstants.CENTER);
-    mark.setOpaque(true);
-    mark.setBackground(Color.decode("#3a2854"));
-    mark.setBorder(BorderFactory.createLineBorder(Color.decode("#6d4d91")));
-    mark.setPreferredSize(new Dimension(46, 46));
-    bar.add(mark, BorderLayout.WEST);
+    bar.add(new JLabel(new JvnHub.JvnLogoIcon(110, 58)), BorderLayout.WEST);
 
     JPanel titles = vertical(RAISED);
-    titles.add(label("Plugin Manager", TEXT, 20, true));
+    titles.add(label("Plugin Manager", TEXT, 19, true));
     titles.add(Box.createVerticalStrut(3));
-    titles.add(label("Inspect and manage bundles without executing third-party plugin code", MUTED, 12, false));
+    titles.add(label("ENGINE HUB  /  EXTENSIONS", MUTED, 10, true));
     bar.add(titles, BorderLayout.CENTER);
-    JPanel counts = panel(new FlowLayout(FlowLayout.RIGHT, 8, 0), RAISED);
-    counts.add(countCard("INSTALLED", installedCount));
-    counts.add(countCard("ENABLED", enabledCount));
-    counts.add(countCard("ISSUES", issueCount));
-    bar.add(counts, BorderLayout.EAST);
     return bar;
   }
 
@@ -129,18 +124,43 @@ final class HubPluginManagerDialog extends JDialog {
     list.setBackground(PANEL);
     list.setForeground(TEXT);
     list.setBorder(empty(4, 4, 4, 4));
-    inventory.add(scroller(list, true), BorderLayout.CENTER);
+    inventoryCards.add(scroller(list, false), "list");
+    JPanel emptyLibrary = panel(new GridBagLayout(), PANEL);
+    JPanel emptyContent = vertical(PANEL);
+    emptyTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+    emptyHint.setAlignmentX(Component.CENTER_ALIGNMENT);
+    emptyContent.add(emptyTitle);
+    emptyContent.add(Box.createVerticalStrut(8));
+    emptyContent.add(emptyHint);
+    emptyContent.add(Box.createVerticalStrut(20));
+    JButton install = button("Install a plugin…", true, () -> installInto(userPlugins, "User"));
+    install.setAlignmentX(Component.CENTER_ALIGNMENT);
+    emptyContent.add(install);
+    emptyLibrary.add(emptyContent);
+    inventoryCards.add(emptyLibrary, "empty");
+    inventoryCards.setBorder(BorderFactory.createLineBorder(BORDER));
+    inventory.add(inventoryCards, BorderLayout.CENTER);
     JPanel listBottom = panel(new BorderLayout(), BG);
     listBottom.add(visibleCount, BorderLayout.WEST);
     listBottom.add(refreshButton, BorderLayout.EAST);
     inventory.add(listBottom, BorderLayout.SOUTH);
     buildDetails();
     JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, inventory, details);
+    split.setUI(new BasicSplitPaneUI() {
+      @Override public javax.swing.plaf.basic.BasicSplitPaneDivider createDefaultDivider() {
+        return new javax.swing.plaf.basic.BasicSplitPaneDivider(this) {
+          @Override public void paint(Graphics g) {
+            g.setColor(BG);
+            g.fillRect(0, 0, getWidth(), getHeight());
+          }
+        };
+      }
+    });
     split.setBorder(null);
     split.setOpaque(false);
-    split.setResizeWeight(.47);
-    split.setDividerLocation(470);
-    split.setDividerSize(7);
+    split.setResizeWeight(.4);
+    split.setDividerLocation(440);
+    split.setDividerSize(14);
     root.add(split);
     return root;
   }
@@ -154,15 +174,20 @@ final class HubPluginManagerDialog extends JDialog {
     search.setSelectionColor(Color.decode("#5c4278"));
     search.setToolTipText("Search by name, ID, vendor, filename, or description");
     search.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(BORDER), empty(7, 9, 7, 9)));
-    root.add(search, BorderLayout.CENTER);
+    search.setFont(search.getFont().deriveFont(Font.PLAIN, 12f));
+    search.putClientProperty("JTextField.placeholderText", "Search plugins");
+    JPanel searchRow = panel(new BorderLayout(10, 0), BG);
+    searchRow.add(label("Search", MUTED, 11, false), BorderLayout.WEST);
+    searchRow.add(search);
+    root.add(searchRow, BorderLayout.CENTER);
     scope.setModel(new DefaultComboBoxModel<>(projectPlugins == null
         ? new String[] {"All locations", "User"} : new String[] {"All locations", "User", "Project"}));
-    styleCombo(scope, 116);
-    styleCombo(health, 132);
-    JPanel combos = panel(new FlowLayout(FlowLayout.RIGHT, 7, 0), BG);
+    styleCombo(scope, 160);
+    styleCombo(health, 160);
+    JPanel combos = panel(new FlowLayout(FlowLayout.LEFT, 7, 0), BG);
     combos.add(scope);
     combos.add(health);
-    root.add(combos, BorderLayout.EAST);
+    root.add(combos, BorderLayout.SOUTH);
     return root;
   }
 
@@ -173,11 +198,15 @@ final class HubPluginManagerDialog extends JDialog {
     JPanel message = vertical(PANEL);
     JLabel title = label("Select a plugin", SOFT, 16, true);
     title.setAlignmentX(Component.CENTER_ALIGNMENT);
-    JLabel hint = label("Manifest details, diagnostics, and actions appear here.", MUTED, 11, false);
+    JLabel hint = label("Choose an installed plugin to view its details.", MUTED, 12, false);
     hint.setAlignmentX(Component.CENTER_ALIGNMENT);
     message.add(title);
     message.add(Box.createVerticalStrut(7));
     message.add(hint);
+    message.add(Box.createVerticalStrut(26));
+    JLabel note = label("Versions  ·  Capabilities  ·  Health checks", MUTED, 11, false);
+    note.setAlignmentX(Component.CENTER_ALIGNMENT);
+    message.add(note);
     empty.add(message);
     details.add(empty, "empty");
 
@@ -194,7 +223,7 @@ final class HubPluginManagerDialog extends JDialog {
     heading.add(detailState, BorderLayout.EAST);
     selected.add(heading, BorderLayout.NORTH);
 
-    JPanel body = vertical(PANEL);
+    JPanel body = new DetailBody();
     body.add(section("ABOUT"));
     body.add(Box.createVerticalStrut(5));
     description.setRows(3);
@@ -216,8 +245,9 @@ final class HubPluginManagerDialog extends JDialog {
     body.add(Box.createVerticalGlue());
     JScrollPane bodyScroll = scroller(body, false);
     bodyScroll.setBorder(null);
+    bodyScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
     selected.add(bodyScroll);
-    JPanel actions = panel(new FlowLayout(FlowLayout.LEFT, 7, 0), PANEL);
+    JPanel actions = panel(new GridLayout(2, 2, 8, 8), PANEL);
     actions.add(toggle);
     actions.add(reveal);
     actions.add(copy);
@@ -231,14 +261,15 @@ final class HubPluginManagerDialog extends JDialog {
     JPanel root = panel(new BorderLayout(12, 0), RAISED);
     root.setBorder(BorderFactory.createCompoundBorder(
         BorderFactory.createMatteBorder(1, 0, 0, 0, BORDER), empty(12, 18, 12, 18)));
-    root.add(status);
+    status.setBorder(empty(0, 0, 10, 0));
+    root.add(status, BorderLayout.NORTH);
     JPanel actions = panel(new FlowLayout(FlowLayout.RIGHT, 7, 0), RAISED);
     actions.add(button("Open User Folder", false, () -> openFolder(userPlugins)));
     if (projectPlugins != null) actions.add(button("Open Project Folder", false, () -> openFolder(projectPlugins)));
     actions.add(button("Install for User…", true, () -> installInto(userPlugins, "User")));
     if (projectPlugins != null) actions.add(button("Install for Project…", true, () -> installInto(projectPlugins, "Project")));
     actions.add(button("Close", false, this::dispose));
-    root.add(actions, BorderLayout.EAST);
+    root.add(actions, BorderLayout.CENTER);
     return root;
   }
 
@@ -341,18 +372,19 @@ final class HubPluginManagerDialog extends JDialog {
       if (!query.isBlank() && !row.searchText().contains(query)) continue;
       shownRows.addElement(row);
     }
-    visibleCount.setText(shownRows.size() + " shown of " + allRows.size());
+    long enabled = allRows.stream().filter(PluginRow::enabled).count();
+    long issues = allRows.stream().filter(row -> row.kind() == Kind.ISSUE).count();
+    visibleCount.setText(shownRows.size() + " of " + allRows.size() + " plugins · " + enabled + " enabled"
+        + (issues > 0 ? " · " + issues + " need attention" : ""));
+    emptyTitle.setText(allRows.isEmpty() ? "Your plugin library is empty" : "No matching plugins");
+    emptyHint.setText(allRows.isEmpty() ? "Install a plugin JAR to add tools to JVN." : "Try a different search or change the filters.");
+    inventoryLayout.show(inventoryCards, shownRows.isEmpty() ? "empty" : "list");
     select(selected);
     if (list.getSelectedIndex() < 0) showDetails();
   }
 
   private void updateSummary(List<String> errors) {
-    long enabled = allRows.stream().filter(PluginRow::enabled).count();
     long issues = allRows.stream().filter(r -> r.kind() == Kind.ISSUE).count();
-    installedCount.setText(Integer.toString(allRows.size()));
-    enabledCount.setText(Long.toString(enabled));
-    issueCount.setText(Long.toString(issues));
-    issueCount.setForeground(issues == 0 ? PASS : WARN);
     if (postScanNotice != null) {
       setStatus(postScanNotice.message(), postScanNotice.color());
       postScanNotice = null;
@@ -411,6 +443,7 @@ final class HubPluginManagerDialog extends JDialog {
     right.insets = new Insets(3, 0, 3, 0);
     JLabel content = label(value == null || value.isBlank() ? "—" : value, SOFT, 11, false);
     content.setToolTipText(value);
+    content.setMinimumSize(new Dimension(0, content.getPreferredSize().height));
     facts.add(content, right);
     return row + 1;
   }
@@ -569,38 +602,25 @@ final class HubPluginManagerDialog extends JDialog {
   private static JLabel label(String text, Color color, float size, boolean bold) {
     JLabel l = new JLabel(text); l.setForeground(color); l.setFont(l.getFont().deriveFont(bold ? Font.BOLD : Font.PLAIN, size)); return l;
   }
-  private static JLabel countLabel() { JLabel l = label("0", TEXT, 16, true); l.setHorizontalAlignment(SwingConstants.CENTER); return l; }
-  private static JComponent countCard(String caption, JLabel value) {
-    JPanel p = vertical(Color.decode("#191919"));
-    p.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(BORDER), empty(5, 12, 5, 12)));
-    value.setAlignmentX(Component.CENTER_ALIGNMENT);
-    JLabel c = label(caption, MUTED, 9, true); c.setAlignmentX(Component.CENTER_ALIGNMENT);
-    p.add(value); p.add(c); return p;
-  }
   private static JLabel section(String text) { JLabel l = label(text, ACCENT, 10, true); l.setAlignmentX(Component.LEFT_ALIGNMENT); return l; }
   private static JTextArea textArea() {
     JTextArea a = new JTextArea(); a.setEditable(false); a.setLineWrap(true); a.setWrapStyleWord(true);
+    a.setAlignmentX(Component.LEFT_ALIGNMENT);
     a.setOpaque(false); a.setForeground(SOFT); a.setFont(a.getFont().deriveFont(11f)); a.setBorder(empty(2, 0, 2, 0)); return a;
   }
   private static JScrollPane scroller(Component view, boolean border) {
     JScrollPane s = new JScrollPane(view); s.setBackground(PANEL); s.getViewport().setBackground(PANEL);
-    s.setBorder(border ? BorderFactory.createLineBorder(BORDER) : null); s.getVerticalScrollBar().setUnitIncrement(14); return s;
+    s.setBorder(border ? BorderFactory.createLineBorder(BORDER) : null); JvnHub.styleScrollBar(s.getVerticalScrollBar());
+    JvnHub.styleScrollBar(s.getHorizontalScrollBar());
+    return s;
   }
   private static void styleCombo(JComboBox<String> combo, int width) {
-    combo.setBackground(Color.decode("#151515")); combo.setForeground(SOFT); combo.setFocusable(false);
-    combo.setBorder(BorderFactory.createLineBorder(BORDER)); combo.setPreferredSize(new Dimension(width, 32));
+    JvnHub.styleHubComboBox(combo, new Dimension(width, 34));
   }
   private static JButton button(String text, boolean primary, Runnable action) {
-    JButton b = new JButton(text); b.setUI(new BasicButtonUI()); b.setFocusPainted(false); b.setOpaque(true);
-    b.setBackground(primary ? Color.decode("#67458d") : Color.decode("#252525")); b.setForeground(TEXT);
-    b.setFont(b.getFont().deriveFont(Font.BOLD, 11f));
-    b.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(primary ? Color.decode("#9a70c9") : Color.decode("#505050")), empty(7, 11, 7, 11)));
-    Color normal = b.getBackground();
-    b.addMouseListener(new MouseAdapter() {
-      @Override public void mouseEntered(MouseEvent e) { if (b.isEnabled()) b.setBackground(primary ? Color.decode("#7954a2") : HOVER); }
-      @Override public void mouseExited(MouseEvent e) { b.setBackground(normal); }
-    });
-    b.addActionListener(e -> action.run()); return b;
+    JButton button = new JvnHub.FlatButton(text, null, primary ? ACCENT : null);
+    button.addActionListener(e -> action.run());
+    return button;
   }
   private static GridBagConstraints constraints(int x, int y, double weight, int fill) {
     GridBagConstraints c = new GridBagConstraints(); c.gridx = x; c.gridy = y; c.weightx = weight;
@@ -608,11 +628,27 @@ final class HubPluginManagerDialog extends JDialog {
   }
   private static Color dark(Color color) { return new Color(Math.max(18, color.getRed() / 4), Math.max(18, color.getGreen() / 4), Math.max(18, color.getBlue() / 4)); }
 
+  private static final class DetailBody extends JPanel implements Scrollable {
+    DetailBody() {
+      setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+      setBackground(PANEL);
+    }
+    @Override public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
+    @Override public boolean getScrollableTracksViewportWidth() { return true; }
+    @Override public boolean getScrollableTracksViewportHeight() { return false; }
+    @Override public int getScrollableUnitIncrement(Rectangle visible, int orientation, int direction) { return 16; }
+    @Override public int getScrollableBlockIncrement(Rectangle visible, int orientation, int direction) {
+      return Math.max(16, visible.height - 16);
+    }
+  }
+
   private final class PluginRenderer implements ListCellRenderer<PluginRow> {
     @Override public Component getListCellRendererComponent(JList<? extends PluginRow> source, PluginRow row,
         int index, boolean selected, boolean focus) {
       JPanel card = panel(new BorderLayout(10, 0), selected ? HOVER : PANEL);
-      card.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER), empty(9, 9, 9, 9)));
+      card.setBorder(BorderFactory.createCompoundBorder(
+          BorderFactory.createMatteBorder(0, selected ? 3 : 0, 1, 0, selected ? ACCENT : BORDER),
+          empty(12, selected ? 9 : 12, 12, 12)));
       JLabel icon = label(row.kind().symbol, row.kind().color, 15, true);
       icon.setHorizontalAlignment(SwingConstants.CENTER); icon.setOpaque(true); icon.setBackground(dark(row.kind().color));
       icon.setBorder(BorderFactory.createLineBorder(row.kind().color.darker())); icon.setPreferredSize(new Dimension(38, 38));
