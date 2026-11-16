@@ -31,6 +31,21 @@ Launch command:
 
 ## Layout Overview
 
+### Startup progress
+
+The editor and launcher show a glossy green loading bar with the current startup task.
+Environment checks run in the background. Preferences, editor plugins, window construction,
+and first-frame layout then run in order before the splash closes. The bar tracks completed
+milestones, not elapsed time; slower steps can hold it in place. The five-second minimum is distributed across the check and initialization messages, so
+fast steps remain readable rather than leaving a long pause at “Ready”. Expensive window
+initialization steps consume their display interval while they run. Window construction uses the
+JavaFX UI thread, so the animation may pause during an individual expensive initialization step.
+
+Preflight failures keep diagnostics and a **Retry** action visible. If window initialization
+fails after services have started, the splash offers **Quit** and explains that a relaunch is
+required, avoiding duplicate partially initialized services. Release notes open only after
+successful startup.
+
 ### Startup welcome dashboard
 
 - The center area opens with a `Welcome` tab by default.

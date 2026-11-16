@@ -23,13 +23,15 @@ import javafx.stage.StageStyle;
 
 /**
  * Transparent startup splash used while the editor and launcher perform preflight checks.
- * Normal startup stays intentionally quiet; diagnostics appear only if launch is blocked.
+ * Displays real startup milestones; detailed diagnostics appear if launch is blocked.
  */
 public final class StartupSplashOverlay {
   private static final String SURFACE_TOP = "#232323";
   private static final String SURFACE_BOTTOM = "#171717";
   private static final String BORDER = "#3a3a3a";
   private static final int MAX_LOG_LINES = 80;
+  private static final long MIN_VISIBLE_NANOS = 5_000_000_000L;
+  private int startupStepCount;
 
   private final Stage stage = new Stage(StageStyle.TRANSPARENT);
   private final StackPane root = new StackPane();
@@ -40,6 +42,10 @@ public final class StartupSplashOverlay {
   private final Label failureKickerLabel = new Label("Startup blocked");
   private final Label statusLabel = new Label("Starting JVN...");
   private final Label detailLabel = new Label();
+  private final Label loadingStatus = new Label("Starting JVN...");
+  private final Label subtitleLabel = new Label("Loading editor environment");
+  private final StartupLoadingBar loadingBar = new StartupLoadingBar();
+  private javafx.animation.AnimationTimer initialization;
   private final ProgressBar progressBar = new ProgressBar(0);
   private final Button retryButton = createActionButton("Retry", true);
   private final Button quitButton = createActionButton("Quit", false);
@@ -58,12 +64,16 @@ public final class StartupSplashOverlay {
     failurePane.setVisible(false);
     failurePane.setManaged(false);
 
-    Scene scene = new Scene(root, 520, 300, Color.TRANSPARENT);
+    Scene scene = new Scene(root, 520, 360, Color.TRANSPARENT);
     scene.setFill(Color.TRANSPARENT);
     stage.setScene(scene);
     stage.setTitle("JVN");
     stage.setResizable(false);
     stage.setAlwaysOnTop(true);
+    stage.setOnHidden(event -> {
+      loadingBar.stop();
+      if (initialization != null) initialization.stop();
+    });
   }
 
   public void show() {
@@ -71,17 +81,35 @@ public final class StartupSplashOverlay {
       if (!stage.isShowing()) {
         stage.show();
       }
+      loadingBar.start();
       stage.centerOnScreen();
       stage.toFront();
     });
   }
 
   public void close() {
-    runOnFx(stage::hide);
+    runOnFx(() -> {
+      loadingBar.stop();
+      if (initialization != null) initialization.stop();
+      stage.hide();
+    });
   }
 
   public void prepareForChecks(boolean clearLogs) {
+    prepareForChecks(clearLogs, 0);
+  }
+
+  public static long minimumStepMillis(int totalSteps) {
+    return (long) Math.ceil(5_000.0 / Math.max(1, totalSteps));
+  }
+
+  public void prepareForChecks(boolean clearLogs, int totalSteps) {
     runOnFx(() -> {
+      startupStepCount = Math.max(0, totalSteps);
+      if (initialization != null) initialization.stop();
+      loadingBar.setProgress(0);
+      loadingStatus.setText("Starting JVN...");
+      if (stage.isShowing()) loadingBar.start();
       if (clearLogs) {
         recentLogLines.clear();
       }
@@ -103,13 +131,17 @@ public final class StartupSplashOverlay {
   }
 
   public void setProgress(double progress) {
-    runOnFx(() -> progressBar.setProgress(progress < 0 ? ProgressBar.INDETERMINATE_PROGRESS : progress));
+    runOnFx(() -> {
+      loadingBar.setProgress(progress);
+      progressBar.setProgress(loadingBar.getProgress());
+    });
   }
 
   public void setStatus(String status) {
     runOnFx(() -> {
       String text = status == null || status.isBlank() ? "Starting JVN..." : status.trim();
       statusLabel.setText(text);
+      loadingStatus.setText(text);
       stage.setTitle("JVN - " + text);
     });
   }
@@ -118,12 +150,15 @@ public final class StartupSplashOverlay {
     runOnFx(() -> {
       if (subtitle != null && !subtitle.isBlank()) {
         failureKickerLabel.setText(subtitle.trim());
+        subtitleLabel.setText(subtitle.trim());
       }
     });
   }
 
   public void showFailure(String summary, String detail, Runnable onRetry, Runnable onQuit) {
     runOnFx(() -> {
+      loadingBar.stop();
+      if (initialization != null) initialization.stop();
       splashPane.setVisible(false);
       splashPane.setManaged(false);
       failurePane.setVisible(true);
@@ -137,7 +172,7 @@ public final class StartupSplashOverlay {
       detailLabel.setManaged(!message.isBlank());
       progressAccent = "#ff8fb6";
       styleProgressBar();
-      retryButton.setDisable(false);
+      retryButton.setDisable(onRetry == null);
       quitButton.setDisable(false);
       retryButton.setOnAction(evt -> {
         retryButton.setDisable(true);
@@ -154,7 +189,7 @@ public final class StartupSplashOverlay {
 
   public void showLaunchingEditor() {
     runOnFx(() -> {
-      statusLabel.setText("Launching editor");
+      setStatus("Preparing editor window...");
       detailLabel.setText("");
       detailLabel.setVisible(false);
       detailLabel.setManaged(false);
@@ -190,7 +225,21 @@ public final class StartupSplashOverlay {
     splashPane.setAlignment(Pos.CENTER);
     splashPane.setPadding(new Insets(18));
     splashPane.setStyle("-fx-background-color: transparent;");
-    splashPane.getChildren().setAll(logoView, versionLabel, sourceLabel);
+    subtitleLabel.setTextFill(Color.web("#aebdc4"));
+    subtitleLabel.setFont(Font.font("System", 12));
+    loadingStatus.setTextFill(Color.web("#edf6ed"));
+    loadingStatus.setFont(Font.font("System", 12));
+    loadingStatus.setWrapText(true);
+    loadingStatus.setAlignment(Pos.CENTER);
+    loadingStatus.setMinHeight(36);
+    loadingStatus.setMaxWidth(400);
+    VBox.setMargin(subtitleLabel, new Insets(12, 0, 8, 0));
+    VBox.setMargin(loadingStatus, new Insets(6, 0, 0, 0));
+    splashPane.setMaxSize(480, 330);
+    String textShadow = "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.85), 5, 0.5, 0, 1);";
+    subtitleLabel.setStyle(textShadow);
+    loadingStatus.setStyle(textShadow);
+    splashPane.getChildren().setAll(logoView, versionLabel, sourceLabel, subtitleLabel, loadingBar, loadingStatus);
   }
 
   private void configureFailurePane() {
@@ -230,6 +279,59 @@ public final class StartupSplashOverlay {
         progressBar,
         actionBar);
   }
+
+  public record InitializationStep(String message, Runnable action) {}
+
+  /** Runs FX-owned initialization in order, allowing each status to paint before its work starts. */
+  public void initialize(java.util.List<InitializationStep> steps, Runnable onReady,
+                         java.util.function.Consumer<Throwable> onFailure) {
+    java.util.List<InitializationStep> sequence = java.util.List.copyOf(steps);
+    runOnFx(() -> {
+      if (initialization != null) initialization.stop();
+      initialization = new javafx.animation.AnimationTimer() {
+        private int index;
+        private boolean announced;
+        private boolean executed;
+        private long announcedAt;
+        private final long stepDuration = MIN_VISIBLE_NANOS
+            / Math.max(1, startupStepCount > 0 ? startupStepCount : sequence.size());
+        @Override public void handle(long now) {
+          try {
+            if (index == sequence.size()) {
+              setProgress(1);
+              stop();
+              onReady.run();
+              return;
+            }
+            InitializationStep step = sequence.get(index);
+            if (!announced) {
+              setStatus(step.message());
+              announced = true;
+              announcedAt = System.nanoTime();
+              return;
+            }
+            if (!executed) {
+              step.action().run();
+              executed = true;
+            }
+            // Work and its message share this interval; slow work consumes the interval itself.
+            if (System.nanoTime() - announcedAt < stepDuration) return;
+            index++;
+            setProgress(.75 + .25 * index / sequence.size());
+            announced = false;
+            executed = false;
+          } catch (Exception error) {
+            stop();
+            onFailure.accept(error);
+          }
+        }
+      };
+      initialization.start();
+    });
+  }
+
+  StackPane rootForTest() { return root; }
+  double progressForTest() { return loadingBar.getProgress(); }
 
   private String failureDetail(String detail) {
     if (detail != null && !detail.isBlank()) {

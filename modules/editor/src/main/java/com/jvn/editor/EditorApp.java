@@ -307,8 +307,7 @@ public class EditorApp extends Application {
       ".settings", ".project", ".properties", ".md", ".json",
       ".yaml", ".yml", ".toml", ".ini", ".cfg", ".xml", ".csv", ".tsv"
   };
-  private static final long MIN_STARTUP_SPLASH_MS = 1500L;
-  private static final long STARTUP_STEP_DELAY_MS = 0L;
+  private static final long STARTUP_STEP_DELAY_MS = StartupSplashOverlay.minimumStepMillis(16);
   private static final boolean STRICT_STARTUP_GRADLE_CHECK =
       Boolean.getBoolean("jvn.editor.strictStartupGradleCheck");
   private static final DateTimeFormatter STARTUP_TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
@@ -929,13 +928,12 @@ public class EditorApp extends Application {
   private void launchStartupSequence(Stage primaryStage,
                                      StartupSplashOverlay splash,
                                      boolean clearLogs) {
-    splash.prepareForChecks(clearLogs);
+    splash.prepareForChecks(clearLogs, 16);
     splash.setProgress(0.0);
     splash.setStatus("Running startup health checks...");
     splash.appendLog(startupLogLine("INFO", "Bootstrap",
         clearLogs ? "Retrying preflight checks" : "Launching preflight checks"));
 
-    long splashShownNs = System.nanoTime();
     Task<Void> startupTask = createStartupHealthCheckTask(splash);
     startupTask.messageProperty().addListener((o, ov, nv) -> {
       if (nv == null || nv.isBlank()) return;
@@ -943,9 +941,9 @@ public class EditorApp extends Application {
     });
     startupTask.progressProperty().addListener((o, ov, nv) -> {
       double progress = nv == null ? -1.0 : nv.doubleValue();
-      splash.setProgress(progress);
+      splash.setProgress(progress < 0 ? -1 : progress * .75);
     });
-    startupTask.setOnSucceeded(e -> finalizeStartupSuccess(primaryStage, splash, splashShownNs));
+    startupTask.setOnSucceeded(e -> finalizeStartupSuccess(primaryStage, splash));
     startupTask.setOnFailed(e -> finalizeStartupFailure(primaryStage, splash, startupTask.getException()));
     Thread startupThread = new Thread(startupTask, "jvn-editor-startup-checks");
     startupThread.setDaemon(true);
@@ -953,27 +951,26 @@ public class EditorApp extends Application {
   }
 
   private void finalizeStartupSuccess(Stage primaryStage,
-                                      StartupSplashOverlay splash,
-                                      long splashShownNs) {
-    long elapsedMs = (System.nanoTime() - splashShownNs) / 1_000_000L;
-    long waitMs = Math.max(0L, MIN_STARTUP_SPLASH_MS - elapsedMs);
-    PauseTransition delay = new PauseTransition(Duration.millis(waitMs));
-    delay.setOnFinished(evt -> {
-      try {
-        initializeEditorStage(primaryStage);
-      } catch (Exception ex) {
-        EditorDialogs.error(
-            primaryStage,
-            "JVN Editor",
-            "Startup failed while preparing the editor window.",
-            ex,
-            "Retry editor startup from the splash screen if it is still available.",
-            "Confirm the workspace and editor resources are readable.");
-      } finally {
-        splash.close();
-      }
-    });
-    delay.play();
+                                      StartupSplashOverlay splash) {
+    splash.initialize(List.of(
+        new StartupSplashOverlay.InitializationStep("Loading editor preferences...", () -> {
+          editorPreferencesStore = new EditorPreferencesStore();
+          editorPreferences = SAFE_MODE ? EditorPreferences.defaults() : editorPreferencesStore.load();
+        }),
+        new StartupSplashOverlay.InitializationStep("Discovering and starting editor plugins...",
+            () -> reloadPlugins(projectRoot)),
+        new StartupSplashOverlay.InitializationStep("Building editor panels and workspace...",
+            () -> initializeEditorStage(primaryStage)),
+        new StartupSplashOverlay.InitializationStep("Preparing the first editor frame...", () -> {
+          primaryStage.getScene().getRoot().applyCss();
+          primaryStage.getScene().getRoot().layout();
+        })
+    ), () -> {
+      splash.close();
+      Platform.runLater(() -> maybeShowWhatsNew(primaryStage, AppBuildInfo.resolve(EditorApp.class)));
+    }, error -> splash.showFailure(
+        "Could not initialize the editor", safeMessage(error)
+            + "\nQuit and relaunch JVN to retry window initialization.", null, Platform::exit));
   }
 
   private void finalizeStartupFailure(Stage primaryStage,
@@ -1097,9 +1094,9 @@ public class EditorApp extends Application {
         updateMessage("GitHub setup checked");
         advance(++step, totalChecks);
 
-        showStartupLaunchProgress(splash);
+        updateMessage("Checking available resources...");
         logSplash(splash, "INFO", "Tests", "Full repository test suite not run during splash launch.");
-        updateMessage("Launching editor");
+        updateMessage("Checking storage and memory...");
         advance(++step, totalChecks);
 
         File diskRoot = workspace;
@@ -1158,11 +1155,6 @@ public class EditorApp extends Application {
   private static void logSplash(StartupSplashOverlay splash, String level, String category, String detail) {
     if (splash == null) return;
     splash.appendLog(startupLogLine(level, category, detail));
-  }
-
-  private void showStartupLaunchProgress(StartupSplashOverlay splash) {
-    logSplash(splash, "INFO", "Launch", "Startup checks passed; launching editor immediately.");
-    splash.showLaunchingEditor();
   }
 
   private void collectGitSetupIssues(File workspace,
@@ -1483,12 +1475,9 @@ public class EditorApp extends Application {
     primaryStage.setTitle("JVN Editor");
     URL editorIcon = getClass().getResource("/com/jvn/editor/images/jvn_editor_icon.png");
     if (editorIcon != null) primaryStage.getIcons().add(new Image(editorIcon.toExternalForm()));
-    editorPreferencesStore = new EditorPreferencesStore();
-    editorPreferences = SAFE_MODE ? EditorPreferences.defaults() : editorPreferencesStore.load();
     layoutStudioWindowManager = new LayoutStudioWindowManager(primaryStage, this::doRunProject);
     BorderPane root = new BorderPane();
     AppBuildInfo.BuildInfo buildInfo = AppBuildInfo.resolve(EditorApp.class);
-    reloadPlugins(projectRoot);
 
     // Menu
     MenuBar mb = new MenuBar();
@@ -2681,7 +2670,6 @@ public class EditorApp extends Application {
     });
     applyLinuxDefaultWindowState(primaryStage);
     primaryStage.show();
-    Platform.runLater(() -> maybeShowWhatsNew(primaryStage, buildInfo));
     installSidebarDividerHoverHints();
     scene.setOnDragOver((DragEvent e) -> {
       Dragboard db = e.getDragboard();

@@ -34,7 +34,6 @@ import com.jvn.editor.ui.WelcomeCenterView;
 import com.jvn.editor.ui.WhatsNewCatalog;
 import com.jvn.editor.ui.WhatsNewDialog;
 
-import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -57,7 +56,6 @@ import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
-import javafx.util.Duration;
 
 /**
  * Standalone launcher app for project discovery and runtime/editor entry.
@@ -66,8 +64,7 @@ public class JvnLauncherApp extends Application {
   private static final String EDITOR_OPEN_PROJECT_PROPERTY = "jvn.editor.openProject";
   private static final String EDITOR_OPEN_FILE_PROPERTY = "jvn.editor.openFile";
   private static final String LAUNCHER_START_PROJECT_PROPERTY = "jvn.launcher.project";
-  private static final long MIN_STARTUP_SPLASH_MS = 350L;
-  private static final long STARTUP_STEP_DELAY_MS = 0L;
+  private static final long STARTUP_STEP_DELAY_MS = StartupSplashOverlay.minimumStepMillis(8);
   private static final DateTimeFormatter STARTUP_TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
   private static final DateTimeFormatter PROCESS_LOG_TIME = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
   private static final boolean DEVELOPER_MODE = Boolean.getBoolean("jvn.launcher.developerMode");
@@ -110,14 +107,13 @@ public class JvnLauncherApp extends Application {
   private void launchStartupSequence(Stage stage,
                                      StartupSplashOverlay splash,
                                      boolean clearLogs) {
-    splash.prepareForChecks(clearLogs);
+    splash.prepareForChecks(clearLogs, 8);
     splash.setSubtitle("Loading launcher environment");
     splash.setStatus("Preparing launcher workspace...");
     splash.setProgress(0.0);
     splash.appendLog(startupLogLine("INFO", "Bootstrap",
         clearLogs ? "Retrying launcher startup checks" : "Launching launcher startup checks"));
 
-    long splashShownNs = System.nanoTime();
     Task<File> startupTask = createStartupTask(splash);
     startupTask.messageProperty().addListener((o, ov, nv) -> {
       if (nv == null || nv.isBlank()) return;
@@ -125,9 +121,9 @@ public class JvnLauncherApp extends Application {
     });
     startupTask.progressProperty().addListener((o, ov, nv) -> {
       double progress = nv == null ? -1.0 : nv.doubleValue();
-      splash.setProgress(progress);
+      splash.setProgress(progress < 0 ? -1 : progress * .75);
     });
-    startupTask.setOnSucceeded(e -> finalizeStartupSuccess(stage, splash, startupTask.getValue(), splashShownNs));
+    startupTask.setOnSucceeded(e -> finalizeStartupSuccess(stage, splash, startupTask.getValue()));
     startupTask.setOnFailed(e -> finalizeStartupFailure(stage, splash, startupTask.getException()));
     Thread startupThread = new Thread(startupTask, "jvn-launcher-startup-checks");
     startupThread.setDaemon(true);
@@ -136,28 +132,26 @@ public class JvnLauncherApp extends Application {
 
   private void finalizeStartupSuccess(Stage stage,
                                       StartupSplashOverlay splash,
-                                      File resolvedWorkspace,
-                                      long splashShownNs) {
-    long elapsedMs = (System.nanoTime() - splashShownNs) / 1_000_000L;
-    long waitMs = Math.max(0L, MIN_STARTUP_SPLASH_MS - elapsedMs);
-    PauseTransition delay = new PauseTransition(Duration.millis(waitMs));
-    delay.setOnFinished(evt -> {
-      try {
-        workspaceRoot = resolvedWorkspace != null ? resolvedWorkspace : resolveWorkspaceRoot();
-        initializeLauncherStage(stage);
-      } catch (Exception ex) {
-        EditorDialogs.error(
-            stage,
-            "JVN Launcher",
-            "Startup failed while preparing the launcher window.",
-            ex,
-            "Retry launcher startup from the splash screen if it is still available.",
-            "Confirm the JVN workspace folder is readable and contains the expected Gradle files.");
-      } finally {
-        splash.close();
-      }
-    });
-    delay.play();
+                                      File resolvedWorkspace) {
+    splash.initialize(java.util.List.of(
+        new StartupSplashOverlay.InitializationStep("Loading launcher preferences...", () -> {
+          workspaceRoot = resolvedWorkspace != null ? resolvedWorkspace : resolveWorkspaceRoot();
+          editorPreferencesStore = new EditorPreferencesStore();
+          editorPreferences = editorPreferencesStore.load();
+          EditorTheme.setTheme(editorPreferences.getLauncherTheme());
+        }),
+        new StartupSplashOverlay.InitializationStep("Building launcher and recent projects...",
+            () -> initializeLauncherStage(stage)),
+        new StartupSplashOverlay.InitializationStep("Preparing the first launcher frame...", () -> {
+          stage.getScene().getRoot().applyCss();
+          stage.getScene().getRoot().layout();
+        })
+    ), () -> {
+      splash.close();
+      Platform.runLater(() -> maybeShowWhatsNew(AppBuildInfo.resolve(JvnLauncherApp.class)));
+    }, error -> splash.showFailure(
+        "Could not initialize the launcher", safeMessage(error)
+            + "\nQuit and relaunch JVN to retry window initialization.", null, Platform::exit));
   }
 
   private void finalizeStartupFailure(Stage stage,
@@ -246,10 +240,6 @@ public class JvnLauncherApp extends Application {
     if (workspaceRoot == null) {
       workspaceRoot = resolveWorkspaceRoot();
     }
-    editorPreferencesStore = new EditorPreferencesStore();
-    editorPreferences = editorPreferencesStore.load();
-    EditorTheme.setTheme(editorPreferences.getLauncherTheme());
-
     BorderPane root = new BorderPane();
     root.getStyleClass().add("jvn-launcher-root");
     AppBuildInfo.BuildInfo buildInfo = AppBuildInfo.resolve(JvnLauncherApp.class);
@@ -332,7 +322,6 @@ public class JvnLauncherApp extends Application {
     setCurrentProject(resolveStartupProject(), false);
     refreshButtonState();
     statusLabel.setText("Workspace: " + displayPath(workspaceRoot));
-    Platform.runLater(() -> maybeShowWhatsNew(buildInfo));
   }
 
   private static String startupLogLine(String level, String category, String detail) {
