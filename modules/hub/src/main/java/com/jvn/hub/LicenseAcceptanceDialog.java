@@ -250,14 +250,7 @@ public final class LicenseAcceptanceDialog {
     if (component instanceof JScrollPane pane) {
       pane.setBorder(BorderFactory.createLineBorder(java.awt.Color.decode("#414141")));
       for (JScrollBar bar : new JScrollBar[] {pane.getVerticalScrollBar(), pane.getHorizontalScrollBar()}) {
-        bar.setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
-          @Override protected void configureScrollBarColors() {
-            thumbColor = java.awt.Color.decode("#555555");
-            trackColor = java.awt.Color.decode("#1c1c1c");
-          }
-          @Override protected JButton createDecreaseButton(int direction) { return emptyScrollButton(); }
-          @Override protected JButton createIncreaseButton(int direction) { return emptyScrollButton(); }
-        });
+        JvnHub.styleScrollBar(bar);
         bar.setUnitIncrement(24);
       }
     }
@@ -325,11 +318,7 @@ public final class LicenseAcceptanceDialog {
       for (var child : container.getComponents()) graphite(child);
   }
 
-  private static JButton emptyScrollButton() {
-    JButton button = new JButton();
-    button.setPreferredSize(new Dimension(0, 0));
-    return button;
-  }
+
 
   private static JPanel field(String label, JTextField input) {
     JPanel panel = new JPanel(new BorderLayout(0, 6));

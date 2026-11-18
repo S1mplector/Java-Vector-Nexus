@@ -1,4 +1,5 @@
 @import "editor-aero.css";
+@import "editor-aero-controls.css";
 @import "editor-code.css";
 
 /* JVN editor light theme. Set -Djvn.editor.theme=light (or JVN_EDITOR_THEME=light) to use. */
@@ -1265,8 +1266,7 @@
 /* Ensure virtualized scroll pane and content are transparent to show editor bg */
 .virtualized-scroll-pane,
 .virtualized-scroll-pane .viewport,
-.virtualized-scroll-pane .content,
-.virtualized-scroll-pane * {
+.virtualized-scroll-pane .content {
   -fx-background-color: transparent;
 }
 
@@ -1278,47 +1278,6 @@
 .tab-pane .tab:selected .tab-label { -fx-text-fill: #191919; }
 .tab-pane .tab-content-area { -fx-background-color: #e9eef4; }
 
-/* Scrollbars — thin, accent-colored, IDE-style */
-.scroll-bar {
-  -fx-background-color: transparent;
-  -fx-pref-width: 10px;
-  -fx-pref-height: 10px;
-  -fx-padding: 1;
-}
-.scroll-bar .track {
-  -fx-background-color: -jvn-aero-surface;
-  -fx-background-radius: 5;
-}
-.scroll-bar .thumb {
-  -fx-background-color: -jvn-aero-button;
-  -fx-background-insets: 1;
-  -fx-background-radius: 5;
-}
-.scroll-bar .thumb:hover {
-  -fx-background-color: -jvn-aero-hover;
-}
-.scroll-bar .thumb:pressed {
-  -fx-background-color: -jvn-aero-pressed;
-}
-.scroll-bar .increment-button,
-.scroll-bar .decrement-button {
-  -fx-pref-width: 0;
-  -fx-pref-height: 0;
-  -fx-padding: 0;
-  -fx-background-color: transparent;
-}
-.scroll-bar .increment-arrow,
-.scroll-bar .decrement-arrow {
-  -fx-shape: "";
-  -fx-padding: 0;
-}
-/* Horizontal scrollbar thinner */
-.scroll-bar:horizontal {
-  -fx-pref-height: 8px;
-}
-.scroll-bar:horizontal .thumb {
-  -fx-background-radius: 4;
-}
 
 /* Root and common containers */
 .root, .border-pane, .pane, .vbox, .hbox { -fx-background-color: #e9eef4; }
@@ -4068,27 +4027,6 @@
   -fx-font-size: 11px;
 }
 
-/* ScrollBar (dark theme) */
-.scroll-bar {
-  -fx-background-color: transparent;
-}
-.scroll-bar .thumb {
-  -fx-background-color: -jvn-aero-button;
-  -fx-background-radius: 4;
-}
-.scroll-bar .thumb:hover {
-  -fx-background-color: -jvn-aero-hover;
-}
-.scroll-bar .increment-button,
-.scroll-bar .decrement-button {
-  -fx-background-color: transparent;
-  -fx-padding: 0;
-}
-.scroll-bar .increment-arrow,
-.scroll-bar .decrement-arrow {
-  -fx-shape: "";
-  -fx-padding: 0;
-}
 
 /* SplitPane divider */
 .split-pane > .split-pane-divider {
@@ -4301,24 +4239,6 @@
   -fx-background-color: #eaeff5;
 }
 
-/* Slider */
-.slider .track {
-  -fx-background-color: #d1d6dc;
-  -fx-background-radius: 4;
-}
-.slider .thumb {
-  -fx-background-color: #686868;
-  -fx-background-radius: 8;
-}
-.slider .thumb:hover {
-  -fx-background-color: #595959;
-}
-.slider:disabled .thumb {
-  -fx-background-color: #c1c6cc;
-}
-.slider:disabled .track {
-  -fx-background-color: #e1e6ec;
-}
 
 /* Tooltip */
 .tooltip {

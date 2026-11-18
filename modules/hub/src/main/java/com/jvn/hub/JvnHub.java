@@ -105,7 +105,6 @@ import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicCheckBoxUI;
 import javax.swing.plaf.basic.BasicComboBoxUI;
-import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.plaf.basic.BasicComboPopup;
 import javax.swing.plaf.basic.BasicSpinnerUI;
 
@@ -156,8 +155,6 @@ public final class JvnHub {
   private static final Color ACCENT_ERROR   = Color.decode("#f38ba8");
   private static final Color ACCENT_MAINTENANCE = Color.decode("#ff9933");
   private static final Color LOG_TEXT       = Color.decode("#cfcfcf");
-  private static final Color SCROLL_THUMB   = Color.decode("#3f3f3f");
-  private static final Color SCROLL_THUMB_HOVER = Color.decode("#5d5d5d");
   private static final int PROCESS_OUTPUT_PREFIX_LIMIT = 8192;
   private static final int PROCESS_OUTPUT_TAIL_LINES = 40;
 
@@ -331,6 +328,7 @@ public final class JvnHub {
     UIManager.put("Window.background", BG);
     UIManager.put("RootPane.background", BG);
     UIManager.put("Dialog.background", BG);
+    HubAeroControls.installDefaults();
     UIManager.put("Panel.background", BG);
     UIManager.put("OptionPane.background", BG);
     UIManager.put("ToolTip.background", BG);
@@ -391,7 +389,6 @@ public final class JvnHub {
     UIManager.put("TextArea.caretForeground", LOG_TEXT);
     UIManager.put("ScrollBar.background", BG);
     UIManager.put("ScrollBar.track", BG);
-    UIManager.put("ScrollBar.thumb", SCROLL_THUMB);
     scaleDefaultUiFonts();
   }
 
@@ -2625,11 +2622,11 @@ public final class JvnHub {
 
   static void styleScrollBar(JScrollBar bar) {
     if (bar == null) return;
-    bar.setUI(new NeutralScrollBarUI());
+    bar.setUI(new HubAeroControls.ScrollBarUi(ui(17)));
     bar.setOpaque(true);
     bar.setBackground(BG);
     bar.setBorder(BorderFactory.createEmptyBorder());
-    bar.setPreferredSize(uiDimension(10, 10));
+    bar.setPreferredSize(uiDimension(17, 17));
     bar.setUnitIncrement(ui(16));
   }
 
@@ -8893,57 +8890,6 @@ public final class JvnHub {
           BasicStroke.CAP_ROUND,
           BasicStroke.JOIN_ROUND));
       g2.draw(texture);
-    }
-  }
-
-  /**
-   * Flat neutral scrollbar UI: no arrow buttons, rounded thumb, BG-matching track.
-   * Lightens the thumb on hover/drag for subtle feedback.
-   */
-  private static final class NeutralScrollBarUI extends BasicScrollBarUI {
-    @Override
-    protected void configureScrollBarColors() {
-      this.thumbColor = SCROLL_THUMB;
-      this.trackColor = BG;
-      this.thumbDarkShadowColor = BG;
-      this.thumbHighlightColor = SCROLL_THUMB;
-      this.thumbLightShadowColor = SCROLL_THUMB;
-    }
-
-    @Override
-    protected JButton createDecreaseButton(int orientation) { return zeroButton(); }
-    @Override
-    protected JButton createIncreaseButton(int orientation) { return zeroButton(); }
-
-    private static JButton zeroButton() {
-      JButton b = new JButton();
-      Dimension zero = new Dimension(0, 0);
-      b.setPreferredSize(zero);
-      b.setMinimumSize(zero);
-      b.setMaximumSize(zero);
-      b.setVisible(false);
-      return b;
-    }
-
-    @Override
-    protected void paintTrack(Graphics g, JComponent c, Rectangle bounds) {
-      g.setColor(BG);
-      g.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-    }
-
-    @Override
-    protected void paintThumb(Graphics g, JComponent c, Rectangle bounds) {
-      if (bounds.isEmpty() || !scrollbar.isEnabled()) return;
-      Graphics2D g2 = (Graphics2D) g.create();
-      g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-      Color fill = (isThumbRollover() || isDragging) ? SCROLL_THUMB_HOVER : SCROLL_THUMB;
-      int inset = 2;
-      int arc = Math.min(bounds.width, bounds.height) - inset * 2;
-      if (arc < 4) arc = 4;
-      g2.setColor(fill);
-      g2.fillRoundRect(bounds.x + inset, bounds.y + inset,
-          bounds.width - inset * 2, bounds.height - inset * 2, arc, arc);
-      g2.dispose();
     }
   }
 

@@ -1,0 +1,50 @@
+/* Graphite palette for the shared Aero scrollbar geometry. */
+.scroll-bar {
+  -fx-background-color: #292929;
+}
+
+.scroll-bar:vertical .track {
+  -fx-background-color: linear-gradient(to right, #202020, #2b2b2b 30%, #303030 75%, #262626);
+}
+
+.scroll-bar:horizontal .track {
+  -fx-background-color: linear-gradient(to bottom, #202020, #2b2b2b 30%, #303030 75%, #262626);
+}
+
+.scroll-bar .thumb,
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+  -fx-background-color: #181818, #777777,
+      linear-gradient(to bottom, #626262, #505050 48%, #404040 51%, #4b4b4b);
+}
+
+.scroll-bar:vertical .thumb {
+  -fx-background-color: #181818, #777777,
+      linear-gradient(to right, #626262, #505050 48%, #404040 51%, #4b4b4b);
+}
+
+.scroll-bar .thumb:hover,
+.scroll-bar:vertical .thumb:hover,
+.scroll-bar .increment-button:hover,
+.scroll-bar .decrement-button:hover {
+  -fx-background-color: #3f7189, #7998a8,
+      linear-gradient(to bottom, #5c7480, #485f6c 48%, #354b59 51%, #435d6d);
+}
+
+.scroll-bar .thumb:pressed,
+.scroll-bar:vertical .thumb:pressed,
+.scroll-bar .increment-button:pressed,
+.scroll-bar .decrement-button:pressed {
+  -fx-background-color: #244c63, #5b7c90,
+      linear-gradient(to bottom, #3f5d70, #314c60 48%, #263c4e 51%, #365368);
+}
+
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+  -fx-background-color: #e2e2e2;
+}
+
+.scroll-pane .corner,
+.virtualized-scroll-pane .corner {
+  -fx-background-color: #292929;
+}
