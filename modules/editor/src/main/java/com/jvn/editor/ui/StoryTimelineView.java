@@ -1,10 +1,10 @@
 package com.jvn.editor.ui;
 
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -314,7 +314,6 @@ public class StoryTimelineView extends BorderPane {
   private final StoryGraphPane graph = new StoryGraphPane();
   private final ScrollPane graphScroll = new ScrollPane(graph);
   private final Label graphHint = new Label("Add an arc or drag a .vns script here to start your story map.");
-  private final List<Button> toolbarIconButtons = new ArrayList<>();
   private static final double MIN_ZOOM = 0.6;
   private static final double MAX_ZOOM = 2.0;
   private double zoomLevel = 1.0;
@@ -324,14 +323,12 @@ public class StoryTimelineView extends BorderPane {
   private Consumer<Arc> onRunArc;
   private Consumer<Link> onRunLink;
   private Runnable onChanged;
-  private boolean toolbarIconOnly = false;
-  private double toolbarTextModeMinWidth = -1;
   private final javafx.animation.Timeline autoRefreshTimer = new javafx.animation.Timeline(
       new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2.0), e -> autoRefreshFromDisk()));
   private long lastTimelineModified = -1L;
 
   public StoryTimelineView() {
-    getStyleClass().addAll("timeline-root", "sidebar-tool-root");
+    getStyleClass().add("sidebar-tool-root");
     arcs.getStyleClass().add("timeline-list");
     links.getStyleClass().add("timeline-list");
     graphHint.getStyleClass().add("timeline-empty-hint");
@@ -339,6 +336,7 @@ public class StoryTimelineView extends BorderPane {
     graphHint.setMaxWidth(440);
     graphHint.setMouseTransparent(true);
     StackPane.setAlignment(graphHint, Pos.CENTER);
+    StackPane.setMargin(graphHint, new Insets(12));
 
     arcs.setCellFactory(v -> new ListCell<>() {
       @Override protected void updateItem(Arc a, boolean empty) {
@@ -411,6 +409,7 @@ public class StoryTimelineView extends BorderPane {
     graphScroll.setFitToWidth(false);
     graphScroll.setFitToHeight(false);
     graphScroll.setPannable(true);
+    graphScroll.getStyleClass().add("story-map-scroll");
     StackPane graphPane = new StackPane(graphScroll, graphHint);
     graphPane.getStyleClass().add("timeline-graph-pane");
 
@@ -427,6 +426,7 @@ public class StoryTimelineView extends BorderPane {
 
     // Split layout
     SplitPane rootSplit = new SplitPane();
+    rootSplit.getStyleClass().add("sidebar-tool-split");
     rootSplit.setOrientation(javafx.geometry.Orientation.VERTICAL);
     rootSplit.getItems().addAll(graphPane, listTabs);
     rootSplit.setDividerPositions(0.76);
@@ -434,12 +434,10 @@ public class StoryTimelineView extends BorderPane {
 
     // Toolbar
     Button bAddArc = iconButton("Add Arc", SidebarToolIcon.plus(), e -> addArc());
-    bAddArc.getStyleClass().add("timeline-primary-button");
     Button bAddLink = iconButton("Add Link", SidebarToolIcon.link(), e -> addLink());
-    bAddLink.getStyleClass().add("timeline-primary-button");
-    Button bEdit = iconButton("Edit Selected", SidebarToolIcon.edit(), e -> editSelected());
+    Button bEdit = iconButton("Edit", SidebarToolIcon.edit(), e -> editSelected());
     Button bOpen = iconButton("Open", SidebarToolIcon.folder(), e -> openArc());
-    Button bDelete = iconButton("Delete Selected", SidebarToolIcon.delete(), e -> deleteSelected());
+    Button bDelete = iconButton("Delete", SidebarToolIcon.delete(), e -> deleteSelected());
     Button bCopyGoto = iconButton("Copy Goto", SidebarToolIcon.copy(), e -> copyGoto());
     Button bRefresh = iconButton("Refresh", SidebarToolIcon.refresh(), e -> syncFromDisk(true));
     Button bAuto = iconButton("Auto Layout", SidebarToolIcon.auto(), e -> { graph.autoLayout(); onGraphChanged(); });
@@ -447,8 +445,10 @@ public class StoryTimelineView extends BorderPane {
     Button bValidate = iconButton("Validate", SidebarToolIcon.check(), e -> validate());
     TextField tfSearch = new TextField();
     tfSearch.setPromptText("Find arc...");
+    tfSearch.setAccessibleText("Find arc");
+    tfSearch.getStyleClass().add("sidebar-tool-search-field");
     tfSearch.setTooltip(new Tooltip("Find and highlight story arcs by name"));
-    tfSearch.setPrefWidth(180);
+    tfSearch.setMinWidth(72);
     tfSearch.textProperty().addListener((o, ov, nv) -> graph.highlight(nv));
     HBox.setHgrow(tfSearch, Priority.ALWAYS);
     bAddArc.setTooltip(new Tooltip("Create a story arc from a .vns script"));
@@ -463,17 +463,14 @@ public class StoryTimelineView extends BorderPane {
     bValidate.setTooltip(new Tooltip("Validate scripts and entry labels"));
 
     clusterFilter = new ComboBox<>();
-    clusterFilter.setPrefWidth(170);
+    clusterFilter.setMinWidth(80);
+    clusterFilter.setPrefWidth(112);
+    clusterFilter.setMaxWidth(112);
     clusterFilter.setPromptText("All");
     clusterFilter.setTooltip(new Tooltip("Filter story arcs by cluster"));
     clusterFilter.valueProperty().addListener((o,ov,nv) -> {
       if (nv == null || nv.equals("All")) graph.setFilterCluster(null); else graph.setFilterCluster(nv);
     });
-
-    Separator sepA = new Separator(javafx.geometry.Orientation.VERTICAL);
-    Separator sepB = new Separator(javafx.geometry.Orientation.VERTICAL);
-    Region rowSpacer = new Region();
-    HBox.setHgrow(rowSpacer, Priority.ALWAYS);
 
     Label titleLabel = new Label("Story Map");
     titleLabel.getStyleClass().add("sidebar-tool-title");
@@ -489,20 +486,19 @@ flow between story sections. Drop .vns files onto the graph to create arcs \
 quickly, then use Validate to catch missing scripts or labels."""));
     titleRow.setAlignment(Pos.CENTER_LEFT);
 
-    HBox rowPrimary = new HBox(6,
-      bAddArc, bAddLink, sepA, bEdit, bOpen, bDelete, rowSpacer, new Label("Find"), tfSearch
-    );
-    rowPrimary.setAlignment(Pos.CENTER_LEFT);
-    HBox rowSecondary = new HBox(8,
-      new Label("Cluster"), clusterFilter, sepB, bCopyGoto, bRefresh, bAuto, bFit, bValidate
-    );
-    rowSecondary.setAlignment(Pos.CENTER_LEFT);
+    Label clusterLabel = new Label("Cluster");
+    clusterLabel.getStyleClass().add("sidebar-tool-subtitle");
+    clusterLabel.setMinWidth(Region.USE_PREF_SIZE);
+    clusterLabel.setLabelFor(clusterFilter);
+    HBox filters = new HBox(8, tfSearch, clusterLabel, clusterFilter);
+    filters.setAlignment(Pos.CENTER_LEFT);
+    FlowPane actions = new FlowPane(4, 4,
+        bAddArc, bAddLink, bEdit, bOpen, bDelete, bCopyGoto, bRefresh, bAuto, bFit, bValidate);
+    actions.setAlignment(Pos.CENTER_LEFT);
 
-    VBox toolbar = new VBox(6, titleRow, rowPrimary, rowSecondary);
-    toolbar.getStyleClass().add("timeline-toolbar");
-    toolbar.setPadding(new Insets(8, 8, 6, 8));
+    VBox toolbar = new VBox(6, titleRow, filters, actions);
+    toolbar.getStyleClass().add("sidebar-tool-header");
     setTop(toolbar);
-    setupResponsiveToolbar(toolbar, rowPrimary, rowSecondary);
     setGraphZoom(1.0);
 
     // Graph actions wiring
@@ -572,57 +568,15 @@ quickly, then use Validate to catch missing scripts or labels."""));
     updateGraphHint();
   }
 
-  private Button iconButton(String text,
-                            javafx.scene.layout.Region iconClass,
-                            javafx.event.EventHandler<javafx.event.ActionEvent> onAction) {
-    Button button = new Button(text);
-    button.getStyleClass().addAll("timeline-toolbar-button", "sidebar-tool-btn");
-    button.getProperties().put("fullText", text);
+  private static Button iconButton(String text, Region icon,
+                                   javafx.event.EventHandler<javafx.event.ActionEvent> onAction) {
+    Button button = new Button(text, icon);
+    button.getStyleClass().add("sidebar-tool-btn");
     button.setContentDisplay(ContentDisplay.LEFT);
     button.setGraphicTextGap(6);
+    button.setMinWidth(Region.USE_PREF_SIZE);
     button.setOnAction(onAction);
-
-    button.setGraphic(iconClass);
-
-    toolbarIconButtons.add(button);
     return button;
-  }
-
-  private void setupResponsiveToolbar(VBox toolbar, HBox rowPrimary, HBox rowSecondary) {
-    Runnable refresh = () -> {
-      double width = toolbar.getWidth();
-      if (width <= 0) return;
-      if (toolbarTextModeMinWidth <= 0) {
-        toolbarTextModeMinWidth = Math.max(rowPrimary.prefWidth(-1), rowSecondary.prefWidth(-1));
-      }
-      // Keep a small breathing room so the switch happens before clipping.
-      boolean iconOnly = width < (toolbarTextModeMinWidth + 24);
-      applyToolbarIconMode(iconOnly);
-    };
-
-    toolbar.widthProperty().addListener((o, ov, nv) -> refresh.run());
-    rowPrimary.widthProperty().addListener((o, ov, nv) -> refresh.run());
-    rowSecondary.widthProperty().addListener((o, ov, nv) -> refresh.run());
-    Platform.runLater(refresh);
-  }
-
-  private void applyToolbarIconMode(boolean iconOnly) {
-    if (toolbarIconOnly == iconOnly) return;
-    toolbarIconOnly = iconOnly;
-    for (Button button : toolbarIconButtons) {
-      if (button == null) continue;
-      Object full = button.getProperties().get("fullText");
-      String fullText = full == null ? "" : full.toString();
-      if (iconOnly) {
-        button.getStyleClass().add("icon-only");
-        button.setText(null);
-        button.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-      } else {
-        button.getStyleClass().remove("icon-only");
-        button.setText(fullText);
-        button.setContentDisplay(ContentDisplay.LEFT);
-      }
-    }
   }
 
   public void setProjectRoot(File dir) {

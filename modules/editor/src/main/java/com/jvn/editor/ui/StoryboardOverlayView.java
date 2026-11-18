@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import javafx.beans.binding.Bindings;
 import javafx.event.EventHandler;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
@@ -90,6 +91,7 @@ public class StoryboardOverlayView extends BorderPane {
   private final Label statusLabel = new Label("");
   private final TextField folderField = new TextField();
   private final TextField filterField = new TextField();
+  private final ScrollPane toolScroll = new ScrollPane();
   private final ListView<StoryboardFrame> framesList = new ListView<>();
   private final ImageView previewImage = new ImageView();
   private final Canvas cropCanvas = new Canvas(280, 220);
@@ -161,7 +163,7 @@ public class StoryboardOverlayView extends BorderPane {
   private StackPane cropPreviewStack;
 
   public StoryboardOverlayView() {
-    getStyleClass().addAll("layout-launcher-root", "sidebar-tool-root");
+    getStyleClass().add("sidebar-tool-root");
     titleLabel.getStyleClass().add("sidebar-tool-title");
     summaryLabel.getStyleClass().add("sidebar-tool-summary");
     summaryLabel.setWrapText(true);
@@ -170,7 +172,7 @@ public class StoryboardOverlayView extends BorderPane {
     sourceLabel.getStyleClass().add("sidebar-tool-subtitle");
     sourceLabel.setWrapText(true);
     framesSummaryLabel.getStyleClass().add("sidebar-tool-subtitle");
-    matchLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #d4b07c;");
+    matchLabel.getStyleClass().addAll("sidebar-tool-status", "sidebar-tool-caution");
     matchLabel.setWrapText(true);
     statusLabel.getStyleClass().add("sidebar-tool-status");
     statusLabel.setWrapText(true);
@@ -230,10 +232,10 @@ public class StoryboardOverlayView extends BorderPane {
     fitModeCombo.getStyleClass().add("layout-launcher-field");
     fitModeCombo.setTooltip(new Tooltip("How the storyboard frame maps onto the runtime viewport"));
 
-    configureDimensionField(runtimeWidthField, "Runtime W");
-    configureDimensionField(runtimeHeightField, "Runtime H");
-    configureDimensionField(storyboardWidthField, "Board W");
-    configureDimensionField(storyboardHeightField, "Board H");
+    configureDimensionField(runtimeWidthField, "Width", "Runtime width");
+    configureDimensionField(runtimeHeightField, "Height", "Runtime height");
+    configureDimensionField(storyboardWidthField, "Width", "Storyboard width");
+    configureDimensionField(storyboardHeightField, "Height", "Storyboard height");
     configureOffsetField(offsetXField, "Offset X");
     configureOffsetField(offsetYField, "Offset Y");
 
@@ -243,12 +245,14 @@ public class StoryboardOverlayView extends BorderPane {
     });
     filterField.setOnKeyPressed(e -> {
       if (e.getCode() == KeyCode.DOWN && !framesList.getItems().isEmpty()) {
+        toolScroll.setVvalue(toolScroll.getVmax());
         framesList.requestFocus();
         int index = framesList.getSelectionModel().getSelectedIndex();
         framesList.getSelectionModel().select(index < 0 ? 0 : Math.min(index + 1, framesList.getItems().size() - 1));
         e.consume();
       } else if (e.getCode() == KeyCode.ENTER && framesList.getItems().size() == 1) {
         framesList.getSelectionModel().selectFirst();
+        toolScroll.setVvalue(toolScroll.getVmax());
         framesList.requestFocus();
         e.consume();
       } else if (e.getCode() == KeyCode.ESCAPE && !filterField.getText().isBlank()) {
@@ -371,21 +375,30 @@ public class StoryboardOverlayView extends BorderPane {
     filterHintLabel.getStyleClass().add("sidebar-tool-subtitle");
     filterHintLabel.setWrapText(true);
 
-    HBox folderRow = new HBox(6, folderField, browseButton, autoButton, refreshButton);
-    HBox.setHgrow(folderField, Priority.ALWAYS);
+    FlowPane folderRow = new FlowPane(6, 6, folderField, browseButton, autoButton, refreshButton);
+    folderRow.setAlignment(Pos.CENTER_LEFT);
+    folderField.prefWidthProperty().bind(Bindings.createDoubleBinding(() -> {
+      double width = folderRow.getWidth();
+      if (width <= 0) return 200.0;
+      double actionsWidth = browseButton.prefWidth(-1) + autoButton.prefWidth(-1)
+          + refreshButton.prefWidth(-1) + 3 * folderRow.getHgap();
+      double remaining = width - actionsWidth;
+      return remaining >= 175 ? Math.floor(remaining) : width;
+    }, folderRow.widthProperty()));
 
     FlowPane checksRow = new FlowPane(12, 6, enabledCheck, followActiveCheck, hideUiCheck);
     checksRow.setAlignment(Pos.CENTER_LEFT);
 
     Label opacityLabel = new Label("Opacity");
-    opacityLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #9aabb8;");
-    opacityValueLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #c8c8c8; -fx-min-width: 30;");
+    opacityLabel.getStyleClass().add("sidebar-tool-subtitle");
+    opacityValueLabel.getStyleClass().add("sidebar-tool-subtitle");
+    opacityValueLabel.setMinWidth(30);
     HBox opacityRow = new HBox(8, opacityLabel, opacitySlider, opacityValueLabel);
     opacityRow.setAlignment(Pos.CENTER_LEFT);
     HBox.setHgrow(opacitySlider, Priority.ALWAYS);
 
     Label fitLabel = new Label("Mode");
-    fitLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #9aabb8;");
+    fitLabel.getStyleClass().add("sidebar-tool-subtitle");
     HBox fitRow = new HBox(8, fitLabel, fitModeCombo);
     fitRow.setAlignment(Pos.CENTER_LEFT);
     HBox.setHgrow(fitModeCombo, Priority.ALWAYS);
@@ -394,27 +407,32 @@ public class StoryboardOverlayView extends BorderPane {
     setupActions.setAlignment(Pos.CENTER_LEFT);
 
     Label advancedLabel = new Label("Advanced mapping");
-    advancedLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #9aabb8; -fx-font-weight: 700;");
+    advancedLabel.getStyleClass().add("sidebar-tool-section-title");
 
     Label runtimeLabel = new Label("Game");
-    runtimeLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #9aabb8;");
+    runtimeLabel.getStyleClass().add("sidebar-tool-subtitle");
     Label boardLabel = new Label("Board");
-    boardLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #9aabb8;");
-    HBox resolutionRow = new HBox(8, runtimeLabel, runtimeWidthField, runtimeHeightField, boardLabel, storyboardWidthField, storyboardHeightField);
+    boardLabel.getStyleClass().add("sidebar-tool-subtitle");
+    HBox gameSize = new HBox(8, runtimeLabel, runtimeWidthField, runtimeHeightField);
+    gameSize.setAlignment(Pos.CENTER_LEFT);
+    HBox boardSize = new HBox(8, boardLabel, storyboardWidthField, storyboardHeightField);
+    boardSize.setAlignment(Pos.CENTER_LEFT);
+    FlowPane resolutionRow = new FlowPane(8, 6, gameSize, boardSize);
     resolutionRow.setAlignment(Pos.CENTER_LEFT);
-    HBox.setHgrow(runtimeWidthField, Priority.ALWAYS);
-    HBox.setHgrow(runtimeHeightField, Priority.ALWAYS);
-    HBox.setHgrow(storyboardWidthField, Priority.ALWAYS);
-    HBox.setHgrow(storyboardHeightField, Priority.ALWAYS);
 
     Label scaleLabel = new Label("Scale");
-    scaleLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #9aabb8;");
-    scaleValueLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #c8c8c8; -fx-min-width: 38;");
+    scaleLabel.getStyleClass().add("sidebar-tool-subtitle");
+    scaleValueLabel.getStyleClass().add("sidebar-tool-subtitle");
+    scaleValueLabel.setMinWidth(38);
+    scaleSlider.setPrefWidth(136);
     Label offsetLabel = new Label("Offset");
-    offsetLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #9aabb8;");
-    HBox transformRow = new HBox(8, scaleLabel, scaleSlider, scaleValueLabel, offsetLabel, offsetXField, offsetYField);
+    offsetLabel.getStyleClass().add("sidebar-tool-subtitle");
+    HBox scaleControls = new HBox(8, scaleLabel, scaleSlider, scaleValueLabel);
+    scaleControls.setAlignment(Pos.CENTER_LEFT);
+    HBox offsets = new HBox(8, offsetLabel, offsetXField, offsetYField);
+    offsets.setAlignment(Pos.CENTER_LEFT);
+    FlowPane transformRow = new FlowPane(8, 6, scaleControls, offsets);
     transformRow.setAlignment(Pos.CENTER_LEFT);
-    HBox.setHgrow(scaleSlider, Priority.ALWAYS);
 
     FlowPane placementButtons = new FlowPane(8, 6, projectSizeButton, imageSizeButton, resetPlacementButton);
     placementButtons.setAlignment(Pos.CENTER_LEFT);
@@ -424,7 +442,7 @@ public class StoryboardOverlayView extends BorderPane {
 
     VBox overlayControls = new VBox(6, checksRow, opacityRow, setupActions, advancedLabel, fitRow, resolutionRow, transformRow, placementButtons, cropControls);
 
-    HBox navigationRow = new HBox(8, previousButton, nextButton, matchButton, revealButton);
+    FlowPane navigationRow = new FlowPane(8, 6, previousButton, nextButton, matchButton, revealButton);
     navigationRow.setAlignment(Pos.CENTER_LEFT);
 
     HBox titleRow = new HBox(6, titleLabel, SidebarToolHelp.button(this, "Storyboard Overlay", """
@@ -445,13 +463,13 @@ with or contains the label name — useful for structured storyboard exports.
 "Hide UI" collapses editor chrome so you can compare composition cleanly."""));
     titleRow.setAlignment(Pos.CENTER_LEFT);
     VBox header = new VBox(6, titleRow, summaryLabel, targetLabel, sourceLabel, framesSummaryLabel, matchLabel, folderRow, filterField, filterHintLabel, overlayControls, navigationRow, statusLabel);
-    header.setPadding(new Insets(10, 10, 8, 10));
+    header.getStyleClass().add("sidebar-tool-header");
 
     StackPane previewStack = new StackPane(previewImage, cropCanvas);
     cropPreviewStack = previewStack;
     previewStack.setAlignment(Pos.CENTER);
-    previewStack.setMinSize(420, 260);
-    previewStack.setPrefSize(720, 420);
+    previewStack.setMinSize(0, 140);
+    previewStack.setPrefSize(520, 260);
     previewStack.setMaxSize(Double.MAX_VALUE, 520);
     installCropDragHandlers(previewStack, cropCanvas, previewImage);
     cropCanvas.widthProperty().bind(previewStack.widthProperty());
@@ -463,20 +481,16 @@ with or contains the label name — useful for structured storyboard exports.
 
     VBox previewBox = new VBox(8, previewStack, cropMetaLabel, previewPathLabel, previewMetaLabel);
     previewBox.setPadding(new Insets(10));
-    previewBox.setStyle("-fx-border-color: #2a2f3a; -fx-border-width: 1 0 0 0;");
+    previewBox.getStyleClass().add("storyboard-preview-box");
     framesList.setMinHeight(120);
     framesList.setPrefHeight(180);
 
-    VBox content = new VBox(previewBox, new Separator(), framesList);
-    VBox.setVgrow(framesList, Priority.ALWAYS);
-
-    ScrollPane scroll = new ScrollPane(content);
-    scroll.setFitToWidth(true);
-    scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-    scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-
-    setTop(header);
-    setCenter(scroll);
+    VBox content = new VBox(header, previewBox, new Separator(), framesList);
+    toolScroll.setContent(content);
+    toolScroll.getStyleClass().add("storyboard-tool-scroll");
+    toolScroll.setFitToWidth(true);
+    toolScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    setCenter(toolScroll);
 
     updateControlAvailability();
   }
@@ -488,8 +502,9 @@ with or contains the label name — useful for structured storyboard exports.
     button.setGraphicTextGap(6);
   }
 
-  private void configureDimensionField(TextField field, String prompt) {
+  private void configureDimensionField(TextField field, String prompt, String accessibleText) {
     field.setPromptText(prompt);
+    field.setAccessibleText(accessibleText);
     field.getStyleClass().add("layout-launcher-field");
     field.setPrefColumnCount(5);
     field.setOnAction(e -> commitPlacementField(field, false));

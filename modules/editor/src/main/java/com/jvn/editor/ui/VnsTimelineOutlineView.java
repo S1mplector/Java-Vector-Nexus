@@ -86,8 +86,7 @@ while after you stop typing, so duration parsing never blocks editing."""));
     titleRow.getStyleClass().add("vns-timeline-outline-title-row");
 
     VBox header = new VBox(6, titleRow, fileLabel, summaryLabel);
-    header.setPadding(new Insets(10, 10, 6, 10));
-    header.getStyleClass().add("vns-timeline-outline-header");
+    header.getStyleClass().add("sidebar-tool-header");
 
     setTop(header);
     setCenter(listView);

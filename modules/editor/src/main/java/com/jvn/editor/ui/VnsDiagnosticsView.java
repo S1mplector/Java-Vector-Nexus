@@ -21,6 +21,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 import java.io.File;
@@ -85,8 +86,6 @@ public class VnsDiagnosticsView extends BorderPane {
   public VnsDiagnosticsView() {
     getStyleClass().addAll("vns-diagnostics-root", "sidebar-tool-root");
     titleLabel.getStyleClass().addAll("vns-diagnostics-title", "sidebar-tool-title");
-    titleLabel.setGraphic(AeroIcon.of(AeroIcon.Kind.VNS_DIAGNOSTICS, 20));
-    titleLabel.setGraphicTextGap(7);
     fileLabel.getStyleClass().addAll("vns-diagnostics-file", "sidebar-tool-subtitle");
     summaryLabel.getStyleClass().addAll("vns-diagnostics-summary", "sidebar-tool-summary");
     summaryLabel.setWrapText(true);
@@ -110,8 +109,9 @@ public class VnsDiagnosticsView extends BorderPane {
     configureSeverityButton(warningCountLabel, severityGroup, SEVERITY_WARNINGS);
     allCountButton.setSelected(true);
 
-    filterField.setPromptText("Search message, code, source, or line...");
-    filterField.getStyleClass().add("vns-diagnostics-filter");
+    filterField.setPromptText("Filter diagnostics...");
+    filterField.setTooltip(new Tooltip("Search message, code, source, or line"));
+    filterField.getStyleClass().addAll("vns-diagnostics-filter", "sidebar-tool-search-field");
     filterField.textProperty().addListener((obs, oldValue, newValue) -> applyFilter());
     filterField.setOnKeyPressed(e -> {
       if (e.getCode() == KeyCode.ESCAPE) {
@@ -122,7 +122,8 @@ public class VnsDiagnosticsView extends BorderPane {
 
     categoryFilter.setValue(CATEGORY_ALL);
     categoryFilter.setFocusTraversable(false);
-    categoryFilter.setPrefWidth(128);
+    categoryFilter.setPrefWidth(134);
+    categoryFilter.setMinWidth(Region.USE_PREF_SIZE);
     categoryFilter.getStyleClass().add("vns-diagnostics-category-filter");
     categoryFilter.setButtonCell(new javafx.scene.control.ListCell<>() {
       @Override
@@ -170,6 +171,7 @@ public class VnsDiagnosticsView extends BorderPane {
     prevButton.setOnAction(e -> navigateDiagnostic(-1));
     nextButton.setTooltip(new Tooltip("Next diagnostic (wraps around)"));
     nextButton.setOnAction(e -> navigateDiagnostic(+1));
+    sortButton.setMinWidth(Region.USE_PREF_SIZE);
     sortButton.setTooltip(new Tooltip("Sorted by line number — click to sort errors first"));
     sortButton.setOnAction(e -> {
       sortMode = sortMode == SortMode.LINE ? SortMode.SEVERITY : SortMode.LINE;
@@ -207,18 +209,15 @@ visible, source-aware result set for sharing."""),
     countsRow.setAlignment(Pos.CENTER_LEFT);
     countsRow.getStyleClass().add("vns-diagnostics-severity-row");
 
-    VBox header = new VBox(6, titleRow, fileLabel, summaryLabel, statsLabel, countsRow);
-    header.setPadding(new Insets(10, 10, 6, 10));
-    header.getStyleClass().add("vns-diagnostics-header");
-
-    HBox filterRow = new HBox(8, filterField, categoryFilter, sortButton);
-    filterRow.setPadding(new Insets(0, 10, 8, 10));
+    HBox filterRow = new HBox(8, filterField, categoryFilter);
+    filterRow.setAlignment(Pos.CENTER_LEFT);
     HBox.setHgrow(filterField, Priority.ALWAYS);
     filterRow.getStyleClass().add("vns-diagnostics-filter-row");
 
     FlowPane actionRow = new FlowPane(
         6,
         6,
+        sortButton,
         refreshButton,
         openSelectedButton,
         prevButton,
@@ -227,10 +226,11 @@ visible, source-aware result set for sharing."""),
         clearFilterButton,
         filteredCountLabel);
     actionRow.setAlignment(Pos.CENTER_LEFT);
-    actionRow.setPadding(new Insets(0, 10, 8, 10));
     actionRow.getStyleClass().add("vns-diagnostics-action-row");
 
-    setTop(new VBox(header, filterRow, actionRow));
+    VBox header = new VBox(6, titleRow, fileLabel, summaryLabel, statsLabel, countsRow, filterRow, actionRow);
+    header.getStyleClass().add("sidebar-tool-header");
+    setTop(header);
     setCenter(listView);
     setPadding(new Insets(0));
     updateActionState();

@@ -521,8 +521,7 @@ result of your most recent actions."""));
         branchRow,
         commitRow
     );
-    top.getStyleClass().add("vcs-top");
-    top.setPadding(new Insets(8));
+    top.getStyleClass().add("sidebar-tool-header");
 
     Label changesLabel = new Label("Changes");
     changesLabel.getStyleClass().add("vcs-section-label");

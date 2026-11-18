@@ -496,12 +496,6 @@
   -fx-background-color: #ebf0f6;
 }
 
-.vcs-top {
-  -fx-background-color: #e9eef4;
-  -fx-border-color: #d1d6dc;
-  -fx-border-width: 0 0 1 0;
-}
-
 .vcs-center {
   -fx-background-color: #ebf0f6;
 }
@@ -1499,7 +1493,7 @@
 }
 
 .project-explorer-root {
-  -fx-padding: 8;
+  -fx-padding: 10;
 }
 
 .project-explorer-header {
@@ -2066,17 +2060,6 @@
   -fx-effect: dropshadow(gaussian, rgba(229, 195, 128, 0.18), 8, 0.2, 0, 0);
 }
 
-.layout-launcher-root {
-  -fx-background-color:
-      linear-gradient(to bottom, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.0)),
-      linear-gradient(to bottom, #e6ebf1 0%, #ecf1f7 100%);
-}
-
-.layout-launcher-header {
-  -fx-spacing: 8;
-  -fx-padding: 0 0 4 0;
-}
-
 .layout-launcher-title {
   -fx-font-size: 14px;
   -fx-font-weight: 800;
@@ -2333,9 +2316,6 @@
 
 .script-editor-launcher-header {
   -fx-spacing: 8;
-  -fx-background-color: rgba(239, 239, 239, 0.9);
-  -fx-border-color: #d0d5db;
-  -fx-border-width: 0 0 1 0;
 }
 
 .script-editor-launcher-meta-row,
@@ -2648,20 +2628,6 @@
   -fx-background-color: #e9eef4;
   -fx-border-color: #ced3d9;
   -fx-border-width: 1 0 0 0;
-}
-
-.vns-diagnostics-root {
-  -fx-background-color:
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.0)),
-      linear-gradient(to bottom, #e7eef3 0%, #edf1f4 100%);
-}
-
-.vns-diagnostics-header {
-  -fx-background-color:
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.18)),
-      linear-gradient(to bottom, #e7f4fc 0%, #cfdfea 100%);
-  -fx-border-color: #9fb7c8;
-  -fx-border-width: 0 0 1 0;
 }
 
 .vns-diagnostics-title-row {
@@ -4028,71 +3994,18 @@
   -fx-text-fill: #191919;
 }
 
-/* Timeline editor panel */
-.timeline-root {
-  -fx-background-color: #101214;
+/* Story Map canvas */
+.story-map-canvas,
+.story-map-scroll > .viewport {
+  -fx-background-color: #e8f2fb;
 }
 
-.timeline-toolbar {
-  -fx-background-color: linear-gradient(to bottom, #e1e6ec, #e8edf3);
-  -fx-border-color: #d4d9df;
-  -fx-border-width: 0 0 1 0;
+.story-map-grid-major {
+  -fx-stroke: #bdcfe0;
 }
 
-.timeline-toolbar .label {
-  -fx-text-fill: #404040;
-}
-
-.timeline-toolbar .separator:vertical .line {
-  -fx-border-color: #cacfd5;
-  -fx-border-width: 0 1 0 0;
-}
-
-.timeline-primary-button {
-  -fx-background-color: #bfc4ca;
-  -fx-text-fill: #0e0e0e;
-}
-
-.timeline-primary-button:hover {
-  -fx-background-color: #aeb3b9;
-}
-
-.timeline-toolbar-button {
-  -fx-content-display: left;
-  -fx-graphic-text-gap: 6;
-}
-
-.timeline-toolbar-button.icon-only {
-  -fx-content-display: graphic-only;
-  -fx-graphic-text-gap: 0;
-  -fx-min-width: 34;
-  -fx-pref-width: 34;
-  -fx-padding: 5 6 5 6;
-}
-
-.timeline-graph-pane {
-  -fx-background-color: #ebf0f6;
-  -fx-border-color: #d4d9df;
-  -fx-border-width: 1 0 1 0;
-}
-
-.timeline-empty-hint {
-  -fx-text-fill: #535353;
-  -fx-background-color: rgba(231, 231, 231, 0.9);
-  -fx-border-color: #c8cdd3;
-  -fx-border-width: 1;
-  -fx-padding: 10 14 10 14;
-  -fx-background-radius: 8;
-  -fx-border-radius: 8;
-}
-
-.timeline-lists-tabs .tab-content-area {
-  -fx-background-color: #e9eef4;
-}
-
-.timeline-list .placeholder .label {
-  -fx-text-fill: #898989;
-  -fx-font-size: 12px;
+.story-map-grid-minor {
+  -fx-stroke: #d2e1ee;
 }
 
 /* Dialogs */
@@ -6679,16 +6592,6 @@
   -fx-background-color: #ebf0f6;
 }
 
-.sidebar-tool-header,
-.layout-launcher-header,
-.script-editor-launcher-header,
-.vns-diagnostics-header,
-.vcs-top {
-  -fx-background-color: -jvn-aero-chrome;
-  -fx-border-color: -jvn-aero-edge;
-  -fx-border-width: 0 0 1 0;
-}
-
 .sidebar-tool-footer {
   -fx-border-color: #d0d5db;
   -fx-border-width: 1 0 0 0;
@@ -6852,28 +6755,6 @@
   -fx-cursor: default;
 }
 
-.trashman-root {
-  -fx-background-color: #ebf0f6;
-}
-
-.trashman-header {
-  -fx-padding: 12 12 10 12;
-  -fx-background-color: #e9eef4;
-  -fx-border-color: #d0d5db;
-  -fx-border-width: 0 0 1 0;
-}
-
-.trashman-title {
-  -fx-font-size: 18px;
-  -fx-font-weight: 800;
-  -fx-text-fill: #202326;
-}
-
-.trashman-subtitle {
-  -fx-text-fill: #5f5b56;
-  -fx-font-size: 12px;
-}
-
 .trashman-actions {
   -fx-alignment: center-left;
 }
@@ -7024,20 +6905,7 @@
   -fx-pref-row-count: 8;
 }
 
-/* Diagnostics keeps a compact Windows 7-style glass surface over shared sidebar defaults. */
-.vns-diagnostics-root.sidebar-tool-root {
-  -fx-background-color:
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.0)),
-      linear-gradient(to bottom, #e7eef3 0%, #edf1f4 100%);
-}
-
-.vns-diagnostics-root .vns-diagnostics-header {
-  -fx-background-color:
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.18)),
-      linear-gradient(to bottom, #e7f4fc 0%, #cfdfea 100%);
-  -fx-border-color: #9fb7c8;
-}
-
+/* Diagnostics severity chips */
 .vns-diagnostics-root .vns-diagnostics-chip.vns-diagnostics-chip-all {
   -fx-text-fill: #334957;
   -fx-background-color: linear-gradient(to bottom, #f8fcff, #dce8ef);

@@ -151,7 +151,6 @@ final class AssetAutoLabelDashboardView extends BorderPane {
     batchButton.setId("asset-label-auto-ready");
     batchButton.setTooltip(new Tooltip("Generate labels for ready suggestions at 80% confidence or above. Other assets stay in the review queue."));
     VBox header = new VBox(8, titleRow, summary, primaryActions, search, filters);
-    header.setPadding(new Insets(12));
     header.getStyleClass().add("sidebar-tool-header");
 
     configureTable();

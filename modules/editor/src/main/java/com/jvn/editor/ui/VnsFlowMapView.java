@@ -1,7 +1,6 @@
 package com.jvn.editor.ui;
 
 import javafx.application.Platform;
-import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
@@ -102,7 +101,6 @@ refreshes automatically when you edit or switch the active .vns file."""));
         legendItem("●", "Undefined", "#f38ba8"));
     legend.setAlignment(Pos.CENTER_LEFT);
     VBox header = new VBox(6, titleRow, fileLabel, summaryLabel, toolbar, legend);
-    header.setPadding(new Insets(10, 10, 8, 10));
     header.getStyleClass().add("sidebar-tool-header");
     setTop(header);
 

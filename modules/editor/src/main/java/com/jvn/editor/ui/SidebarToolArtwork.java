@@ -471,6 +471,26 @@ final class SidebarToolArtwork {
     return finish(art);
   }
 
+  static Pane javaRuntime() {
+    Pane art = canvas();
+    Ellipse saucer = new Ellipse(9.6, 16.7, 8.1, 2.1);
+    saucer.setFill(metal());
+    saucer.setStroke(Color.web("#46647b"));
+    saucer.setStrokeWidth(0.7);
+    SVGPath handle = svg("M14.6 8.9 H16.3 C19.5 8.9 18.7 13.5 14.6 13.5",
+        Color.TRANSPARENT, Color.web("#91c5dd"), 1.8);
+    SVGPath cup = svg("M3.1 8.1 H15.8 L14.9 12.6 Q14.1 16.6 9.5 16.6 Q4.8 16.6 4 12.6 Z",
+        glassPanel(Color.web("#f6fdff"), Color.web("#5ca0c6")), Color.web("#325772"), 0.85);
+    Ellipse rim = new Ellipse(9.45, 8.2, 6.3, 1.55);
+    rim.setFill(Color.web("#f5fcff"));
+    rim.setStroke(Color.web("#7198ad"));
+    rim.setStrokeWidth(0.75);
+    SVGPath steam = svg("M8.9 6.7 C5.8 4.4 11.9 3.3 9.7 1.2 M11.7 6.1 Q14.3 4.7 12.7 3.2",
+        Color.TRANSPARENT, Color.web("#e88b55"), 1.25);
+    art.getChildren().addAll(saucer, handle, cup, rim, steam);
+    return finish(art);
+  }
+
   static Pane open(String requested) {
     Color accent = accent(requested, "#dfa44f");
     Pane art = canvas();

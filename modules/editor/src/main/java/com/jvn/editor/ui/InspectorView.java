@@ -53,9 +53,7 @@ public class InspectorView extends VBox {
 
     Label title = new Label("Inspector");
     title.getStyleClass().add("sidebar-tool-title");
-    Region spacer = new Region();
-    HBox.setHgrow(spacer, Priority.ALWAYS);
-    HBox titleRow = new HBox(6, title, spacer, SidebarToolHelp.button(this, "Inspector", """
+    HBox titleRow = new HBox(6, title, SidebarToolHelp.button(this, "Inspector", """
         The Inspector edits the entity selected in the JES scene viewport.
 
         Fields are grouped by purpose and change with the selected entity type. Press Enter or
@@ -72,8 +70,7 @@ public class InspectorView extends VBox {
     selectionLabel.setWrapText(true);
     feedbackLabel.setWrapText(true);
 
-    VBox header = new VBox(5, titleRow, selectionLabel);
-    header.setPadding(new Insets(10, 10, 8, 10));
+    VBox header = new VBox(6, titleRow, selectionLabel);
     header.getStyleClass().add("sidebar-tool-header");
     content.setPadding(new Insets(10));
     VBox footer = new VBox(feedbackLabel);

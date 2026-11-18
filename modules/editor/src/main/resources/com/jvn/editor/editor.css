@@ -550,12 +550,6 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-background-color: #131313;
 }
 
-.vcs-top {
-  -fx-background-color: #161616;
-  -fx-border-color: #2e2e2e;
-  -fx-border-width: 0 0 1 0;
-}
-
 .vcs-center {
   -fx-background-color: #131313;
 }
@@ -1648,7 +1642,7 @@ The editor.css file defines the visual styling for the editor module, including 
 }
 
 .project-explorer-root {
-  -fx-padding: 8;
+  -fx-padding: 10;
 }
 
 .project-explorer-header {
@@ -2215,17 +2209,6 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-effect: dropshadow(gaussian, rgba(229, 195, 128, 0.18), 8, 0.2, 0, 0);
 }
 
-.layout-launcher-root {
-  -fx-background-color:
-      linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #191919 0%, #131313 100%);
-}
-
-.layout-launcher-header {
-  -fx-spacing: 8;
-  -fx-padding: 0 0 4 0;
-}
-
 .layout-launcher-title {
   -fx-font-size: 14px;
   -fx-font-weight: 800;
@@ -2482,9 +2465,6 @@ The editor.css file defines the visual styling for the editor module, including 
 
 .script-editor-launcher-header {
   -fx-spacing: 8;
-  -fx-background-color: rgba(16, 16, 16, 0.9);
-  -fx-border-color: #2f2f2f;
-  -fx-border-width: 0 0 1 0;
 }
 
 .script-editor-launcher-meta-row,
@@ -2797,18 +2777,6 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-background-color: #161616;
   -fx-border-color: #313131;
   -fx-border-width: 1 0 0 0;
-}
-
-.vns-diagnostics-root {
-  -fx-background-color:
-      linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.0)),
-      linear-gradient(to bottom, #1b1b1b 0%, #141414 100%);
-}
-
-.vns-diagnostics-header {
-  -fx-background-color: rgba(16, 16, 16, 0.9);
-  -fx-border-color: #303030;
-  -fx-border-width: 0 0 1 0;
 }
 
 .vns-diagnostics-title-row {
@@ -4141,71 +4109,18 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-text-fill: #e6e6e6;
 }
 
-/* Timeline editor panel */
-.timeline-root {
-  -fx-background-color: #101214;
+/* Story Map canvas */
+.story-map-canvas,
+.story-map-scroll > .viewport {
+  -fx-background-color: #202020;
 }
 
-.timeline-toolbar {
-  -fx-background-color: linear-gradient(to bottom, #1e1e1e, #171717);
-  -fx-border-color: #2b2b2b;
-  -fx-border-width: 0 0 1 0;
+.story-map-grid-major {
+  -fx-stroke: #363636;
 }
 
-.timeline-toolbar .label {
-  -fx-text-fill: #bfbfbf;
-}
-
-.timeline-toolbar .separator:vertical .line {
-  -fx-border-color: #353535;
-  -fx-border-width: 0 1 0 0;
-}
-
-.timeline-primary-button {
-  -fx-background-color: #404040;
-  -fx-text-fill: #f1f1f1;
-}
-
-.timeline-primary-button:hover {
-  -fx-background-color: #515151;
-}
-
-.timeline-toolbar-button {
-  -fx-content-display: left;
-  -fx-graphic-text-gap: 6;
-}
-
-.timeline-toolbar-button.icon-only {
-  -fx-content-display: graphic-only;
-  -fx-graphic-text-gap: 0;
-  -fx-min-width: 34;
-  -fx-pref-width: 34;
-  -fx-padding: 5 6 5 6;
-}
-
-.timeline-graph-pane {
-  -fx-background-color: #141414;
-  -fx-border-color: #2b2b2b;
-  -fx-border-width: 1 0 1 0;
-}
-
-.timeline-empty-hint {
-  -fx-text-fill: #acacac;
-  -fx-background-color: rgba(24, 24, 24, 0.9);
-  -fx-border-color: #373737;
-  -fx-border-width: 1;
-  -fx-padding: 10 14 10 14;
-  -fx-background-radius: 8;
-  -fx-border-radius: 8;
-}
-
-.timeline-lists-tabs .tab-content-area {
-  -fx-background-color: #161616;
-}
-
-.timeline-list .placeholder .label {
-  -fx-text-fill: #767676;
-  -fx-font-size: 12px;
+.story-map-grid-minor {
+  -fx-stroke: #2b2b2b;
 }
 
 /* Dialogs */
@@ -6818,16 +6733,6 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-background-color: #131313;
 }
 
-.sidebar-tool-header,
-.layout-launcher-header,
-.script-editor-launcher-header,
-.vns-diagnostics-header,
-.vcs-top {
-  -fx-background-color: -jvn-aero-chrome;
-  -fx-border-color: -jvn-aero-edge;
-  -fx-border-width: 0 0 1 0;
-}
-
 .sidebar-tool-footer {
   -fx-border-color: #2e2e2e;
   -fx-border-width: 1 0 0 0;
@@ -7019,28 +6924,6 @@ The editor.css file defines the visual styling for the editor module, including 
 .sidebar-tool-card-disabled:hover {
   -fx-opacity: 0.62;
   -fx-cursor: default;
-}
-
-.trashman-root {
-  -fx-background-color: #131313;
-}
-
-.trashman-header {
-  -fx-padding: 12 12 10 12;
-  -fx-background-color: #161616;
-  -fx-border-color: #2e2e2e;
-  -fx-border-width: 0 0 1 0;
-}
-
-.trashman-title {
-  -fx-font-size: 18px;
-  -fx-font-weight: 800;
-  -fx-text-fill: #f4f4f4;
-}
-
-.trashman-subtitle {
-  -fx-text-fill: #bbb7b0;
-  -fx-font-size: 12px;
 }
 
 .trashman-actions {

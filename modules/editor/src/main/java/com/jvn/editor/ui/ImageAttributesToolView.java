@@ -37,7 +37,6 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Separator;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
@@ -162,7 +161,6 @@ public class ImageAttributesToolView extends BorderPane implements ImageToolPane
 
   public ImageAttributesToolView() {
     getStyleClass().add("sidebar-tool-root");
-    setPadding(new Insets(8));
     buildUi();
     refreshCatalog();
   }
@@ -285,15 +283,14 @@ dialogue line or @imgattr command. Clicking Copy puts it on the clipboard."""));
     profileSaveRow.setAlignment(Pos.CENTER_LEFT);
     HBox.setHgrow(profileNameField, Priority.ALWAYS);
 
-    VBox top = new VBox(8,
+    VBox top = new VBox(6,
         titleRow,
         summaryLabel,
         tagFilterRow,
         tagRow,
         exportTagRow,
         profileLoadRow,
-        profileSaveRow,
-        new Separator());
+        profileSaveRow);
     top.getStyleClass().add("sidebar-tool-header");
     setTop(top);
 
@@ -399,7 +396,7 @@ dialogue line or @imgattr command. Clicking Copy puts it on the clipboard."""));
     exportPane.setCollapsible(true);
 
     VBox center = new VBox(8, previewPane, previewInfoLabel, interactionHintLabel, exportPane, tabs, statusLabel);
-    center.setPadding(new Insets(8, 0, 0, 0));
+    center.setPadding(new Insets(0, 10, 8, 10));
     setCenter(center);
 
     refreshShortforms();

@@ -54,9 +54,17 @@
   -fx-background-color: -jvn-aero-selected;
 }
 
-/* Recessed Task Manager-style finish around the performance canvas. */
-.master-toolbar Canvas {
-  -fx-effect: innershadow(gaussian, #071b13, 4, 0.25, 0, 1);
+/* Recess the dark performance display in the same chrome as the toolbar. */
+.editor-perf-graph {
+  -fx-background-color: -jvn-aero-highlight, -jvn-aero-edge;
+  -fx-background-insets: 0, 0 0 1 0;
+  -fx-background-radius: 4, 4;
+  -fx-padding: 2;
+}
+
+.editor-perf-marker {
+  -fx-stroke: #344149;
+  -fx-stroke-width: 0.8;
 }
 
 /* Performance metrics share one readout above the graph. */
@@ -159,6 +167,101 @@
 .jvn-status-bar .jvn-status-diagnostics-ok > .jvn-alert-icon {
   -fx-background-insets: 1.5;
   -fx-shape: "M7 0 A7 7 0 1 1 7 14 A7 7 0 1 1 7 0 Z M2.8 7.2 L5.85 10.18 L11.28 4.76 L10.13 3.62 L5.83 7.92 L3.94 6.06 Z";
+}
+
+/* Sidebar tool headers share the panel surface and leave the chrome to the dock tabs. */
+.sidebar-tool-root .sidebar-tool-header {
+  -fx-background-color: -jvn-aero-surface;
+  -fx-border-width: 0;
+  -fx-padding: 10 10 8 10;
+}
+
+.sidebar-tool-root .image-tool-sidebar-scroll .sidebar-tool-header {
+  -fx-padding: 4 4 2 4;
+}
+
+.sidebar-tool-root .sidebar-tool-header .combo-box {
+  -fx-background-color: -jvn-aero-field;
+  -fx-background-insets: 0;
+  -fx-background-radius: 8;
+  -fx-border-color: derive(-jvn-aero-control-edge, -12%);
+  -fx-border-radius: 8;
+  -fx-border-width: 1;
+  -fx-padding: 0;
+}
+
+.sidebar-tool-root .sidebar-tool-header .combo-box:focused {
+  -fx-border-color: -jvn-aero-focus;
+}
+
+.sidebar-tool-root .sidebar-tool-header .combo-box > .arrow-button {
+  -fx-background-color: derive(-jvn-aero-field, 9%);
+  -fx-background-radius: 0 7 7 0;
+  -fx-border-color: transparent transparent transparent derive(-jvn-aero-control-edge, -12%);
+  -fx-border-width: 0 0 0 1;
+}
+
+.sidebar-tool-root .sidebar-tool-header .combo-box > .list-cell {
+  -fx-background-color: transparent;
+  -fx-text-fill: -jvn-aero-text;
+  -fx-padding: 6 10;
+  -fx-font-size: 11px;
+}
+
+.sidebar-tool-root .sidebar-tool-header .sidebar-tool-search-field {
+  -fx-padding: 7 11;
+  -fx-font-size: 11px;
+}
+
+.sidebar-tool-root .sidebar-tool-caution {
+  -fx-text-fill: -jvn-aero-warning;
+}
+
+.sidebar-tool-placeholder {
+  -fx-background-color: -jvn-aero-field;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-background-radius: 8;
+  -fx-border-radius: 8;
+}
+
+.storyboard-tool-scroll,
+.storyboard-tool-scroll > .viewport {
+  -fx-background-color: -jvn-aero-surface;
+  -fx-padding: 0;
+}
+
+.storyboard-preview-box {
+  -fx-border-color: -jvn-aero-edge;
+  -fx-border-width: 1 0 0 0;
+}
+
+.timeline-graph-pane {
+  -fx-border-color: -jvn-aero-edge;
+  -fx-border-width: 1 0 1 0;
+}
+
+.story-map-scroll {
+  -fx-background-color: transparent;
+  -fx-padding: 0;
+}
+
+.sidebar-tool-root .timeline-empty-hint {
+  -fx-text-fill: -jvn-aero-muted;
+  -fx-background-color: -jvn-aero-field;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-padding: 10 14;
+  -fx-background-radius: 8;
+  -fx-border-radius: 8;
+}
+
+.sidebar-tool-root .timeline-lists-tabs .tab-content-area,
+.sidebar-tool-root .timeline-list {
+  -fx-background-color: -jvn-aero-surface;
+}
+
+.sidebar-tool-root .timeline-list .placeholder .label {
+  -fx-text-fill: -jvn-aero-muted;
+  -fx-font-size: 11px;
 }
 
 /* Command buttons and fields */

@@ -119,7 +119,7 @@ public class TrashmanView extends BorderPane {
   private String lastActionReport = "No GC action has run yet.";
 
   public TrashmanView() {
-    getStyleClass().addAll("trashman-root", "sidebar-tool-root");
+    getStyleClass().add("sidebar-tool-root");
     autoRefreshTimer.setCycleCount(Timeline.INDEFINITE);
     buildUi();
     refreshStatus();
@@ -161,9 +161,9 @@ public class TrashmanView extends BorderPane {
 
   private void buildUi() {
     Label title = new Label("Trashman");
-    title.getStyleClass().add("trashman-title");
+    title.getStyleClass().add("sidebar-tool-title");
     Label subtitle = new Label("Heap memory cleanup utility.");
-    subtitle.getStyleClass().add("trashman-subtitle");
+    subtitle.getStyleClass().add("sidebar-tool-summary");
     subtitle.setWrapText(true);
     HBox titleRow = new HBox(6, title, SidebarToolHelp.button(this, "Trashman", """
         Trashman requests JVM garbage collection to free heap memory.
@@ -204,8 +204,8 @@ public class TrashmanView extends BorderPane {
     FlowPane toggles = new FlowPane(8, 7, finalizationCheck, autoRefreshCheck);
     toggles.getStyleClass().add("trashman-options");
 
-    VBox header = new VBox(9, titleRow, subtitle, actions, sweepOptions, toggles, statusLabel, lastRunLabel);
-    header.getStyleClass().addAll("trashman-header", "sidebar-tool-header");
+    VBox header = new VBox(6, titleRow, subtitle, actions, sweepOptions, toggles, statusLabel, lastRunLabel);
+    header.getStyleClass().add("sidebar-tool-header");
     setTop(header);
 
     FlowPane cards = new FlowPane(8, 8,

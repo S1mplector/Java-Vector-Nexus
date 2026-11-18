@@ -180,7 +180,6 @@ them and review or generate labels in the Auto-label tab."""));
     HBox.setHgrow(titleSpacer, Priority.ALWAYS);
     titleRow.getChildren().addAll(titleSpacer, refreshButton);
     VBox header = new VBox(6, titleRow, rootLabel, summaryLabel, filterRow);
-    header.setPadding(new Insets(10, 10, 8, 10));
     header.getStyleClass().add("sidebar-tool-header");
 
     HBox previewActions = new HBox(8, copyPathButton, openButton, useAssetButton);

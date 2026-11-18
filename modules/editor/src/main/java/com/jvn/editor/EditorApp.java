@@ -55,6 +55,7 @@ import com.jvn.editor.ui.DslPropertyDiagnostics;
 import com.jvn.editor.ui.EditorDialogs;
 import com.jvn.editor.ui.EditorPanelPlacement;
 import com.jvn.editor.ui.EditorPathExplorer;
+import com.jvn.editor.ui.EditorPerformanceGraph;
 import com.jvn.editor.ui.EditorPreferences;
 import com.jvn.editor.ui.EditorPreferencesStore;
 import com.jvn.editor.ui.EditorSettingsView;
@@ -192,7 +193,7 @@ public class EditorApp extends Application {
   private Label jdkChip;
   private Label gradleChip;
   private Label projectShapeChip;
-  private PerfGraph perfGraph;
+  private EditorPerformanceGraph perfGraph;
   private EditorGraphicsStatus.Snapshot graphicsStatus;
   private File lastOpened;
   private Entity2D selected;
@@ -297,11 +298,6 @@ public class EditorApp extends Application {
   private long minFrameIntervalNs = 0L; // 0 = uncapped
   private @Nullable Path developerDiagnosticsLogFile;
   private long lastDeveloperDiagnosticWriteNs = -1L;
-  private static final Color CPU_COLOR = Color.web("#f27333");
-  private static final Color HEAP_COLOR = Color.web("#a855f7");
-  private static final Color FPS_COLOR = Color.web("#f4f4f4");
-  private static final Color GRID_BG = Color.color(0.08, 0.08, 0.08, 0.8);
-  private static final Color GRID_LINE = Color.color(1, 1, 1, 0.08);
   private static final String[] EDITABLE_EXTENSIONS = new String[] {
       ".jes", ".txt", ".vns", ".java", ".storymap", ".timeline", ".theme", ".menu", ".layout", ".style", ".registry",
       ".settings", ".project", ".properties", ".md", ".json",
@@ -2365,6 +2361,9 @@ public class EditorApp extends Application {
     heapChip = perfChip("Heap --", "perf-chip-heap");
     jvmChip = perfChip("JVM --", "perf-chip-jvm");
     fpsChip = perfChip("FPS --", "perf-chip-fps");
+    cpuChip.setGraphic(EditorPerformanceGraph.Series.CPU.legendMarker());
+    heapChip.setGraphic(EditorPerformanceGraph.Series.HEAP.legendMarker());
+    fpsChip.setGraphic(EditorPerformanceGraph.Series.FPS.legendMarker());
     graphicsStatus = EditorGraphicsStatus.detect();
     graphicsChip = perfChip(
         graphicsStatus.chipText(),
@@ -2392,7 +2391,7 @@ public class EditorApp extends Application {
         projectShapeChip);
     perfChips.getStyleClass().add("editor-perf-chip-row");
     perfChips.setMaxHeight(48);
-    perfGraph = new PerfGraph();
+    perfGraph = new EditorPerformanceGraph();
     Runnable refreshChrome = () -> {
       FileEditorTab ft = getActiveFileTab();
       Tab activeTab = filesTabs != null ? filesTabs.getSelectionModel().getSelectedItem() : null;
@@ -2484,13 +2483,10 @@ public class EditorApp extends Application {
     logoBox.setAlignment(Pos.CENTER_RIGHT);
     logoBox.getStyleClass().add("jvn-wordmark-box");
     logoBox.getChildren().addAll(wordmark, verLabel, sourceLabel);
-    VBox perfBox = new VBox(4, perfChips, perfGraph.getCanvas());
+    VBox perfBox = new VBox(4, perfChips, perfGraph);
     perfBox.setAlignment(Pos.CENTER);
     perfBox.setFillWidth(true);
     HBox.setHgrow(perfBox, Priority.ALWAYS);
-    perfBox.widthProperty().addListener((o, ov, nv) -> {
-      perfGraph.setWidth(Math.max(180.0, nv.doubleValue() - 22.0));
-    });
     toolbar.setCenter(perfBox);
     BorderPane.setAlignment(logoBox, Pos.TOP_RIGHT);
     toolbar.setRight(logoBox);
@@ -3713,123 +3709,6 @@ public class EditorApp extends Application {
         if (modules == 0 && javaFiles == 0 && gradleFiles == 0) return "Project ?";
         return modules + " modules";
       }
-    }
-  }
-
-  /** Tiny inline graph renderer for CPU/heap/FPS trends. */
-  private static class PerfGraph {
-    private final Canvas canvas = new Canvas(320, 64);
-    private final double[] cpu = new double[240]; // ~72s at ~300ms updates
-    private final double[] ram = new double[240];
-    private final double[] fps = new double[240];
-    private int idx = 0;
-    private boolean filled = false;
-
-    public Canvas getCanvas() { return canvas; }
-    public void setWidth(double w) {
-      canvas.setWidth(sanitizeCanvasDimension(w, 160.0));
-      redraw();
-    }
-
-    public void pushSample(double cpu01, double ram01, double fps01) {
-      int i = idx % cpu.length;
-      cpu[i] = clamp01(cpu01);
-      ram[i] = clamp01(ram01);
-      fps[i] = clamp01(fps01);
-      idx++;
-      if (idx >= cpu.length) filled = true;
-      redraw();
-    }
-
-    private void redraw() {
-      GraphicsContext g = canvas.getGraphicsContext2D();
-      double w = canvas.getWidth();
-      double h = canvas.getHeight();
-      if (!Double.isFinite(w) || !Double.isFinite(h) || w <= 0 || h <= 0) return;
-      g.setFill(GRID_BG);
-      g.fillRect(0, 0, w, h);
-
-      // grid
-      g.setStroke(GRID_LINE);
-      g.setLineWidth(1);
-      int rows = 4;
-      for (int r = 1; r < rows; r++) {
-        double y = h * r / rows;
-        g.strokeLine(0, y, w, y);
-      }
-      double stepX = w / 6.0;
-      for (double x = stepX; x < w; x += stepX) {
-        g.strokeLine(x, 0, x, h);
-      }
-
-      int samples = filled ? cpu.length : Math.min(idx, cpu.length);
-      if (samples <= 1) return;
-      double scaleX = w / (cpu.length - 1);
-
-      // HEAP area
-      g.setFill(HEAP_COLOR.deriveColor(0, 1, 1, 0.26));
-      g.beginPath();
-      for (int i = 0; i < samples; i++) {
-        int si = (idx - samples + i + cpu.length) % cpu.length;
-        double x = i * scaleX;
-        double y = h * (1 - ram[si]);
-        if (i == 0) g.moveTo(x, h);
-        g.lineTo(x, y);
-      }
-      g.lineTo((samples - 1) * scaleX, h);
-      g.closePath();
-      g.fill();
-
-      // HEAP outline
-      g.setStroke(HEAP_COLOR.deriveColor(0, 1, 1, 0.95));
-      g.setLineWidth(1.6);
-      g.beginPath();
-      for (int i = 0; i < samples; i++) {
-        int si = (idx - samples + i + cpu.length) % cpu.length;
-        double x = i * scaleX;
-        double y = h * (1 - ram[si]);
-        if (i == 0) g.moveTo(x, y); else g.lineTo(x, y);
-      }
-      g.stroke();
-
-      // CPU line
-      g.setStroke(CPU_COLOR.deriveColor(0, 1, 1, 0.9));
-      g.setLineWidth(2);
-      g.beginPath();
-      for (int i = 0; i < samples; i++) {
-        int si = (idx - samples + i + cpu.length) % cpu.length;
-        double x = i * scaleX;
-        double y = h * (1 - cpu[si]);
-        if (i == 0) g.moveTo(x, y); else g.lineTo(x, y);
-      }
-      g.stroke();
-
-      // FPS line
-      g.setStroke(FPS_COLOR.deriveColor(0, 1, 1, 0.88));
-      g.setLineWidth(2);
-      g.beginPath();
-      for (int i = 0; i < samples; i++) {
-        int si = (idx - samples + i + cpu.length) % cpu.length;
-        double x = i * scaleX;
-        double y = h * (1 - fps[si]);
-        if (i == 0) g.moveTo(x, y); else g.lineTo(x, y);
-      }
-      g.stroke();
-    }
-
-    private double clamp01(double v) {
-      if (Double.isNaN(v) || Double.isInfinite(v)) return 0;
-      if (v < 0) return 0;
-      if (v > 1) return 1;
-      return v;
-    }
-
-    private static double sanitizeCanvasDimension(double value, double minimum) {
-      if (!Double.isFinite(value)) return minimum;
-      double min = Math.max(1.0, minimum);
-      if (value < min) return min;
-      if (value > 8192.0) return 8192.0;
-      return value;
     }
   }
 

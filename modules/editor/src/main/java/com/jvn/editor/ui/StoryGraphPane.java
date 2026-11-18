@@ -315,7 +315,7 @@ public class StoryGraphPane extends Pane {
     setPrefSize(1400, 920);
     setMinSize(800, 520);
     setFocusTraversable(true);
-    setStyle("-fx-background-color: #0d1118;");
+    getStyleClass().add("story-map-canvas");
     addEventHandler(MouseEvent.MOUSE_PRESSED, e -> requestFocus());
     setOnMouseMoved(e -> {
       if (tempLine != null) {
@@ -878,7 +878,7 @@ public class StoryGraphPane extends Pane {
     for (double x = minX; x <= maxX; x += GRID_STEP) {
       Line line = new Line(x, minY, x, maxY);
       boolean major = Math.round(x) % Math.round(GRID_MAJOR_STEP) == 0;
-      line.setStroke(major ? Color.web("#182231") : Color.web("#101722"));
+      line.getStyleClass().add(major ? "story-map-grid-major" : "story-map-grid-minor");
       line.setStrokeWidth(major ? 0.95 : 0.45);
       line.setMouseTransparent(true);
       group.getChildren().add(line);
@@ -886,7 +886,7 @@ public class StoryGraphPane extends Pane {
     for (double y = minY; y <= maxY; y += GRID_STEP) {
       Line line = new Line(minX, y, maxX, y);
       boolean major = Math.round(y) % Math.round(GRID_MAJOR_STEP) == 0;
-      line.setStroke(major ? Color.web("#182231") : Color.web("#101722"));
+      line.getStyleClass().add(major ? "story-map-grid-major" : "story-map-grid-minor");
       line.setStrokeWidth(major ? 0.95 : 0.45);
       line.setMouseTransparent(true);
       group.getChildren().add(line);

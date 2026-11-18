@@ -34,6 +34,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Tooltip;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -108,7 +109,7 @@ public class PuppeteerLauncherPanel extends VBox {
 
   public PuppeteerLauncherPanel() {
     setSpacing(8);
-    setPadding(new Insets(12));
+    setPadding(new Insets(10));
     getStyleClass().add("sidebar-tool-root");
 
     lblHeader = new Label("Puppeteer Launcher");
@@ -143,7 +144,8 @@ leaving this panel."""));
     lblLine.getStyleClass().add("sidebar-tool-subtitle");
 
     lblLineText = new Label("");
-    lblLineText.setStyle("-fx-text-fill: #e6e6e6; -fx-font-family: monospace; -fx-font-size: 11px;");
+    lblLineText.getStyleClass().add("sidebar-tool-subtitle");
+    lblLineText.setStyle("-fx-font-family: monospace;");
     lblLineText.setWrapText(true);
     lblLineText.setMaxWidth(260);
 
@@ -270,7 +272,6 @@ button then opens it in the editor."""));
     btnLaunch = createActionButton(
         "Launch @ Cursor",
         SidebarToolIcon.nearMe("#f0f0f0"),
-        "-fx-background-color: #3a3a3a; -fx-text-fill: #f0f0f0; -fx-font-weight: bold;",
         "Launch Puppeteer with scene snapshot from the current cursor line");
     btnLaunch.setOnAction(e -> {
       if (onLaunch != null) {
@@ -281,7 +282,6 @@ button then opens it in the editor."""));
     btnLaunchLabelStart = createActionButton(
         "Launch @ Label Start",
         SidebarToolIcon.label("#e4e4e4"),
-        "-fx-background-color: #2e2e2e; -fx-text-fill: #e4e4e4; -fx-font-weight: bold;",
         "Launch Puppeteer from the active label start line");
     btnLaunchLabelStart.setOnAction(e -> {
       if (onLaunch == null) return;
@@ -292,7 +292,6 @@ button then opens it in the editor."""));
     btnLaunchSceneStart = createActionButton(
         "Launch @ Scene Start",
         SidebarToolIcon.movie("#e4e4e4"),
-        "-fx-background-color: #2f2f2f; -fx-text-fill: #e4e4e4; -fx-font-weight: bold;",
         "Launch Puppeteer from the most recent background change in the active label");
     btnLaunchSceneStart.setOnAction(e -> {
       if (onLaunch == null) return;
@@ -303,7 +302,6 @@ button then opens it in the editor."""));
     btnOpenTimeline = createActionButton(
         "Open Timeline",
         SidebarToolIcon.timeline("#e0e0e0"),
-        "-fx-background-color: #2d2d2d; -fx-text-fill: #e0e0e0;",
         "Open the related timeline file or inline block");
     btnOpenTimeline.setOnAction(e -> {
       if (onOpenTarget == null) return;
@@ -318,7 +316,6 @@ button then opens it in the editor."""));
     btnNewBlankTimeline = createActionButton(
         "New Animation",
         SidebarToolIcon.plus("#e0e0e0"),
-        "-fx-background-color: #2d2d2d; -fx-text-fill: #e0e0e0;",
         "Create a new blank timeline in Puppeteer");
     btnNewBlankTimeline.setOnAction(e -> {
       if (onLaunch != null) {
@@ -329,7 +326,6 @@ button then opens it in the editor."""));
     btnOpenIssue = createActionButton(
         "Jump To Issue",
         SidebarToolIcon.warning("#dfdfdf"),
-        "-fx-background-color: #303030; -fx-text-fill: #dfdfdf;",
         "Jump to the first launcher issue in the active VNS source");
     btnOpenIssue.setOnAction(e -> {
       if (onOpenTarget == null) return;
@@ -337,15 +333,11 @@ button then opens it in the editor."""));
       if (target != null) onOpenTarget.accept(target);
     });
 
-    HBox actionRow = new HBox(6, btnLaunch, btnLaunchLabelStart, btnLaunchSceneStart);
-    HBox.setHgrow(btnLaunch, Priority.ALWAYS);
-    HBox.setHgrow(btnLaunchLabelStart, Priority.ALWAYS);
-    HBox.setHgrow(btnLaunchSceneStart, Priority.ALWAYS);
+    FlowPane actionRow = new FlowPane(6, 4, btnLaunch, btnLaunchLabelStart, btnLaunchSceneStart);
+    actionRow.setAlignment(Pos.CENTER_LEFT);
 
-    HBox openRow = new HBox(6, btnOpenTimeline, btnNewBlankTimeline, btnOpenIssue);
-    HBox.setHgrow(btnOpenTimeline, Priority.ALWAYS);
-    HBox.setHgrow(btnNewBlankTimeline, Priority.ALWAYS);
-    HBox.setHgrow(btnOpenIssue, Priority.ALWAYS);
+    FlowPane openRow = new FlowPane(6, 4, btnOpenTimeline, btnNewBlankTimeline, btnOpenIssue);
+    openRow.setAlignment(Pos.CENTER_LEFT);
 
     getChildren().addAll(
         headerRow,
@@ -553,13 +545,13 @@ button then opens it in the editor."""));
     refreshRegisteredAnimations(snap);
   }
 
-  private static Button createActionButton(String text, Region icon, String style, String tooltip) {
+  private static Button createActionButton(String text, Region icon, String tooltip) {
     Button button = new Button(text);
-    button.setStyle(style);
-    button.setMaxWidth(Double.MAX_VALUE);
+    button.getStyleClass().add("sidebar-tool-btn");
+    button.setMinWidth(Region.USE_PREF_SIZE);
     button.setGraphic(icon);
     button.setContentDisplay(ContentDisplay.LEFT);
-    button.setGraphicTextGap(8);
+    button.setGraphicTextGap(6);
     button.setTooltip(new Tooltip(tooltip));
     return button;
   }
@@ -812,15 +804,15 @@ button then opens it in the editor."""));
 
   private VBox createPlaceholderCard(String title, String detail) {
     Label titleLabel = new Label(title);
-    titleLabel.setStyle("-fx-text-fill: #e6e6e6; -fx-font-size: 11px; -fx-font-weight: bold;");
+    titleLabel.getStyleClass().add("sidebar-tool-section-title");
 
     Label detailLabel = new Label(detail);
-    detailLabel.setStyle("-fx-text-fill: #a0a0a0; -fx-font-size: 11px;");
+    detailLabel.getStyleClass().add("sidebar-tool-subtitle");
     detailLabel.setWrapText(true);
 
     VBox box = new VBox(4, titleLabel, detailLabel);
     box.setPadding(new Insets(12));
-    box.setStyle("-fx-background-color: #202020; -fx-background-radius: 12; -fx-border-radius: 12; -fx-border-color: #373737;");
+    box.getStyleClass().add("sidebar-tool-placeholder");
     return box;
   }
 

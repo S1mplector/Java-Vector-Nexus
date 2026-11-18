@@ -4,7 +4,6 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
@@ -18,6 +17,7 @@ import javafx.application.Platform;
 import javafx.geometry.Side;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
@@ -28,20 +28,27 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
+import javafx.scene.transform.Scale;
 
 /**
  * Compact application-wide status bar inspired by desktop IDE chrome.
  */
 public final class JvnStatusBar extends HBox {
-  private static final String DARK_ICON_COLOR = "#d6d6d6";
-  private static final String LIGHT_ICON_COLOR = "#3f3f3f";
+  private static final double ICON_SIZE = 14;
   private static final Runnable NO_OP = () -> {};
   private static final long GIT_REFRESH_INTERVAL_MS = 5_000L;
   private static final long GIT_STATUS_TIMEOUT_MS = 650L;
   private static final String SEGMENT_TOOLTIP_KEY = "jvn.status.tooltip";
 
-  private final List<Region> icons = new ArrayList<>();
+  private final Region gitCleanIcon = compactIcon(SidebarToolArtwork.apply("#60cb7c"));
+  private final Region gitChangesIcon = VersionControlIcon.of(VersionControlIcon.Kind.DIFF, ICON_SIZE);
+  private final Region savedIcon = compactIcon(SidebarToolArtwork.save("#50b982"));
+  private final Region unsavedIcon = compactIcon(SidebarToolArtwork.save("#e7a33c"));
+  private final Region noProblemsIcon = compactIcon(SidebarToolArtwork.apply("#60cb7c"));
+  private final Region warningsIcon = VersionControlIcon.of(VersionControlIcon.Kind.WARNING, ICON_SIZE);
+  private final Region errorsIcon = VersionControlIcon.of(VersionControlIcon.Kind.CLOSE, ICON_SIZE);
   private final Label productLabel = segmentLabel("");
   private final Label branchLabel = segmentLabel("No branch");
   private final Label gitStateLabel = segmentLabel("Git --");
@@ -131,22 +138,23 @@ public final class JvnStatusBar extends HBox {
     Region spacer = new Region();
     HBox.setHgrow(spacer, Priority.ALWAYS);
 
-    productSegment = segment(icon(CssIcon.home(DARK_ICON_COLOR)), productLabel, "jvn-status-segment-strong");
-    branchSegment = segment(icon(CssIcon.branchPlus(DARK_ICON_COLOR)), branchLabel);
-    gitStateSegment = segment(icon(CssIcon.check(DARK_ICON_COLOR)), gitStateLabel);
-    messageSegment = segment(icon(CssIcon.speech(DARK_ICON_COLOR)), messageLabel, "jvn-status-message");
-    projectSegment = segment(icon(CssIcon.folder(DARK_ICON_COLOR)), projectLabel);
-    activeFileSegment = segment(icon(CssIcon.document(DARK_ICON_COLOR)), activeFileLabel);
-    positionSegment = segment(icon(CssIcon.edit(DARK_ICON_COLOR)), positionLabel);
-    fileMetaSegment = segment(icon(CssIcon.label(DARK_ICON_COLOR)), fileMetaLabel);
-    workspaceSegment = segment(icon(CssIcon.dock(DARK_ICON_COLOR)), workspaceLabel);
-    dirtySegment = segment(icon(CssIcon.save(DARK_ICON_COLOR)), dirtyLabel);
-    diagnosticsSegment = segment(icon(CssIcon.warning(DARK_ICON_COLOR)), diagnosticsLabel, "jvn-status-diagnostics-ok");
+    productSegment = segment(compactIcon(SidebarToolArtwork.home("#69be7a")), productLabel,
+        "jvn-status-segment-strong");
+    branchSegment = segment(VersionControlIcon.of(VersionControlIcon.Kind.BRANCH, 15), branchLabel);
+    gitStateSegment = segment(gitCleanIcon, gitStateLabel);
+    messageSegment = segment(compactIcon(SidebarToolArtwork.speech("#63b6e1")), messageLabel, "jvn-status-message");
+    projectSegment = segment(ShellFileArtwork.folder(ICON_SIZE, null), projectLabel);
+    activeFileSegment = segment(ShellFileArtwork.document(ICON_SIZE, null), activeFileLabel);
+    positionSegment = segment(compactIcon(SidebarToolArtwork.edit("#eeb25a")), positionLabel);
+    fileMetaSegment = segment(compactIcon(SidebarToolArtwork.label("#769edf")), fileMetaLabel);
+    workspaceSegment = segment(compactIcon(SidebarToolArtwork.dock("#59b8e3")), workspaceLabel);
+    dirtySegment = segment(savedIcon, dirtyLabel, "jvn-status-clean");
+    diagnosticsSegment = segment(noProblemsIcon, diagnosticsLabel, "jvn-status-diagnostics-ok");
     encodingSegment = segment(encodingLabel);
     lineEndingSegment = segment(lineEndingLabel);
-    memorySegment = segment(icon(CssIcon.memory(DARK_ICON_COLOR)), memoryLabel);
-    javaSegment = segment(icon(CssIcon.memory(DARK_ICON_COLOR)), javaLabel);
-    themeSegment = segment(icon(CssIcon.palette(DARK_ICON_COLOR)), themeLabel);
+    memorySegment = segment(compactIcon(SidebarToolArtwork.memory("#6bbb83")), memoryLabel);
+    javaSegment = segment(compactIcon(SidebarToolArtwork.javaRuntime()), javaLabel);
+    themeSegment = segment(compactIcon(SidebarToolArtwork.palette("#d6a063")), themeLabel);
     versionSegment = segment(versionLabel, "jvn-status-version");
     productSeparator = separator();
     branchSeparator = separator();
@@ -306,6 +314,7 @@ public final class JvnStatusBar extends HBox {
         : dirtyTabs + " unsaved tab" + (dirtyTabs == 1 ? "" : "s") + ". Click for save options.");
     setSegmentState(dirtySegment, dirtyTabs > 0 ? "jvn-status-dirty" : "jvn-status-clean",
         "jvn-status-clean", "jvn-status-dirty");
+    setSegmentIcon(dirtySegment, dirtyTabs > 0 ? unsavedIcon : savedIcon);
     StringBuilder tip = new StringBuilder();
     tip.append(closableTabs).append(" closable tab").append(closableTabs == 1 ? "" : "s");
     if (canUndo) tip.append(" • undo available");
@@ -334,12 +343,12 @@ public final class JvnStatusBar extends HBox {
         "jvn-status-diagnostics-ok",
         "jvn-status-diagnostics-warn",
         "jvn-status-diagnostics-error");
+    setSegmentIcon(diagnosticsSegment, errors > 0 ? errorsIcon : warnings > 0 ? warningsIcon : noProblemsIcon);
   }
 
   public void setTheme(EditorTheme.Theme theme) {
     boolean light = theme == EditorTheme.Theme.LIGHT;
     themeLabel.setText(light ? "Light" : "Dark");
-    recolorIcons(light ? LIGHT_ICON_COLOR : DARK_ICON_COLOR);
   }
 
   public void setLineEnding(String lineEnding) {
@@ -409,9 +418,16 @@ public final class JvnStatusBar extends HBox {
     return segment(label, "");
   }
 
-  private Region icon(Region region) {
-    icons.add(region);
-    return region;
+  private static Region compactIcon(Pane artwork) {
+    double scale = ICON_SIZE / artwork.prefWidth(-1);
+    Group scaled = new Group(artwork);
+    scaled.getTransforms().add(new Scale(scale, scale));
+    Pane icon = new Pane(scaled);
+    icon.setMinSize(ICON_SIZE, ICON_SIZE);
+    icon.setPrefSize(ICON_SIZE, ICON_SIZE);
+    icon.setMaxSize(ICON_SIZE, ICON_SIZE);
+    icon.setMouseTransparent(true);
+    return icon;
   }
 
   private void installMenus() {
@@ -537,12 +553,9 @@ public final class JvnStatusBar extends HBox {
     }
   }
 
-  private void recolorIcons(String color) {
-    for (Region icon : icons) {
-      if (icon == null) continue;
-      String style = icon.getStyle();
-      if (style == null || style.isBlank()) continue;
-      icon.setStyle(style.replaceAll("-fx-background-color:\\s*[^;]+;", "-fx-background-color: " + color + ";"));
+  private static void setSegmentIcon(HBox segment, Region icon) {
+    if (segment.getChildren().getFirst() != icon) {
+      segment.getChildren().set(0, icon);
     }
   }
 
@@ -666,6 +679,7 @@ public final class JvnStatusBar extends HBox {
     gitStateLabel.setText(state.text());
     setTooltip(gitStateSegment, state.tooltip());
     setSegmentDataVisible(EditorStatusBarSegment.GIT_STATE, true);
+    setSegmentIcon(gitStateSegment, state.clean() ? gitCleanIcon : gitChangesIcon);
     setSegmentState(gitStateSegment,
         state.clean() ? "jvn-status-clean" : "jvn-status-dirty",
         "jvn-status-clean",

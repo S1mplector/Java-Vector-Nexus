@@ -34,7 +34,7 @@ public class ProjectExplorerView extends VBox {
 
   public ProjectExplorerView() {
     setSpacing(8);
-    setPadding(new Insets(6));
+    setPadding(new Insets(10));
     getStyleClass().addAll("project-explorer-root", "sidebar-tool-root");
     header.getStyleClass().addAll("project-explorer-header", "sidebar-tool-title");
     filter.setPromptText("Filter files...");

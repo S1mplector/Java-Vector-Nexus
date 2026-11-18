@@ -94,8 +94,7 @@ public class LayoutEditorLauncherView extends BorderPane {
   }
 
   public LayoutEditorLauncherView() {
-    getStyleClass().addAll("layout-launcher-root", "sidebar-tool-root");
-    setPadding(new Insets(8));
+    getStyleClass().add("sidebar-tool-root");
 
     Label title = new Label("Layout Editors");
     title.getStyleClass().addAll("layout-launcher-title", "sidebar-tool-title");
@@ -136,11 +135,12 @@ the authoritative rendering and navigation check."""));
 
     summaryLabel.getStyleClass().addAll("layout-launcher-summary", "sidebar-tool-summary");
 
-    VBox top = new VBox(8, titleRow, summaryLabel, topActions, new Separator());
-    top.getStyleClass().addAll("layout-launcher-header", "sidebar-tool-header");
+    VBox top = new VBox(6, titleRow, summaryLabel, topActions);
+    top.getStyleClass().add("sidebar-tool-header");
     setTop(top);
 
     ScrollPane scroll = new ScrollPane(itemList);
+    itemList.setPadding(new Insets(0, 10, 8, 10));
     itemList.getStyleClass().add("layout-launcher-list");
     scroll.getStyleClass().add("layout-launcher-scroll");
     scroll.setFitToWidth(true);

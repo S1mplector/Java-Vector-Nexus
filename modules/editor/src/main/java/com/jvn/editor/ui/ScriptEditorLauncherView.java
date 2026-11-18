@@ -154,15 +154,13 @@ public class ScriptEditorLauncherView extends BorderPane {
 
     VBox header = new VBox(8);
     header.getStyleClass().addAll("script-editor-launcher-header", "sidebar-tool-header");
-    header.setPadding(new Insets(10, 12, 8, 12));
 
     Label titleLabel = new Label("Text Editor");
     titleLabel.getStyleClass().addAll("script-editor-launcher-title", "sidebar-tool-title");
     Region titleSpacer = new Region();
     HBox.setHgrow(titleSpacer, Priority.ALWAYS);
     HBox titleRow = new HBox(
-        8,
-        SidebarToolIcon.list("#d0d0d0"),
+        6,
         titleLabel,
         SidebarToolHelp.button(this, "Text Editor", """
             The Text Editor panel browses and manages all text-based project \
