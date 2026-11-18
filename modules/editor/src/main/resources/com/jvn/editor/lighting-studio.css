@@ -1,0 +1,54 @@
+.lighting-studio {
+  -fx-background-color: -jvn-aero-surface;
+}
+
+.lighting-toolbar .button.lighting-apply {
+  -fx-background-color: -jvn-aero-button;
+  -fx-border-color: -jvn-aero-focus;
+  -fx-border-radius: 3;
+  -fx-border-width: 1;
+  -fx-font-weight: bold;
+}
+
+.lighting-scene-info, .lighting-footer {
+  -fx-padding: 5 10;
+  -fx-background-color: -jvn-aero-surface;
+  -fx-text-fill: -jvn-aero-text;
+}
+
+.lighting-scene-info {
+  -fx-padding: 0;
+}
+
+.lighting-footer {
+  -fx-border-color: -jvn-aero-edge transparent transparent transparent;
+}
+
+.lighting-viewport {
+  -fx-background-color: #161616;
+  -fx-border-color: -jvn-aero-edge;
+}
+
+.lighting-inspector .tab-header-background {
+  -fx-background-color: -jvn-aero-chrome;
+}
+
+.lighting-inspector-body {
+  -fx-padding: 10;
+  -fx-background-color: -jvn-aero-surface;
+}
+
+.lighting-rig-list {
+  -fx-background-color: -jvn-aero-field;
+  -fx-control-inner-background: -jvn-aero-field;
+  -fx-border-color: -jvn-aero-edge;
+}
+
+.lighting-rig-list .list-cell:filled {
+  -fx-padding: 6 8;
+  -fx-text-fill: -jvn-aero-text;
+}
+
+.lighting-rig-list .list-cell:filled:selected {
+  -fx-background-color: -jvn-aero-selected;
+}

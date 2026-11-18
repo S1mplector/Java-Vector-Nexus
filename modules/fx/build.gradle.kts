@@ -45,3 +45,11 @@ tasks.withType<JavaCompile>().configureEach {
       ep.option("NullAway:AnnotatedPackages", "com.jvn.fx")
     }
 }
+
+tasks.register<JavaExec>("renderStageLighting") {
+  group = "verification"
+  description = "Render a stage preset on an image without opening a window."
+  classpath = sourceSets["main"].runtimeClasspath
+  mainClass.set("com.jvn.fx.vn.HeadlessStageLighting")
+  systemProperty("java.awt.headless", "true")
+}

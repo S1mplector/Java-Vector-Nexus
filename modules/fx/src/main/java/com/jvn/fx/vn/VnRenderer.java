@@ -111,6 +111,14 @@ public class VnRenderer {
       16, STAGE_BACKGROUND_CACHE_BUDGET_BYTES, FxImageMemory::estimatedBytes);
   private final BoundedImageCache<Image> stageCharacterCache = new BoundedImageCache<>(
       64, STAGE_CHARACTER_CACHE_BUDGET_BYTES, FxImageMemory::estimatedBytes);
+  private final VnStageRenderJobs stageRenderJobs = new VnStageRenderJobs();
+  private final BoundedImageCache<VnStageLightingSupport.PixelData> stageSourcePixels = new BoundedImageCache<>(
+      24, 32L * MIB, data -> (long) data.width() * data.height() * 4);
+  private VnStagePreset lightingStage;
+  private double lightingWidth;
+  private double lightingHeight;
+  private int lightingDrawSlot;
+
   // Independently transformed layers are a live render working set, not ordinary reusable source
   // data. Keep exactly the layers used by consecutive frames resident so two large layered
   // characters cannot evict and synchronously reload one another through imageCache every frame.
@@ -312,6 +320,11 @@ public class VnRenderer {
     particleBlitter.setProjectRoot(root);
     stageBackgroundCache.clear();
     stageCharacterCache.clear();
+    stageSourcePixels.clear();
+    stageRenderJobs.clear();
+    characterRigStage = null;
+    characterRig = null;
+    stageOverlays.clear();
     layerPathCache.clear();
     reloadUiLayout();
   }
@@ -387,6 +400,14 @@ public class VnRenderer {
     syncAccessibilitySettings(state);
     applyRuntimeCharacterFramingOverrides(state);
     VnStagePreset activeStage = resolveActiveStagePreset(state, scenario);
+    if (activeStage != lightingStage || lightingWidth != width || lightingHeight != height) {
+      stageRenderJobs.clear();
+      lightingStage = activeStage;
+      lightingWidth = width;
+      lightingHeight = height;
+    }
+    stageRenderJobs.collect();
+    lightingDrawSlot = 0;
     // Clear screen
     gc.setFill(Color.BLACK);
     gc.fillRect(0, 0, width, height);
@@ -673,11 +694,11 @@ public class VnRenderer {
         ? timelineAccessor.getProxy(timelineEntityId != null ? timelineEntityId : background.getId())
         : null;
     if (img != null) {
-      if (stage != null && proxy == null) {
+      if (stage != null && stage.hasBackgroundLighting() && proxy == null) {
         drawStageBackgroundImage(backgroundPath, img, stage, width, height);
       } else {
         drawBackgroundImage(img, proxy, width, height);
-        if (stage != null) {
+        if (stage != null && stage.hasBackgroundLighting()) {
           applyStageBackgroundFallbackOverlay(stage, width, height);
           renderStageLightOverlays(stage, width, height, VnStagePreset.LightLayer.BACKGROUND);
         }
@@ -700,12 +721,24 @@ public class VnRenderer {
   }
 
   private void drawStageBackgroundImage(String backgroundPath, Image img, VnStagePreset stage, double width, double height) {
-    String key = backgroundPath
-        + "|stage:" + (stage == null ? "none" : stage.getCacheToken())
-        + "|size:" + Math.round(width) + "x" + Math.round(height);
-    Image lit = stageBackgroundCache.computeIfAbsent(key, unused ->
-        VnStageLightingSupport.buildLitBackground(img, stage, width, height));
-    gc.drawImage(lit, 0, 0, width, height);
+    String slot = "background|" + backgroundPath;
+    String key = slot + "|stage:" + stage.getCacheToken() + "|size:" + Math.round(width) + "x" + Math.round(height);
+    Image lit = stageBackgroundCache.get(key);
+    if (lit == null && freezeTransientEffects) {
+      var raster = VnStageLightingSupport.shadeBackground(stagePixels(img), stage, width, height);
+      if (raster != null) {
+        lit = raster.image();
+        stageBackgroundCache.put(key, lit);
+      }
+    } else if (lit == null && stageRenderJobs.canSubmit(slot)) {
+      var source = stagePixels(img);
+      if (source != null) {
+        stageRenderJobs.submit(slot, key, img, stageBackgroundCache,
+            () -> VnStageLightingSupport.shadeBackground(source, stage, width, height));
+      }
+    }
+    if (lit != null) gc.drawImage(lit, 0, 0, width, height);
+    else drawBackgroundImage(img, null, width, height);
   }
 
   private void applyStageBackgroundFallbackOverlay(VnStagePreset stage, double width, double height) {
@@ -1901,7 +1934,26 @@ public class VnRenderer {
 
   private final java.util.Map<Image, Long> effectFrameIds = new java.util.WeakHashMap<>();
   private long nextEffectFrameId;
+  private VnStagePreset characterRigStage;
+  private double characterRigWidth;
+  private double characterRigHeight;
+  private VnStageLightingSupport.CharacterRig characterRig;
+
+  private VnStageLightingSupport.CharacterRig characterRig(VnStagePreset stage, double width, double height) {
+    if (characterRigStage != stage || characterRigWidth != width || characterRigHeight != height) {
+      characterRigStage = stage;
+      characterRigWidth = width;
+      characterRigHeight = height;
+      characterRig = new VnStageLightingSupport.CharacterRig(stage, width, height);
+    }
+    return characterRig;
+  }
   private long effectFrameId(Image image) { return effectFrameIds.computeIfAbsent(image, ignored -> ++nextEffectFrameId); }
+
+  private VnStageLightingSupport.PixelData stagePixels(Image image) {
+    if (image == null) return null;
+    return stageSourcePixels.computeIfAbsent(Long.toString(effectFrameId(image)), ignored -> VnStageLightingSupport.PixelData.capture(image));
+  }
 
   private void drawCharacterImage(Image source,
                                   String spriteTag,
@@ -1915,19 +1967,35 @@ public class VnRenderer {
     if (source == null) return;
     Image rendered = imageEffects.frame(source, characterEffect.id(), characterEffect.parameters(), animationTime);
     drawCallStats.incrementCharacterLayer();
-    if (stage == null || stage.getLights().isEmpty()) {
+    if (stage == null || !stage.hasCharacterLighting()) {
       gc.drawImage(rendered, x, y, drawWidth, drawHeight);
       return;
     }
     String renderedTag = spriteTag + "|effect:" + effectFrameId(rendered);
+    String slot = "sprite|" + renderedTag + "|draw:" + lightingDrawSlot++;
     String key = stageCharacterCacheKey(renderedTag, stage.getCacheToken(), x, y, drawWidth, drawHeight, canvasWidth, canvasHeight);
-    boolean[] missed = {false};
-    Image lit = stageCharacterCache.computeIfAbsent(key, unused -> {
-      missed[0] = true;
-      return VnStageLightingSupport.buildLitCharacter(rendered, renderedTag, x, y, drawWidth, drawHeight, canvasWidth, canvasHeight, stage);
-    });
-    if (missed[0]) drawCallStats.incrementStageLightingRecomposite();
-    gc.drawImage(lit, x, y, drawWidth, drawHeight);
+    Image lit = stageCharacterCache.get(key);
+    if (lit == null && (freezeTransientEffects || stageRenderJobs.canSubmit(slot))) {
+      String normalPath = stage.getSubjectMaterial().normalMap();
+      Image normalImage = normalPath.isBlank() || !stage.matchesSubject(spriteTag) ? null : loadSpriteLayerImage(normalPath);
+      var pixels = stagePixels(rendered);
+      var normals = stagePixels(normalImage);
+      var rig = characterRig(stage, canvasWidth, canvasHeight);
+      java.util.function.Supplier<VnStageLightingSupport.Raster> shade = () -> VnStageLightingSupport.shadeCharacter(
+          pixels, spriteTag, x, y, drawWidth, drawHeight, canvasWidth, canvasHeight, stage, normals, rig);
+      if (pixels != null) {
+        if (freezeTransientEffects) {
+          var raster = shade.get();
+          lit = raster == null ? rendered : raster.image();
+          stageCharacterCache.put(key, lit);
+        } else {
+          stageRenderJobs.submit(slot, key, rendered, stageCharacterCache, shade);
+        }
+        drawCallStats.incrementStageLightingRecomposite();
+      }
+    }
+    if (lit == null) lit = stageRenderJobs.previous(slot, stageCharacterCache);
+    gc.drawImage(lit == null ? rendered : lit, x, y, drawWidth, drawHeight);
   }
 
   /**
@@ -1973,99 +2041,21 @@ public class VnRenderer {
     return scenario.getStagePreset(stageId);
   }
 
-  private void renderStageLightOverlays(VnStagePreset stage, double canvasWidth, double canvasHeight, VnStagePreset.LightLayer layer) {
-    if (stage == null || layer == null || stage.getLights().isEmpty()) return;
-    boolean hasSolo = stage.hasSoloLights();
-    double minDimension = Math.max(1.0, Math.min(canvasWidth, canvasHeight));
-    for (VnStagePreset.Light light : stage.getLights()) {
-      if (light == null || light.layer() != layer || light.muted() || (hasSolo && !light.solo())) continue;
-      Color color = VnStageLightingSupport.parseColor(light.color(), Color.web("#ffd7a8"));
-      double alpha = layer == VnStagePreset.LightLayer.FOREGROUND
-          ? VnStageLightingSupport.foregroundLightAlpha(light)
-          : VnStageLightingSupport.backgroundLightAlpha(light);
-      if (alpha <= 1e-6) continue;
-      double targetX = light.sceneX() * canvasWidth;
-      double targetY = light.sceneY() * canvasHeight;
-      double sourceX = light.sourceX() * canvasWidth;
-      double sourceY = light.sourceY() * canvasHeight;
-      double radius = Math.max(10.0, light.radius() * minDimension);
+  private VnStagePreset overlayStage;
+  private double overlayWidth;
+  private double overlayHeight;
+  private final Map<VnStagePreset.LightLayer, VnStageLightOverlay> stageOverlays =
+      new java.util.EnumMap<>(VnStagePreset.LightLayer.class);
 
-      switch (light.type()) {
-        case POLYGON -> drawPolygonLightOverlay(light, color, alpha, canvasWidth, canvasHeight);
-        case CONE -> drawConeLightOverlay(sourceX, sourceY, targetX, targetY, radius, color, alpha);
-        case STRIP, WINDOW -> drawStripLightOverlay(sourceX, sourceY, targetX, targetY, radius * 0.42, color, alpha);
-        default -> {
-          gc.setFill(new javafx.scene.paint.RadialGradient(
-              0, 0, targetX, targetY, radius, false, CycleMethod.NO_CYCLE,
-              new Stop(0.0, Color.color(color.getRed(), color.getGreen(), color.getBlue(), alpha)),
-              new Stop(0.42, Color.color(color.getRed(), color.getGreen(), color.getBlue(), alpha * 0.55)),
-              new Stop(1.0, Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.0))
-          ));
-          gc.fillOval(targetX - radius, targetY - radius, radius * 2.0, radius * 2.0);
-        }
-      }
+  private void renderStageLightOverlays(VnStagePreset stage, double width, double height, VnStagePreset.LightLayer layer) {
+    if (stage != overlayStage || width != overlayWidth || height != overlayHeight) {
+      stageOverlays.clear();
+      overlayStage = stage;
+      overlayWidth = width;
+      overlayHeight = height;
     }
-  }
-
-  private void drawPolygonLightOverlay(VnStagePreset.Light light, Color color, double alpha, double canvasWidth, double canvasHeight) {
-    List<VnStagePreset.Point> polygon = light.polygon();
-    if (polygon == null || polygon.size() < 3) return;
-    double[] xs = new double[polygon.size()];
-    double[] ys = new double[polygon.size()];
-    for (int i = 0; i < polygon.size(); i++) {
-      xs[i] = polygon.get(i).x() * canvasWidth;
-      ys[i] = polygon.get(i).y() * canvasHeight;
-    }
-    gc.setFill(Color.color(color.getRed(), color.getGreen(), color.getBlue(), alpha));
-    gc.fillPolygon(xs, ys, xs.length);
-  }
-
-  private void drawConeLightOverlay(double sourceX, double sourceY, double targetX, double targetY, double radius, Color color, double alpha) {
-    double dx = targetX - sourceX;
-    double dy = targetY - sourceY;
-    double length = Math.max(1.0, Math.hypot(dx, dy));
-    double nx = dx / length;
-    double ny = dy / length;
-    double px = -ny;
-    double py = nx;
-    double endWidth = Math.max(18.0, radius * 0.48);
-    double sourceWidth = Math.max(6.0, endWidth * 0.18);
-    double[] xs = {
-        sourceX + px * sourceWidth,
-        sourceX - px * sourceWidth,
-        targetX - px * endWidth,
-        targetX + px * endWidth
-    };
-    double[] ys = {
-        sourceY + py * sourceWidth,
-        sourceY - py * sourceWidth,
-        targetY - py * endWidth,
-        targetY + py * endWidth
-    };
-    gc.setFill(Color.color(color.getRed(), color.getGreen(), color.getBlue(), alpha));
-    gc.fillPolygon(xs, ys, 4);
-  }
-
-  private void drawStripLightOverlay(double sourceX, double sourceY, double targetX, double targetY, double halfWidth, Color color, double alpha) {
-    double dx = targetX - sourceX;
-    double dy = targetY - sourceY;
-    double length = Math.max(1.0, Math.hypot(dx, dy));
-    double px = -dy / length;
-    double py = dx / length;
-    double[] xs = {
-        sourceX + px * halfWidth,
-        sourceX - px * halfWidth,
-        targetX - px * halfWidth,
-        targetX + px * halfWidth
-    };
-    double[] ys = {
-        sourceY + py * halfWidth,
-        sourceY - py * halfWidth,
-        targetY - py * halfWidth,
-        targetY + py * halfWidth
-    };
-    gc.setFill(Color.color(color.getRed(), color.getGreen(), color.getBlue(), alpha));
-    gc.fillPolygon(xs, ys, 4);
+    if (stage == null || stage.getLights().isEmpty()) return;
+    stageOverlays.computeIfAbsent(layer, key -> VnStageLightOverlay.prepare(stage, key, width, height)).draw(gc);
   }
 
   private void renderAudioVisualizer(double width, double height, AudioVisualizerSettings settings) {
@@ -4482,6 +4472,11 @@ public class VnRenderer {
     backgroundImageCache.clear();
     stageBackgroundCache.clear();
     stageCharacterCache.clear();
+    stageSourcePixels.clear();
+    stageRenderJobs.clear();
+    characterRigStage = null;
+    characterRig = null;
+    stageOverlays.clear();
     layerPathCache.clear();
     particleBlitter.clearCache();
     textMetrics.clear();
@@ -4493,6 +4488,7 @@ public class VnRenderer {
 
   public void dispose() {
     imageEffects.close();
+    stageRenderJobs.close();
     if (disposed) return;
     disposed = true;
     imageCache.clear();
@@ -4504,6 +4500,11 @@ public class VnRenderer {
     backgroundImageCache.clear();
     stageBackgroundCache.clear();
     stageCharacterCache.clear();
+    stageSourcePixels.clear();
+    stageRenderJobs.clear();
+    characterRigStage = null;
+    characterRig = null;
+    stageOverlays.clear();
     layerPathCache.clear();
     particleBlitter.clearCache();
     textMetrics.clear();

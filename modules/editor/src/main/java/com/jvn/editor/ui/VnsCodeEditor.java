@@ -748,6 +748,28 @@ public class VnsCodeEditor extends BorderPane {
     return true;
   }
 
+  /** Registers a preset and activates it at the current scene beat as one undoable edit. */
+  public void insertStagePreset(String id, String scriptRelativePath) {
+    int line = codeArea.getCurrentParagraph();
+    FoldRegion timeline = findTimelineRegionForParagraph(line);
+    if (timeline != null) line = timeline.startLine();
+    String before = codeArea.getParagraph(line).getText();
+    String indent = before.substring(0, before.length() - before.stripLeading().length());
+    String declaration = "@stagepreset " + id + " " + scriptRelativePath;
+    String command = indent + "[stage " + id + "]";
+    int start = codeArea.getAbsolutePosition(line, 0);
+    if (timeline == null && before.stripLeading().matches("(?i)\\[stage(?:\\s+[^]]*)?].*")) {
+      codeArea.replaceText(start, start + before.length(), declaration + "\n" + command);
+    } else if (timeline == null && (before.stripLeading().startsWith("@") || before.stripLeading().startsWith("[bg ")
+        || before.stripLeading().startsWith("[show "))) {
+      start += before.length() + 1;
+      codeArea.insertText(start - 1, "\n" + declaration + "\n" + command);
+    } else {
+      codeArea.insertText(start, declaration + "\n" + command + "\n");
+    }
+    codeArea.moveTo(start + declaration.length() + 1 + command.length());
+  }
+
   public void setOnTextChanged(Consumer<String> listener) {
     this.onTextChanged = listener;
   }

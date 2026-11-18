@@ -4640,6 +4640,7 @@ public class EditorApp extends Application {
   private ImageTintToolView ensureImageTintToolView() {
     if (imageTintToolView != null) return imageTintToolView;
     imageTintToolView = new ImageTintToolView();
+    imageTintToolView.setActiveScriptSupplier(this::getActiveFileTab);
     imageTintToolView.setProjectRoot(projectRoot);
     imageTintToolView.setOnToggleFullscreen(() -> toggleImageToolFullscreen(imageTintToolView));
     imageTintToolView.setFullscreenActive(false);

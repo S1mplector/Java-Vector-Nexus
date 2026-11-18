@@ -62,16 +62,15 @@ Tag/setup controls, global grade sliders, background grade, light rig, and local
 
 ## Workspace Structure
 
-The tool uses a split workspace:
+The viewport keeps a 16:9 stage. The inspector sits next to it in a wide window and below it in a narrow sidebar. Use **Original** to compare the same composition with the grade and lights bypassed. The Scene, Rig, Shadows, Grade and Output tabs keep related controls together.
 
-- **Preview side** — a large interactive canvas for the current composite
-- **Controls side** — a resizable, hideable sidebar like the editor and Puppeteer side panes
+### Work directly from a VNS scene
 
-The sidebar width and collapsed state are persisted per project.
+1. Put the VNS cursor on a scene beat and click **Load from VNS**. The studio loads the background, available subjects, and active stage preset.
+2. Choose a subject, arrange the rig, and check its shadows in the viewport.
+3. Click **Apply to VNS** to write a `.stagepreset` beside the script in `lighting/` and activate it at the cursor. Applying directly on an existing studio-generated `[stage …]` line updates that preset. If the script already had unsaved changes, save it to persist the activation.
 
----
-
-## Main Sections
+The scene still supplies its own background during gameplay. Standalone `.tintsetup` and `.stagepreset` files can be reopened through **Output → Import**.
 
 ### Tags & Setup
 
@@ -128,7 +127,7 @@ Example header:
 # JVN Stage Preset
 # @stagepreset sunset_park config/stage/sunset_park.stagepreset
 # [stage sunset_park]
-jvn.stagePreset.schema=2
+jvn.stagePreset.schema=3
 jvn.stagePreset.id=sunset_park
 jvn.stagePreset.file=sunset_park.stagepreset
 jvn.stagePreset.vnsDeclaration=@stagepreset sunset_park config/stage/sunset_park.stagepreset
@@ -177,7 +176,12 @@ Each light has:
 | **Silhouette** | Rim/backlight contribution — high values rim the character instead of flat-tinting (0–100%) |
 | **Shape** | Light type (see below) |
 | **Layer** | Z-layer: `background`, `character`, or `foreground` |
-| **Group** | Organizational group name for related lights |
+| **Group** | Name a cluster, then mute or solo its lights together |
+| **Blend** | Physical, Normal, Add, Screen, Multiply, Overlay, or Soft Light |
+| **Falloff** | Classic, linear, smooth, or a bounded inverse-square curve |
+| **Beam Angle / Area Width** | Spotlight aperture in degrees, or the width-to-length ratio of an Area or Window light |
+| **Cast shadows** | Include or exclude occlusion for this light |
+| **Shadow sampling** | Hard edges, four-ray soft shadows, or eight-ray soft shadows |
 | **Mute** | Suppress light contribution without removing it |
 | **Lock** | Prevent accidental dragging on the canvas |
 | **Solo** | Show only this light, hiding all others temporarily |
@@ -194,6 +198,9 @@ The key idea is scene-relative behavior: when you move the character around the 
 | **Strip** | Thin edge lights, monitors, or tube lights |
 | **Window** | Broad rectangular light patches |
 | **Bounce** | Reflected light from floor or wall surfaces |
+| **Area** | An oriented oval whose width can be adjusted |
+| **Directional** | Full-stage light with parallel shadow rays |
+| **Ambient** | Uniform fill across the stage |
 
 #### Quick-Add Light Presets
 
@@ -246,10 +253,26 @@ Each occluder has:
 | **Softness** | Edge falloff for the blocker (0–100%) |
 | **Enabled** | Toggle the occluder on/off without removing it |
 
-Occluders are drawn on the preview with the same two polygon modes as lights:
+Use **Draw Box** or **Draw Ellipse** and edit the normalized bounds as percentages in the Shadows tab. Use the polygon or freehand tools when the object silhouette matters. **Import Mask** traces the alpha channel of a transparent PNG or the white areas of a grayscale PNG. The mask should have the same framing as the stage. Connected solid regions create separate polygon casters.
 
-- **Polygon draw** — click to nail vertices; click near start or double-click to close
-- **Freehand draw** — hold and drag to sketch a smoothed shadow polygon
+The Shadows tab can display solid outlines, sampled rays, blocked-light coverage, or both diagnostics together. Pink areas show which portions of the selected light are blocked. Opacity controls how much light the caster blocks and penumbra controls the width of soft edges.
+
+For a painted room with a floor, turn on **Project shadows onto floor** in the selected light. Set the point below the light, the horizon and shadow strength. Floor Light controls the illumination on the receiver plane, and Floor Exposure controls the floor independently of the sky. In the Shadows tab, set each object's floor contact and height scale. Floor depth can give flat silhouettes volume. For a rigid prop, enter a floor Y for each contour vertex to give its corners distinct depths. Shadow Fade reduces opacity toward the end of a long floor cast. Shadow Framing allows an optional offset, scale and angle correction for a painted reference. Use **Round floor shadow** for a sphere. The projection preserves the painted artwork over the projected shadow.
+
+Object Exposure and Object Contrast grade a segmented object on a flattened background. Use them to preserve painted material detail while changing the stage exposure.
+
+### Subject material
+
+Use **Grade → Subject Material** to attach a tangent-space RGB normal map to the selected sprite. Use the same framing as the artwork. Normal Strength controls directional relief, Specular controls reflected highlights, and Gloss changes highlight width. The material and caster geometry are saved with the rig.
+
+### Headless preview and mask tracing
+
+```sh
+./gradlew :fx:renderStageLighting --args='plate.png rig.stagepreset lit.png silhouettes.png shadow-debug.png'
+./gradlew :fx:renderStageLighting --args='--segment caster-mask.png casters.stagepreset 128 0.8'
+```
+
+The headless preview applies the gameplay background-lighting pass to a flattened plate. The two debug PNGs are optional. Floor-projection diagnostics show the footprint of the light and projected rays. Mask tracing accepts a coverage threshold from 1 to 255 and contour simplification tolerance in source pixels. Preset caster polygons and `bounds=x,y,width,height` use normalized stage coordinates with the origin at the upper-left.
 
 ### Background Grade
 

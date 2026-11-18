@@ -6,22 +6,23 @@ import java.util.List;
 import com.jvn.core.vn.stage.VnStagePreset;
 
 import javafx.scene.image.Image;
-import javafx.scene.image.PixelReader;
-import javafx.scene.image.PixelWriter;
+import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
-final class VnStageLightingSupport {
+public final class VnStageLightingSupport {
   private VnStageLightingSupport() {}
 
-  static Image buildLitBackground(Image source, VnStagePreset stage, double width, double height) {
-    if (source == null || width <= 0 || height <= 0) return source;
+  /** Shades the same plate pass used by gameplay at the dimensions of an editor preview. */
+  public static Image renderBackgroundPreview(Image source, VnStagePreset stage, double width, double height) {
+    Raster raster = shadeBackground(PixelData.capture(source), stage, width, height);
+    return raster == null ? null : raster.image();
+  }
+
+  static Raster shadeBackground(PixelData source, VnStagePreset stage, double width, double height) {
+    if (source == null || width <= 0 || height <= 0) return null;
     int outWidth = Math.max(1, (int) Math.round(width));
     int outHeight = Math.max(1, (int) Math.round(height));
-    WritableImage out = new WritableImage(outWidth, outHeight);
-    PixelReader reader = source.getPixelReader();
-    PixelWriter writer = out.getPixelWriter();
-    if (reader == null) return source;
 
     VnStagePreset.BackgroundGrade grade = stage == null ? VnStagePreset.BackgroundGrade.defaults() : stage.getBackgroundGrade();
     Color tintColor = parseColor(grade.tintColor(), Color.WHITE);
@@ -30,30 +31,61 @@ final class VnStageLightingSupport {
     double satAdjust = clamp(grade.saturation(), -1.0, 1.0);
     double conAdjust = clamp(grade.contrast(), -1.0, 1.0);
     double overlayOpacity = clamp(grade.overlayOpacity(), 0.0, 1.0);
+    double exposure = Math.pow(2, grade.exposure());
+    int tintMode = VnStageGradeBlend.index(grade.tintBlend());
+    int overlayMode = VnStageGradeBlend.index(grade.overlayBlend());
 
-    double sourceWidth = Math.max(1.0, source.getWidth());
-    double sourceHeight = Math.max(1.0, source.getHeight());
+    double sourceWidth = source.width();
+    double sourceHeight = source.height();
     double scale = Math.max(width / sourceWidth, height / sourceHeight);
     double drawWidth = sourceWidth * scale;
     double drawHeight = sourceHeight * scale;
     double drawX = (width - drawWidth) * 0.5;
     double drawY = (height - drawHeight) * 0.5;
-    double minDimension = Math.max(1.0, Math.min(width, height));
-    List<LightRuntime> runtimeLights = prepareLights(stage, width, height, minDimension);
-    List<OccluderRuntime> occluders = prepareOccluders(stage, width, height);
+    List<LightRuntime> runtimeLights = prepareLights(stage, width, height, true);
+    int[] sourceColumns = new int[outWidth];
+    for (int x = 0; x < outWidth; x++) {
+      sourceColumns[x] = (int) Math.round(clamp((x - drawX) / scale, 0.0, sourceWidth - 1.0));
+    }
+    int[] output = new int[outWidth * outHeight];
+    byte[] groundShadows = stage == null ? null : VnGroundShadows.mask(stage, outWidth, outHeight);
+    int[] materialMap = stage == null ? null : VnGroundShadows.materialMap(stage, outWidth, outHeight,
+        runtimeLights.stream().anyMatch(light -> light.floor != null));
+    VnGroundShadows.FloorLight floor = runtimeLights.stream().map(light -> light.floor)
+        .filter(java.util.Objects::nonNull).findFirst().orElse(null);
+    double aspect = width / height;
+    double[] materialExposure = materialMap == null ? null : new double[stage.getOccluders().size() + 1];
+    double[] materialContrast = materialMap == null ? null : new double[stage.getOccluders().size() + 1];
+    if (materialMap != null) {
+      for (int i = 0; i < stage.getOccluders().size(); i++) {
+        var tone = stage.getOccluders().get(i).surfaceTone();
+        if (tone == null) continue;
+        materialExposure[i + 1] = Math.pow(2, tone.exposure());
+        materialContrast[i + 1] = 1 + tone.contrast();
+      }
+    }
+    List<VnStageShadow> occluders = VnStageShadow.prepare(stage == null ? List.of() : stage.getOccluders(), width, height);
 
     for (int y = 0; y < outHeight; y++) {
+      if (Thread.currentThread().isInterrupted()) return null;
       double sourceY = clamp((y - drawY) / scale, 0.0, sourceHeight - 1.0);
+      double v = (y + 0.5) / outHeight;
+      boolean floorRow = floor != null && v > floor.horizon();
       int sy = (int) Math.round(sourceY);
       for (int x = 0; x < outWidth; x++) {
-        double sourceX = clamp((x - drawX) / scale, 0.0, sourceWidth - 1.0);
-        int sx = (int) Math.round(sourceX);
-        int argb = reader.getArgb(sx, sy);
+        int argb = source.at(sourceColumns[x], sy);
         int a = (argb >>> 24) & 0xFF;
         double r = ((argb >>> 16) & 0xFF) / 255.0;
         double g = ((argb >>> 8) & 0xFF) / 255.0;
         double b = (argb & 0xFF) / 255.0;
 
+        int material = materialMap == null ? 0 : materialMap[y * outWidth + x];
+        double cameraExposure = floorRow && material == 0 ? exposure * floor.exposure() : exposure;
+        if (cameraExposure != 1) {
+          r = linearToSrgb(srgbToLinear(r) * cameraExposure);
+          g = linearToSrgb(srgbToLinear(g) * cameraExposure);
+          b = linearToSrgb(srgbToLinear(b) * cameraExposure);
+        }
         double lum = linearLuminance(r, g, b);
         r = lum + (r - lum) * (1.0 + satAdjust);
         g = lum + (g - lum) * (1.0 + satAdjust);
@@ -61,41 +93,64 @@ final class VnStageLightingSupport {
         r = (r - 0.5) * (1.0 + conAdjust) + 0.5;
         g = (g - 0.5) * (1.0 + conAdjust) + 0.5;
         b = (b - 0.5) * (1.0 + conAdjust) + 0.5;
-        r = r * (1.0 - tintStrength) + tintColor.getRed() * tintStrength;
-        g = g * (1.0 - tintStrength) + tintColor.getGreen() * tintStrength;
-        b = b * (1.0 - tintStrength) + tintColor.getBlue() * tintStrength;
+        r = VnStageGradeBlend.fastComposite(r, tintColor.getRed(), tintStrength, tintMode);
+        g = VnStageGradeBlend.fastComposite(g, tintColor.getGreen(), tintStrength, tintMode);
+        b = VnStageGradeBlend.fastComposite(b, tintColor.getBlue(), tintStrength, tintMode);
 
         if (overlayOpacity > 1e-6) {
-          r = applyBlend(r, overlayColor.getRed(), overlayOpacity, 4);
-          g = applyBlend(g, overlayColor.getGreen(), overlayOpacity, 4);
-          b = applyBlend(b, overlayColor.getBlue(), overlayOpacity, 4);
+          r = applyBlend(r, overlayColor.getRed(), overlayOpacity, overlayMode);
+          g = applyBlend(g, overlayColor.getGreen(), overlayOpacity, overlayMode);
+          b = applyBlend(b, overlayColor.getBlue(), overlayOpacity, overlayMode);
         }
 
         for (LightRuntime light : runtimeLights) {
-          if (light.layer != VnStagePreset.LightLayer.BACKGROUND) continue;
-          double weight = lightWeight(light, x, y);
-          if (weight <= 0.0) continue;
-          double occlusion = occlusion(light.sourceX, light.sourceY, x, y, occluders);
-          weight *= (1.0 - occlusion);
-          if (weight <= 0.0) continue;
-          double influence = weight * light.intensity;
-          double albedo = linearLuminance(r, g, b);
-          r = applySceneLightChannel(r, light.color.getRed(), influence, albedo, false);
-          g = applySceneLightChannel(g, light.color.getGreen(), influence, albedo, false);
-          b = applySceneLightChannel(b, light.color.getBlue(), influence, albedo, false);
-          double tintWeight = clamp(influence * 0.14, 0.0, 0.32);
-          r = applyBlend(r, light.color.getRed(), tintWeight, 4);
-          g = applyBlend(g, light.color.getGreen(), tintWeight, 4);
-          b = applyBlend(b, light.color.getBlue(), tintWeight, 4);
+          double influence;
+          if (light.floor != null && material == 0) {
+            if (v <= light.floor.horizon()) continue;
+            influence = light.floor.illumination((x + 0.5) / outWidth, 1 / (v - light.floor.horizon()), aspect);
+          } else {
+            double weight = light.field.weight(x, y);
+            if (weight <= 0) continue;
+            if (light.castsShadows) weight *= light.field.transmission(occluders, x, y, light.shadowQuality);
+            influence = weight * light.intensity;
+          }
+          if (influence <= 0.001) continue;
+          if (light.blend == VnStagePreset.LightBlend.PHYSICAL) {
+            double albedo = linearLuminance(r, g, b);
+            double tintWeight = clamp(influence * 0.14, 0.0, 0.32);
+            r = lightChannel(r, light.color.getRed(), influence, albedo, tintWeight);
+            g = lightChannel(g, light.color.getGreen(), influence, albedo, tintWeight);
+            b = lightChannel(b, light.color.getBlue(), influence, albedo, tintWeight);
+          } else {
+            r = light.blend.composite(r, light.color.getRed(), influence);
+            g = light.blend.composite(g, light.color.getGreen(), influence);
+            b = light.blend.composite(b, light.color.getBlue(), influence);
+          }
         }
 
+        if (materialMap != null) {
+          int id = materialMap[y * outWidth + x];
+          if (id > 0 && materialContrast[id] > 0) {
+            double gain = materialExposure[id];
+            double contrast = materialContrast[id];
+            r = surfaceChannel(r, gain, contrast);
+            g = surfaceChannel(g, gain, contrast);
+            b = surfaceChannel(b, gain, contrast);
+          }
+        }
+        if (groundShadows != null) {
+          double shade = 1 - (groundShadows[y * outWidth + x] & 255) / 255.0;
+          r *= shade;
+          g *= shade;
+          b *= shade;
+        }
         int rr = (int) Math.round(clamp(r, 0.0, 1.0) * 255.0);
         int gg = (int) Math.round(clamp(g, 0.0, 1.0) * 255.0);
         int bb = (int) Math.round(clamp(b, 0.0, 1.0) * 255.0);
-        writer.setArgb(x, y, (a << 24) | (rr << 16) | (gg << 8) | bb);
+        output[y * outWidth + x] = (a << 24) | (rr << 16) | (gg << 8) | bb;
       }
     }
-    return out;
+    return new Raster(outWidth, outHeight, output);
   }
 
   static Image buildLitCharacter(
@@ -107,162 +162,272 @@ final class VnStageLightingSupport {
       double drawHeight,
       double canvasWidth,
       double canvasHeight,
-      VnStagePreset stage
+      VnStagePreset stage,
+      Image normalMap,
+      CharacterRig rig
   ) {
-    if (source == null || stage == null || drawWidth <= 0 || drawHeight <= 0) return source;
+    Raster raster = shadeCharacter(PixelData.capture(source), spriteTag, drawX, drawY, drawWidth, drawHeight,
+        canvasWidth, canvasHeight, stage, PixelData.capture(normalMap), rig);
+    return raster == null ? source : raster.image();
+  }
+
+  static Raster shadeCharacter(
+      PixelData source,
+      String spriteTag,
+      double drawX,
+      double drawY,
+      double drawWidth,
+      double drawHeight,
+      double canvasWidth,
+      double canvasHeight,
+      VnStagePreset stage,
+      PixelData normalMap,
+      CharacterRig rig
+  ) {
+    if (source == null || stage == null || drawWidth <= 0 || drawHeight <= 0) return null;
     int outWidth = Math.max(1, (int) Math.round(drawWidth));
     int outHeight = Math.max(1, (int) Math.round(drawHeight));
-    WritableImage out = new WritableImage(outWidth, outHeight);
-    PixelReader reader = source.getPixelReader();
-    PixelWriter writer = out.getPixelWriter();
-    if (reader == null) return source;
 
-    double sourceWidth = Math.max(1.0, source.getWidth());
-    double sourceHeight = Math.max(1.0, source.getHeight());
-    double minDimension = Math.max(1.0, Math.min(canvasWidth, canvasHeight));
-    List<LightRuntime> runtimeLights = prepareLights(stage, canvasWidth, canvasHeight, minDimension);
-    List<OccluderRuntime> occluders = prepareOccluders(stage, canvasWidth, canvasHeight);
-    boolean hasSolo = stage.hasSoloLights();
-    boolean subjectMatched = stage.getSubjectTag() == null
-        || stage.getSubjectTag().isBlank()
-        || stage.getSubjectTag().equals(spriteTag);
-    List<ResponseRuntime> responseZones = prepareResponseZones(stage, sourceWidth, sourceHeight);
+    double sourceWidth = source.width();
+    double sourceHeight = source.height();
+    List<CharacterLight> runtimeLights = rig.lights().stream()
+        .filter(light -> light.light.field.intersects(drawX, drawY, drawWidth, drawHeight)).toList();
+    boolean subjectMatched = stage.matchesSubject(spriteTag);
+    VnStagePreset.SubjectGrade grade = stage.getSubjectGrade();
+    boolean gradeActive = subjectMatched && grade.active();
+    if (runtimeLights.isEmpty() && !gradeActive) return null;
+    Color tint = parseColor(grade.color(), Color.WHITE);
+
+    VnStageMaterial material = new VnStageMaterial(null, stage.getSubjectMaterial());
+    double lightHeight = Math.max(1, Math.min(canvasWidth, canvasHeight) * 0.20);
+    List<ResponseRuntime> responseZones = subjectMatched ? prepareResponseZones(stage) : List.of();
+    int sourcePixelWidth = (int) sourceWidth;
+    int sourcePixelHeight = (int) sourceHeight;
+    int[] sourceColumns = new int[outWidth];
+    double[] normalizedColumns = new double[outWidth];
+    double[] sceneColumns = new double[outWidth];
+    for (int x = 0; x < outWidth; x++) {
+      double fraction = x / Math.max(1.0, outWidth - 1.0);
+      sourceColumns[x] = (int) Math.round(fraction * (sourceWidth - 1.0));
+      normalizedColumns[x] = outWidth == 1 ? 0.5 : fraction;
+      sceneColumns[x] = drawX + normalizedColumns[x] * drawWidth;
+    }
+    int[] output = new int[outWidth * outHeight];
+    double aspect = sourceWidth / sourceHeight;
 
     for (int y = 0; y < outHeight; y++) {
+      if (Thread.currentThread().isInterrupted()) return null;
       double srcYf = clamp((y / Math.max(1.0, outHeight - 1.0)) * (sourceHeight - 1.0), 0.0, sourceHeight - 1.0);
       int sy = (int) Math.round(srcYf);
       double normalizedY = outHeight <= 1 ? 0.5 : (y / (double) (outHeight - 1));
       double sceneY = drawY + normalizedY * drawHeight;
       for (int x = 0; x < outWidth; x++) {
-        double srcXf = clamp((x / Math.max(1.0, outWidth - 1.0)) * (sourceWidth - 1.0), 0.0, sourceWidth - 1.0);
-        int sx = (int) Math.round(srcXf);
-        int argb = reader.getArgb(sx, sy);
+        int sx = sourceColumns[x];
+        int argb = source.at(sx, sy);
         int a = (argb >>> 24) & 0xFF;
-        if (a == 0) {
-          writer.setArgb(x, y, 0);
-          continue;
-        }
+        if (a == 0) continue;
         double r = ((argb >>> 16) & 0xFF) / 255.0;
         double g = ((argb >>> 8) & 0xFF) / 255.0;
         double b = (argb & 0xFF) / 255.0;
-        double normalizedX = outWidth <= 1 ? 0.5 : (x / (double) (outWidth - 1));
-        double sceneX = drawX + normalizedX * drawWidth;
+        double normalizedX = normalizedColumns[x];
+        double sceneX = sceneColumns[x];
+        if (gradeActive) {
+          double lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          r = gradeChannel(r, tint.getRed(), lum, grade);
+          g = gradeChannel(g, tint.getGreen(), lum, grade);
+          b = gradeChannel(b, tint.getBlue(), lum, grade);
+        }
+        int normal = 0;
+        ResponseInfluence response = null;
+        double edgeFactor = -1.0;
+        double edgeX = 0.0;
+        double edgeY = 0.0;
 
-        ResponseInfluence response = subjectMatched
-            ? resolveResponse(normalizedX, normalizedY, responseZones, sourceWidth / Math.max(1.0, sourceHeight))
-            : ResponseInfluence.defaults();
-
-        for (LightRuntime light : runtimeLights) {
-          if (light.muted || (hasSolo && !light.solo)) continue;
-          double weight = lightWeight(light, sceneX, sceneY);
+        for (CharacterLight prepared : runtimeLights) {
+          LightRuntime light = prepared.light;
+          double weight = prepared.weight(sceneX, sceneY);
           if (weight <= 0.0) continue;
-          double occlusion = occlusion(light.sourceX, light.sourceY, sceneX, sceneY, occluders);
-          weight *= (1.0 - occlusion);
-          if (weight <= 0.0) continue;
 
+          if (response == null) {
+            response = resolveResponse(normalizedX, normalizedY, responseZones, aspect);
+            if (subjectMatched && normalMap != null && stage.getSubjectMaterial().normalStrength() > 0) {
+              normal = normalMap.sample(normalizedX, normalizedY);
+            }
+          }
           if (light.layer == VnStagePreset.LightLayer.CHARACTER) {
             double directional = sceneLightDirectionalBias(
                 sceneX, sceneY, light.targetX, light.targetY, light.sourceX, light.sourceY);
             double influence = weight * light.intensity * directional
-                * response.responseScale * response.directFactor * response.depthFactor;
-            double albedo = linearLuminance(r, g, b);
-            r = applySceneLightChannel(r, light.color.getRed(), influence, albedo, false);
-            g = applySceneLightChannel(g, light.color.getGreen(), influence, albedo, false);
-            b = applySceneLightChannel(b, light.color.getBlue(), influence, albedo, false);
-            double tintWeight = clamp(influence * response.tintFactor, 0.0, 0.35);
-            r = applyBlend(r, light.color.getRed(), tintWeight, 4);
-            g = applyBlend(g, light.color.getGreen(), tintWeight, 4);
-            b = applyBlend(b, light.color.getBlue(), tintWeight, 4);
+                * response.responseScale * response.directFactor * response.depthFactor
+                * material.response(normal, light.sourceX - sceneX, light.sourceY - sceneY, lightHeight);
+            if (light.blend == VnStagePreset.LightBlend.PHYSICAL) {
+              double albedo = linearLuminance(r, g, b);
+              double tintWeight = clamp(influence * response.tintFactor, 0.0, 0.35);
+              r = lightChannel(r, light.color.getRed(), influence, albedo, tintWeight);
+              g = lightChannel(g, light.color.getGreen(), influence, albedo, tintWeight);
+              b = lightChannel(b, light.color.getBlue(), influence, albedo, tintWeight);
+            } else {
+              r = light.blend.composite(r, light.color.getRed(), influence);
+              g = light.blend.composite(g, light.color.getGreen(), influence);
+              b = light.blend.composite(b, light.color.getBlue(), influence);
+            }
           }
 
           double silhouetteStrength = light.silhouette * response.rimFactor;
           if (silhouetteStrength <= 1e-6) continue;
-          double edgeFactor = alphaEdgeWeight(reader, sx, sy, (int) Math.round(sourceWidth), (int) Math.round(sourceHeight));
+          if (edgeFactor < 0.0) {
+            int left = alphaAt(source, sx - 1, sy, sourcePixelWidth, sourcePixelHeight);
+            int right = alphaAt(source, sx + 1, sy, sourcePixelWidth, sourcePixelHeight);
+            int up = alphaAt(source, sx, sy - 1, sourcePixelWidth, sourcePixelHeight);
+            int down = alphaAt(source, sx, sy + 1, sourcePixelWidth, sourcePixelHeight);
+            int difference = Math.max(Math.max(Math.abs(a - left), Math.abs(a - right)),
+                Math.max(Math.abs(a - up), Math.abs(a - down)));
+            edgeFactor = difference > 0 ? difference / 255.0 : 1.0 - (left + right + up + down) / 1020.0;
+            edgeX = left - right;
+            edgeY = up - down;
+            double edgeLength = Math.sqrt(edgeX * edgeX + edgeY * edgeY);
+            if (edgeLength > 0) {
+              edgeX /= edgeLength;
+              edgeY /= edgeLength;
+            }
+          }
           if (edgeFactor <= 0.0) continue;
-          double[] edgeNormal = alphaEdgeNormal(reader, sx, sy, (int) Math.round(sourceWidth), (int) Math.round(sourceHeight));
           double lightDirX = light.sourceX - sceneX;
           double lightDirY = light.sourceY - sceneY;
           double lightDirLength = Math.hypot(lightDirX, lightDirY);
           double facing = 1.0;
-          if (lightDirLength > 1e-6 && (Math.abs(edgeNormal[0]) > 1e-6 || Math.abs(edgeNormal[1]) > 1e-6)) {
+          if (lightDirLength > 1e-6 && (edgeX != 0 || edgeY != 0)) {
             facing = clamp(
-                edgeNormal[0] * (lightDirX / lightDirLength) + edgeNormal[1] * (lightDirY / lightDirLength),
+                edgeX * (lightDirX / lightDirLength) + edgeY * (lightDirY / lightDirLength),
                 0.0,
                 1.0
             );
           }
           double rimWeight = weight * light.intensity * silhouetteStrength * edgeFactor
               * (0.28 + 0.72 * facing) * response.depthFactor;
-          double albedo = linearLuminance(r, g, b);
-          r = applySceneLightChannel(r, light.color.getRed(), rimWeight, albedo, true);
-          g = applySceneLightChannel(g, light.color.getGreen(), rimWeight, albedo, true);
-          b = applySceneLightChannel(b, light.color.getBlue(), rimWeight, albedo, true);
+          if (light.blend == VnStagePreset.LightBlend.PHYSICAL) {
+            double albedo = linearLuminance(r, g, b);
+            r = applySceneLightChannel(r, light.color.getRed(), rimWeight, albedo, true);
+            g = applySceneLightChannel(g, light.color.getGreen(), rimWeight, albedo, true);
+            b = applySceneLightChannel(b, light.color.getBlue(), rimWeight, albedo, true);
+          } else {
+            r = light.blend.composite(r, light.color.getRed(), rimWeight);
+            g = light.blend.composite(g, light.color.getGreen(), rimWeight);
+            b = light.blend.composite(b, light.color.getBlue(), rimWeight);
+          }
         }
 
         int rr = (int) Math.round(clamp(r, 0.0, 1.0) * 255.0);
         int gg = (int) Math.round(clamp(g, 0.0, 1.0) * 255.0);
         int bb = (int) Math.round(clamp(b, 0.0, 1.0) * 255.0);
-        writer.setArgb(x, y, (a << 24) | (rr << 16) | (gg << 8) | bb);
+        output[y * outWidth + x] = (a << 24) | (rr << 16) | (gg << 8) | bb;
       }
     }
-    return out;
+    return new Raster(outWidth, outHeight, output);
   }
 
-  private static List<LightRuntime> prepareLights(VnStagePreset stage, double canvasWidth, double canvasHeight, double minDimension) {
+  private static double surfaceChannel(double channel, double exposure, double contrast) {
+    double exposed = linearToSrgb(srgbToLinear(channel) * exposure);
+    return 0.29 + (exposed - 0.29) * contrast;
+  }
+
+  private static double gradeChannel(double base, double tint, double luma, VnStagePreset.SubjectGrade grade) {
+    double saturated = luma + (base - luma) * (1 + grade.saturation());
+    double contrasted = 0.5 + (saturated - 0.5) * (1 + grade.contrast());
+    return contrasted * (1 - grade.strength()) + tint * grade.strength();
+  }
+
+  record Raster(int width, int height, int[] pixels) {
+    Image image() {
+      WritableImage result = new WritableImage(width, height);
+      result.getPixelWriter().setPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), pixels, 0, width);
+      return result;
+    }
+  }
+
+  record PixelData(int width, int height, int[] pixels) {
+    static PixelData capture(Image source) {
+      if (source == null) return null;
+      var reader = source.getPixelReader();
+      if (reader == null) return null;
+      int w = (int) source.getWidth();
+      int h = (int) source.getHeight();
+      int[] pixels = new int[w * h];
+      reader.getPixels(0, 0, w, h, PixelFormat.getIntArgbInstance(), pixels, 0, w);
+      return new PixelData(w, h, pixels);
+    }
+
+    int at(int x, int y) { return pixels[y * width + x]; }
+
+    int sample(double u, double v) {
+      return at((int) Math.round(u * (width - 1)), (int) Math.round(v * (height - 1)));
+    }
+  }
+
+  private static double lightChannel(double base, double color, double influence, double albedo, double tintWeight) {
+    return applyBlend(applySceneLightChannel(base, color, influence, albedo, false), color, tintWeight, 4);
+  }
+
+  static final class CharacterRig {
+    private static final int MAX_SAMPLED_LIGHTS = 12;
+    private final VnStagePreset stage;
+    private final double width;
+    private final double height;
+    private List<CharacterLight> prepared;
+
+    CharacterRig(VnStagePreset stage, double width, double height) {
+      this.stage = stage;
+      this.width = width;
+      this.height = height;
+    }
+
+    synchronized List<CharacterLight> lights() {
+      if (prepared != null) return prepared;
+      List<CharacterLight> lights = new ArrayList<>();
+      List<VnStageShadow> shadows = VnStageShadow.prepare(stage.getOccluders(), width, height);
+      for (LightRuntime light : prepareLights(stage, width, height, false)) {
+        List<VnStageShadow> blockers = light.castsShadows ? shadows : List.of();
+        VnStageLightSamples samples = !blockers.isEmpty() && lights.size() < MAX_SAMPLED_LIGHTS
+            ? new VnStageLightSamples(light.field, blockers, light.shadowQuality, width, height) : null;
+        lights.add(new CharacterLight(light, blockers, samples));
+      }
+      if (!Thread.currentThread().isInterrupted()) prepared = lights;
+      return lights;
+    }
+  }
+
+  private record CharacterLight(LightRuntime light, List<VnStageShadow> shadows, VnStageLightSamples samples) {
+    double weight(double x, double y) {
+      if (samples != null) return samples.weight(x, y);
+      double direct = light.field.weight(x, y);
+      return direct <= 0 || shadows.isEmpty() ? direct
+          : direct * light.field.transmission(shadows, x, y, light.shadowQuality);
+    }
+  }
+
+  private static List<LightRuntime> prepareLights(VnStagePreset stage, double canvasWidth,
+      double canvasHeight, boolean background) {
     List<LightRuntime> lights = new ArrayList<>();
     if (stage == null) return lights;
     for (VnStagePreset.Light light : stage.getLights()) {
-      if (light == null) continue;
-      List<double[]> polygon = null;
-      if (light.polygon() != null && !light.polygon().isEmpty()) {
-        polygon = new ArrayList<>();
-        for (VnStagePreset.Point point : light.polygon()) {
-          polygon.add(new double[]{point.x() * canvasWidth, point.y() * canvasHeight});
-        }
-      }
-      lights.add(new LightRuntime(
-          light.type(),
-          light.layer(),
-          light.sceneX() * canvasWidth,
-          light.sceneY() * canvasHeight,
-          light.sourceX() * canvasWidth,
-          light.sourceY() * canvasHeight,
-          light.sceneX() * canvasWidth,
-          light.sceneY() * canvasHeight,
-          parseColor(light.color(), Color.web("#ffd7a8")),
-          clamp(light.intensity(), 0.0, 1.0),
-          Math.max(12.0, light.radius() * minDimension),
-          clamp(light.softness(), 0.0, 1.0),
-          clamp(light.silhouette(), 0.0, 1.0),
-          light.muted(),
-          light.solo(),
-          polygon
-      ));
+      if (!stage.isActive(light)) continue;
+      if (background ? light.layer() != VnStagePreset.LightLayer.BACKGROUND
+          : light.layer() != VnStagePreset.LightLayer.CHARACTER && light.silhouette() <= 0.0) continue;
+      double x = light.sceneX() * canvasWidth;
+      double y = light.sceneY() * canvasHeight;
+      double sourceX = light.sourceX() * canvasWidth;
+      double sourceY = light.sourceY() * canvasHeight;
+      VnStageLightField field = VnStageLightField.forLight(light, canvasWidth, canvasHeight, 1);
+      var floor = background && light.groundProjection() != null && light.groundProjection().floorLight() > 0
+          ? VnGroundShadows.FloorLight.from(light, canvasWidth / canvasHeight) : null;
+      lights.add(new LightRuntime(light.layer(), x, y, sourceX, sourceY,
+          parseColor(light.color(), Color.web("#ffd7a8")), clamp(light.intensity(), 0, 1),
+          clamp(light.silhouette(), 0, 1), light.blend(), light.castsShadows() && light.groundProjection() == null, light.shadowQuality(), field, floor));
     }
     return lights;
   }
 
-  private static List<OccluderRuntime> prepareOccluders(VnStagePreset stage, double canvasWidth, double canvasHeight) {
-    List<OccluderRuntime> occluders = new ArrayList<>();
-    if (stage == null) return occluders;
-    for (VnStagePreset.Occluder occluder : stage.getOccluders()) {
-      if (occluder == null || !occluder.enabled() || occluder.polygon() == null || occluder.polygon().size() < 3) {
-        continue;
-      }
-      List<double[]> polygon = new ArrayList<>();
-      for (VnStagePreset.Point point : occluder.polygon()) {
-        polygon.add(new double[]{point.x() * canvasWidth, point.y() * canvasHeight});
-      }
-      occluders.add(new OccluderRuntime(
-          clamp(occluder.opacity(), 0.0, 1.0),
-          clamp(occluder.softness(), 0.0, 1.0),
-          polygon
-      ));
-    }
-    return occluders;
-  }
-
-  private static List<ResponseRuntime> prepareResponseZones(VnStagePreset stage, double sourceWidth, double sourceHeight) {
+  private static List<ResponseRuntime> prepareResponseZones(VnStagePreset stage) {
     List<ResponseRuntime> zones = new ArrayList<>();
     if (stage == null) return zones;
     for (VnStagePreset.ResponseZone zone : stage.getResponseZones()) {
@@ -299,107 +464,6 @@ final class VnStageLightingSupport {
     }
   }
 
-  static double backgroundLightAlpha(VnStagePreset.Light light) {
-    double intensity = light == null ? 0.0 : clamp(light.intensity(), 0.0, 1.0);
-    return clamp(intensity * 0.18, 0.02, 0.24);
-  }
-
-  static double foregroundLightAlpha(VnStagePreset.Light light) {
-    double intensity = light == null ? 0.0 : clamp(light.intensity(), 0.0, 1.0);
-    return clamp(intensity * 0.16, 0.02, 0.22);
-  }
-
-  static double lightWeight(LightRuntime light, double x, double y) {
-    return switch (light.type) {
-      case POLYGON -> scenePolygonLightWeightPx(x, y, light.polygon, light.radius, light.softness);
-      case CONE -> coneLightWeight(light, x, y);
-      case STRIP, WINDOW -> stripLightWeight(light, x, y);
-      case BOUNCE -> sceneLightWeightPx(x, y, light.targetX, light.targetY, light.radius, clamp(light.softness * 1.15, 0.0, 1.0));
-      default -> sceneLightWeightPx(x, y, light.targetX, light.targetY, light.radius, light.softness);
-    };
-  }
-
-  private static double coneLightWeight(LightRuntime light, double x, double y) {
-    double dx = x - light.sourceX;
-    double dy = y - light.sourceY;
-    double distance = Math.hypot(dx, dy);
-    if (distance <= 1e-6) return 0.0;
-    double axisX = light.targetX - light.sourceX;
-    double axisY = light.targetY - light.sourceY;
-    double axisLength = Math.hypot(axisX, axisY);
-    if (axisLength <= 1e-6) return 0.0;
-    double dot = clamp((dx / distance) * (axisX / axisLength) + (dy / distance) * (axisY / axisLength), -1.0, 1.0);
-    double angle = Math.acos(dot);
-    double maxAngle = Math.toRadians(12.0 + light.radius * 0.14);
-    if (angle >= maxAngle) return 0.0;
-    double angular = 1.0 - (angle / maxAngle);
-    double radial = clamp(1.0 - (distance / Math.max(axisLength, light.radius * 1.6)), 0.0, 1.0);
-    return Math.pow(angular, 0.55 + (1.0 - light.softness) * 1.8) * radial;
-  }
-
-  private static double stripLightWeight(LightRuntime light, double x, double y) {
-    double axisX = light.targetX - light.sourceX;
-    double axisY = light.targetY - light.sourceY;
-    double axisLength = Math.hypot(axisX, axisY);
-    if (axisLength <= 1e-6) return 0.0;
-    double t = clamp(((x - light.sourceX) * axisX + (y - light.sourceY) * axisY) / (axisLength * axisLength), 0.0, 1.0);
-    double closestX = light.sourceX + axisX * t;
-    double closestY = light.sourceY + axisY * t;
-    double width = Math.max(10.0, light.radius * 0.42);
-    double distance = Math.hypot(x - closestX, y - closestY);
-    if (distance >= width) return 0.0;
-    double lateral = 1.0 - (distance / width);
-    double along = Math.sin(t * Math.PI);
-    return Math.pow(lateral, 0.65 + (1.0 - light.softness) * 2.0) * clamp(along + 0.18, 0.0, 1.0);
-  }
-
-  private static double occlusion(double sourceX, double sourceY, double targetX, double targetY, List<OccluderRuntime> occluders) {
-    if (occluders == null || occluders.isEmpty()) return 0.0;
-    double blocked = 0.0;
-    for (OccluderRuntime occluder : occluders) {
-      if (occluder == null || occluder.polygon == null || occluder.polygon.size() < 3) continue;
-      if (!segmentIntersectsPolygon(sourceX, sourceY, targetX, targetY, occluder.polygon)) continue;
-      blocked = Math.max(blocked, occluder.opacity * (0.78 + 0.22 * (1.0 - occluder.softness)));
-    }
-    return blocked;
-  }
-
-  private static boolean segmentIntersectsPolygon(double ax, double ay, double bx, double by, List<double[]> polygon) {
-    int size = polygon == null ? 0 : polygon.size();
-    if (size < 3) return false;
-    for (int i = 0, j = size - 1; i < size; j = i++) {
-      double[] p1 = polygon.get(j);
-      double[] p2 = polygon.get(i);
-      if (segmentsIntersect(ax, ay, bx, by, p1[0], p1[1], p2[0], p2[1])) return true;
-    }
-    return false;
-  }
-
-  private static boolean segmentsIntersect(double ax, double ay, double bx, double by,
-                                           double cx, double cy, double dx, double dy) {
-    double d1 = direction(cx, cy, dx, dy, ax, ay);
-    double d2 = direction(cx, cy, dx, dy, bx, by);
-    double d3 = direction(ax, ay, bx, by, cx, cy);
-    double d4 = direction(ax, ay, bx, by, dx, dy);
-    if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0))
-        && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) {
-      return true;
-    }
-    return d1 == 0 && onSegment(cx, cy, dx, dy, ax, ay)
-        || d2 == 0 && onSegment(cx, cy, dx, dy, bx, by)
-        || d3 == 0 && onSegment(ax, ay, bx, by, cx, cy)
-        || d4 == 0 && onSegment(ax, ay, bx, by, dx, dy);
-  }
-
-  private static double direction(double ax, double ay, double bx, double by, double px, double py) {
-    return ((px - ax) * (by - ay)) - ((py - ay) * (bx - ax));
-  }
-
-  private static boolean onSegment(double ax, double ay, double bx, double by, double px, double py) {
-    return px >= Math.min(ax, bx) && px <= Math.max(ax, bx)
-        && py >= Math.min(ay, by) && py <= Math.max(ay, by);
-  }
-
   private static ResponseInfluence resolveResponse(double nx, double ny, List<ResponseRuntime> zones, double aspect) {
     ResponseInfluence influence = ResponseInfluence.defaults();
     for (ResponseRuntime zone : zones) {
@@ -423,43 +487,6 @@ final class VnStageLightingSupport {
       case GLASS -> new ResponseInfluence(0.86 * scale, 1.22, 0.12, 0.88 + depthBias * 0.10, 1.10 + depthBias * 0.18);
       default -> new ResponseInfluence(scale, 1.0, 0.12, 1.0 + depthBias * 0.10, 1.0 + depthBias * 0.14);
     };
-  }
-
-  static double sceneLightWeightPx(double px, double py, double lightX, double lightY, double radiusPx, double softness) {
-    double safeRadius = Math.max(1.0, radiusPx);
-    double dx = px - lightX;
-    double dy = py - lightY;
-    double distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance >= safeRadius) return 0.0;
-    double normalized = clamp(1.0 - (distance / safeRadius), 0.0, 1.0);
-    double exponent = 0.65 + (1.0 - clamp(softness, 0.0, 1.0)) * 2.15;
-    return Math.pow(normalized, exponent);
-  }
-
-  static double scenePolygonLightWeightPx(double px, double py, List<double[]> polygonPx, double featherPx, double softness) {
-    if (polygonPx == null || polygonPx.size() < 3) return 0.0;
-    double safeFeather = Math.max(1.0, featherPx);
-    boolean inside = false;
-    int n = polygonPx.size();
-    double minDist = Double.MAX_VALUE;
-    for (int i = 0, j = n - 1; i < n; j = i++) {
-      double[] a = polygonPx.get(j);
-      double[] b = polygonPx.get(i);
-      if ((b[1] > py) != (a[1] > py)
-          && px < (a[0] - b[0]) * (py - b[1]) / Math.max(1e-9, (a[1] - b[1])) + b[0]) {
-        inside = !inside;
-      }
-      double dist = pointToSegmentDist(px, py, a[0], a[1], b[0], b[1]);
-      if (dist < minDist) minDist = dist;
-    }
-    double exponent = 0.65 + (1.0 - clamp(softness, 0.0, 1.0)) * 2.15;
-    if (inside) {
-      double normalized = clamp(minDist / safeFeather, 0.0, 1.0);
-      return 0.72 + (0.28 * (1.0 - Math.pow(1.0 - normalized, exponent)));
-    }
-    if (minDist >= safeFeather) return 0.0;
-    double normalized = clamp(1.0 - (minDist / safeFeather), 0.0, 1.0);
-    return Math.pow(normalized, exponent);
   }
 
   static double sceneLightDirectionalBias(double sceneX,
@@ -497,59 +524,14 @@ final class VnStageLightingSupport {
     return clamp(safeBase * (1.0 - blendWeight) + lit * blendWeight, 0.0, 1.0);
   }
 
-  static double applyBlend(double base, double zone, double weight, int mode) {
-    double b = clamp(base, 0.0, 1.0);
-    double s = clamp(zone, 0.0, 1.0);
-    double w = clamp(weight, 0.0, 1.0);
-    if (w <= 0.0) return b;
-    if (mode == 0) {
-      return b * (1.0 - w) + s * w;
-    }
-    double bLin = srgbToLinear(b);
-    double sLin = srgbToLinear(s);
-    double blended = switch (mode) {
-      case 4 -> sLin <= 0.5
-          ? bLin - (1.0 - 2.0 * sLin) * bLin * (1.0 - bLin)
-          : bLin + (2.0 * sLin - 1.0) * (softLightCurve(bLin) - bLin);
-      default -> sLin;
-    };
-    double blendedSrgb = linearToSrgb(clamp(blended, 0.0, 1.0));
-    return b * (1.0 - w) + blendedSrgb * w;
+  static double applyBlend(double base, double tone, double weight, int mode) {
+    return VnStageGradeBlend.fastComposite(base, tone, weight, mode);
   }
 
-  static double alphaEdgeWeight(PixelReader reader, int x, int y, int width, int height) {
-    if (reader == null || width <= 0 || height <= 0) return 0.0;
-    int center = alphaAt(reader, x, y, width, height);
-    if (center == 0) return 0.0;
-    int left = alphaAt(reader, x - 1, y, width, height);
-    int right = alphaAt(reader, x + 1, y, width, height);
-    int up = alphaAt(reader, x, y - 1, width, height);
-    int down = alphaAt(reader, x, y + 1, width, height);
-    double diff = Math.max(
-        Math.max(Math.abs(center - left), Math.abs(center - right)),
-        Math.max(Math.abs(center - up), Math.abs(center - down))
-    ) / 255.0;
-    if (diff > 0.0) return clamp(diff, 0.0, 1.0);
-    double neighborOpacity = (left + right + up + down) / (4.0 * 255.0);
-    return clamp(1.0 - neighborOpacity, 0.0, 1.0);
-  }
-
-  static double[] alphaEdgeNormal(PixelReader reader, int x, int y, int width, int height) {
-    double left = alphaAt(reader, x - 1, y, width, height);
-    double right = alphaAt(reader, x + 1, y, width, height);
-    double up = alphaAt(reader, x, y - 1, width, height);
-    double down = alphaAt(reader, x, y + 1, width, height);
-    double normalX = left - right;
-    double normalY = up - down;
-    double length = Math.hypot(normalX, normalY);
-    if (length <= 1e-6) return new double[]{0.0, 0.0};
-    return new double[]{normalX / length, normalY / length};
-  }
-
-  private static int alphaAt(PixelReader reader, int x, int y, int width, int height) {
+  private static int alphaAt(PixelData source, int x, int y, int width, int height) {
     int safeX = Math.max(0, Math.min(width - 1, x));
     int safeY = Math.max(0, Math.min(height - 1, y));
-    return (reader.getArgb(safeX, safeY) >>> 24) & 0xFF;
+    return (source.at(safeX, safeY) >>> 24) & 0xFF;
   }
 
   private static double zoneWeight(double nx, double ny, double zx, double zy, double zw, double zh, double feather, double rotRad, double imgAspect) {
@@ -618,47 +600,30 @@ final class VnStageLightingSupport {
     return clamp(0.2126 * srgbToLinear(r) + 0.7152 * srgbToLinear(g) + 0.0722 * srgbToLinear(b), 0.0, 1.0);
   }
 
-  private static double softLightCurve(double value) {
-    double v = clamp(value, 0.0, 1.0);
-    if (v <= 0.25) {
-      return ((16.0 * v - 12.0) * v + 4.0) * v;
-    }
-    return Math.sqrt(v);
-  }
 
-  static double srgbToLinear(double value) {
-    double v = clamp(value, 0.0, 1.0);
-    if (v <= 0.04045) return v / 12.92;
-    return Math.pow((v + 0.055) / 1.055, 2.4);
-  }
 
-  static double linearToSrgb(double value) {
-    double v = clamp(value, 0.0, 1.0);
-    if (v <= 0.0031308) return v * 12.92;
-    return 1.055 * Math.pow(v, 1.0 / 2.4) - 0.055;
-  }
+  private static double srgbToLinear(double value) { return VnStageGradeBlend.srgbToLinear(value); }
+
+  private static double linearToSrgb(double value) { return VnStageGradeBlend.linearToSrgb(value); }
 
   static double clamp(double value, double min, double max) {
     return Math.max(min, Math.min(max, value));
   }
 
   private record LightRuntime(
-      VnStagePreset.LightType type,
       VnStagePreset.LightLayer layer,
       double targetX,
       double targetY,
       double sourceX,
       double sourceY,
-      double sceneX,
-      double sceneY,
       Color color,
       double intensity,
-      double radius,
-      double softness,
       double silhouette,
-      boolean muted,
-      boolean solo,
-      List<double[]> polygon
+      VnStagePreset.LightBlend blend,
+      boolean castsShadows,
+      VnStagePreset.ShadowQuality shadowQuality,
+      VnStageLightField field,
+      VnGroundShadows.FloorLight floor
   ) {}
 
   private record ResponseRuntime(
@@ -673,12 +638,6 @@ final class VnStageLightingSupport {
       List<double[]> polygon
   ) {}
 
-  private record OccluderRuntime(
-      double opacity,
-      double softness,
-      List<double[]> polygon
-  ) {}
-
   private record ResponseInfluence(
       double responseScale,
       double rimFactor,
@@ -686,9 +645,9 @@ final class VnStageLightingSupport {
       double directFactor,
       double depthFactor
   ) {
-    static ResponseInfluence defaults() {
-      return new ResponseInfluence(1.0, 1.0, 0.12, 1.0, 1.0);
-    }
+    private static final ResponseInfluence DEFAULT = new ResponseInfluence(1.0, 1.0, 0.12, 1.0, 1.0);
+
+    static ResponseInfluence defaults() { return DEFAULT; }
 
     ResponseInfluence mix(ResponseInfluence other, double weight) {
       double w = clamp(weight, 0.0, 1.0);

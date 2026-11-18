@@ -3,10 +3,12 @@ package com.jvn.editor.ui;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.InputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Comparator;
@@ -17,8 +19,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleConsumer;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -26,6 +27,23 @@ import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 
 import com.jvn.core.scene2d.Sprite2D;
+import com.jvn.core.vn.CharacterPosition;
+import com.jvn.core.vn.stage.VnStagePreset;
+import com.jvn.core.vn.stage.VnCasterSegmentation;
+import com.jvn.core.vn.stage.VnStagePreset.LightBlend;
+import com.jvn.core.vn.stage.VnStagePreset.LightFalloff;
+
+import com.jvn.core.vn.stage.VnStagePreset.OccluderShape;
+import com.jvn.core.vn.stage.VnStagePreset.ShadowQuality;
+import com.jvn.core.vn.stage.VnStagePresetLoader;
+import com.jvn.fx.vn.VnGroundShadows;
+import com.jvn.fx.vn.VnStageGradeBlend;
+import com.jvn.fx.vn.VnStageLightField;
+import com.jvn.fx.vn.VnStageLightOverlay;
+import com.jvn.fx.vn.VnStageLightingSupport;
+import com.jvn.fx.vn.VnStageMaterial;
+import com.jvn.fx.vn.VnStageShadow;
+import com.jvn.fx.vn.VnStageShadowDebug;
 import com.jvn.editor.ui.actioneditor.AnimationProject;
 import com.jvn.editor.ui.actioneditor.EntityGroup;
 import com.jvn.editor.ui.actioneditor.EntitySelector;
@@ -38,6 +56,7 @@ import javafx.concurrent.Task;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
@@ -52,11 +71,14 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Slider;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
+import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
@@ -67,6 +89,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -142,6 +165,7 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
   private final Slider bgTintStrengthSlider = slider(0, 100, 0);
   private final Slider bgSaturationSlider = slider(-100, 100, 0);
   private final Slider bgContrastSlider = slider(-100, 100, 0);
+  private final Slider bgExposureSlider = slider(-400, 400, 0);
   private final ComboBox<String> bgTintBlendModeBox = new ComboBox<>();
   private final ColorPicker bgOverlayColorPicker = new ColorPicker(Color.web("#000000"));
   private final Slider bgOverlayOpacitySlider = slider(0, 100, 0);
@@ -172,6 +196,17 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
   private final PauseTransition stateSaveDebounce = new PauseTransition(Duration.millis(250));
 
   private File projectRoot;
+  private Supplier<FileEditorTab> activeScriptSupplier = () -> null;
+  private final Label sceneInfo = new Label();
+  private final ComboBox<SceneSubject> sceneSubjectBox = new ComboBox<>();
+  private final Map<String, PresetTagEntry> sceneSubjectLayers = new HashMap<>();
+  private final TabPane inspector = new TabPane();
+  private final TextField normalMapField = new TextField();
+  private final Slider normalStrengthSlider = slider(0, 100, 70);
+  private final Slider specularSlider = slider(0, 100, 20);
+  private final Slider glossSlider = slider(2, 128, 32);
+  private Tab rigTab;
+  private Tab shadowsTab;
   private Runnable fullscreenToggleHandler;
   private boolean fullscreenActive;
   private Button fullscreenButton;
@@ -201,7 +236,7 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
   private double sidebarDividerPosition = DEFAULT_SIDEBAR_DIVIDER;
   private boolean sidebarCollapsed;
   private StackPane previewHost;
-  private ScrollPane sidebarScroll;
+  private javafx.scene.Node sidebarScroll;
 
   private String tintedImageTag;
   private String tintedImageKey;
@@ -212,30 +247,6 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
   private AnimationProject sceneEntityProject = new AnimationProject();
   private JesScene2D sceneEntityScene = new JesScene2D();
   private boolean syncingSceneEntitySelector;
-
-  private record BackgroundTintParams(
-      double tintStrength,
-      double satAdjust,
-      double conAdjust,
-      double tr,
-      double tg,
-      double tb,
-      String tintBlendMode,
-      int tintBlendIndex,
-      double overlayOpacity,
-      double or,
-      double og,
-      double ob,
-      String overlayBlendMode,
-      int overlayBlendIndex
-  ) {
-    boolean isIdentity() {
-      return Math.abs(tintStrength) < 1e-8
-          && Math.abs(satAdjust) < 1e-8
-          && Math.abs(conAdjust) < 1e-8
-          && Math.abs(overlayOpacity) < 1e-8;
-    }
-  }
 
   private record SceneSelectorBinding(String tag, boolean background) {}
 
@@ -312,6 +323,22 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
   private final Slider lightSilhouetteSlider = slider(0, 100, DEFAULT_LIGHT_SILHOUETTE);
   private final ComboBox<String> lightShapeBox = new ComboBox<>();
   private final ComboBox<String> lightLayerBox = new ComboBox<>();
+  private final ComboBox<LightBlend> lightBlendBox = new ComboBox<>();
+  private final ComboBox<LightFalloff> lightFalloffBox = new ComboBox<>();
+  private final CheckBox lightShadowsCheck = new CheckBox("Cast shadows");
+  private final ComboBox<ShadowQuality> shadowQualityBox = new ComboBox<>();
+  private final Slider beamAngleSlider = slider(0, 175, 0);
+  private final Slider areaAspectSlider = slider(0, 100, 0);
+  private final CheckBox groundProjectionCheck = new CheckBox("Project shadows onto floor");
+  private final TextField groundProjectionField = new TextField();
+  private final Slider floorLightSlider = slider(0, 100, 0);
+  private final Slider floorExposureSlider = slider(-400, 400, 0);
+  private Image groundShadowPreview;
+  private final CheckBox compareOriginal = new CheckBox("Original");
+  private VnStagePreset previewRig;
+  private double previewOverlayWidth;
+  private double previewOverlayHeight;
+  private final Map<SceneLightLayer, VnStageLightOverlay> previewOverlays = new java.util.EnumMap<>(SceneLightLayer.class);
   private final TextField lightNameField = new TextField();
   private final TextField lightGroupField = new TextField();
   private final CheckBox lightMutedCheck = new CheckBox("Mute");
@@ -328,8 +355,25 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
   private int selectedOccluderIndex = -1;
   private final ListView<SceneOccluder> occluderListView = new ListView<>();
   private final TextField occluderNameField = new TextField();
+  private final TextField occluderBoundsField = new TextField();
+  private final TextField occluderFloorContactsField = new TextField();
+  private final TextField occluderFramingField = new TextField();
+  private final ComboBox<OccluderShape> occluderShapeBox = new ComboBox<>();
+  private final ComboBox<String> shadowDebugBox = new ComboBox<>();
+  private ShadowDebugCache shadowDebugCache;
+  private record ShadowDebugCache(VnStagePreset rig, VnStagePreset.Light light, int width, int height,
+      Image mask, List<VnStageShadowDebug.Ray> rays) {}
+  private OccluderShape occluderBoundsDrawMode;
+  private boolean drawingOccluderBounds;
   private final Slider occluderOpacitySlider = slider(0, 100, 85);
   private final Slider occluderSoftnessSlider = slider(0, 100, 12);
+  private final Slider occluderContactSlider = slider(0, 100, 0);
+  private final Slider occluderHeightSlider = slider(0, 300, 100);
+  private final Slider occluderFootprintSlider = slider(0, 50, 0);
+  private final Slider occluderFadeSlider = slider(0, 100, 0);
+  private final CheckBox occluderRoundCheck = new CheckBox("Round floor shadow");
+  private final Slider occluderExposureSlider = slider(-400, 400, 0);
+  private final Slider occluderContrastSlider = slider(-80, 200, 0);
   private final CheckBox occluderEnabledCheck = new CheckBox("Enabled");
   private final VBox occluderControlsSection = new VBox(6);
   private Button occluderPolyDrawToggleButton;
@@ -338,8 +382,8 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
   public ImageTintToolView() {
 
     stateSaveDebounce.setOnFinished(e -> flushPendingStateSave());
-    getStyleClass().add("sidebar-tool-root");
-    setPadding(new Insets(8));
+    getStyleClass().addAll("sidebar-tool-root", "lighting-studio");
+    getStylesheets().add(ImageTintToolView.class.getResource("/com/jvn/editor/lighting-studio.css").toExternalForm());
     buildUi();
     refreshCatalog();
   }
@@ -447,9 +491,17 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
     setupSaveRow.setAlignment(Pos.CENTER_LEFT);
     HBox.setHgrow(setupNameField, Priority.ALWAYS);
 
-    // Tags / setup section
-    TitledPane tagsPane = new TitledPane("Tags & Setup",
-        new VBox(4, filterRow, scopeRow, charRow, bgRow, setupLoadRow, setupSaveRow));
+    sceneSubjectBox.setPromptText("Subject from scene");
+    sceneSubjectBox.setMaxWidth(Double.MAX_VALUE);
+    sceneSubjectBox.valueProperty().addListener((obs, old, subject) -> {
+      if (applyingState || subject == null) return;
+      setComboTagValue(characterTagBox, subject.tag());
+      frameSceneSubject(subject);
+      persistGlobalState();
+      redrawPreview();
+    });
+    TitledPane tagsPane = new TitledPane("Scene Assets",
+        new VBox(8, sceneSubjectBox, bgRow, charRow, filterRow, scopeRow, setupLoadRow, setupSaveRow));
     tagsPane.setExpanded(true);
     tagsPane.setAnimated(false);
     tagsPane.setCollapsible(true);
@@ -460,15 +512,17 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
     StackPane previewPane = new StackPane(previewCanvas, previewLoadingOverlay);
     StackPane.setAlignment(previewLoadingOverlay, Pos.CENTER);
     previewLoadingOverlay.hideOverlay();
-    previewPane.setStyle("-fx-background-color: #161616; -fx-border-color: #333333; -fx-border-radius: 4; -fx-background-radius: 4;");
-    previewPane.widthProperty().addListener((o, ov, nv) -> {
-      previewCanvas.setWidth(Math.max(140, nv.doubleValue() - 4));
+    previewPane.getStyleClass().add("lighting-viewport");
+    Runnable fitStage = () -> {
+      double parentWidth = Math.max(140, previewPane.getWidth() - 4);
+      double parentHeight = Math.max(100, previewPane.getHeight() - 4);
+      double stageWidth = Math.min(parentWidth, parentHeight * 16 / 9);
+      previewCanvas.setWidth(stageWidth);
+      previewCanvas.setHeight(stageWidth * 9 / 16);
       redrawPreview();
-    });
-    previewPane.heightProperty().addListener((o, ov, nv) -> {
-      previewCanvas.setHeight(Math.max(140, nv.doubleValue() - 4));
-      redrawPreview();
-    });
+    };
+    previewPane.widthProperty().addListener((o, ov, nv) -> fitStage.run());
+    previewPane.heightProperty().addListener((o, ov, nv) -> fitStage.run());
 
     installPreviewInteractions();
 
@@ -487,11 +541,10 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
     Button exportSetupAsButton = actionButton("Setup As", SidebarToolIcon.download("#9ed67a"), "Choose a .tintsetup destination", this::exportSetupToFileAs);
     Button exportStageBtn = actionButton("Stage", SidebarToolIcon.save("#d2c6ff"), "Quick export runtime-ready .stagepreset to the configured folder", this::quickExportStagePresetToFile);
     Button exportStageAsButton = actionButton("Stage As", SidebarToolIcon.download("#d2c6ff"), "Choose a .stagepreset destination", this::exportStagePresetToFileAs);
-    Button importSetupBtn = actionButton("Import", SidebarToolIcon.folder("#f5c46b"), "Import setup from .tintsetup file", this::importSetupFromFile);
+    Button importSetupBtn = actionButton("Import", SidebarToolIcon.folder("#f5c46b"), "Open a .tintsetup or .stagepreset file", this::importSetupFromFile);
     Button exportBundleButton = actionButton("PNG + Setup + Stage", SidebarToolIcon.download("#d8c48a"), "Quick export PNG, editor setup, and runtime stage preset to the configured folder", this::quickExportBundle);
     Button copyExportButton = actionButton("Copy", SidebarToolIcon.copy("#9ad19c"), "Copy selected export format", this::copySelectedExport);
-    HBox actionRow = new HBox(4, resetViewButton, resetTintButton, fullscreenButton);
-    actionRow.setAlignment(Pos.CENTER_LEFT);
+
     HBox exportModeRow = new HBox(4, new Label("Mode"), exportFormatBox);
     exportModeRow.setAlignment(Pos.CENTER_LEFT);
     HBox.setHgrow(exportFormatBox, Priority.ALWAYS);
@@ -562,54 +615,56 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
 
     sidebarHideButton = iconButton(SidebarToolIcon.arrowRight("#d0d0d0"), "Hide controls sidebar", () -> setSidebarCollapsed(true, true));
     sidebarHideButton.getStyleClass().add("image-tool-sidebar-toggle");
-    Region sidebarHeaderSpacer = new Region();
-    HBox.setHgrow(sidebarHeaderSpacer, Priority.ALWAYS);
-    HBox sidebarHeader = new HBox(8, title, SidebarToolHelp.button(this, TOOL_TITLE, """
-        Scene Lighting Studio lets you build and preview multi-layer colour \
-grade setups ("light rigs") and apply them to character and background images.
+    Button loadScene = actionButton("Load from VNS", SidebarToolIcon.download("#8ab4f8"),
+        "Load the background, visible subjects and stage preset at the VNS cursor", this::loadActiveVnsScene);
+    Button saveScene = actionButton("Apply to VNS", SidebarToolIcon.save("#9ed67a"),
+        "Save a stage preset and activate it at the VNS cursor", this::applyLightingToVns);
+    loadScene.setId("lighting-load-vns");
+    saveScene.setId("lighting-apply-vns");
+    saveScene.getStyleClass().add("lighting-apply");
+    compareOriginal.setTooltip(new Tooltip("Compare against the unlit scene at the same framing"));
+    compareOriginal.selectedProperty().addListener((obs, old, selected) -> redrawPreview());
+    HBox titleRow = new HBox(6, title, SidebarToolHelp.button(this, TOOL_TITLE, """
+            Put the cursor on a scene beat in a VNS script and choose Load from VNS.
+            Select a subject, then arrange and blend lights in the Rig tab. The cross moves
+            the light's target and the diamond moves its source. Use Shadows for occlusion,
+            Grade for color and material zones, or Output to export reusable files.
+            Apply to VNS saves a preset and activates it at the cursor. Save the script to
+            keep that activation if the script already had unsaved edits.
+            """));
+    titleRow.setAlignment(Pos.CENTER_LEFT);
+    FlowPane toolbar = new FlowPane(6, 5, loadScene, saveScene, compareOriginal, resetViewButton,
+        fullscreenButton, sidebarHideButton);
+    toolbar.setAlignment(Pos.CENTER_LEFT);
+    toolbar.getStyleClass().add("lighting-toolbar");
+    sceneInfo.setWrapText(true);
+    sceneInfo.getStyleClass().add("lighting-scene-info");
+    sceneInfo.setVisible(false);
+    sceneInfo.managedProperty().bind(sceneInfo.visibleProperty());
+    VBox header = new VBox(6, titleRow, toolbar, sceneInfo);
+    header.getStyleClass().add("sidebar-tool-header");
+    setTop(header);
 
-Core concepts:
-  • Subject image — the character or background you're grading
-  • Light rig    — a named collection of light sources; each light has a \
-colour, shape (directional, ambient, spot), and layer (character / background)
-  • Export       — renders the graded image to disk for use in the game
-
-Typical workflow:
-  1. Select a character tag or background image from the tag dropdowns.
-  2. Drag the subject in the preview to test scene framing.
-  3. Add lights from the Lights section and adjust their colour and shape.
-  4. Save the setup under a name for reuse across sessions.
-  5. Export the result when you're satisfied.
-
-The cross handle controls the shadow fall target and the diamond handle \
-sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
-    sidebarHeader.setAlignment(Pos.CENTER_LEFT);
-    sidebarHeader.getStyleClass().add("sidebar-tool-header");
-
-    // ── Right sidebar ──
-    VBox sidebar = new VBox(6,
-        sidebarHeader, summaryLabel,
-        actionRow,
-        tagsPane,
-        sceneEntitiesPane,
-        exportPane,
-        controlsPane,
-        backgroundPane,
-        lightsPane,
-        occlusionPane,
-        zonesPane,
-        previewInfoLabel, interactionHintLabel,
-        statusLabel);
-    sidebar.setPadding(new Insets(6));
-    sidebar.setStyle("-fx-font-size: 11px;");
-
-    sidebarScroll = new ScrollPane(sidebar);
-    sidebarScroll.setFitToWidth(true);
-    sidebarScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-    sidebarScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-    sidebarScroll.getStyleClass().add("image-tool-sidebar-scroll");
-    sidebarScroll.setPrefWidth(280);
-    sidebarScroll.setMinWidth(0);
+    Tab sceneTab = inspectorTab("Scene", tagsPane, sceneEntitiesPane, summaryLabel);
+    rigTab = inspectorTab("Rig", lightsPane, interactionHintLabel);
+    shadowsTab = inspectorTab("Shadows", occlusionPane);
+    Tab gradeTab = inspectorTab("Grade", controlsPane, resetTintButton, buildMaterialPane(), backgroundPane, zonesPane);
+    Tab outputTab = inspectorTab("Output", exportPane);
+    lightsPane.setExpanded(true);
+    lightsPane.setCollapsible(false);
+    occlusionPane.setExpanded(true);
+    occlusionPane.setCollapsible(false);
+    inspector.getTabs().setAll(sceneTab, rigTab, shadowsTab, gradeTab, outputTab);
+    inspector.setId("lighting-inspector");
+    inspector.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+    inspector.getStyleClass().add("lighting-inspector");
+    inspector.setPrefWidth(380);
+    inspector.setMinWidth(0);
+    inspector.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) -> {
+      if (selected != shadowsTab) disableOccluderShapeDrawModes();
+      if (!applyingState) persistGlobalState();
+      redrawPreview();
+    });
 
     sidebarShowButton = iconButton(SidebarToolIcon.arrowLeft("#d0d0d0"), "Show controls sidebar", () -> setSidebarCollapsed(false, true));
     sidebarShowButton.getStyleClass().addAll("image-tool-sidebar-toggle", "image-tool-sidebar-overlay-toggle");
@@ -623,6 +678,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     StackPane.setAlignment(sidebarShowButton, Pos.TOP_RIGHT);
     StackPane.setMargin(sidebarShowButton, new Insets(10));
 
+    sidebarScroll = inspector;
     workspaceSplit.getItems().setAll(previewHost, sidebarScroll);
     workspaceSplit.getStyleClass().add("image-tool-workspace");
     workspaceSplit.setDividerPositions(DEFAULT_SIDEBAR_DIVIDER);
@@ -630,9 +686,239 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     SplitPane.setResizableWithParent(sidebarScroll, true);
 
     setCenter(workspaceSplit);
+    widthProperty().addListener((obs, old, width) -> {
+      Orientation orientation = width.doubleValue() < 670 ? Orientation.VERTICAL : Orientation.HORIZONTAL;
+      if (orientation != workspaceSplit.getOrientation()) {
+        if (workspaceSplit.getOrientation() == Orientation.HORIZONTAL) captureSidebarDividerPosition();
+        workspaceSplit.setOrientation(orientation);
+        workspaceSplit.setDividerPositions(orientation == Orientation.VERTICAL ? 0.52 : sidebarDividerPosition);
+      }
+    });
+    previewInfoLabel.setWrapText(true);
+    VBox footer = new VBox(3, statusLabel, previewInfoLabel);
+    statusLabel.managedProperty().bind(statusLabel.textProperty().isNotEmpty());
+    previewInfoLabel.managedProperty().bind(previewInfoLabel.textProperty().isNotEmpty());
+    footer.getStyleClass().add("lighting-footer");
+    setBottom(footer);
 
     bindTagSelectionHandlers();
     updateExportControls();
+  }
+
+  private static Tab inspectorTab(String name, javafx.scene.Node... controls) {
+    VBox content = new VBox(8, controls);
+    content.getStyleClass().add("lighting-inspector-body");
+    ScrollPane scroll = new ScrollPane(content);
+    scroll.setFitToWidth(true);
+    scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    return new Tab(name, scroll);
+  }
+
+  private TitledPane buildMaterialPane() {
+    normalMapField.setEditable(false);
+    normalMapField.setPromptText("Subject normal map");
+    normalMapField.setTooltip(new Tooltip("Use a tangent-space RGB normal map with the same framing as the subject."));
+    Button choose = iconButton(SidebarToolIcon.folder("#f5c46b"), "Choose a normal map in this project", this::chooseNormalMap);
+    Button clear = iconButton(SidebarToolIcon.clearX("#f38ba8"), "Clear the normal map", () -> normalMapField.clear());
+    HBox mapRow = new HBox(5, normalMapField, choose, clear);
+    HBox.setHgrow(normalMapField, Priority.ALWAYS);
+    normalMapField.textProperty().addListener((obs, old, value) -> onMaterialChanged());
+    for (Slider slider : List.of(normalStrengthSlider, specularSlider, glossSlider)) {
+      slider.disableProperty().bind(normalMapField.textProperty().isEmpty());
+      slider.valueProperty().addListener((obs, old, value) -> onMaterialChanged());
+    }
+    TitledPane pane = new TitledPane("Subject Material", new VBox(7, mapRow,
+        sliderRow("Normal Strength", normalStrengthSlider), sliderRow("Specular", specularSlider), sliderRow("Gloss", glossSlider)));
+    pane.setAnimated(false);
+    pane.setExpanded(false);
+    return pane;
+  }
+
+  private void chooseNormalMap() {
+    if (projectRoot == null || !projectRoot.isDirectory()) {
+      status("Open a project before choosing a normal map.");
+      return;
+    }
+    FileChooser chooser = new FileChooser();
+    chooser.setTitle("Choose Subject Normal Map");
+    chooser.setInitialDirectory(projectRoot);
+    chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Normal Map Images", "*.png"));
+    File file = chooser.showOpenDialog(getScene() == null ? null : getScene().getWindow());
+    if (file == null) return;
+    try {
+      Path directory = projectRoot.toPath().toRealPath();
+      Path imagePath = file.toPath().toRealPath();
+      if (!imagePath.startsWith(directory)) throw new IOException("Choose an image inside the project.");
+      String tag = directory.relativize(imagePath).toString().replace('\\', '/');
+      if (loadImage(tag) == null) throw new IOException("The selected image could not be opened.");
+      normalMapField.setText(tag);
+    } catch (IOException ex) {
+      status(ex.getMessage());
+    }
+  }
+
+  private void onMaterialChanged() {
+    if (applyingState) return;
+    invalidateTintCache();
+    persistGlobalState();
+    redrawPreview();
+  }
+
+  public void setActiveScriptSupplier(Supplier<FileEditorTab> supplier) {
+    activeScriptSupplier = Objects.requireNonNull(supplier);
+  }
+
+  private FileEditorTab activeVnsScript() {
+    FileEditorTab tab = activeScriptSupplier.get();
+    if (tab == null || tab.getKind() != FileEditorTab.Kind.VNS || tab.getFile() == null || projectRoot == null) {
+      status("Open a project VNS script and place the cursor on a scene beat.");
+      return null;
+    }
+    return tab;
+  }
+
+  private void loadActiveVnsScene() {
+    FileEditorTab tab = activeVnsScript();
+    if (tab == null) return;
+    try {
+      var snapshot = PuppeteerLauncherPanel.resolveProjectSnapshot(
+          tab.getCurrentTextSnapshot(), tab.getVnsCaretLine(), tab.getFile(), projectRoot);
+      Properties setup = new Properties();
+      if (snapshot.activeStagePresetId != null) {
+        String presetPath = snapshot.resolveStagePresetPath(projectRoot);
+        if (presetPath.isBlank()) throw new IOException("No preset file for " + snapshot.activeStagePresetId);
+        setup = readSetup(projectRoot.toPath().resolve(presetPath));
+      }
+      sceneSubjectLayers.keySet().forEach(imageCache::remove);
+      sceneSubjectLayers.clear();
+      List<SceneSubject> subjects = snapshot.characters.stream()
+          .map(subject -> sceneSubject(snapshot, subject)).toList();
+      String storedSubject = setup.getProperty("character", "");
+      SceneSubject selected = subjects.stream().filter(subject -> subject.tag().equals(storedSubject))
+          .findFirst().orElse(subjects.isEmpty() ? null : subjects.get(0));
+      String background = Boolean.parseBoolean(setup.getProperty("jvn.stagePreset.useSceneBackground"))
+          ? snapshot.resolveBackgroundPath() : setup.getProperty("background", snapshot.resolveBackgroundPath());
+      setup.setProperty("background", sceneAssetTag(background));
+      setup.setProperty("character", selected == null ? "" : selected.tag());
+      applyingState = true;
+      try {
+        sceneSubjectBox.getItems().setAll(subjects);
+        sceneSubjectBox.setValue(selected);
+      } finally {
+        applyingState = false;
+      }
+      applyPortableSetup(setup);
+      if (selected != null && snapshot.activeStagePresetId == null) frameSceneSubject(selected);
+      inspector.getSelectionModel().select(rigTab);
+      showSceneInfo(tab, snapshot.currentLabel, snapshot.activeStagePresetId);
+      persistGlobalState();
+      redrawPreview();
+      status("Loaded the scene at line " + (tab.getVnsCaretLine() + 1) + ".");
+    } catch (IOException | IllegalArgumentException ex) {
+      status("Could not load scene lighting: " + ex.getMessage());
+    }
+  }
+
+  private SceneSubject sceneSubject(PuppeteerLauncherPanel.SceneSnapshot snapshot,
+      PuppeteerLauncherPanel.CharacterEntry character) {
+    List<String> layers = snapshot.resolveCharacterLayers(character.characterId, character.expression).stream()
+        .map(layer -> sceneAssetTag(layer.path)).filter(path -> !path.isBlank()).toList();
+    String tag;
+    if (layers.size() > 1) {
+      tag = buildPresetTag(character.characterId, character.expression);
+      sceneSubjectLayers.put(tag, new PresetTagEntry(tag, layers));
+    } else {
+      tag = layers.isEmpty() ? sceneAssetTag(snapshot.resolveCharacterPath(character.characterId, character.expression)) : layers.getFirst();
+    }
+    return new SceneSubject(character.characterId, character.expression, tag,
+        PuppeteerLauncherPanel.snapshotPosition(character), character.scale);
+  }
+
+  private String sceneAssetTag(String path) {
+    String value = normalize(path);
+    if (value.length() >= 2 && (value.startsWith("\"") && value.endsWith("\"")
+        || value.startsWith("'") && value.endsWith("'"))) {
+      value = value.substring(1, value.length() - 1);
+    }
+    return value.replace('\\', '/');
+  }
+
+  private record SceneSubject(String character, String expression, String tag, CharacterPosition position, double scale) {
+    @Override public String toString() { return character + " · " + expression; }
+  }
+
+  private void frameSceneSubject(SceneSubject subject) {
+    Image image = loadImage(subject.tag());
+    if (image == null) return;
+    double w = previewCanvas.getWidth();
+    double h = previewCanvas.getHeight();
+    double spriteHeight = h * 0.85 * subject.scale();
+    zoom = clamp(spriteHeight / image.getHeight(), 0.01, 8.0);
+    double drawWidth = image.getWidth() * zoom;
+    double drawHeight = image.getHeight() * zoom;
+    double x = subject.position().computeScreenX(w, drawWidth);
+    double y = subject.position().computeScreenY(h, drawHeight, 1.0);
+    offsetX = Double.isFinite(x) ? x - (w - drawWidth) * 0.5 : 0;
+    offsetY = (Double.isFinite(y) ? y : h - drawHeight) - (h - drawHeight) * 0.5;
+  }
+
+  private void showSceneInfo(FileEditorTab tab, String label, String preset) {
+    sceneInfo.setText(tab.getFile().getName() + (label == null ? "" : "  /  " + label)
+        + (preset == null ? "" : "  /  " + preset));
+    sceneInfo.setVisible(true);
+  }
+
+  private void applyLightingToVns() {
+    FileEditorTab tab = activeVnsScript();
+    if (tab == null) return;
+    Path pendingFile = null;
+    try {
+      Path script = tab.getFile().toPath().toRealPath();
+      if (!script.startsWith(projectRoot.toPath().toRealPath())) throw new IOException("The script is outside the project.");
+      var snapshot = PuppeteerLauncherPanel.resolveProjectSnapshot(
+          tab.getCurrentTextSnapshot(), tab.getVnsCaretLine(), tab.getFile(), projectRoot);
+      Path directory = script.getParent().resolve("lighting");
+      Files.createDirectories(directory);
+      if (!directory.toRealPath().startsWith(projectRoot.toPath().toRealPath())) {
+        throw new IOException("The lighting folder is outside the project.");
+      }
+      String stem = buildStagePresetId(script.getFileName().toString().replaceFirst("(?i)\\.vns$", "")
+          + "_" + Objects.toString(snapshot.currentLabel, "scene"));
+      String active = snapshot.activeStagePresetId;
+      Path existing = active != null && active.matches(Pattern.quote(stem) + "(?:_\\d+)?")
+          && snapshot.activeStageLine == tab.getVnsCaretLine() ? directory.resolve(active + ".stagepreset") : null;
+      boolean update = existing != null && Files.isRegularFile(existing)
+          && Files.isSameFile(existing, projectRoot.toPath().resolve(snapshot.resolveStagePresetPath(projectRoot)))
+          && Boolean.parseBoolean(readSetup(existing).getProperty("jvn.stagePreset.useSceneBackground"));
+      String id = update ? active : stem;
+      Path target = update ? existing : directory.resolve(id + ".stagepreset");
+      for (int number = 2; !update && (Files.exists(target) || snapshot.stagePresetPaths.containsKey(id)); number++) {
+        id = stem + "_" + number;
+        target = directory.resolve(id + ".stagepreset");
+      }
+      String scriptPath = script.getParent().relativize(target).toString().replace('\\', '/');
+      String preset = buildStagePresetText(id, target.getFileName().toString(), scriptPath, true);
+      pendingFile = Files.createTempFile(directory, ".lighting-", ".tmp");
+      Files.writeString(pendingFile, preset, StandardCharsets.UTF_8);
+      if (update) {
+        Files.move(pendingFile, target, StandardCopyOption.REPLACE_EXISTING);
+        status("Updated " + target.getFileName() + ".");
+      } else {
+        Files.move(pendingFile, target);
+        boolean scriptWasDirty = tab.isDirty();
+        tab.getVnsEditor().insertStagePreset(id, quoteVnsTokenIfNeeded(scriptPath));
+        if (!scriptWasDirty) tab.saveTo(tab.getFile());
+        status(tab.isDirty() ? "Preset saved. Save the VNS script to keep its activation."
+            : "Saved lighting to " + tab.getDisplayName() + ".");
+      }
+      showSceneInfo(tab, snapshot.currentLabel, id);
+    } catch (IOException | IllegalArgumentException ex) {
+      status("Could not apply scene lighting: " + ex.getMessage());
+    } finally {
+      if (pendingFile != null) {
+        try { Files.deleteIfExists(pendingFile); } catch (IOException ignored) { }
+      }
+    }
   }
 
   private void buildSceneEntitiesPane() {
@@ -713,6 +999,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     bindBackgroundFxSlider(bgTintStrengthSlider);
     bindBackgroundFxSlider(bgSaturationSlider);
     bindBackgroundFxSlider(bgContrastSlider);
+    bindBackgroundFxSlider(bgExposureSlider);
     bgTintBlendModeBox.valueProperty().addListener((o, ov, nv) -> {
       if (!applyingState) onBackgroundFxChanged(true);
     });
@@ -730,6 +1017,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
         sliderRow("Grade %", bgTintStrengthSlider),
         sliderRow("Saturation", bgSaturationSlider),
         sliderRow("Contrast", bgContrastSlider),
+        sliderRow("Exposure ×100 EV", bgExposureSlider),
         comboRow("Grade Blend", bgTintBlendModeBox),
         tintPickerRow("Overlay", bgOverlayColorPicker, bgOverlayColorSwatch, Color.BLACK),
         sliderRow("Overlay %", bgOverlayOpacitySlider),
@@ -753,8 +1041,56 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     updateLightColorSwatch(lightColorPicker.getValue());
     lightShapeBox.getItems().setAll(SceneLightShape.labels());
     lightShapeBox.getSelectionModel().select(SceneLightShape.RADIAL.toString());
+    beamAngleSlider.disableProperty().bind(lightShapeBox.valueProperty().isNotEqualTo(SceneLightShape.CONE.toString()));
+    areaAspectSlider.disableProperty().bind(lightShapeBox.valueProperty().isNotEqualTo(SceneLightShape.AREA.toString())
+        .and(lightShapeBox.valueProperty().isNotEqualTo(SceneLightShape.WINDOW.toString())));
     lightLayerBox.getItems().setAll(SceneLightLayer.labels());
     lightLayerBox.getSelectionModel().select(SceneLightLayer.CHARACTER.toString());
+    lightBlendBox.setId("lighting-blend");
+    lightBlendBox.getItems().setAll(LightBlend.values());
+    lightBlendBox.setValue(LightBlend.PHYSICAL);
+    lightBlendBox.valueProperty().addListener((o, ov, nv) -> {
+      if (!applyingState) applyLightControlsToSelected();
+    });
+    lightFalloffBox.setId("lighting-falloff");
+    lightFalloffBox.getItems().setAll(LightFalloff.values());
+    lightFalloffBox.setValue(LightFalloff.CLASSIC);
+    lightFalloffBox.valueProperty().addListener((o, ov, nv) -> {
+      if (!applyingState) applyLightControlsToSelected();
+    });
+    lightShadowsCheck.setSelected(true);
+    lightShadowsCheck.selectedProperty().addListener((o, ov, nv) -> {
+      if (!applyingState) applyLightControlsToSelected();
+    });
+    beamAngleSlider.setTooltip(new Tooltip("Full spotlight angle in degrees. Use 0 for automatic framing."));
+    areaAspectSlider.setTooltip(new Tooltip("Width of the Area or Window light as a percentage of its length. 0 uses the default."));
+    beamAngleSlider.valueProperty().addListener((o, old, value) -> { if (!applyingState) applyLightControlsToSelected(); });
+    areaAspectSlider.valueProperty().addListener((o, old, value) -> { if (!applyingState) applyLightControlsToSelected(); });
+    groundProjectionField.setPromptText("Floor X, Y, Horizon Y, Strength (%)");
+    groundProjectionField.setTooltip(new Tooltip("Four percentages. The floor point sits directly below the light, and the horizon sets ground perspective."));
+    groundProjectionField.disableProperty().bind(groundProjectionCheck.selectedProperty().not());
+    for (Slider slider : List.of(floorLightSlider, floorExposureSlider)) {
+      slider.disableProperty().bind(groundProjectionCheck.selectedProperty().not());
+      slider.valueProperty().addListener((o, old, value) -> { if (!applyingState) applyLightControlsToSelected(); });
+    }
+    groundProjectionField.setOnAction(event -> applyLightControlsToSelected());
+    groundProjectionField.focusedProperty().addListener((obs, old, focused) -> {
+      if (!focused && !applyingState && groundProjectionCheck.isSelected()) applyLightControlsToSelected();
+    });
+    groundProjectionCheck.selectedProperty().addListener((obs, old, value) -> {
+      if (applyingState) return;
+      if (value && groundProjectionField.getText().isBlank() && selectedLightIndex >= 0) {
+        SceneLight light = sceneLights.get(selectedLightIndex);
+        groundProjectionField.setText(groundProjectionString(new VnStagePreset.GroundProjection(light.sourceX, 0.70, 0.25, 0.55), 100));
+      }
+      applyLightControlsToSelected();
+    });
+    shadowQualityBox.getItems().setAll(ShadowQuality.values());
+    shadowQualityBox.setValue(ShadowQuality.SOFT);
+    shadowQualityBox.disableProperty().bind(lightShadowsCheck.selectedProperty().not());
+    shadowQualityBox.valueProperty().addListener((o, ov, nv) -> {
+      if (!applyingState) applyLightControlsToSelected();
+    });
     showLightVectorsCheck.setSelected(true);
     showLightVectorsCheck.setFocusTraversable(false);
     showLightVectorsCheck.selectedProperty().addListener((o, ov, nv) -> {
@@ -763,9 +1099,10 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
       persistGlobalState();
     });
 
-    lightListView.setPrefHeight(96);
+    lightListView.setPrefHeight(100);
+    lightListView.setMinHeight(100);
     lightListView.setMaxHeight(132);
-    lightListView.setStyle("-fx-background-color: #1f1f1f; -fx-border-color: #333333;");
+    lightListView.getStyleClass().add("lighting-rig-list");
     lightListView.setCellFactory(lv -> new ListCell<SceneLight>() {
       @Override protected void updateItem(SceneLight item, boolean empty) {
         super.updateItem(item, empty);
@@ -780,23 +1117,10 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
         swatch.setPrefSize(10, 10);
         swatch.setMaxSize(10, 10);
         updateColorSwatch(swatch, item.color, Color.web("#ffd7a8"));
-        Label name = new Label(fallbackLightName(item));
-        name.setStyle("-fx-font-weight: 700; -fx-text-fill: #eef2f8;");
-        Label meta = new Label(describeLightMeta(item));
-        meta.setStyle("-fx-text-fill: #aeb6c8; -fx-font-size: 10px;");
-        VBox text = new VBox(2, name, meta);
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        Label badge = new Label(item.layer == null ? SceneLightLayer.CHARACTER.toString() : item.layer.toString());
-        badge.setStyle("-fx-background-color: rgba(255,255,255,0.08); -fx-background-radius: 999; -fx-padding: 2 6 2 6; -fx-text-fill: #d9deea; -fx-font-size: 10px;");
-        HBox row = new HBox(8, swatch, text, spacer, badge);
-        row.setAlignment(Pos.CENTER_LEFT);
-        setText(null);
-        setGraphic(row);
-        boolean sel = getIndex() == selectedLightIndex;
-        setStyle(sel
-            ? "-fx-background-color: #2b2b2b; -fx-text-fill: #e2e8f0;"
-            : "-fx-text-fill: #c8d0dc;");
+        setGraphic(swatch);
+        setText(fallbackLightName(item) + "  ·  " + describeLightMeta(item));
+        setContentDisplay(ContentDisplay.LEFT);
+        setStyle(item.muted ? "-fx-opacity: 0.60;" : "");
       }
     });
     lightListView.getSelectionModel().selectedIndexProperty().addListener((o, ov, nv) -> {
@@ -849,6 +1173,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     lightPolyDrawToggleButton = iconButton(SidebarToolIcon.polygon("#f5c46b"), "Draw a polygonal scene light on the preview", this::toggleLightPolyDrawMode);
     lightFreehandDrawToggleButton = iconButton(SidebarToolIcon.freehand("#9ad4ff"), "Sketch a freehand polygonal scene light on the preview", this::toggleLightFreehandDrawMode);
     Button addLightButton = iconButton(SidebarToolIcon.plus("#f6cc7a"), "Add a scene light at center", this::addDefaultLight);
+    addLightButton.setId("lighting-add-light");
     Button duplicateLightButton = iconButton(SidebarToolIcon.copy("#d0d0d0"), "Duplicate selected light", this::duplicateSelectedLight);
     Button removeLightButton = iconButton(SidebarToolIcon.minus("#f38ba8"), "Remove selected light", this::removeSelectedLight);
     Button clearLightsButton = iconButton(SidebarToolIcon.clearX("#f5b971"), "Remove all scene lights", this::clearAllLights);
@@ -857,8 +1182,8 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     Button resetLightVectorButton = iconButton(SidebarToolIcon.undo("#cfd8e6"), "Reset selected light source vector", this::resetSelectedLightSource);
     Button mirrorLightButton = iconButton(SidebarToolIcon.arrowLeft("#d7c3ff"), "Mirror selected light across the scene", this::mirrorSelectedLight);
     Button normalizeRigButton = iconButton(SidebarToolIcon.check("#9ed67a"), "Normalize light intensities in the rig", this::normalizeRigIntensity);
-    HBox lightActions = new HBox(
-        6,
+    FlowPane lightActions = new FlowPane(
+        4, 4,
         lightPolyDrawToggleButton,
         lightFreehandDrawToggleButton,
         addLightButton,
@@ -872,8 +1197,8 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
         normalizeRigButton);
     lightActions.setAlignment(Pos.CENTER_LEFT);
 
-    HBox presetRow = new HBox(
-        6,
+    FlowPane presetRow = new FlowPane(
+        4, 4,
         presetChip("Key", this::addKeyLightPreset),
         presetChip("Fill", this::addFillLightPreset),
         presetChip("Rim", this::addRimLightPreset),
@@ -890,6 +1215,13 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     HBox.setHgrow(lightNameField, Priority.ALWAYS);
 
     HBox lightGroupRow = new HBox(8, new Label("Group"), lightGroupField);
+    Button groupMute = new Button("Mute Group");
+    groupMute.setOnAction(event -> toggleLightGroup(false));
+    Button groupSolo = new Button("Solo Group");
+    groupSolo.setOnAction(event -> toggleLightGroup(true));
+    groupMute.disableProperty().bind(lightGroupField.textProperty().isEmpty());
+    groupSolo.disableProperty().bind(lightGroupField.textProperty().isEmpty());
+    FlowPane lightGroupActions = new FlowPane(5, 4, groupMute, groupSolo);
     lightGroupRow.setAlignment(Pos.CENTER_LEFT);
     HBox.setHgrow(lightGroupField, Priority.ALWAYS);
 
@@ -904,20 +1236,35 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     lightLayerRow.setAlignment(Pos.CENTER_LEFT);
     HBox.setHgrow(lightLayerBox, Priority.ALWAYS);
 
-    HBox lightFlagsRow = new HBox(10, lightMutedCheck, lightLockedCheck, lightSoloCheck);
+    HBox lightBlendRow = new HBox(8, new Label("Blend"), lightBlendBox);
+    lightBlendRow.setAlignment(Pos.CENTER_LEFT);
+    HBox.setHgrow(lightBlendBox, Priority.ALWAYS);
+
+    HBox lightFalloffRow = new HBox(8, new Label("Falloff"), lightFalloffBox);
+    lightFalloffRow.setAlignment(Pos.CENTER_LEFT);
+    HBox.setHgrow(lightFalloffBox, Priority.ALWAYS);
+    FlowPane lightFlagsRow = new FlowPane(7, 4, lightMutedCheck, lightLockedCheck, lightSoloCheck, lightShadowsCheck);
     lightFlagsRow.setAlignment(Pos.CENTER_LEFT);
 
     lightControlsSection.getChildren().setAll(
         lightNameRow,
         lightGroupRow,
+        lightGroupActions,
         lightShapeRow,
         lightLayerRow,
+        lightBlendRow,
+        lightFalloffRow,
         lightColorRow,
         sliderRow("Intensity", lightIntensitySlider),
         sliderRow("Radius / Feather", lightRadiusSlider),
         sliderRow("Softness", lightSoftnessSlider),
+        sliderRow("Beam Angle", beamAngleSlider),
+        sliderRow("Area Width %", areaAspectSlider),
         sliderRow("Silhouette", lightSilhouetteSlider),
-        lightFlagsRow);
+        lightFlagsRow,
+        new HBox(8, new Label("Shadows"), shadowQualityBox), groundProjectionCheck,
+        new VBox(3, new Label("Floor X, Y, Horizon Y, Strength (%)"), groundProjectionField),
+        sliderRow("Floor Light %", floorLightSlider), sliderRow("Floor Exposure ×100 EV", floorExposureSlider));
     lightControlsSection.setDisable(true);
 
     VBox lightsContent = new VBox(6, presetRow, lightActions, lightOptionsRow, lightRigSummaryLabel, lightListView, lightControlsSection);
@@ -1016,6 +1363,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
       bgTintStrengthSlider.setValue(0.0);
       bgSaturationSlider.setValue(0.0);
       bgContrastSlider.setValue(0.0);
+      bgExposureSlider.setValue(0);
       bgTintBlendModeBox.getSelectionModel().select("Normal");
       bgOverlayColorPicker.setValue(Color.BLACK);
       bgOverlayOpacitySlider.setValue(0.0);
@@ -1032,6 +1380,11 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
   public void setProjectRoot(File projectRoot) {
     if (disposed) return;
     persistGlobalState();
+    if (!Objects.equals(this.projectRoot, projectRoot)) {
+      sceneSubjectBox.getItems().clear();
+      sceneSubjectLayers.clear();
+      sceneInfo.setVisible(false);
+    }
     this.projectRoot = projectRoot;
     refreshCatalog();
   }
@@ -1236,6 +1589,8 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
   private void applyPersistedSelections() {
     applyingState = true;
     try {
+      int inspectorIndex = (int) parseDouble(persisted.getProperty("global.inspectorTab"), 0);
+      inspector.getSelectionModel().select(Math.clamp(inspectorIndex, 0, inspector.getTabs().size() - 1));
       filterField.setText(persisted.getProperty("global.filter", ""));
       String scope = normalize(persisted.getProperty("global.assetScope", ASSET_SCOPE_CHARACTER_ASSETS_AND_PRESETS));
       if (!assetScopeBox.getItems().contains(scope)) {
@@ -1273,6 +1628,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
       bgTintStrengthSlider.setValue(parseDouble(persisted.getProperty("global.bgTintStrength"), 0.0));
       bgSaturationSlider.setValue(parseDouble(persisted.getProperty("global.bgSaturation"), 0.0));
       bgContrastSlider.setValue(parseDouble(persisted.getProperty("global.bgContrast"), 0.0));
+      bgExposureSlider.setValue(parseDouble(persisted.getProperty("global.bgExposure"), 0));
       bgTintBlendModeBox.getSelectionModel().select(canonicalBlendMode(persisted.getProperty("global.bgTintBlend"), "Normal"));
       bgOverlayColorPicker.setValue(parseColor(persisted.getProperty("global.bgOverlayColor"), Color.BLACK));
       bgOverlayOpacitySlider.setValue(parseDouble(persisted.getProperty("global.bgOverlayOpacity"), 0.0));
@@ -1291,10 +1647,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
         boolean hideZones = parseBoolean(persisted.getProperty("global.hideZones"), true);
         zonesPane.setExpanded(!hideZones);
       }
-      if (lightsPane != null) {
-        boolean hideLights = parseBoolean(persisted.getProperty("global.hideLights"), true);
-        lightsPane.setExpanded(!hideLights);
-      }
+
     } finally {
       applyingState = false;
     }
@@ -1303,6 +1656,8 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     activeZoneProfileTag = normalize(selectedCharacterTag());
     loadPersistedZones();
     loadSceneLightsFromPrefix("global.light.");
+    loadSceneOccludersFromPrefix("global.occluder.");
+    loadMaterialFromPrefix("global.material.");
     applyBackgroundTintIfPresent(selectedBackgroundTag());
   }
 
@@ -1319,7 +1674,8 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
         workspaceSplit.getItems().setAll(previewHost, sidebarScroll);
       }
       sidebarCollapsed = false;
-      double divider = clampSidebarDivider(sidebarDividerPosition, DEFAULT_SIDEBAR_DIVIDER);
+      double divider = workspaceSplit.getOrientation() == Orientation.VERTICAL ? 0.52
+          : clampSidebarDivider(sidebarDividerPosition, DEFAULT_SIDEBAR_DIVIDER);
       Platform.runLater(() -> workspaceSplit.setDividerPositions(divider));
     }
     updateSidebarToggleButtons();
@@ -1341,7 +1697,8 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
   }
 
   private void captureSidebarDividerPosition() {
-    if (workspaceSplit == null || workspaceSplit.getItems().size() < 2 || workspaceSplit.getDividers().isEmpty()) return;
+    if (workspaceSplit.getOrientation() == Orientation.VERTICAL || workspaceSplit.getItems().size() < 2
+        || workspaceSplit.getDividers().isEmpty()) return;
     sidebarDividerPosition = clampSidebarDivider(workspaceSplit.getDividerPositions()[0], DEFAULT_SIDEBAR_DIVIDER);
   }
 
@@ -1587,6 +1944,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     persisted.setProperty(prefix + "bgTintStrength", formatDouble(bgTintStrengthSlider.getValue()));
     persisted.setProperty(prefix + "bgSaturation", formatDouble(bgSaturationSlider.getValue()));
     persisted.setProperty(prefix + "bgContrast", formatDouble(bgContrastSlider.getValue()));
+    persisted.setProperty(prefix + "bgExposure", formatDouble(bgExposureSlider.getValue()));
     persisted.setProperty(prefix + "bgTintBlend", canonicalBlendMode(bgTintBlendModeBox.getValue(), "Normal"));
     persisted.setProperty(prefix + "bgOverlayColor", colorToHex(bgOverlayColorPicker.getValue()));
     persisted.setProperty(prefix + "bgOverlayOpacity", formatDouble(bgOverlayOpacitySlider.getValue()));
@@ -1595,6 +1953,8 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     persisted.setProperty(prefix + "offsetX", formatDouble(offsetX));
     persisted.setProperty(prefix + "offsetY", formatDouble(offsetY));
     writeSceneLightsToPrefix(prefix + "light.");
+    writeSceneOccludersToPrefix(prefix + "occluder.");
+    writeMaterialToPrefix(prefix + "material.");
 
     // A: Save zone data with setup.
     clearPrefix(prefix + "zone.");
@@ -1615,6 +1975,9 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
       persisted.setProperty(zp + "rotation", formatDouble(z.rotation));
       persisted.setProperty(zp + "blendMode", canonicalBlendMode(z.blendMode, "Normal"));
       persisted.setProperty(zp + "overlayVisible", Boolean.toString(z.overlayVisible));
+      persisted.setProperty(zp + "surface", z.surfaceClass.persistedValue());
+      persisted.setProperty(zp + "depthBias", formatDouble(z.depthBias));
+      persisted.setProperty(zp + "responseScale", formatDouble(z.responseScale));
       if (z.isPolygon()) {
         StringBuilder polyStr = new StringBuilder();
         for (int p = 0; p < z.polygon.size(); p++) {
@@ -1662,6 +2025,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
       bgTintStrengthSlider.setValue(parseDouble(persisted.getProperty(prefix + "bgTintStrength"), bgTintStrengthSlider.getValue()));
       bgSaturationSlider.setValue(parseDouble(persisted.getProperty(prefix + "bgSaturation"), bgSaturationSlider.getValue()));
       bgContrastSlider.setValue(parseDouble(persisted.getProperty(prefix + "bgContrast"), bgContrastSlider.getValue()));
+      bgExposureSlider.setValue(parseDouble(persisted.getProperty(prefix + "bgExposure"), 0));
       bgTintBlendModeBox.getSelectionModel().select(canonicalBlendMode(persisted.getProperty(prefix + "bgTintBlend"), bgTintBlendModeBox.getValue()));
       bgOverlayColorPicker.setValue(parseColor(persisted.getProperty(prefix + "bgOverlayColor"), bgOverlayColorPicker.getValue()));
       bgOverlayOpacitySlider.setValue(parseDouble(persisted.getProperty(prefix + "bgOverlayOpacity"), bgOverlayOpacitySlider.getValue()));
@@ -1669,7 +2033,9 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
       zoom = clamp(parseDouble(persisted.getProperty(prefix + "zoom"), zoom), 0.1, 8.0);
       offsetX = parseDouble(persisted.getProperty(prefix + "offsetX"), offsetX);
       offsetY = parseDouble(persisted.getProperty(prefix + "offsetY"), offsetY);
+      loadMaterialFromPrefix(prefix + "material.");
       loadSceneLightsFromPrefix(prefix + "light.");
+      loadSceneOccludersFromPrefix(prefix + "occluder.");
 
       // A: Load zone data from setup.
       int zoneCount = (int) parseDouble(persisted.getProperty(prefix + "zone.count"), -1);
@@ -1836,7 +2202,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
 
   private void installPreviewInteractions() {
     previewCanvas.setOnMouseClicked(e -> {
-      if (e.getButton() == MouseButton.SECONDARY && (polyDrawMode || lightPolyDrawMode)) {
+      if (e.getButton() == MouseButton.SECONDARY && (polyDrawMode || lightPolyDrawMode || occluderPolyDrawMode)) {
         // Right-click removes last nail point.
         if (!nailPoints.isEmpty()) {
           nailPoints.remove(nailPoints.size() - 1);
@@ -1845,7 +2211,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
         e.consume();
         return;
       }
-      if (e.getButton() == MouseButton.SECONDARY && (freehandDrawMode || lightFreehandDrawMode)) {
+      if (e.getButton() == MouseButton.SECONDARY && (freehandDrawMode || lightFreehandDrawMode || occluderFreehandDrawMode)) {
         if (!freehandPoints.isEmpty()) {
           freehandPoints.clear();
           drawingFreehand = false;
@@ -1856,12 +2222,13 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
         return;
       }
       if (e.getButton() != MouseButton.PRIMARY) return;
-      if (zoneDrawMode || freehandDrawMode || lightFreehandDrawMode) return;
-      if (polyDrawMode || lightPolyDrawMode) {
+      if (zoneDrawMode || freehandDrawMode || lightFreehandDrawMode || occluderFreehandDrawMode || occluderBoundsDrawMode != null) return;
+      if (polyDrawMode || lightPolyDrawMode || occluderPolyDrawMode) {
         double mx = e.getX(), my = e.getY();
         // Close polygon on double-click or clicking near first point.
         if (nailPoints.size() >= 3 && (e.getClickCount() >= 2 || isNearFirstNail(mx, my))) {
           if (polyDrawMode) commitPolygonZone();
+          else if (occluderPolyDrawMode) commitDrawnOccluder(nailPoints);
           else commitPolygonSceneLight();
           e.consume();
           return;
@@ -1869,7 +2236,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
         nailPoints.add(new double[]{mx, my});
         redrawPreview();
         int n = nailPoints.size();
-        status((polyDrawMode ? "Polygon zone" : "Polygon light") + ": " + n + " point(s) — "
+        status((polyDrawMode ? "Polygon zone" : occluderPolyDrawMode ? "Shadow caster" : "Polygon light") + ": " + n + " point(s) — "
             + (n >= 3 ? "click near first point to close" : "place more points"));
         e.consume();
         return;
@@ -1887,16 +2254,17 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
 
     previewCanvas.setOnMousePressed(e -> {
       if (e.getButton() != MouseButton.PRIMARY) return;
-      if (polyDrawMode || lightPolyDrawMode) return; // handled by onMouseClicked
-      if (freehandDrawMode || lightFreehandDrawMode) {
+      if (polyDrawMode || lightPolyDrawMode || occluderPolyDrawMode) return; // handled by onMouseClicked
+      if (freehandDrawMode || lightFreehandDrawMode || occluderFreehandDrawMode) {
         drawingFreehand = true;
         freehandPoints.clear();
         freehandPoints.add(new double[]{e.getX(), e.getY()});
         redrawPreview();
         return;
       }
-      if (zoneDrawMode) {
-        drawingZone = true;
+      if (zoneDrawMode || occluderBoundsDrawMode != null) {
+        drawingZone = zoneDrawMode;
+        drawingOccluderBounds = occluderBoundsDrawMode != null;
         zoneDrawStartX = e.getX();
         zoneDrawStartY = e.getY();
         zoneDrawEndX = e.getX();
@@ -1919,13 +2287,13 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
       dragLastY = e.getY();
     });
     previewCanvas.setOnMouseDragged(e -> {
-      if (polyDrawMode || lightPolyDrawMode) return;
-      if ((freehandDrawMode || lightFreehandDrawMode) && drawingFreehand) {
+      if (polyDrawMode || lightPolyDrawMode || occluderPolyDrawMode) return;
+      if ((freehandDrawMode || lightFreehandDrawMode || occluderFreehandDrawMode) && drawingFreehand) {
         appendFreehandPoint(e.getX(), e.getY());
         redrawPreview();
         return;
       }
-      if (zoneDrawMode && drawingZone) {
+      if (drawingZone || drawingOccluderBounds) {
         zoneDrawEndX = e.getX();
         zoneDrawEndY = e.getY();
         redrawPreview();
@@ -1949,18 +2317,24 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     });
     previewCanvas.setOnMouseReleased(e -> {
       if (e.getButton() != MouseButton.PRIMARY) return;
-      if (polyDrawMode || lightPolyDrawMode) return;
-      if ((freehandDrawMode || lightFreehandDrawMode) && drawingFreehand) {
+      if (polyDrawMode || lightPolyDrawMode || occluderPolyDrawMode) return;
+      if ((freehandDrawMode || lightFreehandDrawMode || occluderFreehandDrawMode) && drawingFreehand) {
         appendFreehandPoint(e.getX(), e.getY());
         drawingFreehand = false;
         if (freehandDrawMode) commitFreehandZone();
+        else if (occluderFreehandDrawMode) commitDrawnOccluder(freehandPoints);
         else commitFreehandSceneLight();
         redrawPreview();
         return;
       }
-      if (zoneDrawMode && drawingZone) {
-        drawingZone = false;
-        commitDrawnZone();
+      if (drawingZone || drawingOccluderBounds) {
+        if (drawingOccluderBounds) {
+          drawingOccluderBounds = false;
+          commitDrawnOccluderBounds(e.getX(), e.getY());
+        } else {
+          drawingZone = false;
+          commitDrawnZone();
+        }
         redrawPreview();
         return;
       }
@@ -2014,39 +2388,51 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     g.setFill(Color.web("#161616"));
     g.fillRect(0, 0, w, h);
 
+    boolean original = compareOriginal.isSelected();
     Image bg = loadImage(selectedBackgroundTag());
     if (bg != null) {
-      Image previewBg = resolvePreviewBackgroundImage(selectedBackgroundTag(), bg);
+      Image previewBg = original ? bg : resolvePreviewBackgroundImage(selectedBackgroundTag(), bg, w, h);
       drawCover(g, previewBg == null ? bg : previewBg, w, h);
     } else {
       cancelBackgroundTintTask();
       drawChecker(g, w, h);
     }
-    drawSceneLightEffects(g, w, h, SceneLightLayer.BACKGROUND);
+    if (!original && bg == null) {
+      drawSceneLightEffects(g, w, h, SceneLightLayer.BACKGROUND);
+      drawGroundShadowPreview(g, w, h);
+    }
 
     String characterTag = selectedCharacterTag();
     Image rawCharacter = loadImage(characterTag);
     if (rawCharacter == null) {
-      drawSceneLightEffects(g, w, h, SceneLightLayer.FOREGROUND);
-      drawSceneLightOverlays(g, w, h);
-      drawHint(g, w, h, "Select a character image tag");
-      previewInfoLabel.setText("No subject image selected.");
+      if (!original) {
+        drawSceneLightEffects(g, w, h, SceneLightLayer.FOREGROUND);
+        drawSceneLightOverlays(g, w, h);
+        drawOccluderGuides(g, w, h);
+      }
+      if (bg == null) drawHint(g, w, h, "Load a VNS scene or select scene assets.");
+      previewInfoLabel.setText(bg == null ? "" : "Background only");
       return;
     }
 
     CharacterRenderContext renderContext = buildCharacterRenderContext(rawCharacter, w, h);
     TintRasterSpec rasterSpec = buildPreviewTintRasterSpec(rawCharacter, renderContext);
-    Image tintedCharacter = buildTintedImage(characterTag, rawCharacter, renderContext, rasterSpec);
+    Image tintedCharacter = original ? rawCharacter : buildTintedImage(characterTag, rawCharacter, renderContext, rasterSpec);
     double drawW = renderContext.drawWidth();
     double drawH = renderContext.drawHeight();
     double drawX = renderContext.drawX();
     double drawY = renderContext.drawY();
     g.drawImage(tintedCharacter, drawX, drawY, drawW, drawH);
+    if (original) {
+      previewInfoLabel.setText("Original scene");
+      return;
+    }
     drawSceneLightEffects(g, w, h, SceneLightLayer.FOREGROUND);
 
     drawSceneLightOverlays(g, w, h);
     // Draw zone overlays on the character image region.
     drawZoneOverlays(g, rawCharacter, drawX, drawY, drawW, drawH);
+    drawOccluderGuides(g, w, h);
 
     // Draw in-progress zone rectangle while user is dragging.
     if (zoneDrawMode && drawingZone) {
@@ -2239,59 +2625,27 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     status("Reset source vector for " + fallbackLightName(light) + ".");
   }
 
-  private Image resolvePreviewBackgroundImage(String tag, Image source) {
-    if (source == null) return null;
-    BackgroundTintParams params = snapshotBackgroundTintParams();
-    String key = backgroundTintKey(tag, source, params);
-
-    if (params.isIdentity()) {
+  private Image resolvePreviewBackgroundImage(String tag, Image source, double width, double height) {
+    VnStagePreset stage = previewRig();
+    if (!stage.hasBackgroundLighting()) {
       cancelBackgroundTintTask();
-      tintedBackgroundTag = tag;
-      tintedBackgroundKey = key;
-      tintedBackground = source;
       return source;
     }
-
+    int workWidth = Math.max(1, (int) Math.round(Math.min(1100, width)));
+    int workHeight = Math.max(1, (int) Math.round(height * workWidth / width));
+    String key = tag + "|" + stage.getCacheToken() + "|" + workWidth + "x" + workHeight;
     if (Objects.equals(tintedBackgroundTag, tag) && Objects.equals(tintedBackgroundKey, key) && tintedBackground != null) {
-      if (backgroundTintTask == null || !backgroundTintTask.isRunning()) {
-        previewLoadingOverlay.hideOverlay();
-      }
       return tintedBackground;
     }
-
-    ensureBackgroundTintTask(tag, source, key, params);
-    return source;
+    ensureBackgroundTintTask(tag, source, key, stage, workWidth, workHeight);
+    return Objects.equals(tintedBackgroundTag, tag) ? tintedBackground : null;
   }
 
-  private BackgroundTintParams snapshotBackgroundTintParams() {
-    Color tint = bgTintColorPicker.getValue() == null ? Color.WHITE : bgTintColorPicker.getValue();
-    Color overlay = bgOverlayColorPicker.getValue() == null ? Color.BLACK : bgOverlayColorPicker.getValue();
-    String tintBlendMode = canonicalBlendMode(bgTintBlendModeBox.getValue(), "Normal");
-    String overlayBlendMode = canonicalBlendMode(bgOverlayBlendModeBox.getValue(), "Overlay");
-    return new BackgroundTintParams(
-        clamp(bgTintStrengthSlider.getValue() / 100.0, 0.0, 1.0),
-        clamp(bgSaturationSlider.getValue() / 100.0, -1.0, 1.0),
-        clamp(bgContrastSlider.getValue() / 100.0, -1.0, 1.0),
-        tint.getRed(),
-        tint.getGreen(),
-        tint.getBlue(),
-        tintBlendMode,
-        blendModeIndex(tintBlendMode),
-        clamp(bgOverlayOpacitySlider.getValue() / 100.0, 0.0, 1.0),
-        overlay.getRed(),
-        overlay.getGreen(),
-        overlay.getBlue(),
-        overlayBlendMode,
-        blendModeIndex(overlayBlendMode)
-    );
-  }
-
-  private void ensureBackgroundTintTask(String tag, Image source, String key, BackgroundTintParams params) {
+  private void ensureBackgroundTintTask(String tag, Image source, String key, VnStagePreset stage, int width, int height) {
     if (backgroundTintTask != null
-        && backgroundTintTask.isRunning()
+        && !backgroundTintTask.isDone()
         && Objects.equals(backgroundTintTaskTag, tag)
         && Objects.equals(backgroundTintTaskKey, key)) {
-      previewLoadingOverlay.showDeterminate("Applying background tint...", backgroundTintTask.getProgress());
       return;
     }
 
@@ -2300,22 +2654,12 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     Task<Image> task = new Task<>() {
       @Override
       protected Image call() {
-        return renderTintedBackgroundImage(
-            source,
-            params,
-            this::isCancelled,
-            progress -> updateProgress(progress, 1.0)
-        );
+        return VnStageLightingSupport.renderBackgroundPreview(source, stage, width, height);
       }
     };
     backgroundTintTask = task;
     backgroundTintTaskTag = tag;
     backgroundTintTaskKey = key;
-    previewLoadingOverlay.showDeterminate("Applying background tint...", 0.0);
-    task.progressProperty().addListener((o, ov, nv) -> {
-      double progress = nv == null ? -1.0 : nv.doubleValue();
-      previewLoadingOverlay.setProgress(progress);
-    });
     task.setOnSucceeded(e -> {
       if (disposed || serial != backgroundTintTaskSerial) return;
       Image rendered = task.getValue();
@@ -2361,64 +2705,6 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     backgroundTintTaskTag = null;
     backgroundTintTaskKey = null;
     previewLoadingOverlay.hideOverlay();
-  }
-
-  private static Image renderTintedBackgroundImage(Image source,
-                                                   BackgroundTintParams params,
-                                                   BooleanSupplier isCancelled,
-                                                   DoubleConsumer progressSink) {
-    if (source == null || params == null) return source;
-    int width = (int) Math.max(1, Math.round(source.getWidth()));
-    int height = (int) Math.max(1, Math.round(source.getHeight()));
-    PixelReader reader = source.getPixelReader();
-    if (reader == null) return source;
-    WritableImage out = new WritableImage(width, height);
-    PixelWriter writer = out.getPixelWriter();
-
-    for (int y = 0; y < height; y++) {
-      if (isCancelled != null && isCancelled.getAsBoolean()) return null;
-      for (int x = 0; x < width; x++) {
-        int argb = reader.getArgb(x, y);
-        int a = (argb >>> 24) & 0xFF;
-        if (a == 0) {
-          writer.setArgb(x, y, argb);
-          continue;
-        }
-        double r = ((argb >>> 16) & 0xFF) / 255.0;
-        double g = ((argb >>> 8) & 0xFF) / 255.0;
-        double b = (argb & 0xFF) / 255.0;
-
-        double lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-        double zr = lum + (r - lum) * (1.0 + params.satAdjust());
-        double zg = lum + (g - lum) * (1.0 + params.satAdjust());
-        double zb = lum + (b - lum) * (1.0 + params.satAdjust());
-        zr = (zr - 0.5) * (1.0 + params.conAdjust()) + 0.5;
-        zg = (zg - 0.5) * (1.0 + params.conAdjust()) + 0.5;
-        zb = (zb - 0.5) * (1.0 + params.conAdjust()) + 0.5;
-        zr = zr * (1.0 - params.tintStrength()) + params.tr() * params.tintStrength();
-        zg = zg * (1.0 - params.tintStrength()) + params.tg() * params.tintStrength();
-        zb = zb * (1.0 - params.tintStrength()) + params.tb() * params.tintStrength();
-
-        r = applyBlend(r, zr, 1.0, params.tintBlendIndex());
-        g = applyBlend(g, zg, 1.0, params.tintBlendIndex());
-        b = applyBlend(b, zb, 1.0, params.tintBlendIndex());
-
-        if (params.overlayOpacity() > 0.0) {
-          r = applyBlend(r, params.or(), params.overlayOpacity(), params.overlayBlendIndex());
-          g = applyBlend(g, params.og(), params.overlayOpacity(), params.overlayBlendIndex());
-          b = applyBlend(b, params.ob(), params.overlayOpacity(), params.overlayBlendIndex());
-        }
-
-        int rr = (int) Math.round(clamp(r, 0.0, 1.0) * 255.0);
-        int gg = (int) Math.round(clamp(g, 0.0, 1.0) * 255.0);
-        int bb = (int) Math.round(clamp(b, 0.0, 1.0) * 255.0);
-        writer.setArgb(x, y, (a << 24) | (rr << 16) | (gg << 8) | bb);
-      }
-      if (progressSink != null && ((y & 7) == 0 || y == height - 1)) {
-        progressSink.accept((y + 1) / (double) height);
-      }
-    }
-    return out;
   }
 
   private CharacterRenderContext buildCharacterRenderContext(Image source, double canvasWidth, double canvasHeight) {
@@ -2563,41 +2849,38 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     double[] lightPy = new double[lightCount];
     double[] lightSourcePx = new double[lightCount];
     double[] lightSourcePy = new double[lightCount];
-    double[] lightRadiusPx = new double[lightCount];
     double[] lightIntensity = new double[lightCount];
-    double[] lightSoftness = new double[lightCount];
     double[] lightSilhouette = new double[lightCount];
     double[] lightR = new double[lightCount];
     double[] lightG = new double[lightCount];
     double[] lightB = new double[lightCount];
-    SceneLightShape[] lightShape = new SceneLightShape[lightCount];
     SceneLightLayer[] lightLayer = new SceneLightLayer[lightCount];
-    @SuppressWarnings("unchecked")
-    List<double[]>[] lightPoly = new List[lightCount];
-    double sceneMinDimension = Math.max(1.0, Math.min(context.canvasWidth(), context.canvasHeight()));
+    LightBlend[] lightBlend = new LightBlend[lightCount];
+    VnStageLightField[] fields = new VnStageLightField[lightCount];
+    VnStagePreset.Light[] activeLights = new VnStagePreset.Light[lightCount];
+    VnStagePreset rig = previewRig();
+    List<VnStageShadow> shadows = VnStageShadow.prepare(rig.getOccluders(), context.canvasWidth(), context.canvasHeight());
+    var materialSettings = new VnStagePreset.SubjectMaterial(normalMapField.getText(),
+        normalStrengthSlider.getValue() / 100, specularSlider.getValue() / 100, glossSlider.getValue(), List.of());
+    VnStageMaterial material = new VnStageMaterial(loadImage(materialSettings.normalMap()), materialSettings);
+    double lightHeight = Math.max(1, Math.min(context.canvasWidth(), context.canvasHeight()) * 0.20);
     for (int i = 0; i < lightCount; i++) {
       SceneLight light = sceneLights.get(i);
+      VnStagePreset.Light runtimeLight = rig.getLights().get(i);
+      if (!rig.isActive(runtimeLight)) continue;
+      fields[i] = VnStageLightField.forLight(runtimeLight, context.canvasWidth(), context.canvasHeight(), 1);
+      activeLights[i] = runtimeLight;
       lightPx[i] = light.sceneX * context.canvasWidth();
       lightPy[i] = light.sceneY * context.canvasHeight();
       lightSourcePx[i] = light.sourceX * context.canvasWidth();
       lightSourcePy[i] = light.sourceY * context.canvasHeight();
-      lightRadiusPx[i] = Math.max(12.0, light.radius * sceneMinDimension);
-      lightIntensity[i] = clamp(light.intensity / 100.0, 0.0, 1.0);
-      lightSoftness[i] = clamp(light.softness / 100.0, 0.0, 1.0);
-      lightSilhouette[i] = clamp(light.silhouette / 100.0, 0.0, 1.0);
-      Color lightColor = light.color == null ? Color.web("#ffd7a8") : light.color;
-      lightR[i] = lightColor.getRed();
-      lightG[i] = lightColor.getGreen();
-      lightB[i] = lightColor.getBlue();
-      lightShape[i] = light.shape == null ? SceneLightShape.RADIAL : light.shape;
-      lightLayer[i] = light.layer == null ? SceneLightLayer.CHARACTER : light.layer;
-      if (light.isPolygon()) {
-        List<double[]> points = new ArrayList<>();
-        for (double[] pt : light.polygon) {
-          points.add(new double[]{pt[0] * context.canvasWidth(), pt[1] * context.canvasHeight()});
-        }
-        lightPoly[i] = points;
-      }
+      lightIntensity[i] = runtimeLight.intensity();
+      lightBlend[i] = light.blend;
+      lightSilhouette[i] = runtimeLight.silhouette();
+      lightR[i] = light.color.getRed();
+      lightG[i] = light.color.getGreen();
+      lightB[i] = light.color.getBlue();
+      lightLayer[i] = light.layer;
     }
 
     double imgAspect = (double) width / height; // for aspect-correct rotation
@@ -2659,14 +2942,17 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
 
         if (lightCount > 0 && context.hasDrawableArea()) {
           double sceneX = sceneXMap[x];
+          int normal = material.sample(nx, ny);
           double edgeFactor = 0.0;
           double edgeNormalX = 0.0;
           double edgeNormalY = 0.0;
           boolean edgeSampled = false;
           for (int i = 0; i < lightCount; i++) {
-            double weight = lightShape[i] == SceneLightShape.POLYGON && lightPoly[i] != null
-                ? scenePolygonLightWeightPx(sceneX, sceneY, lightPoly[i], lightRadiusPx[i], lightSoftness[i])
-                : sceneLightWeightPx(sceneX, sceneY, lightPx[i], lightPy[i], lightRadiusPx[i], lightSoftness[i]);
+            if (lightIntensity[i] == 0) continue;
+            double weight = fields[i].weight(sceneX, sceneY);
+            if (weight > 0 && activeLights[i].castsShadows() && activeLights[i].groundProjection() == null) {
+              weight *= fields[i].transmission(shadows, sceneX, sceneY, activeLights[i].shadowQuality());
+            }
             if (weight <= 0.0) continue;
             if (lightLayer[i] == SceneLightLayer.CHARACTER) {
               double influence = weight * lightIntensity[i]
@@ -2676,7 +2962,14 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
                       lightPx[i],
                       lightPy[i],
                       lightSourcePx[i],
-                      lightSourcePy[i]);
+                      lightSourcePy[i])
+                  * material.response(normal, lightSourcePx[i] - sceneX, lightSourcePy[i] - sceneY, lightHeight);
+              if (lightBlend[i] != LightBlend.PHYSICAL) {
+                r = lightBlend[i].composite(r, lightR[i], influence);
+                g = lightBlend[i].composite(g, lightG[i], influence);
+                b = lightBlend[i].composite(b, lightB[i], influence);
+                continue;
+              }
               double albedo = linearLuminance(r, g, b);
               r = applySceneLightChannel(r, lightR[i], influence, albedo, false);
               g = applySceneLightChannel(g, lightG[i], influence, albedo, false);
@@ -2728,9 +3021,15 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
             double rimWeight = weight * lightIntensity[i] * lightSilhouette[i] * edgeFactor * directionalFactor;
             double rimBoost = lightLayer[i] == SceneLightLayer.BACKGROUND ? 1.35 : 1.08;
             double albedo = linearLuminance(r, g, b);
-            r = applySceneLightChannel(r, lightR[i], rimWeight * rimBoost, albedo, true);
-            g = applySceneLightChannel(g, lightG[i], rimWeight * rimBoost, albedo, true);
-            b = applySceneLightChannel(b, lightB[i], rimWeight * rimBoost, albedo, true);
+            if (lightBlend[i] == LightBlend.PHYSICAL) {
+              r = applySceneLightChannel(r, lightR[i], rimWeight * rimBoost, albedo, true);
+              g = applySceneLightChannel(g, lightG[i], rimWeight * rimBoost, albedo, true);
+              b = applySceneLightChannel(b, lightB[i], rimWeight * rimBoost, albedo, true);
+            } else {
+              r = lightBlend[i].composite(r, lightR[i], rimWeight * rimBoost);
+              g = lightBlend[i].composite(g, lightG[i], rimWeight * rimBoost);
+              b = lightBlend[i].composite(b, lightB[i], rimWeight * rimBoost);
+            }
             double rimTintWeight = clamp(rimWeight * 0.20, 0.0, 0.34);
             r = applyBlend(r, lightR[i], rimTintWeight, 4);
             g = applyBlend(g, lightG[i], rimTintWeight, 4);
@@ -2819,40 +3118,13 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
   }
 
   static double sceneLightWeightPx(double px, double py, double lightX, double lightY, double radiusPx, double softness) {
-    double safeRadius = Math.max(1.0, radiusPx);
-    double dx = px - lightX;
-    double dy = py - lightY;
-    double distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance >= safeRadius) return 0.0;
-    double normalized = clamp(1.0 - (distance / safeRadius), 0.0, 1.0);
-    double exponent = 0.65 + (1.0 - clamp(softness, 0.0, 1.0)) * 2.15;
-    return Math.pow(normalized, exponent);
+    return new VnStageLightField(VnStagePreset.LightType.RADIAL, lightX, lightY, lightX, lightY,
+        radiusPx, softness, LightFalloff.CLASSIC, List.of()).weight(px, py);
   }
 
-  static double scenePolygonLightWeightPx(double px, double py, List<double[]> polygonPx, double featherPx, double softness) {
-    if (polygonPx == null || polygonPx.size() < 3) return 0.0;
-    double safeFeather = Math.max(1.0, featherPx);
-    boolean inside = false;
-    int n = polygonPx.size();
-    double minDist = Double.MAX_VALUE;
-    for (int i = 0, j = n - 1; i < n; j = i++) {
-      double[] a = polygonPx.get(j);
-      double[] b = polygonPx.get(i);
-      if ((b[1] > py) != (a[1] > py)
-          && px < (a[0] - b[0]) * (py - b[1]) / Math.max(1e-9, (a[1] - b[1])) + b[0]) {
-        inside = !inside;
-      }
-      double dist = pointToSegmentDist(px, py, a[0], a[1], b[0], b[1]);
-      if (dist < minDist) minDist = dist;
-    }
-    double exponent = 0.65 + (1.0 - clamp(softness, 0.0, 1.0)) * 2.15;
-    if (inside) {
-      double normalized = clamp(minDist / safeFeather, 0.0, 1.0);
-      return 0.72 + (0.28 * (1.0 - Math.pow(1.0 - normalized, exponent)));
-    }
-    if (minDist >= safeFeather) return 0.0;
-    double normalized = clamp(1.0 - (minDist / safeFeather), 0.0, 1.0);
-    return Math.pow(normalized, exponent);
+  static double scenePolygonLightWeightPx(double px, double py, List<double[]> polygon, double radiusPx, double softness) {
+    return new VnStageLightField(VnStagePreset.LightType.POLYGON, px, py, px, py,
+        radiusPx, softness, LightFalloff.CLASSIC, polygon).weight(px, py);
   }
 
   private static int alphaAt(PixelReader reader, int x, int y, int width, int height) {
@@ -2922,94 +3194,15 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     return clamp(safeBase * (1.0 - blendWeight) + lit * blendWeight, 0.0, 1.0);
   }
 
-  private static double applyBlend(double base, double zone, double weight, int mode) {
-    double b = clamp(base, 0.0, 1.0);
-    double s = clamp(zone, 0.0, 1.0);
-    double w = clamp(weight, 0.0, 1.0);
-    if (w <= 0.0) return b;
-    if (mode == 0) {
-      return b * (1.0 - w) + s * w;
-    }
-
-    double bLin = srgbToLinear(b);
-    double sLin = srgbToLinear(s);
-    double blended;
-    switch (mode) {
-      case 1: // Multiply
-        blended = bLin * sLin;
-        break;
-      case 2: // Screen
-        blended = 1.0 - (1.0 - bLin) * (1.0 - sLin);
-        break;
-      case 3: // Overlay
-        blended = bLin < 0.5 ? 2.0 * bLin * sLin : 1.0 - 2.0 * (1.0 - bLin) * (1.0 - sLin);
-        break;
-      case 4: // Soft Light
-        blended = sLin <= 0.5
-            ? bLin - (1.0 - 2.0 * sLin) * bLin * (1.0 - bLin)
-            : bLin + (2.0 * sLin - 1.0) * (softLightCurve(bLin) - bLin);
-        break;
-      case 5: // Hard Light
-        blended = sLin < 0.5 ? 2.0 * bLin * sLin : 1.0 - 2.0 * (1.0 - bLin) * (1.0 - sLin);
-        break;
-      case 6: // Color Dodge
-        blended = sLin >= (1.0 - 1e-6) ? 1.0 : clamp(bLin / (1.0 - sLin), 0.0, 1.0);
-        break;
-      case 7: // Color Burn
-        blended = sLin <= 1e-6 ? 0.0 : 1.0 - clamp((1.0 - bLin) / sLin, 0.0, 1.0);
-        break;
-      case 8: // Difference
-        blended = Math.abs(bLin - sLin);
-        break;
-      case 9: // Exclusion
-        blended = bLin + sLin - (2.0 * bLin * sLin);
-        break;
-      case 10: // Lighten
-        blended = Math.max(bLin, sLin);
-        break;
-      case 11: // Darken
-        blended = Math.min(bLin, sLin);
-        break;
-      case 12: // Add
-        blended = Math.min(1.0, bLin + sLin);
-        break;
-      case 13: // Subtract
-        blended = Math.max(0.0, bLin - sLin);
-        break;
-      default: // Normal
-        blended = sLin;
-        break;
-    }
-    double blendedSrgb = linearToSrgb(clamp(blended, 0.0, 1.0));
-    return b * (1.0 - w) + blendedSrgb * w;
+  private static double applyBlend(double base, double tone, double weight, int mode) {
+    return VnStageGradeBlend.composite(base, tone, weight, mode);
   }
 
   private static int blendModeIndex(String mode) {
-    return switch (canonicalBlendMode(mode, "Normal")) {
-      case "Multiply" -> 1;
-      case "Screen" -> 2;
-      case "Overlay" -> 3;
-      case "Soft Light" -> 4;
-      case "Hard Light" -> 5;
-      case "Color Dodge" -> 6;
-      case "Color Burn" -> 7;
-      case "Difference" -> 8;
-      case "Exclusion" -> 9;
-      case "Lighten" -> 10;
-      case "Darken" -> 11;
-      case "Add" -> 12;
-      case "Subtract" -> 13;
-      default -> 0;
-    };
+    return VnStageGradeBlend.index(canonicalBlendMode(mode, "Normal"));
   }
 
-  private static double softLightCurve(double value) {
-    double v = clamp(value, 0.0, 1.0);
-    if (v <= 0.25) {
-      return ((16.0 * v - 12.0) * v + 4.0) * v;
-    }
-    return Math.sqrt(v);
-  }
+
 
   private static double srgbToLinear(double value) {
     double v = clamp(value, 0.0, 1.0);
@@ -3089,20 +3282,6 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     return sb.toString();
   }
 
-  private String backgroundTintKey(String tag, Image source, BackgroundTintParams params) {
-    BackgroundTintParams p = params == null ? snapshotBackgroundTintParams() : params;
-    return normalize(tag)
-        + "|" + source.getWidth() + "x" + source.getHeight()
-        + "|" + formatDouble(p.tr()) + "," + formatDouble(p.tg()) + "," + formatDouble(p.tb())
-        + "|" + formatDouble(p.tintStrength())
-        + "|" + formatDouble(p.satAdjust())
-        + "|" + formatDouble(p.conAdjust())
-        + "|" + p.tintBlendMode()
-        + "|" + formatDouble(p.or()) + "," + formatDouble(p.og()) + "," + formatDouble(p.ob())
-        + "|" + formatDouble(p.overlayOpacity())
-        + "|" + p.overlayBlendMode();
-  }
-
   private Image loadImage(String tag) {
     if (tag == null || tag.isBlank()) return null;
     String normalized = tag.trim().replace('\\', '/');
@@ -3110,7 +3289,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     Image cached = imageCache.get(normalized);
     if (cached != null) return cached;
 
-    PresetTagEntry preset = presetByTag.get(normalized);
+    PresetTagEntry preset = sceneSubjectLayers.getOrDefault(normalized, presetByTag.get(normalized));
     if (preset != null) {
       Image composed = composePresetImage(preset);
       if (composed != null) {
@@ -3175,13 +3354,13 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
   }
 
   private static void drawChecker(GraphicsContext g, double w, double h) {
-    g.setFill(Color.web("#17243c"));
+    g.setFill(Color.web("#242424"));
     g.fillRect(0, 0, w, h);
-    double tile = 24.0;
+    double tile = 20.0;
     for (double y = 0; y < h; y += tile) {
       for (double x = 0; x < w; x += tile) {
         boolean alt = (((int) (x / tile)) + ((int) (y / tile))) % 2 == 0;
-        g.setFill(alt ? Color.web("#1d2f4d") : Color.web("#162740"));
+        g.setFill(alt ? Color.web("#2b2b2b") : Color.web("#232323"));
         g.fillRect(x, y, tile, tile);
       }
     }
@@ -3233,6 +3412,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     persisted.setProperty(prefix + "tintStrength", tintStrength);
     persisted.setProperty(prefix + "saturation", saturation);
     persisted.setProperty(prefix + "contrast", contrast);
+    persisted.setProperty(prefix + "exposure", formatDouble(bgExposureSlider.getValue()));
     persisted.setProperty(prefix + "tintBlend", canonicalBlendMode(bgTintBlendModeBox.getValue(), "Normal"));
     persisted.setProperty(prefix + "overlayColor", colorToHex(bgOverlayColorPicker.getValue()));
     persisted.setProperty(prefix + "overlayOpacity", formatDouble(bgOverlayOpacitySlider.getValue()));
@@ -3269,6 +3449,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
           bgTintStrengthSlider.getValue()));
       bgSaturationSlider.setValue(parseDouble(persisted.getProperty(prefix + "saturation"), bgSaturationSlider.getValue()));
       bgContrastSlider.setValue(parseDouble(persisted.getProperty(prefix + "contrast"), bgContrastSlider.getValue()));
+      bgExposureSlider.setValue(parseDouble(persisted.getProperty(prefix + "exposure"), 0));
       bgTintBlendModeBox.getSelectionModel().select(
           canonicalBlendMode(persisted.getProperty(prefix + "tintBlend"), bgTintBlendModeBox.getValue()));
       bgOverlayColorPicker.setValue(parseColor(persisted.getProperty(prefix + "overlayColor"), bgOverlayColorPicker.getValue()));
@@ -3283,6 +3464,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
 
   private void persistGlobalState() {
     captureSidebarDividerPosition();
+    persisted.setProperty("global.inspectorTab", Integer.toString(inspector.getSelectionModel().getSelectedIndex()));
     persisted.setProperty("global.filter", normalize(filterField.getText()));
     persisted.setProperty("global.assetScope", normalize(assetScopeBox.getValue()));
     persisted.setProperty("global.characterTag", selectedCharacterTag());
@@ -3304,6 +3486,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     persisted.setProperty("global.bgTintStrength", formatDouble(bgTintStrengthSlider.getValue()));
     persisted.setProperty("global.bgSaturation", formatDouble(bgSaturationSlider.getValue()));
     persisted.setProperty("global.bgContrast", formatDouble(bgContrastSlider.getValue()));
+    persisted.setProperty("global.bgExposure", formatDouble(bgExposureSlider.getValue()));
     persisted.setProperty("global.bgTintBlend", canonicalBlendMode(bgTintBlendModeBox.getValue(), "Normal"));
     persisted.setProperty("global.bgOverlayColor", colorToHex(bgOverlayColorPicker.getValue()));
     persisted.setProperty("global.bgOverlayOpacity", formatDouble(bgOverlayOpacitySlider.getValue()));
@@ -3322,9 +3505,9 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     persisted.setProperty("global.hideBackgroundFx", Boolean.toString(hideBackgroundFx));
     boolean hideZones = zonesPane != null && !zonesPane.isExpanded();
     persisted.setProperty("global.hideZones", Boolean.toString(hideZones));
-    boolean hideLights = lightsPane != null && !lightsPane.isExpanded();
-    persisted.setProperty("global.hideLights", Boolean.toString(hideLights));
     writeSceneLightsToPrefix("global.light.");
+    writeSceneOccludersToPrefix("global.occluder.");
+    writeMaterialToPrefix("global.material.");
     savePersistentState();
   }
 
@@ -4475,7 +4658,10 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     CONE("Cone", "cone"),
     STRIP("Strip", "strip"),
     WINDOW("Window", "window"),
-    BOUNCE("Bounce", "bounce");
+    BOUNCE("Bounce", "bounce"),
+    AREA("Area", "area"),
+    DIRECTIONAL("Directional", "directional"),
+    AMBIENT("Ambient", "ambient");
 
     private final String label;
     private final String persisted;
@@ -4661,6 +4847,13 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     double silhouette;
     SceneLightShape shape;
     SceneLightLayer layer;
+    LightBlend blend = LightBlend.PHYSICAL;
+    LightFalloff falloff = LightFalloff.CLASSIC;
+    boolean castsShadows = true;
+    ShadowQuality shadowQuality = ShadowQuality.SOFT;
+    double beamAngle;
+    double areaAspect;
+    VnStagePreset.GroundProjection groundProjection;
     boolean muted;
     boolean locked;
     boolean solo;
@@ -4710,6 +4903,16 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     double softness;
     boolean enabled;
     List<double[]> polygon;
+    OccluderShape shape = OccluderShape.POLYGON;
+    VnStagePreset.Bounds bounds;
+    double contactY = -1;
+    double heightScale = 1;
+    double footprintDepth;
+    boolean roundFootprint;
+    VnStagePreset.SurfaceTone surfaceTone;
+    List<Double> floorContacts = List.of();
+    double shadowFade;
+    VnStagePreset.ShadowFraming shadowFraming;
 
     SceneOccluder(String name) {
       this.name = name;
@@ -4879,6 +5082,17 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     occluderNameField.setPromptText("Occluder name");
     occluderEnabledCheck.setFocusTraversable(false);
     occluderEnabledCheck.setSelected(true);
+    occluderShapeBox.getItems().setAll(OccluderShape.values());
+    occluderShapeBox.valueProperty().addListener((obs, old, shape) -> changeOccluderShape(shape));
+    occluderBoundsField.setPromptText("X, Y, width, height (%)");
+    occluderBoundsField.setTooltip(new Tooltip("Enter left, top, width and height as percentages of the stage"));
+    occluderBoundsField.setOnAction(event -> commitOccluderBounds());
+    occluderFloorContactsField.setPromptText("Optional floor Y for each polygon vertex (%)");
+    occluderFloorContactsField.setTooltip(new Tooltip("Assign floor depth to each vertex of a rigid caster. Leave blank for a flat silhouette."));
+    occluderFloorContactsField.setOnAction(event -> commitFloorContacts());
+    occluderFramingField.setPromptText("Shadow offset X, Y, width %, height %, angle°");
+    occluderFramingField.setTooltip(new Tooltip("Optional floor shadow adjustment. Offsets and scale are percentages. Leave blank for the original projection."));
+    occluderFramingField.setOnAction(event -> commitShadowFraming());
 
     occluderListView.setPrefHeight(84);
     occluderListView.setMaxHeight(124);
@@ -4892,7 +5106,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
           setStyle("");
           return;
         }
-        Label label = new Label(item.toString());
+        Label label = new Label(item.shape + "  ·  " + item);
         label.setStyle(getIndex() == selectedOccluderIndex
             ? "-fx-text-fill: #e2e8f0;"
             : "-fx-text-fill: #c8d0dc;");
@@ -4913,7 +5127,12 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     Button addOccluderButton = iconButton(SidebarToolIcon.plus("#9ed67a"), "Add a default occluder", this::addDefaultOccluder);
     Button removeOccluderButton = iconButton(SidebarToolIcon.minus("#f38ba8"), "Remove selected occluder", this::removeSelectedOccluder);
     Button clearOccludersButton = iconButton(SidebarToolIcon.clearX("#f5b971"), "Remove all occluders", this::clearAllOccluders);
-    HBox actions = new HBox(6, occluderPolyDrawToggleButton, occluderFreehandDrawToggleButton, addOccluderButton, removeOccluderButton, clearOccludersButton);
+    Button box = actionButton("Draw Box", SidebarToolIcon.rectSelect("#9ed67a"), "Drag a rectangular shadow caster", () -> startOccluderBounds(OccluderShape.BOX));
+    Button ellipse = actionButton("Draw Ellipse", SidebarToolIcon.rectSelect("#9ed67a"), "Drag bounds for a round shadow caster", () -> startOccluderBounds(OccluderShape.ELLIPSE));
+    Button mask = actionButton("Import Mask", SidebarToolIcon.folder("#a6b7ff"),
+        "Trace the alpha or white areas of a full-stage PNG into shadow casters", this::importCasterMask);
+    FlowPane actions = new FlowPane(6, 4, mask, box, ellipse, occluderPolyDrawToggleButton,
+        occluderFreehandDrawToggleButton, addOccluderButton, removeOccluderButton, clearOccludersButton);
     actions.setAlignment(Pos.CENTER_LEFT);
 
     occluderNameField.textProperty().addListener((o, ov, nv) -> {
@@ -4925,6 +5144,11 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     occluderSoftnessSlider.valueProperty().addListener((o, ov, nv) -> {
       if (!applyingState) applyOccluderControlsToSelected();
     });
+    for (Slider control : List.of(occluderContactSlider, occluderHeightSlider, occluderFootprintSlider, occluderFadeSlider, occluderExposureSlider, occluderContrastSlider)) {
+      control.valueProperty().addListener((o, old, value) -> { if (!applyingState) applyOccluderControlsToSelected(); });
+    }
+    occluderContactSlider.setTooltip(new Tooltip("Floor contact measured from the top of the stage. 0 uses the bottom of the silhouette."));
+    occluderRoundCheck.selectedProperty().addListener((o, old, value) -> { if (!applyingState) applyOccluderControlsToSelected(); });
     occluderEnabledCheck.selectedProperty().addListener((o, ov, nv) -> {
       if (!applyingState) applyOccluderControlsToSelected();
     });
@@ -4934,14 +5158,26 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     HBox.setHgrow(occluderNameField, Priority.ALWAYS);
 
     occluderControlsSection.getChildren().setAll(
-        nameRow,
+        nameRow, new HBox(8, new Label("Shape"), occluderShapeBox),
+        new VBox(3, new Label("Bounds · X, Y, width, height (%)"), occluderBoundsField),
         sliderRow("Block %", occluderOpacitySlider),
-        sliderRow("Softness", occluderSoftnessSlider),
+        sliderRow("Penumbra", occluderSoftnessSlider),
+        sliderRow("Floor Contact %", occluderContactSlider),
+        sliderRow("Height Scale %", occluderHeightSlider),
+        sliderRow("Floor Depth %", occluderFootprintSlider),
+        sliderRow("Shadow Fade %", occluderFadeSlider),
+        occluderRoundCheck, occluderFloorContactsField, occluderFramingField,
+        sliderRow("Object Exposure ×100 EV", occluderExposureSlider),
+        sliderRow("Object Contrast %", occluderContrastSlider),
         occluderEnabledCheck
     );
     occluderControlsSection.setDisable(true);
 
-    VBox content = new VBox(6, actions, occluderListView, occluderControlsSection);
+    shadowDebugBox.getItems().setAll("Casters", "Sample Rays", "Shadow Coverage", "Rays + Coverage", "Off");
+    shadowDebugBox.setValue("Casters");
+    shadowDebugBox.valueProperty().addListener((obs, old, selected) -> redrawPreview());
+    VBox content = new VBox(6, actions, new HBox(8, new Label("Debug view"), shadowDebugBox),
+        occluderListView, occluderControlsSection);
     occlusionPane = new TitledPane("Occlusion & Shadows", content);
     occlusionPane.setExpanded(false);
     occlusionPane.setAnimated(false);
@@ -5040,6 +5276,8 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
   }
 
   private void toggleOccluderPolyDrawMode() {
+    occluderBoundsDrawMode = null;
+    drawingOccluderBounds = false;
     disableZoneAllDrawModes();
     disableLightShapeDrawModes();
     disableOccluderFreehandDrawMode();
@@ -5057,6 +5295,8 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
   }
 
   private void toggleOccluderFreehandDrawMode() {
+    occluderBoundsDrawMode = null;
+    drawingOccluderBounds = false;
     disableZoneAllDrawModes();
     disableLightShapeDrawModes();
     disableOccluderPolyDrawMode();
@@ -5153,6 +5393,8 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
   }
 
   private void disableOccluderShapeDrawModes() {
+    occluderBoundsDrawMode = null;
+    drawingOccluderBounds = false;
     disableOccluderPolyDrawMode();
     disableOccluderFreehandDrawMode();
   }
@@ -6052,6 +6294,13 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     copy.silhouette = source.silhouette;
     copy.shape = source.shape;
     copy.layer = source.layer;
+    copy.blend = source.blend;
+    copy.falloff = source.falloff;
+    copy.castsShadows = source.castsShadows;
+    copy.shadowQuality = source.shadowQuality;
+    copy.beamAngle = source.beamAngle;
+    copy.areaAspect = source.areaAspect;
+    copy.groundProjection = source.groundProjection;
     copy.muted = source.muted;
     copy.locked = false;
     copy.solo = source.solo;
@@ -6145,14 +6394,307 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     status("All scene lights cleared.");
   }
 
+  private void importCasterMask() {
+    FileChooser chooser = new FileChooser();
+    chooser.setTitle("Import Full-Stage Caster Mask");
+    chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG images", "*.png"));
+    File file = chooser.showOpenDialog(getScene() == null ? null : getScene().getWindow());
+    if (file == null) return;
+    Image image = new Image(file.toURI().toString());
+    PixelReader reader = image.getPixelReader();
+    int width = (int) image.getWidth();
+    int height = (int) image.getHeight();
+    if (reader == null || width < 1 || height < 1) {
+      status("Could not read the caster mask.");
+      return;
+    }
+    int[] pixels = new int[width * height];
+    reader.getPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), pixels, 0, width);
+    Task<List<List<VnStagePreset.Point>>> task = new Task<>() {
+      @Override protected List<List<VnStagePreset.Point>> call() {
+        return VnCasterSegmentation.trace(width, height, pixels, 128, 0.8);
+      }
+    };
+    File sourceProject = projectRoot;
+    task.setOnSucceeded(event -> {
+      if (disposed || !Objects.equals(sourceProject, projectRoot)) return;
+      if (task.getValue().isEmpty()) { status("The mask contains no solid silhouettes."); return; }
+      int index = 1;
+      for (List<VnStagePreset.Point> polygon : task.getValue()) {
+        SceneOccluder caster = new SceneOccluder(file.getName().replaceFirst("(?i)\\.png$", "") + " " + index++);
+        for (var point : polygon) caster.polygon.add(new double[]{point.x(), point.y()});
+        sceneOccluders.add(caster);
+      }
+      invalidateTintCache();
+      refreshOccluderList();
+      selectOccluder(sceneOccluders.size() - 1);
+      persistGlobalState();
+      status("Traced " + task.getValue().size() + " caster silhouettes.");
+    });
+    task.setOnFailed(event -> status("Could not trace the caster mask: " + task.getException().getMessage()));
+    Thread thread = new Thread(task, "jvn-caster-mask");
+    thread.setDaemon(true);
+    thread.start();
+  }
+
+  private void startOccluderBounds(OccluderShape shape) {
+    disableZoneAllDrawModes();
+    disableLightShapeDrawModes();
+    disableOccluderShapeDrawModes();
+    resetDrawButtons();
+    occluderBoundsDrawMode = shape;
+    status("Drag on the scene to place a " + shape.name().toLowerCase(Locale.ROOT) + " caster.");
+  }
+
+  private void commitDrawnOccluderBounds(double endX, double endY) {
+    double w = previewCanvas.getWidth();
+    double h = previewCanvas.getHeight();
+    OccluderShape shape = occluderBoundsDrawMode;
+    occluderBoundsDrawMode = null;
+    if (shape == null || Math.abs(zoneDrawStartX - endX) < 3 || Math.abs(zoneDrawStartY - endY) < 3) return;
+    var bounds = new VnStagePreset.Bounds(Math.min(zoneDrawStartX, endX) / w, Math.min(zoneDrawStartY, endY) / h,
+        Math.abs(zoneDrawStartX - endX) / w, Math.abs(zoneDrawStartY - endY) / h);
+    SceneOccluder occluder = new SceneOccluder("Caster " + (sceneOccluders.size() + 1));
+    setOccluderBounds(occluder, shape, bounds);
+    addOccluder(occluder);
+  }
+
+  private void commitDrawnOccluder(List<double[]> points) {
+    List<double[]> polygon = canvasStrokeToScenePolygon(points);
+    if (!isValidScenePolygon(polygon)) {
+      status("Draw at least three distinct points to create a caster.");
+      return;
+    }
+    SceneOccluder occluder = new SceneOccluder("Caster " + (sceneOccluders.size() + 1));
+    occluder.polygon.addAll(polygon);
+    disableOccluderShapeDrawModes();
+    resetDrawButtons();
+    addOccluder(occluder);
+  }
+
+  private static void setOccluderBounds(SceneOccluder occluder, OccluderShape shape, VnStagePreset.Bounds bounds) {
+    occluder.shape = shape;
+    occluder.bounds = bounds;
+    occluder.polygon.clear();
+    occluder.floorContacts = List.of();
+    for (VnStagePreset.Point point : bounds.outline(shape)) {
+      occluder.polygon.add(new double[]{point.x(), point.y()});
+    }
+  }
+
+  private void changeOccluderShape(OccluderShape shape) {
+    if (applyingState || shape == null || selectedOccluderIndex < 0) return;
+    SceneOccluder occluder = sceneOccluders.get(selectedOccluderIndex);
+    if (shape == OccluderShape.POLYGON) {
+      occluder.shape = shape;
+      occluder.bounds = null;
+    } else {
+      var bounds = occluder.bounds;
+      if (bounds == null) {
+        double left = 1, top = 1, right = 0, bottom = 0;
+        for (double[] p : occluder.polygon) {
+          left = Math.min(left, p[0]);
+          top = Math.min(top, p[1]);
+          right = Math.max(right, p[0]);
+          bottom = Math.max(bottom, p[1]);
+        }
+        bounds = new VnStagePreset.Bounds(left, top, right - left, bottom - top);
+      }
+      setOccluderBounds(occluder, shape, bounds);
+    }
+    occluderEdited();
+  }
+
+  private void commitOccluderBounds() {
+    if (selectedOccluderIndex < 0) return;
+    SceneOccluder occluder = sceneOccluders.get(selectedOccluderIndex);
+    if (occluder.shape == OccluderShape.POLYGON) return;
+    try {
+      double[] values = Stream.of(occluderBoundsField.getText().split(","))
+          .map(String::strip).mapToDouble(Double::parseDouble).toArray();
+      if (values.length != 4 || java.util.Arrays.stream(values).anyMatch(value -> !Double.isFinite(value))) {
+        throw new IllegalArgumentException();
+      }
+      var bounds = new VnStagePreset.Bounds(values[0] / 100, values[1] / 100, values[2] / 100, values[3] / 100);
+      if (bounds.width() <= 0 || bounds.height() <= 0) throw new IllegalArgumentException();
+      setOccluderBounds(occluder, occluder.shape, bounds);
+      occluderEdited();
+    } catch (IllegalArgumentException invalid) {
+      status("Enter four percentages with a positive width and height inside the scene.");
+    }
+  }
+
+  private void commitShadowFraming() {
+    if (selectedOccluderIndex < 0) return;
+    SceneOccluder caster = sceneOccluders.get(selectedOccluderIndex);
+    String raw = occluderFramingField.getText().strip();
+    try {
+      if (raw.isEmpty()) caster.shadowFraming = null;
+      else {
+        double[] v = Stream.of(raw.split(",")).map(String::strip).mapToDouble(Double::parseDouble).toArray();
+        if (v.length != 5 || java.util.Arrays.stream(v).anyMatch(value -> !Double.isFinite(value))) throw new IllegalArgumentException();
+        caster.shadowFraming = new VnStagePreset.ShadowFraming(v[0] / 100, v[1] / 100, v[2] / 100, v[3] / 100, v[4]);
+      }
+      occluderEdited();
+    } catch (IllegalArgumentException invalid) {
+      status("Enter shadow X and Y offsets, width, height and angle.");
+    }
+  }
+
+  private static String framingString(VnStagePreset.ShadowFraming framing, double units) {
+    if (framing == null) return "";
+    return formatNormalized(framing.offsetX() * units) + "," + formatNormalized(framing.offsetY() * units) + ","
+        + formatNormalized(framing.scaleX() * units) + "," + formatNormalized(framing.scaleY() * units) + ","
+        + formatNormalized(framing.angle());
+  }
+
+  private void commitFloorContacts() {
+    if (selectedOccluderIndex < 0) return;
+    SceneOccluder caster = sceneOccluders.get(selectedOccluderIndex);
+    String text = occluderFloorContactsField.getText().strip();
+    try {
+      List<Double> values = text.isEmpty() ? List.of() : Stream.of(text.split(","))
+          .map(String::strip).map(value -> Double.parseDouble(value) / 100).toList();
+      if (!values.isEmpty() && (values.size() != caster.polygon.size()
+          || values.stream().anyMatch(value -> !Double.isFinite(value) || value < 0 || value > 1))) {
+        throw new IllegalArgumentException();
+      }
+      caster.floorContacts = values;
+      occluderEdited();
+    } catch (IllegalArgumentException invalid) {
+      status("Enter one floor Y percentage for each of the " + caster.polygon.size() + " vertices.");
+    }
+  }
+
+  private static String floorContactsString(List<Double> contacts, double scale) {
+    return contacts.stream().map(value -> formatNormalized(value * scale)).collect(java.util.stream.Collectors.joining(","));
+  }
+
+  private void occluderEdited() {
+    invalidateTintCache();
+    selectOccluder(selectedOccluderIndex);
+    persistGlobalState();
+    redrawPreview();
+  }
+
+  private static String boundsString(VnStagePreset.Bounds bounds, double units) {
+    return formatNormalized(bounds.x() * units) + "," + formatNormalized(bounds.y() * units) + ","
+        + formatNormalized(bounds.width() * units) + "," + formatNormalized(bounds.height() * units);
+  }
+
+  private void drawOccluderGuides(GraphicsContext g, double width, double height) {
+    if (inspector.getSelectionModel().getSelectedItem() != shadowsTab) return;
+    String mode = shadowDebugBox.getValue();
+    if (!"Casters".equals(mode) && !"Off".equals(mode)) drawShadowDebug(g, width, height, mode);
+    if ("Off".equals(mode) && !drawingOccluderBounds && !occluderPolyDrawMode && !occluderFreehandDrawMode) return;
+    g.save();
+    for (int i = 0; i < sceneOccluders.size(); i++) {
+      SceneOccluder caster = sceneOccluders.get(i);
+      if (!caster.isPolygon() || (!caster.enabled && caster.surfaceTone != null && i != selectedOccluderIndex)) continue;
+      double[] xs = new double[caster.polygon.size()];
+      double[] ys = new double[xs.length];
+      for (int vertex = 0; vertex < xs.length; vertex++) {
+        xs[vertex] = caster.polygon.get(vertex)[0] * width;
+        ys[vertex] = caster.polygon.get(vertex)[1] * height;
+      }
+      g.setStroke(i == selectedOccluderIndex ? Color.web("#ffcc78") : Color.web("#9ed4ff"));
+      g.setLineWidth(i == selectedOccluderIndex ? 2 : 1);
+      g.setLineDashes(caster.enabled ? null : new double[]{4, 4});
+      g.strokePolygon(xs, ys, xs.length);
+      g.setFill(g.getStroke());
+      g.fillText(caster.name, xs[0] + 4, ys[0] - 4);
+    }
+    g.setStroke(Color.web("#ffcc78"));
+    g.setLineDashes(4, 3);
+    if (drawingOccluderBounds) {
+      double x = Math.min(zoneDrawStartX, zoneDrawEndX);
+      double y = Math.min(zoneDrawStartY, zoneDrawEndY);
+      double w = Math.abs(zoneDrawStartX - zoneDrawEndX);
+      double h = Math.abs(zoneDrawStartY - zoneDrawEndY);
+      if (occluderBoundsDrawMode == OccluderShape.ELLIPSE) g.strokeOval(x, y, w, h);
+      else g.strokeRect(x, y, w, h);
+    }
+    List<double[]> inProgress = occluderPolyDrawMode ? nailPoints : occluderFreehandDrawMode ? freehandPoints : List.of();
+    for (int i = 1; i < inProgress.size(); i++) {
+      double[] a = inProgress.get(i - 1);
+      double[] b = inProgress.get(i);
+      g.strokeLine(a[0], a[1], b[0], b[1]);
+    }
+    g.restore();
+  }
+
+  private static double[] parsePercentVector(String input) {
+    double[] values = Stream.of(input.split(",")).map(String::strip).mapToDouble(Double::parseDouble).toArray();
+    if (values.length != 4 || java.util.Arrays.stream(values).anyMatch(value -> !Double.isFinite(value))) {
+      throw new IllegalArgumentException("Expected four percentages");
+    }
+    for (int i = 0; i < values.length; i++) values[i] /= 100;
+    return values;
+  }
+
+  private static String groundProjectionString(VnStagePreset.GroundProjection ground, double units) {
+    return formatNormalized(ground.groundX() * units) + "," + formatNormalized(ground.groundY() * units) + ","
+        + formatNormalized(ground.horizon() * units) + "," + formatNormalized(ground.strength() * units);
+  }
+
+  private void drawGroundShadowPreview(GraphicsContext g, double width, double height) {
+    VnStagePreset stage = previewRig();
+    if (stage.getOccluders().isEmpty() || stage.getLights().stream().noneMatch(light -> light.groundProjection() != null)) return;
+    double scale = Math.min(1, 900 / Math.max(width, height));
+    int w = Math.max(1, (int) Math.round(width * scale));
+    int h = Math.max(1, (int) Math.round(height * scale));
+    if (groundShadowPreview == null || groundShadowPreview.getWidth() != w || groundShadowPreview.getHeight() != h) {
+      byte[] mask = VnGroundShadows.mask(stage, w, h);
+      if (mask == null) return;
+      int[] ink = new int[mask.length];
+      for (int i = 0; i < mask.length; i++) ink[i] = (mask[i] & 255) << 24;
+      WritableImage shadow = new WritableImage(w, h);
+      shadow.getPixelWriter().setPixels(0, 0, w, h, PixelFormat.getIntArgbInstance(), ink, 0, w);
+      groundShadowPreview = shadow;
+    }
+    g.drawImage(groundShadowPreview, 0, 0, width, height);
+  }
+
+  private void drawShadowDebug(GraphicsContext g, double width, double height, String mode) {
+    VnStagePreset rig = previewRig();
+    VnStagePreset.Light light = selectedLightIndex >= 0 && selectedLightIndex < rig.getLights().size()
+        ? rig.getLights().get(selectedLightIndex) : null;
+    if (light == null || !light.castsShadows()) {
+      light = rig.getLights().stream().filter(item -> rig.isActive(item) && item.castsShadows()).findFirst().orElse(null);
+    }
+    if (light == null) return;
+    double scale = Math.min(1, 512 / Math.max(width, height));
+    int w = Math.max(1, (int) Math.round(width * scale));
+    int h = Math.max(1, (int) Math.round(height * scale));
+    if (shadowDebugCache == null || shadowDebugCache.rig() != rig || shadowDebugCache.light() != light
+        || shadowDebugCache.width() != w || shadowDebugCache.height() != h) {
+      VnStageShadowDebug debug = new VnStageShadowDebug(rig, light, w, h);
+      WritableImage mask = new WritableImage(w, h);
+      mask.getPixelWriter().setPixels(0, 0, w, h, PixelFormat.getIntArgbInstance(), debug.mask(), 0, w);
+      shadowDebugCache = new ShadowDebugCache(rig, light, w, h, mask, debug.sampledRays());
+    }
+    if ("Shadow Coverage".equals(mode) || "Rays + Coverage".equals(mode)) g.drawImage(shadowDebugCache.mask(), 0, 0, width, height);
+    if ("Sample Rays".equals(mode) || "Rays + Coverage".equals(mode)) {
+      g.save();
+      g.setLineWidth(1);
+      for (var ray : shadowDebugCache.rays()) {
+        g.setStroke(ray.blocked() > 0.05 ? Color.web("#ff9db9", 0.72) : Color.web("#ffe292", 0.56));
+        g.strokeLine(ray.sourceX() * width / w, ray.sourceY() * height / h, ray.x() * width / w, ray.y() * height / h);
+      }
+      g.restore();
+    }
+  }
+
   private void addDefaultOccluder() {
     SceneOccluder occluder = new SceneOccluder("Occluder " + (sceneOccluders.size() + 1));
-    occluder.polygon.add(new double[]{0.35, 0.18});
-    occluder.polygon.add(new double[]{0.62, 0.18});
-    occluder.polygon.add(new double[]{0.62, 0.42});
-    occluder.polygon.add(new double[]{0.35, 0.42});
+    setOccluderBounds(occluder, OccluderShape.BOX, new VnStagePreset.Bounds(0.35, 0.18, 0.27, 0.24));
+    addOccluder(occluder);
+  }
+
+  private void addOccluder(SceneOccluder occluder) {
     sceneOccluders.add(occluder);
     refreshOccluderList();
+    invalidateTintCache();
     selectOccluder(sceneOccluders.size() - 1);
     invalidateTintCache();
     persistGlobalState();
@@ -6201,8 +6743,20 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     applyingState = true;
     try {
       occluderNameField.setText(occluder.name == null ? "" : occluder.name);
+      occluderShapeBox.setValue(occluder.shape);
+      occluderBoundsField.setDisable(occluder.bounds == null);
+      occluderBoundsField.setText(occluder.bounds == null ? "" : boundsString(occluder.bounds, 100));
       occluderOpacitySlider.setValue(occluder.opacity);
       occluderSoftnessSlider.setValue(occluder.softness);
+      occluderContactSlider.setValue(Math.max(0, occluder.contactY * 100));
+      occluderHeightSlider.setValue(occluder.heightScale * 100);
+      occluderFootprintSlider.setValue(occluder.footprintDepth * 100);
+      occluderFadeSlider.setValue(occluder.shadowFade * 100);
+      occluderRoundCheck.setSelected(occluder.roundFootprint);
+      occluderFloorContactsField.setText(floorContactsString(occluder.floorContacts, 100));
+      occluderFramingField.setText(framingString(occluder.shadowFraming, 100));
+      occluderExposureSlider.setValue(occluder.surfaceTone == null ? 0 : occluder.surfaceTone.exposure() * 100);
+      occluderContrastSlider.setValue(occluder.surfaceTone == null ? 0 : occluder.surfaceTone.contrast() * 100);
       occluderEnabledCheck.setSelected(occluder.enabled);
     } finally {
       applyingState = false;
@@ -6230,6 +6784,14 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     occluder.name = normalize(occluderNameField.getText());
     occluder.opacity = occluderOpacitySlider.getValue();
     occluder.softness = occluderSoftnessSlider.getValue();
+    occluder.contactY = occluderContactSlider.getValue() <= 0 ? -1 : occluderContactSlider.getValue() / 100;
+    occluder.heightScale = occluderHeightSlider.getValue() / 100;
+    occluder.footprintDepth = occluderFootprintSlider.getValue() / 100;
+    occluder.shadowFade = occluderFadeSlider.getValue() / 100;
+    occluder.roundFootprint = occluderRoundCheck.isSelected();
+    double ev = occluderExposureSlider.getValue() / 100;
+    double contrast = occluderContrastSlider.getValue() / 100;
+    occluder.surfaceTone = ev == 0 && contrast == 0 ? null : new VnStagePreset.SurfaceTone(ev, contrast);
     occluder.enabled = occluderEnabledCheck.isSelected();
     refreshOccluderList();
     invalidateTintCache();
@@ -6282,6 +6844,16 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
       lightSilhouetteSlider.setValue(light.silhouette);
       lightShapeBox.getSelectionModel().select((light.shape == null ? SceneLightShape.RADIAL : light.shape).toString());
       lightLayerBox.getSelectionModel().select((light.layer == null ? SceneLightLayer.CHARACTER : light.layer).toString());
+      lightBlendBox.setValue(light.blend);
+      lightFalloffBox.setValue(light.falloff);
+      lightShadowsCheck.setSelected(light.castsShadows);
+      shadowQualityBox.setValue(light.shadowQuality);
+      beamAngleSlider.setValue(light.beamAngle);
+      areaAspectSlider.setValue(light.areaAspect * 100);
+      groundProjectionCheck.setSelected(light.groundProjection != null);
+      groundProjectionField.setText(light.groundProjection == null ? "" : groundProjectionString(light.groundProjection, 100));
+      floorLightSlider.setValue(light.groundProjection == null ? 0 : light.groundProjection.floorLight() * 100);
+      floorExposureSlider.setValue(light.groundProjection == null ? 0 : light.groundProjection.floorExposure() * 100);
       lightGroupField.setText(light.group == null ? "" : light.group);
       lightMutedCheck.setSelected(light.muted);
       lightLockedCheck.setSelected(light.locked);
@@ -6317,11 +6889,23 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     light.silhouette = lightSilhouetteSlider.getValue();
     SceneLightShape nextShape = SceneLightShape.fromPersisted(lightShapeBox.getValue());
     light.layer = SceneLightLayer.fromPersisted(lightLayerBox.getValue());
-    if (nextShape == SceneLightShape.RADIAL
-        || nextShape == SceneLightShape.CONE
-        || nextShape == SceneLightShape.STRIP
-        || nextShape == SceneLightShape.WINDOW
-        || nextShape == SceneLightShape.BOUNCE) {
+    light.blend = Objects.requireNonNullElse(lightBlendBox.getValue(), LightBlend.PHYSICAL);
+    light.falloff = Objects.requireNonNullElse(lightFalloffBox.getValue(), LightFalloff.CLASSIC);
+    light.castsShadows = lightShadowsCheck.isSelected();
+    light.shadowQuality = Objects.requireNonNullElse(shadowQualityBox.getValue(), ShadowQuality.SOFT);
+    light.beamAngle = beamAngleSlider.getValue();
+    light.areaAspect = areaAspectSlider.getValue() / 100;
+    if (!groundProjectionCheck.isSelected()) light.groundProjection = null;
+    else {
+      try {
+        double[] v = parsePercentVector(groundProjectionField.getText());
+        light.groundProjection = new VnStagePreset.GroundProjection(v[0], v[1], v[2], v[3],
+            floorLightSlider.getValue() / 100, floorExposureSlider.getValue() / 100);
+      } catch (IllegalArgumentException ignored) {
+        status("Enter floor X, floor Y, horizon Y and shadow strength as four percentages.");
+      }
+    }
+    if (nextShape != SceneLightShape.POLYGON) {
       light.shape = nextShape;
       if (nextShape != SceneLightShape.POLYGON) {
         light.polygon = null;
@@ -6373,78 +6957,52 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     redrawPreview();
   }
 
+  private void toggleLightGroup(boolean solo) {
+    if (selectedLightIndex < 0 || selectedLightIndex >= sceneLights.size()) return;
+    String group = sceneLights.get(selectedLightIndex).group;
+    if (group == null || group.isBlank()) return;
+    List<SceneLight> members = sceneLights.stream().filter(light -> group.equals(light.group)).toList();
+    boolean turnOn = members.stream().anyMatch(light -> solo ? !light.solo : !light.muted);
+    for (SceneLight light : members) {
+      if (solo) light.solo = turnOn;
+      else light.muted = turnOn;
+    }
+    invalidateTintCache();
+    refreshLightList();
+    selectLight(selectedLightIndex);
+    persistGlobalState();
+    status((solo ? (turnOn ? "Soloed " : "Restored ") : (turnOn ? "Muted " : "Unmuted ")) + group + ".");
+  }
+
   private void updateLightRigSummary() {
     if (lightRigSummaryLabel == null) return;
     if (sceneLights.isEmpty()) {
       lightRigSummaryLabel.setText("No lights staged. Add a key, fill, or backlight to build the rig.");
       return;
     }
-    int background = 0;
-    int character = 0;
-    int foreground = 0;
-    int muted = 0;
-    int locked = 0;
-    int solo = 0;
-    for (SceneLight light : sceneLights) {
-      SceneLightLayer layer = light.layer == null ? SceneLightLayer.CHARACTER : light.layer;
-      switch (layer) {
-        case BACKGROUND -> background++;
-        case FOREGROUND -> foreground++;
-        case CHARACTER -> character++;
-      }
-      if (light.muted) muted++;
-      if (light.locked) locked++;
-      if (light.solo) solo++;
-    }
-    String base = "Rig: " + sceneLights.size() + " lights · "
-        + character + " subject · "
-        + background + " back · "
-        + foreground + " front"
-        + " · " + muted + " muted"
-        + " · " + locked + " locked"
-        + (solo > 0 ? " · soloed" : "");
-    if (selectedLightIndex < 0 || selectedLightIndex >= sceneLights.size()) {
-      lightRigSummaryLabel.setText(base);
-      return;
-    }
-    SceneLight light = sceneLights.get(selectedLightIndex);
-    lightRigSummaryLabel.setText(base + " · selected "
-        + fallbackLightName(light)
-        + " ("
-        + describeLightMeta(light)
-        + ")");
+    int count = sceneLights.size();
+    long active = sceneLights.stream().filter(light -> !light.muted && light.intensity > 0).count();
+    lightRigSummaryLabel.setText(count + (count == 1 ? " light" : " lights") + " · " + active + " enabled");
   }
 
   private static String describeLightMeta(SceneLight light) {
-    if (light == null) return "";
-    String shape = light.isPolygon() ? "polygon" : (light.shape == null ? SceneLightShape.RADIAL : light.shape).persistedValue();
-    String layer = (light.layer == null ? SceneLightLayer.CHARACTER : light.layer).persistedValue();
-    return layer
-        + " · "
-        + shape
-        + " · "
-        + Math.round(light.intensity)
-        + "% key"
-        + " · "
-        + Math.round(light.radius * 100.0)
-        + "% span"
-        + " · "
-        + Math.round(light.silhouette)
-        + "% rim"
-        + (light.muted ? " · muted" : "")
-        + (light.locked ? " · locked" : "")
-        + (light.solo ? " · solo" : "")
-        + ((light.group == null || light.group.isBlank()) ? "" : " · " + light.group)
-        + " · vector";
+    return light.shape + " · " + Math.round(light.intensity) + "%"
+        + (light.solo ? " · Solo" : "") + (light.locked ? " · Locked" : "")
+        + (light.group == null || light.group.isBlank() ? "" : " · " + light.group);
   }
 
   private void invalidateTintCache() {
+    previewRig = null;
+    previewOverlays.clear();
+    groundShadowPreview = null;
     tintedImageTag = null;
     tintedImageKey = null;
     tintedImage = null;
   }
 
   private void invalidateBackgroundTintCache() {
+    previewRig = null;
+    previewOverlays.clear();
     cancelBackgroundTintTask();
     tintedBackgroundTag = null;
     tintedBackgroundKey = null;
@@ -6654,7 +7212,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
           }
         }
       }
-      case RADIAL -> {
+      case AREA, RADIAL -> {
         drawBeam(g, sourceX, sourceY, targetX, targetY, beamStart, radius * 0.54, color, selected);
         drawFootprintEllipse(g, targetX, targetY, angleDeg, radius * 1.22, radius * 1.00, color, selected);
       }
@@ -6667,47 +7225,40 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     g.setLineDashes((double[]) null);
   }
 
-  private void drawSceneLightEffects(GraphicsContext g, double canvasWidth, double canvasHeight, SceneLightLayer layer) {
-    if (sceneLights.isEmpty() || layer == null) return;
-    double minDimension = Math.max(1.0, Math.min(canvasWidth, canvasHeight));
-    for (SceneLight light : sceneLights) {
-      SceneLightLayer lightLayer = light.layer == null ? SceneLightLayer.CHARACTER : light.layer;
-      if (lightLayer != layer) continue;
-      Color color = light.color == null ? Color.web("#ffd7a8") : light.color;
-      double alpha = clamp((light.intensity / 100.0) * (layer == SceneLightLayer.FOREGROUND ? 0.17 : 0.13), 0.02, 0.24);
-      if (light.isPolygon()) {
-        double[] xs = new double[light.polygon.size()];
-        double[] ys = new double[light.polygon.size()];
-        for (int i = 0; i < light.polygon.size(); i++) {
-          xs[i] = light.polygon.get(i)[0] * canvasWidth;
-          ys[i] = light.polygon.get(i)[1] * canvasHeight;
-        }
-        g.setFill(Color.color(color.getRed(), color.getGreen(), color.getBlue(), alpha));
-        g.fillPolygon(xs, ys, xs.length);
-        g.setStroke(Color.color(color.getRed(), color.getGreen(), color.getBlue(), alpha * 0.85));
-        g.setLineWidth(Math.max(1.5, light.radius * minDimension * 0.05));
-        g.strokePolygon(xs, ys, xs.length);
-        continue;
-      }
-      double cx = light.sceneX * canvasWidth;
-      double cy = light.sceneY * canvasHeight;
-      double radius = Math.max(10.0, light.radius * minDimension);
-      double innerStop = clamp(0.18 + (light.softness / 100.0) * 0.42, 0.08, 0.82);
-      RadialGradient gradient = new RadialGradient(
-          0,
-          0,
-          cx,
-          cy,
-          radius,
-          false,
-          CycleMethod.NO_CYCLE,
-          new Stop(0.0, Color.color(color.getRed(), color.getGreen(), color.getBlue(), alpha)),
-          new Stop(innerStop, Color.color(color.getRed(), color.getGreen(), color.getBlue(), alpha * 0.52)),
-          new Stop(1.0, Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.0))
-      );
-      g.setFill(gradient);
-      g.fillOval(cx - radius, cy - radius, radius * 2.0, radius * 2.0);
+  private VnStagePreset previewRig() {
+    if (previewRig == null) {
+      List<VnStagePreset.Light> lights = sceneLights.stream().map(light -> new VnStagePreset.Light(
+          light.name, VnStagePreset.LightType.from(light.shape.persistedValue()),
+          VnStagePreset.LightLayer.from(light.layer.persistedValue()), light.sceneX, light.sceneY,
+          light.sourceX, light.sourceY, colorToHex(light.color), light.intensity / 100, light.radius,
+          light.softness / 100, light.silhouette / 100, light.muted, light.locked, light.solo, light.group,
+          presetPoints(light.polygon), light.blend, light.falloff, light.castsShadows, light.shadowQuality, light.beamAngle, light.areaAspect, light.groundProjection)).toList();
+      List<VnStagePreset.Occluder> shadows = sceneOccluders.stream().map(occluder -> new VnStagePreset.Occluder(
+          occluder.name, occluder.opacity / 100, occluder.softness / 100, occluder.enabled,
+          presetPoints(occluder.polygon), occluder.shape, occluder.bounds, occluder.contactY, occluder.heightScale, occluder.footprintDepth, occluder.roundFootprint, occluder.surfaceTone, occluder.floorContacts, occluder.shadowFade, occluder.shadowFraming)).toList();
+      var grade = new VnStagePreset.BackgroundGrade(colorToHex(bgTintColorPicker.getValue()),
+          bgTintStrengthSlider.getValue() / 100, bgSaturationSlider.getValue() / 100,
+          bgContrastSlider.getValue() / 100, colorToHex(bgOverlayColorPicker.getValue()),
+          bgOverlayOpacitySlider.getValue() / 100, canonicalBlendMode(bgTintBlendModeBox.getValue(), "Normal"),
+          canonicalBlendMode(bgOverlayBlendModeBox.getValue(), "Overlay"), bgExposureSlider.getValue() / 100);
+      previewRig = new VnStagePreset("", "", "", "", grade, lights, shadows, List.of());
     }
+    return previewRig;
+  }
+
+  private static List<VnStagePreset.Point> presetPoints(List<double[]> points) {
+    return points == null ? List.of() : points.stream().map(point -> new VnStagePreset.Point(point[0], point[1])).toList();
+  }
+
+  private void drawSceneLightEffects(GraphicsContext g, double canvasWidth, double canvasHeight, SceneLightLayer layer) {
+    if (sceneLights.isEmpty()) return;
+    if (previewOverlayWidth != canvasWidth || previewOverlayHeight != canvasHeight) {
+      previewOverlayWidth = canvasWidth;
+      previewOverlayHeight = canvasHeight;
+      previewOverlays.clear();
+    }
+    previewOverlays.computeIfAbsent(layer, key -> VnStageLightOverlay.prepare(previewRig(),
+        VnStagePreset.LightLayer.from(key.persistedValue()), canvasWidth, canvasHeight)).draw(g);
   }
 
   private void drawSceneLightOverlays(GraphicsContext g, double canvasWidth, double canvasHeight) {
@@ -6888,6 +7439,93 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
             + " -fx-border-width: 1;");
   }
 
+  private void writeMaterialToPrefix(String prefix) {
+    persisted.setProperty(prefix + "normalMap", normalMapField.getText());
+    persisted.setProperty(prefix + "normalStrength", formatDouble(normalStrengthSlider.getValue()));
+    persisted.setProperty(prefix + "specular", formatDouble(specularSlider.getValue()));
+    persisted.setProperty(prefix + "gloss", formatDouble(glossSlider.getValue()));
+  }
+
+  private void loadMaterialFromPrefix(String prefix) {
+    boolean previous = applyingState;
+    applyingState = true;
+    try {
+      normalMapField.setText(persisted.getProperty(prefix + "normalMap", ""));
+      normalStrengthSlider.setValue(parseDouble(persisted.getProperty(prefix + "normalStrength"), 70));
+      specularSlider.setValue(parseDouble(persisted.getProperty(prefix + "specular"), 20));
+      glossSlider.setValue(parseDouble(persisted.getProperty(prefix + "gloss"), 32));
+    } finally {
+      applyingState = previous;
+    }
+    invalidateTintCache();
+  }
+
+  private void writeSceneOccludersToPrefix(String prefix) {
+    clearPrefix(prefix);
+    persisted.setProperty(prefix + "count", Integer.toString(sceneOccluders.size()));
+    for (int i = 0; i < sceneOccluders.size(); i++) {
+      SceneOccluder occluder = sceneOccluders.get(i);
+      String key = prefix + i + ".";
+      persisted.setProperty(key + "name", occluder.name);
+      persisted.setProperty(key + "opacity", formatNormalized(occluder.opacity / 100));
+      persisted.setProperty(key + "softness", formatNormalized(occluder.softness / 100));
+      persisted.setProperty(key + "enabled", Boolean.toString(occluder.enabled));
+      persisted.setProperty(key + "shape", occluder.shape.name());
+      persisted.setProperty(key + "contactY", formatNormalized(occluder.contactY));
+      persisted.setProperty(key + "heightScale", formatNormalized(occluder.heightScale));
+      persisted.setProperty(key + "footprintDepth", formatNormalized(occluder.footprintDepth));
+      persisted.setProperty(key + "roundFootprint", Boolean.toString(occluder.roundFootprint));
+      persisted.setProperty(key + "shadowFade", formatNormalized(occluder.shadowFade));
+      if (occluder.shadowFraming != null) persisted.setProperty(key + "shadowFraming", framingString(occluder.shadowFraming, 1));
+      if (!occluder.floorContacts.isEmpty()) persisted.setProperty(key + "floorContacts", floorContactsString(occluder.floorContacts, 1));
+      if (occluder.surfaceTone != null) {
+        persisted.setProperty(key + "surfaceExposure", formatNormalized(occluder.surfaceTone.exposure()));
+        persisted.setProperty(key + "surfaceContrast", formatNormalized(occluder.surfaceTone.contrast()));
+      }
+      if (occluder.bounds != null) persisted.setProperty(key + "bounds", boundsString(occluder.bounds, 1));
+      persisted.setProperty(key + "polygon", occluder.polygon.stream()
+          .map(point -> formatNormalized(point[0]) + "," + formatNormalized(point[1]))
+          .collect(java.util.stream.Collectors.joining(";")));
+    }
+  }
+
+  private void loadSceneOccludersFromPrefix(String prefix) {
+    Properties portable = new Properties();
+    portable.setProperty("occluders", persisted.getProperty(prefix + "count", "0"));
+    for (String key : persisted.stringPropertyNames()) {
+      if (key.startsWith(prefix)) portable.setProperty("occluder." + key.substring(prefix.length()), persisted.getProperty(key));
+    }
+    replaceSceneOccluders(VnStagePresetLoader.loadOccluders(portable));
+    refreshOccluderList();
+    selectOccluder(sceneOccluders.isEmpty() ? -1 : 0);
+  }
+
+  private void replaceSceneOccluders(List<VnStagePreset.Occluder> saved) {
+    sceneOccluders.clear();
+    selectedOccluderIndex = -1;
+    for (VnStagePreset.Occluder stored : saved) {
+      SceneOccluder occluder = new SceneOccluder(stored.name());
+      occluder.enabled = stored.enabled();
+      occluder.opacity = stored.opacity() * 100;
+      occluder.softness = stored.softness() * 100;
+      occluder.shape = stored.shape();
+      occluder.bounds = stored.bounds();
+      occluder.contactY = stored.contactY();
+      occluder.heightScale = stored.heightScale();
+      occluder.footprintDepth = stored.footprintDepth();
+      occluder.roundFootprint = stored.roundFootprint();
+      occluder.surfaceTone = stored.surfaceTone();
+      occluder.floorContacts = stored.floorContacts();
+      occluder.shadowFade = stored.shadowFade();
+      occluder.shadowFraming = stored.shadowFraming();
+      for (VnStagePreset.Point point : stored.polygon()) {
+        occluder.polygon.add(new double[]{point.x(), point.y()});
+      }
+      sceneOccluders.add(occluder);
+    }
+    invalidateTintCache();
+  }
+
   private void writeSceneLightsToPrefix(String prefix) {
     clearPrefix(prefix);
     persisted.setProperty(prefix + "count", Integer.toString(sceneLights.size()));
@@ -6906,6 +7544,21 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
       persisted.setProperty(lightPrefix + "silhouette", formatDouble(light.silhouette));
       persisted.setProperty(lightPrefix + "shape", (light.shape == null ? SceneLightShape.RADIAL : light.shape).persistedValue());
       persisted.setProperty(lightPrefix + "layer", (light.layer == null ? SceneLightLayer.CHARACTER : light.layer).persistedValue());
+      persisted.setProperty(lightPrefix + "blend", light.blend.persisted());
+      persisted.setProperty(lightPrefix + "falloff", light.falloff.persisted());
+      persisted.setProperty(lightPrefix + "castsShadows", Boolean.toString(light.castsShadows));
+      persisted.setProperty(lightPrefix + "shadowQuality", light.shadowQuality.persisted());
+      persisted.setProperty(lightPrefix + "beamAngle", formatNormalized(light.beamAngle));
+      persisted.setProperty(lightPrefix + "areaAspect", formatNormalized(light.areaAspect));
+      if (light.groundProjection != null) {
+        persisted.setProperty(lightPrefix + "ground", groundProjectionString(light.groundProjection, 1));
+        persisted.setProperty(lightPrefix + "floorLight", formatNormalized(light.groundProjection.floorLight()));
+        persisted.setProperty(lightPrefix + "floorExposure", formatNormalized(light.groundProjection.floorExposure()));
+      }
+      persisted.setProperty(lightPrefix + "muted", Boolean.toString(light.muted));
+      persisted.setProperty(lightPrefix + "locked", Boolean.toString(light.locked));
+      persisted.setProperty(lightPrefix + "solo", Boolean.toString(light.solo));
+      persisted.setProperty(lightPrefix + "group", Objects.toString(light.group, ""));
       if (light.isPolygon()) {
         StringBuilder poly = new StringBuilder();
         for (int p = 0; p < light.polygon.size(); p++) {
@@ -6948,6 +7601,17 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     light.silhouette = clamp(parseDouble(props.getProperty(prefix + "silhouette"), DEFAULT_LIGHT_SILHOUETTE), 0.0, 100.0);
     light.shape = SceneLightShape.fromPersisted(props.getProperty(prefix + "shape"));
     light.layer = SceneLightLayer.fromPersisted(props.getProperty(prefix + "layer"));
+    light.blend = LightBlend.from(props.getProperty(prefix + "blend"));
+    light.falloff = LightFalloff.from(props.getProperty(prefix + "falloff"));
+    light.castsShadows = parseBoolean(props.getProperty(prefix + "castsShadows"), true);
+    light.shadowQuality = ShadowQuality.from(props.getProperty(prefix + "shadowQuality"));
+    light.beamAngle = clamp(parseDouble(props.getProperty(prefix + "beamAngle"), 0), 0, 175);
+    light.areaAspect = clamp(parseDouble(props.getProperty(prefix + "areaAspect"), 0), 0, 1);
+    light.groundProjection = VnStagePresetLoader.loadGroundProjection(props, prefix);
+    light.muted = parseBoolean(props.getProperty(prefix + "muted"), false);
+    light.locked = parseBoolean(props.getProperty(prefix + "locked"), false);
+    light.solo = parseBoolean(props.getProperty(prefix + "solo"), false);
+    light.group = props.getProperty(prefix + "group", "");
     String polygonRaw = props.getProperty(prefix + "polygon", "");
     if (!polygonRaw.isBlank()) {
       List<double[]> pts = new ArrayList<>();
@@ -6995,6 +7659,9 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
       persisted.setProperty(zonePrefix + "rotation", formatDouble(z.rotation));
       persisted.setProperty(zonePrefix + "blendMode", canonicalBlendMode(z.blendMode, "Normal"));
       persisted.setProperty(zonePrefix + "overlayVisible", Boolean.toString(z.overlayVisible));
+      persisted.setProperty(zonePrefix + "surface", z.surfaceClass.persistedValue());
+      persisted.setProperty(zonePrefix + "depthBias", formatDouble(z.depthBias));
+      persisted.setProperty(zonePrefix + "responseScale", formatDouble(z.responseScale));
       if (z.isPolygon()) {
         StringBuilder polyStr = new StringBuilder();
         for (int p = 0; p < z.polygon.size(); p++) {
@@ -7088,6 +7755,9 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     z.rotation = parseDouble(props.getProperty(prefix + "rotation"), 0);
     String bm = props.getProperty(prefix + "blendMode", "Normal");
     z.blendMode = canonicalBlendMode(bm, "Normal");
+    z.surfaceClass = SubjectSurfaceClass.fromPersisted(props.getProperty(prefix + "surface"));
+    z.depthBias = parseDouble(props.getProperty(prefix + "depthBias"), 0);
+    z.responseScale = parseDouble(props.getProperty(prefix + "responseScale"), 100);
     z.overlayVisible = parseBoolean(props.getProperty(prefix + "overlayVisible"), true);
     String polyRaw = props.getProperty(prefix + "polygon", "");
     if (polyRaw != null && !polyRaw.isBlank()) {
@@ -7250,142 +7920,105 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
   }
 
   private void importSetupFromFile() {
-    FileChooser fc = new FileChooser();
-    fc.setTitle("Import Tint Setup");
-    fc.getExtensionFilters().addAll(
-        new FileChooser.ExtensionFilter("Tint Setup", "*.tintsetup"),
-        new FileChooser.ExtensionFilter("All Files", "*.*"));
+    FileChooser chooser = new FileChooser();
+    chooser.setTitle("Open Lighting Setup or Stage Preset");
+    chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Lighting Files", "*.tintsetup", "*.stagepreset"));
     File initial = resolveExistingExportDirectory();
-    if (initial != null && initial.isDirectory()) fc.setInitialDirectory(initial);
-    File file = fc.showOpenDialog(getScene() != null ? getScene().getWindow() : null);
+    if (initial != null && initial.isDirectory()) chooser.setInitialDirectory(initial);
+    File file = chooser.showOpenDialog(getScene() != null ? getScene().getWindow() : null);
     if (file == null) return;
     try {
-      Properties props = new Properties();
-      try (InputStream in = Files.newInputStream(file.toPath())) {
-        props.load(in);
-      }
-      applyingState = true;
-      try {
-        // D: Import uses normalized values (0.0–1.0) — denormalize to slider ranges.
-        String characterTag = props.getProperty("character", "");
-        String backgroundTag = props.getProperty("background", "");
-        if (!characterTag.isBlank()) {
-          setComboTagValue(characterTagBox, characterTag);
-        }
-        if (!backgroundTag.isBlank()) {
-          setComboTagValue(backgroundTagBox, backgroundTag);
-        }
-
-        tintColorPicker.setValue(parseColor(props.getProperty("color"), tintColorPicker.getValue()));
-        // Values in export are normalized 0.0–1.0; convert to slider range.
-        double str = parseDouble(props.getProperty("strength"), -1);
-        if (str >= 0 && str <= 1.0) tintStrengthSlider.setValue(str * 100.0);
-        double sat = parseDouble(props.getProperty("saturation"), -999);
-        if (sat >= -1.0 && sat <= 1.0 && sat != -999) saturationSlider.setValue(sat * 100.0);
-        double con = parseDouble(props.getProperty("contrast"), -999);
-        if (con >= -1.0 && con <= 1.0 && con != -999) contrastSlider.setValue(con * 100.0);
-        bgTintColorPicker.setValue(parseColor(
-            props.getProperty("bgTintColor", props.getProperty("bg.color")),
-            bgTintColorPicker.getValue()));
-        double bgStr = parseDouble(props.getProperty("bgTintStrength", props.getProperty("bg.strength")), -1);
-        if (bgStr >= 0.0 && bgStr <= 1.0) bgTintStrengthSlider.setValue(bgStr * 100.0);
-        else if (bgStr > 1.0 && bgStr <= 100.0) bgTintStrengthSlider.setValue(bgStr);
-        double bgSat = parseDouble(props.getProperty("bgSaturation", props.getProperty("bg.saturation")), Double.NaN);
-        if (!Double.isNaN(bgSat)) {
-          if (bgSat >= -1.0 && bgSat <= 1.0) bgSaturationSlider.setValue(bgSat * 100.0);
-          else if (bgSat >= -100.0 && bgSat <= 100.0) bgSaturationSlider.setValue(bgSat);
-        }
-        double bgCon = parseDouble(props.getProperty("bgContrast", props.getProperty("bg.contrast")), Double.NaN);
-        if (!Double.isNaN(bgCon)) {
-          if (bgCon >= -1.0 && bgCon <= 1.0) bgContrastSlider.setValue(bgCon * 100.0);
-          else if (bgCon >= -100.0 && bgCon <= 100.0) bgContrastSlider.setValue(bgCon);
-        }
-        bgTintBlendModeBox.getSelectionModel().select(canonicalBlendMode(
-            props.getProperty("bgTintBlend", props.getProperty("bg.tintBlend")),
-            bgTintBlendModeBox.getValue()));
-        bgOverlayColorPicker.setValue(parseColor(
-            props.getProperty("bgOverlayColor", props.getProperty("bg.overlayColor")),
-            bgOverlayColorPicker.getValue()));
-        double bgOverlay = parseDouble(props.getProperty("bgOverlayOpacity", props.getProperty("bg.overlayOpacity")), -1);
-        if (bgOverlay >= 0.0 && bgOverlay <= 1.0) bgOverlayOpacitySlider.setValue(bgOverlay * 100.0);
-        else if (bgOverlay > 1.0 && bgOverlay <= 100.0) bgOverlayOpacitySlider.setValue(bgOverlay);
-        bgOverlayBlendModeBox.getSelectionModel().select(canonicalBlendMode(
-            props.getProperty("bgOverlayBlend", props.getProperty("bg.overlayBlend")),
-            bgOverlayBlendModeBox.getValue()));
-        double z = parseDouble(props.getProperty("zoom"), -1);
-        if (z > 0) zoom = clamp(z, 0.1, 8.0);
-        double ox = parseDouble(props.getProperty("offsetX"), Double.NaN);
-        if (!Double.isNaN(ox)) offsetX = ox;
-        double oy = parseDouble(props.getProperty("offsetY"), Double.NaN);
-        if (!Double.isNaN(oy)) offsetY = oy;
-        int lightCount = (int) parseDouble(props.getProperty("lights"), 0);
-        if (lightCount > 0) {
-          sceneLights.clear();
-          selectedLightIndex = -1;
-          int loaded = 0;
-          for (int i = 0; i < lightCount; i++) {
-            try {
-              SceneLight light = loadLightFromNormalized(props, "light." + i + ".", i);
-              sceneLights.add(light);
-              loaded++;
-            } catch (Exception ignored) {
-            // reason: non-critical operation; exception swallowed to prevent crash propagation
-            }
-          }
-          refreshLightList();
-          if (!sceneLights.isEmpty()) selectLight(0);
-          else lightControlsSection.setDisable(true);
-          if (loaded < lightCount) {
-            status("Imported " + loaded + "/" + lightCount + " scene lights from " + file.getName());
-          }
-        } else {
-          sceneLights.clear();
-          selectedLightIndex = -1;
-          refreshLightList();
-          lightControlsSection.setDisable(true);
-        }
-
-        // Import zones.
-        int zoneCount = (int) parseDouble(props.getProperty("zones"), 0);
-        if (zoneCount > 0) {
-          tintZones.clear();
-          selectedZoneIndex = -1;
-          int loaded = 0, skipped = 0;
-          for (int i = 0; i < zoneCount; i++) {
-            try {
-              TintZone tz = loadZoneFromNormalized(props, "zone." + i + ".", i);
-              tintZones.add(tz);
-              loaded++;
-            } catch (Exception ignored) {
-              // reason: malformed zone in clip data; increment skip counter and continue
-              skipped++;
-            }
-          }
-          refreshZoneList();
-          if (!tintZones.isEmpty()) selectZone(0);
-          else zoneControlsSection.setDisable(true);
-          if (skipped > 0) {
-            status("Imported " + loaded + "/" + zoneCount + " zones (" + skipped + " skipped) from " + file.getName());
-            return;
-          }
-        }
-      } finally {
-        applyingState = false;
-      }
-      updateBackgroundSwatches();
-      invalidateBackgroundTintCache();
-      persistBackgroundTint(selectedBackgroundTag());
-      persistGlobalState();
-      activeZoneProfileTag = normalize(selectedCharacterTag());
-      persistZones();
-      invalidateTintCache();
-      invalidateBackgroundTintCache();
-      redrawPreview();
+      applyPortableSetup(readSetup(file.toPath()));
       setConfiguredExportDirectory(file.getParentFile());
-      status("Imported setup from " + file.getName() + " (" + sceneLights.size() + " lights, " + tintZones.size() + " zones)");
-    } catch (Exception e) {
-      status("Import failed: " + e.getMessage());
+      sceneInfo.setText(file.getName());
+      sceneInfo.setVisible(true);
+      status("Loaded " + file.getName() + ".");
+    } catch (IOException | IllegalArgumentException ex) {
+      status("Could not open lighting setup: " + ex.getMessage());
     }
+  }
+
+  private static Properties readSetup(Path file) throws IOException {
+    Properties props = new Properties();
+    try (var reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+      props.load(reader);
+    }
+    return props;
+  }
+
+  private void applyPortableSetup(Properties props) {
+    List<SceneLight> lights = new ArrayList<>();
+    for (int i = 0, count = entryCount(props, "lights"); i < count; i++) {
+      lights.add(loadLightFromNormalized(props, "light." + i + ".", i));
+    }
+    List<TintZone> zones = new ArrayList<>();
+    for (int i = 0, count = entryCount(props, "zones"); i < count; i++) {
+      zones.add(loadZoneFromNormalized(props, "zone." + i + ".", i));
+    }
+    entryCount(props, "occluders");
+    List<VnStagePreset.Occluder> occluders = VnStagePresetLoader.loadOccluders(props);
+    applyingState = true;
+    try {
+      setComboTagValue(characterTagBox, props.getProperty("character", ""));
+      setComboTagValue(backgroundTagBox, props.getProperty("background", ""));
+      var material = VnStagePresetLoader.loadMaterial(props);
+      normalMapField.setText(material.normalMap());
+      normalStrengthSlider.setValue(material.normalStrength() * 100);
+      specularSlider.setValue(material.specular() * 100);
+      glossSlider.setValue(material.gloss());
+      tintColorPicker.setValue(parseColor(props.getProperty("color"), Color.WHITE));
+      tintStrengthSlider.setValue(setupPercentage(props.getProperty("strength"), 0));
+      saturationSlider.setValue(setupPercentage(props.getProperty("saturation"), 0));
+      contrastSlider.setValue(setupPercentage(props.getProperty("contrast"), 0));
+      bgTintColorPicker.setValue(parseColor(props.getProperty("bgTintColor", props.getProperty("bg.color")), Color.WHITE));
+      bgTintStrengthSlider.setValue(setupPercentage(props.getProperty("bgTintStrength", props.getProperty("bg.strength")), 0));
+      bgSaturationSlider.setValue(setupPercentage(props.getProperty("bgSaturation", props.getProperty("bg.saturation")), 0));
+      bgContrastSlider.setValue(setupPercentage(props.getProperty("bgContrast", props.getProperty("bg.contrast")), 0));
+      bgExposureSlider.setValue(parseDouble(props.getProperty("bgExposure"), 0) * 100);
+      bgTintBlendModeBox.setValue(canonicalBlendMode(props.getProperty("bgTintBlend", props.getProperty("bg.tintBlend")), "Normal"));
+      bgOverlayColorPicker.setValue(parseColor(props.getProperty("bgOverlayColor", props.getProperty("bg.overlayColor")), Color.BLACK));
+      bgOverlayOpacitySlider.setValue(setupPercentage(props.getProperty("bgOverlayOpacity", props.getProperty("bg.overlayOpacity")), 0));
+      bgOverlayBlendModeBox.setValue(canonicalBlendMode(props.getProperty("bgOverlayBlend", props.getProperty("bg.overlayBlend")), "Overlay"));
+      zoom = clamp(parseDouble(props.getProperty("zoom"), 1), 0.1, 8.0);
+      offsetX = parseDouble(props.getProperty("offsetX"), 0);
+      offsetY = parseDouble(props.getProperty("offsetY"), 0);
+
+      sceneLights.clear();
+      sceneLights.addAll(lights);
+      tintZones.clear();
+      tintZones.addAll(zones);
+      replaceSceneOccluders(occluders);
+      selectedLightIndex = selectedZoneIndex = selectedOccluderIndex = -1;
+    } finally {
+      applyingState = false;
+    }
+    refreshLightList();
+    refreshZoneList();
+    refreshOccluderList();
+    selectLight(sceneLights.isEmpty() ? -1 : 0);
+    selectZone(tintZones.isEmpty() ? -1 : 0);
+    selectOccluder(sceneOccluders.isEmpty() ? -1 : 0);
+    refreshSceneEntitySelector(false);
+    updateTintColorSwatch(tintColorPicker.getValue());
+    updateBackgroundSwatches();
+    invalidateTintCache();
+    invalidateBackgroundTintCache();
+    persistBackgroundTint(selectedBackgroundTag());
+    activeZoneProfileTag = normalize(selectedCharacterTag());
+    persistZones();
+    persistGlobalState();
+    redrawPreview();
+  }
+
+  private static int entryCount(Properties props, String key) {
+    int count = Integer.parseInt(props.getProperty(key, "0").strip());
+    if (count < 0 || count > props.size()) throw new IllegalArgumentException("Invalid " + key + " count");
+    return count;
+  }
+
+  private static double setupPercentage(String raw, double fallback) {
+    double value = parseDouble(raw, fallback);
+    return Math.abs(value) <= 1 ? value * 100 : value;
   }
 
   /** Parse zone from normalized export format (strength/sat/contrast/feather as 0.0–1.0). */
@@ -7412,6 +8045,9 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     z.rotation = parseDouble(props.getProperty(prefix + "rotation"), 0);
     String bm = props.getProperty(prefix + "blend", "Normal");
     z.blendMode = canonicalBlendMode(bm, "Normal");
+    z.surfaceClass = SubjectSurfaceClass.fromPersisted(props.getProperty(prefix + "surface"));
+    z.depthBias = setupPercentage(props.getProperty(prefix + "depthBias"), 0);
+    z.responseScale = parseDouble(props.getProperty(prefix + "responseScale"), 1.0) * 100.0;
     z.overlayVisible = parseBoolean(
         props.getProperty(prefix + "overlayVisible", props.getProperty(prefix + "visible")),
         true
@@ -7469,6 +8105,17 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     light.silhouette = clamp(silhouette, 0.0, 100.0);
     light.shape = SceneLightShape.fromPersisted(props.getProperty(prefix + "shape"));
     light.layer = SceneLightLayer.fromPersisted(props.getProperty(prefix + "layer"));
+    light.blend = LightBlend.from(props.getProperty(prefix + "blend"));
+    light.falloff = LightFalloff.from(props.getProperty(prefix + "falloff"));
+    light.castsShadows = parseBoolean(props.getProperty(prefix + "castsShadows"), true);
+    light.shadowQuality = ShadowQuality.from(props.getProperty(prefix + "shadowQuality"));
+    light.beamAngle = clamp(parseDouble(props.getProperty(prefix + "beamAngle"), 0), 0, 175);
+    light.areaAspect = clamp(parseDouble(props.getProperty(prefix + "areaAspect"), 0), 0, 1);
+    light.groundProjection = VnStagePresetLoader.loadGroundProjection(props, prefix);
+    light.muted = parseBoolean(props.getProperty(prefix + "muted"), false);
+    light.locked = parseBoolean(props.getProperty(prefix + "locked"), false);
+    light.solo = parseBoolean(props.getProperty(prefix + "solo"), false);
+    light.group = props.getProperty(prefix + "group", "");
     String polygonRaw = props.getProperty(prefix + "polygon", "");
     if (!polygonRaw.isBlank()) {
       List<double[]> pts = new ArrayList<>();
@@ -7500,6 +8147,10 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     String fileName = targetFile != null ? targetFile.getName() : buildStagePresetFileName();
     String usagePath = targetFile != null ? describePathRelativeToProject(targetFile) : buildStagePresetUsagePath(fileName);
     if ("Project root".equals(usagePath)) usagePath = fileName;
+    return buildStagePresetText(id, fileName, usagePath, false);
+  }
+
+  private String buildStagePresetText(String id, String fileName, String usagePath, boolean sceneBound) {
     String usagePathToken = quoteVnsTokenIfNeeded(usagePath);
     StringBuilder out = new StringBuilder();
     out.append("# JVN Stage Preset\n");
@@ -7507,7 +8158,8 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     out.append("# VNS handoff:\n");
     out.append("# @stagepreset ").append(id).append(' ').append(usagePathToken).append('\n');
     out.append("# [stage ").append(id).append("]\n");
-    out.append("jvn.stagePreset.schema=2\n");
+    out.append("jvn.stagePreset.schema=3\n");
+    if (sceneBound) out.append("jvn.stagePreset.useSceneBackground=true\n");
     out.append("jvn.stagePreset.id=").append(id).append('\n');
     out.append("jvn.stagePreset.file=").append(fileName == null ? "" : fileName).append('\n');
     out.append("jvn.stagePreset.vnsDeclaration=@stagepreset ").append(id).append(' ').append(usagePathToken).append('\n');
@@ -7541,10 +8193,22 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
     out.append("bgTintStrength=").append(formatNormalized(bgTintStrengthSlider.getValue() / 100.0)).append('\n');
     out.append("bgSaturation=").append(formatNormalized(bgSaturationSlider.getValue() / 100.0)).append('\n');
     out.append("bgContrast=").append(formatNormalized(bgContrastSlider.getValue() / 100.0)).append('\n');
+    out.append("bgExposure=").append(formatNormalized(bgExposureSlider.getValue() / 100)).append('\n');
     out.append("bgTintBlend=").append(canonicalBlendMode(bgTintBlendModeBox.getValue(), "Normal")).append('\n');
     out.append("bgOverlayColor=").append(colorToHex(bgOverlayColorPicker.getValue())).append('\n');
     out.append("bgOverlayOpacity=").append(formatNormalized(bgOverlayOpacitySlider.getValue() / 100.0)).append('\n');
     out.append("bgOverlayBlend=").append(canonicalBlendMode(bgOverlayBlendModeBox.getValue(), "Overlay")).append('\n');
+    out.append("material.normalMap=").append(escapeSetupValue(normalMapField.getText())).append('\n');
+    out.append("material.normalStrength=").append(formatNormalized(normalStrengthSlider.getValue() / 100)).append('\n');
+    out.append("material.specular=").append(formatNormalized(specularSlider.getValue() / 100)).append('\n');
+    out.append("material.gloss=").append(formatNormalized(glossSlider.getValue())).append('\n');
+    PresetTagEntry subject = sceneSubjectLayers.getOrDefault(selectedCharacterTag(), presetByTag.get(selectedCharacterTag()));
+    if (subject != null) {
+      out.append("material.layers=").append(subject.layerTags().size()).append('\n');
+      for (int i = 0; i < subject.layerTags().size(); i++) {
+        out.append("material.layer.").append(i).append('=').append(escapeSetupValue(subject.layerTags().get(i))).append('\n');
+      }
+    }
     out.append("zoom=").append(formatNormalized(zoom)).append('\n');
     out.append("offsetX=").append(formatNormalized(offsetX)).append('\n');
     out.append("offsetY=").append(formatNormalized(offsetY)).append('\n');
@@ -7553,7 +8217,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
       for (int i = 0; i < sceneLights.size(); i++) {
         SceneLight light = sceneLights.get(i);
         String p = "light." + i + ".";
-        out.append(p).append("name=").append(light.name == null ? "" : light.name).append('\n');
+        out.append(p).append("name=").append(escapeSetupValue(light.name)).append('\n');
         out.append(p).append("position=").append(formatNormalized(light.sceneX)).append(",")
             .append(formatNormalized(light.sceneY)).append('\n');
         out.append(p).append("source=").append(formatNormalized(light.sourceX)).append(",")
@@ -7565,10 +8229,21 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
         out.append(p).append("silhouette=").append(formatNormalized(light.silhouette / 100.0)).append('\n');
         out.append(p).append("shape=").append((light.shape == null ? SceneLightShape.RADIAL : light.shape).persistedValue()).append('\n');
         out.append(p).append("layer=").append((light.layer == null ? SceneLightLayer.CHARACTER : light.layer).persistedValue()).append('\n');
+        out.append(p).append("blend=").append(light.blend.persisted()).append('\n');
+        out.append(p).append("falloff=").append(light.falloff.persisted()).append('\n');
+        out.append(p).append("castsShadows=").append(light.castsShadows).append('\n');
+        out.append(p).append("shadowQuality=").append(light.shadowQuality.persisted()).append('\n');
+        out.append(p).append("beamAngle=").append(formatNormalized(light.beamAngle)).append('\n');
+        out.append(p).append("areaAspect=").append(formatNormalized(light.areaAspect)).append('\n');
+        if (light.groundProjection != null) {
+          out.append(p).append("ground=").append(groundProjectionString(light.groundProjection, 1)).append('\n');
+          out.append(p).append("floorLight=").append(formatNormalized(light.groundProjection.floorLight())).append('\n');
+          out.append(p).append("floorExposure=").append(formatNormalized(light.groundProjection.floorExposure())).append('\n');
+        }
         out.append(p).append("muted=").append(light.muted).append('\n');
         out.append(p).append("locked=").append(light.locked).append('\n');
         out.append(p).append("solo=").append(light.solo).append('\n');
-        out.append(p).append("group=").append(light.group == null ? "" : light.group).append('\n');
+        out.append(p).append("group=").append(escapeSetupValue(light.group)).append('\n');
         if (light.isPolygon()) {
           StringBuilder polyStr = new StringBuilder();
           for (int pi = 0; pi < light.polygon.size(); pi++) {
@@ -7585,7 +8260,7 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
       for (int i = 0; i < tintZones.size(); i++) {
         TintZone tz = tintZones.get(i);
         String p = "zone." + i + ".";
-        out.append(p).append("name=").append(tz.name == null ? "" : tz.name).append('\n');
+        out.append(p).append("name=").append(escapeSetupValue(tz.name)).append('\n');
         out.append(p).append("bounds=").append(formatNormalized(tz.boundsX)).append(",")
             .append(formatNormalized(tz.boundsY)).append(",")
             .append(formatNormalized(tz.boundsW)).append(",")
@@ -7617,10 +8292,24 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
       for (int i = 0; i < sceneOccluders.size(); i++) {
         SceneOccluder occ = sceneOccluders.get(i);
         String p = "occluder." + i + ".";
-        out.append(p).append("name=").append(occ.name == null ? "" : occ.name).append('\n');
+        out.append(p).append("name=").append(escapeSetupValue(occ.name)).append('\n');
         out.append(p).append("opacity=").append(formatNormalized(occ.opacity / 100.0)).append('\n');
         out.append(p).append("softness=").append(formatNormalized(occ.softness / 100.0)).append('\n');
         out.append(p).append("enabled=").append(occ.enabled).append('\n');
+        out.append(p).append("shape=").append(occ.shape.name().toLowerCase(Locale.ROOT)).append('\n');
+        out.append(p).append("contactY=").append(formatNormalized(occ.contactY)).append('\n');
+        out.append(p).append("heightScale=").append(formatNormalized(occ.heightScale)).append('\n');
+        out.append(p).append("footprintDepth=").append(formatNormalized(occ.footprintDepth)).append('\n');
+        out.append(p).append("roundFootprint=").append(occ.roundFootprint).append('\n');
+        out.append(p).append("shadowFade=").append(formatNormalized(occ.shadowFade)).append('\n');
+        if (occ.shadowFraming != null) out.append(p).append("shadowFraming=").append(framingString(occ.shadowFraming, 1)).append('\n');
+        if (!occ.floorContacts.isEmpty()) out.append(p).append("floorContacts=")
+            .append(floorContactsString(occ.floorContacts, 1)).append('\n');
+        if (occ.surfaceTone != null) {
+          out.append(p).append("surfaceExposure=").append(formatNormalized(occ.surfaceTone.exposure())).append('\n');
+          out.append(p).append("surfaceContrast=").append(formatNormalized(occ.surfaceTone.contrast())).append('\n');
+        }
+        if (occ.bounds != null) out.append(p).append("bounds=").append(boundsString(occ.bounds, 1)).append('\n');
         if (occ.isPolygon()) {
           StringBuilder polyStr = new StringBuilder();
           for (int pi = 0; pi < occ.polygon.size(); pi++) {
@@ -7633,6 +8322,10 @@ sets the key light direction."""), sidebarHeaderSpacer, sidebarHideButton);
       }
     }
     return out.toString();
+  }
+
+  private static String escapeSetupValue(String value) {
+    return Objects.toString(value, "").replace("\\", "\\\\").replace("\r", "\\r").replace("\n", "\\n");
   }
 
   private Button actionButton(String text, javafx.scene.layout.Region icon, String tooltip, Runnable action) {
