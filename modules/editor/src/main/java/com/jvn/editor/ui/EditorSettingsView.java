@@ -2,6 +2,7 @@ package com.jvn.editor.ui;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
@@ -11,22 +12,28 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Labeled;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Separator;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 
 public class EditorSettingsView extends BorderPane {
@@ -38,7 +45,7 @@ public class EditorSettingsView extends BorderPane {
   private static final String GRAPHICS_LABEL_AUTO = "Automatic (recommended)";
   private static final String GRAPHICS_LABEL_HARDWARE = "Prefer GPU acceleration";
   private static final String GRAPHICS_LABEL_SOFTWARE = "Software compatibility";
-  private static final String SETTINGS_SEARCH_TEXT_KEY = "settingsSearchText";
+  private static final String ALL_SETTINGS = "All settings";
   private static final Set<EditorStatusBarSegment> COMPACT_STATUS_BAR_SEGMENTS =
       EnumSet.of(
           EditorStatusBarSegment.PRODUCT,
@@ -79,68 +86,70 @@ public class EditorSettingsView extends BorderPane {
   private final Map<EditorStatusBarSegment, CheckBox> statusBarSegmentChecks =
       new EnumMap<>(EditorStatusBarSegment.class);
   private final Label statusLabel = new Label("Editor settings loaded");
-  private final List<VBox> filterableSections = new ArrayList<>();
+  private final ComboBox<String> category = new ComboBox<>();
+  private final List<Section> sections = new ArrayList<>();
+  private final Label noResults = new Label("No settings match your search.");
+  private final ScrollPane scrollPane = new ScrollPane();
   private Consumer<EditorPreferences> onPreferencesApplied;
 
   public EditorSettingsView(EditorPreferencesStore store) {
     this.store = store == null ? new EditorPreferencesStore() : store;
     setPadding(Insets.EMPTY);
-    getStyleClass().addAll("editor-settings-view", "sidebar-tool-root");
+    getStyleClass().addAll("editor-preferences-view", "sidebar-tool-root");
 
-    ToolBar toolbar = new ToolBar();
-    toolbar.getStyleClass().add("editor-settings-toolbar");
-    Button reloadButton = new Button("Reload");
-    reloadButton.setGraphic(RefreshIcon.compact());
-    reloadButton.setOnAction(e -> reload());
-    reloadButton.getStyleClass().add("editor-settings-button");
-    reloadButton.setTooltip(new Tooltip("Reload settings from disk"));
-    Button saveButton = new Button("Save");
-    saveButton.setOnAction(e -> save());
-    saveButton.getStyleClass().add("editor-settings-button");
-    saveButton.setTooltip(new Tooltip("Save editor settings"));
-    Button defaultsButton = new Button("Defaults");
-    defaultsButton.setOnAction(e -> {
+    Label title = new Label("Editor Settings");
+    title.getStyleClass().add("sidebar-tool-title");
+    HBox titleRow = new HBox(6, title, SidebarToolHelp.button(this, "Editor Settings", """
+        Choose a category or search across editor preferences. Changes stay in the form as you move between categories.
+
+        ## Apply changes
+        - **Save** applies the current values and keeps them for future launches.
+        - **Reload** reads the saved preferences again.
+        - **Defaults** fills the form with factory values for you to review and save.
+
+        *Graphics mode takes effect after restarting JVN.*
+        """));
+    titleRow.setAlignment(Pos.CENTER_LEFT);
+
+    Button reloadButton = action("Reload", SidebarToolIcon.refresh(), "Reload saved settings", this::reload);
+    Button defaultsButton = action("Defaults", SidebarToolIcon.undo(), "Fill the form with default settings", () -> {
       loadIntoForm(EditorPreferences.defaults());
-      statusLabel.setText("Defaults restored in form");
+      statusLabel.setText("Defaults loaded in the form. Save to apply.");
     });
-    defaultsButton.getStyleClass().add("editor-settings-button");
-    defaultsButton.setTooltip(new Tooltip("Restore default editor settings in the form"));
-    toolbar.getItems().addAll(reloadButton, saveButton, defaultsButton);
-    setTop(toolbar);
+    Button saveButton = action("Save", SidebarToolIcon.save("#5db985"), "Save and apply settings", this::save);
+    saveButton.getStyleClass().add("editor-settings-save");
+    FlowPane actions = actionRow(saveButton, reloadButton, defaultsButton);
 
-    VBox content = new VBox(14);
-    content.setPadding(new Insets(12));
-    content.getStyleClass().add("editor-settings-content");
+    category.setAccessibleText("Settings category");
+    category.setMinWidth(108);
+    category.setPrefWidth(138);
+    settingsFilterField.setPromptText("Filter settings...");
+    settingsFilterField.setAccessibleText("Filter settings");
+    settingsFilterField.setTooltip(EditorTooltip.rich("**Search settings** · `Esc` clears the filter"));
+    settingsFilterField.setMinWidth(66);
+    settingsFilterField.getStyleClass().add("sidebar-tool-search-field");
+    HBox navigation = new HBox(8, settingsFilterField, category);
+    navigation.setAlignment(Pos.CENTER_LEFT);
+    HBox.setHgrow(settingsFilterField, Priority.ALWAYS);
 
-    Label header = new Label("Editor Settings");
-    header.getStyleClass().add("editor-settings-header");
-    Label intro = new Label(
-        "Configure editor-wide appearance, launch behavior, and sidebar defaults. "
-            + "These settings apply across launches.");
-    intro.setWrapText(true);
-    intro.getStyleClass().add("editor-settings-copy");
+    VBox header = new VBox(6, titleRow, navigation, actions);
+    header.getStyleClass().add("sidebar-tool-header");
+    setTop(header);
 
     editorThemeCombo.getItems().addAll(THEME_LABEL_DARK, THEME_LABEL_LIGHT);
     editorThemeCombo.setMaxWidth(Double.MAX_VALUE);
-    editorThemeCombo.getStyleClass().add("editor-settings-combo");
-    settingsFilterField.setPromptText("Filter settings...");
-    settingsFilterField.getStyleClass().addAll("editor-settings-text-field", "editor-settings-search-field");
-    settingsFilterField.setTooltip(new Tooltip("Filter editor settings sections"));
-    settingsFilterField.textProperty().addListener((obs, oldValue, newValue) -> applySettingsFilter());
     codeEditorFontSizeSpinner.setValueFactory(
         new SpinnerValueFactory.IntegerSpinnerValueFactory(
             EditorPreferences.MIN_CODE_EDITOR_FONT_SIZE,
             EditorPreferences.MAX_CODE_EDITOR_FONT_SIZE,
             EditorPreferences.DEFAULT_CODE_EDITOR_FONT_SIZE));
     codeEditorFontSizeSpinner.setEditable(true);
-    codeEditorFontSizeSpinner.getStyleClass().add("editor-settings-spinner");
     editorMaxFpsSpinner.setValueFactory(
         new SpinnerValueFactory.IntegerSpinnerValueFactory(
             EditorPreferences.MIN_EDITOR_MAX_FPS,
             EditorPreferences.MAX_EDITOR_MAX_FPS,
             EditorPreferences.DEFAULT_EDITOR_MAX_FPS));
     editorMaxFpsSpinner.setEditable(true);
-    editorMaxFpsSpinner.getStyleClass().add("editor-settings-spinner");
     editorMaxFpsSpinner.setPromptText("0 = display rate");
     largeTimelineBlockActionThresholdSpinner.setValueFactory(
         new SpinnerValueFactory.IntegerSpinnerValueFactory(
@@ -148,7 +157,6 @@ public class EditorSettingsView extends BorderPane {
             EditorPreferences.MAX_LARGE_TIMELINE_BLOCK_ACTION_THRESHOLD,
             EditorPreferences.DEFAULT_LARGE_TIMELINE_BLOCK_ACTION_THRESHOLD));
     largeTimelineBlockActionThresholdSpinner.setEditable(true);
-    largeTimelineBlockActionThresholdSpinner.getStyleClass().add("editor-settings-spinner");
     graphicsModeCombo.getItems().addAll(
         GRAPHICS_LABEL_AUTO, GRAPHICS_LABEL_HARDWARE, GRAPHICS_LABEL_SOFTWARE);
     graphicsModeCombo.setMaxWidth(Double.MAX_VALUE);
@@ -159,136 +167,61 @@ public class EditorSettingsView extends BorderPane {
         TEXT_EDITOR_LABEL_SYSTEM,
         TEXT_EDITOR_LABEL_CUSTOM);
     defaultTextEditorCombo.setMaxWidth(Double.MAX_VALUE);
-    defaultTextEditorCombo.getStyleClass().add("editor-settings-combo");
     defaultTextEditorCombo.valueProperty().addListener((obs, oldValue, newValue) ->
         updateCustomTextEditorCommandState());
     customTextEditorCommandField.setPromptText("Example: code --reuse-window {file}");
-    customTextEditorCommandField.getStyleClass().add("editor-settings-text-field");
-    showWelcomeOnStartupCheck.getStyleClass().add("editor-settings-check");
-    loadSidebarExtensionsOnDemandCheck.getStyleClass().add("editor-settings-check");
-    autoSaveBeforeRunCheck.getStyleClass().add("editor-settings-check");
-    editorRuntimePerfHudCheck.getStyleClass().add("editor-settings-check");
-    editorConfirmRunProjectCheck.getStyleClass().add("editor-settings-check");
-    vnsWordWrapByDefaultCheck.getStyleClass().add("editor-settings-check");
-    vnsMinimapVisibleCheck.getStyleClass().add("editor-settings-check");
-    gradleSkipTestsOnRunCheck.getStyleClass().add("editor-settings-check");
 
-    GridPane appearanceGrid = settingsGrid(180);
-    appearanceGrid.addRow(0, fieldLabel("Editor Theme"), editorThemeCombo);
-    appearanceGrid.addRow(1, fieldLabel("Code Text Size"), codeEditorFontSizeSpinner);
-    VBox appearanceSection =
-        registerSection(
-            settingsSection("Appearance", "Theme and code editor scale.", appearanceGrid),
-            "appearance theme code text size font editor dark light scale");
+    addSection("Appearance", SidebarToolIcon.palette(),
+        "Choose the editor theme and the text size used in code tabs.",
+        "dark light scale font",
+        field("Editor theme", editorThemeCombo),
+        field("Code text size", codeEditorFontSizeSpinner));
 
-    GridPane authoringGrid = settingsGrid(180);
-    authoringGrid.add(vnsWordWrapByDefaultCheck, 1, 0);
-    authoringGrid.add(vnsMinimapVisibleCheck, 1, 1);
-    authoringGrid.addRow(2, fieldLabel("Large timeline block hint"), largeTimelineBlockActionThresholdSpinner);
-    VBox authoringSection =
-        registerSection(
-            settingsSection(
-                "VNS Authoring",
-                "Defaults for script readability and navigation. Changes apply to open VNS tabs immediately.",
-                authoringGrid),
-            "vns authoring script word wrap long lines minimap navigation overview writer code");
+    addSection("VNS Authoring", SidebarToolIcon.edit(),
+        "These readability and navigation settings also apply to open VNS tabs.",
+        "script editor line wrapping timeline actions",
+        vnsWordWrapByDefaultCheck, vnsMinimapVisibleCheck,
+        field("Large timeline block hint", largeTimelineBlockActionThresholdSpinner));
 
-    GridPane runtimeGrid = settingsGrid(180);
-    runtimeGrid.addRow(0, fieldLabel("Max FPS"), editorMaxFpsSpinner);
-    runtimeGrid.addRow(1, fieldLabel("Graphics"), graphicsModeCombo);
-    runtimeGrid.add(editorRuntimePerfHudCheck, 1, 2);
-    runtimeGrid.add(autoSaveBeforeRunCheck, 1, 3);
-    runtimeGrid.add(editorConfirmRunProjectCheck, 1, 4);
-    runtimeGrid.add(gradleSkipTestsOnRunCheck, 1, 5);
-    VBox runtimeSection =
-        registerSection(
-            settingsSection("Runtime", "Project launch and preview performance defaults.", runtimeGrid),
-            "runtime run project launch preview performance max fps perf hud save dirty confirm gradle skip tests");
+    addSection("Runtime", SidebarToolIcon.nearMe("#60bddf"),
+        "Use 0 FPS to follow the display rate. Graphics mode applies after restarting JVN.",
+        "run project launch preview performance frames per second gpu automatic hardware software",
+        field("Maximum FPS", editorMaxFpsSpinner),
+        field("Graphics mode", graphicsModeCombo),
+        editorRuntimePerfHudCheck, autoSaveBeforeRunCheck,
+        editorConfirmRunProjectCheck, gradleSkipTestsOnRunCheck);
 
-    GridPane startupGrid = settingsGrid(180);
-    startupGrid.add(showWelcomeOnStartupCheck, 1, 0);
-    startupGrid.add(loadSidebarExtensionsOnDemandCheck, 1, 1);
-    VBox startupSection =
-        registerSection(
-            settingsSection("Startup", "Tabs and side tools loaded when the editor opens.", startupGrid),
-            "startup workspace hub tab sidebar extensions on demand memory tools");
+    addSection("Startup", SidebarToolIcon.home(),
+        "Choose what the editor opens or loads at startup.", "workspace launch memory",
+        showWelcomeOnStartupCheck, loadSidebarExtensionsOnDemandCheck);
 
-    VBox statusBarSection = new VBox(10);
-    statusBarSection.getStyleClass().add("editor-settings-section");
-    statusBarSection.getChildren().add(sectionHeader("Status Bar"));
-    Label statusBarDesc = new Label(
-        "Choose which bottom-bar segments are shown. Segments that depend on runtime data still stay hidden "
-            + "until they have something useful to report.");
-    statusBarDesc.setWrapText(true);
-    statusBarDesc.getStyleClass().add("editor-settings-copy");
-    HBox statusBarActions = new HBox(8);
-    Button showAllStatusButton = new Button("Show all");
-    showAllStatusButton.getStyleClass().add("editor-settings-button");
-    showAllStatusButton.setOnAction(e -> setAllStatusBarSegments(true));
-    Button compactStatusButton = new Button("Compact");
-    compactStatusButton.getStyleClass().add("editor-settings-button");
-    compactStatusButton.setTooltip(new Tooltip("Keep only the highest-signal bottom-bar segments enabled."));
-    compactStatusButton.setOnAction(e -> applyCompactStatusBarPreset());
-    statusBarActions.getChildren().addAll(showAllStatusButton, compactStatusButton);
-    GridPane statusBarGrid = new GridPane();
-    statusBarGrid.setHgap(16);
-    statusBarGrid.setVgap(8);
-    ColumnConstraints statusLeftColumn = new ColumnConstraints();
-    statusLeftColumn.setPercentWidth(50);
-    statusLeftColumn.setHgrow(Priority.ALWAYS);
-    ColumnConstraints statusRightColumn = new ColumnConstraints();
-    statusRightColumn.setPercentWidth(50);
-    statusRightColumn.setHgrow(Priority.ALWAYS);
-    statusBarGrid.getColumnConstraints().addAll(statusLeftColumn, statusRightColumn);
-    int statusIndex = 0;
+    TilePane segments = new TilePane(10, 4);
+    segments.setPrefColumns(2);
+    segments.setTileAlignment(Pos.CENTER_LEFT);
     for (EditorStatusBarSegment segment : EditorStatusBarSegment.values()) {
       CheckBox check = new CheckBox(segment.displayName());
-      check.getStyleClass().add("editor-settings-check");
       check.setTooltip(new Tooltip(segment.description()));
       statusBarSegmentChecks.put(segment, check);
-      statusBarGrid.add(check, statusIndex % 2, statusIndex / 2);
-      statusIndex++;
+      segments.getChildren().add(check);
     }
-    statusBarSection.getChildren().addAll(statusBarDesc, statusBarActions, statusBarGrid);
-    registerSection(
-        statusBarSection,
-        "status bar bottom footer segments chips product branch git state message project active file cursor line metadata tabs saved diagnostics encoding line ending heap memory java runtime theme version compact");
+    Button showAllStatusButton = action("Show all", SidebarToolIcon.visibility("#64add5"),
+        "Enable all status bar segments", () -> setAllStatusBarSegments(true));
+    Button compactStatusButton = action("Compact", SidebarToolIcon.dock("#6dbce1"),
+        "Enable only the essential status bar segments", this::applyCompactStatusBarPreset);
+    addSection("Status Bar", SidebarToolIcon.dock("#6dbce1"),
+        "Choose the readouts in the bottom bar. Data-dependent readouts appear when data is available.",
+        "bottom footer readouts segments chips clear show hide",
+        actionRow(showAllStatusButton, compactStatusButton), segments);
 
-    GridPane fileOpeningGrid = settingsGrid(180);
-    fileOpeningGrid.addRow(0, fieldLabel("Default Text Editor"), defaultTextEditorCombo);
-    fileOpeningGrid.addRow(1, fieldLabel("Custom Command"), customTextEditorCommandField);
-    VBox fileOpeningSection =
-        registerSection(
-            settingsSection("File Opening", "Default editor used when project files are opened externally.", fileOpeningGrid),
-            "file opening default text editor custom command external system app");
+    addSection("File Opening", SidebarToolIcon.folder(),
+        "Choose what opens text files from the Project Explorer.",
+        "default text editor custom command external system app",
+        field("Default text editor", defaultTextEditorCombo),
+        field("Custom command", customTextEditorCommandField));
 
-    VBox sidebarSection = new VBox(10);
-    sidebarSection.getChildren().add(sectionHeader("Default Sidebar Panels"));
-    sidebarSection.getStyleClass().add("editor-settings-section");
-    Label sidebarDesc = new Label(
-        "Choose whether each sidebar tool should open on the left, on the right, or stay hidden by default. "
-            + "You can also remove tools from the New Panel chooser entirely.");
-    sidebarDesc.setWrapText(true);
-    sidebarDesc.getStyleClass().add("editor-settings-copy");
-    GridPane sidebarGrid = new GridPane();
-    sidebarGrid.setHgap(10);
-    sidebarGrid.setVgap(8);
-    ColumnConstraints panelColumn = new ColumnConstraints();
-    panelColumn.setMinWidth(220);
-    panelColumn.setHgrow(Priority.ALWAYS);
-    ColumnConstraints placementColumn = new ColumnConstraints();
-    placementColumn.setMinWidth(180);
-    ColumnConstraints chooserColumn = new ColumnConstraints();
-    chooserColumn.setMinWidth(150);
-    sidebarGrid.getColumnConstraints().addAll(panelColumn, placementColumn, chooserColumn);
-    int row = 0;
-    sidebarGrid.add(fieldLabel("Panel"), 0, row);
-    sidebarGrid.add(fieldLabel("Default Placement"), 1, row);
-    sidebarGrid.add(fieldLabel("Show In Chooser"), 2, row);
-    row++;
+    VBox panels = new VBox(0);
     for (EditorSidebarPanel panel : EditorSidebarPanel.values()) {
       if (!panel.editableInSettings()) continue;
-      Label label = fieldLabel(panel.displayName());
       ComboBox<EditorPanelPlacement> combo = new ComboBox<>();
       if (panel.supportsDocking()) {
         combo.getItems().addAll(EditorPanelPlacement.values());
@@ -297,45 +230,71 @@ public class EditorSettingsView extends BorderPane {
         combo.setDisable(true);
         combo.setTooltip(new Tooltip(panel.displayName() + " opens only as a pop-out tool."));
       }
-      combo.setMaxWidth(Double.MAX_VALUE);
-      combo.getStyleClass().add("editor-settings-combo");
-      CheckBox chooserVisible = new CheckBox();
-      chooserVisible.getStyleClass().add("editor-settings-check");
+      combo.getStyleClass().add("sidebar-tool-field");
+      combo.setAccessibleText(panel.displayName() + " default placement");
+      combo.setPrefWidth(115);
+      CheckBox chooserVisible = new CheckBox("Show in chooser");
+      chooserVisible.setAccessibleText("Show " + panel.displayName() + " in the New Panel chooser");
       panelPlacements.put(panel, combo);
       chooserVisibilityChecks.put(panel, chooserVisible);
-      sidebarGrid.add(label, 0, row);
-      sidebarGrid.add(combo, 1, row);
-      sidebarGrid.add(chooserVisible, 2, row);
-      row++;
+
+      Label panelTitle = new Label(panel.displayName());
+      panelTitle.getStyleClass().add("editor-settings-field-label");
+      panelTitle.setWrapText(true);
+      FlowPane rowControls = new FlowPane(8, 4, combo, chooserVisible);
+      rowControls.setAlignment(Pos.CENTER_LEFT);
+      VBox panelRow = new VBox(4, panelTitle, rowControls);
+      panelRow.getStyleClass().add("editor-settings-panel-row");
+      panels.getChildren().add(panelRow);
     }
-    sidebarSection.getChildren().addAll(sidebarDesc, sidebarGrid);
-    registerSection(
-        sidebarSection,
-        "default sidebar panels project inspector timeline help assets placement left right hidden chooser tools");
+    addSection("Sidebar Panels", SidebarToolIcon.grid(),
+        "Set where tools open by default and which ones appear in the New Panel chooser.",
+        "default left right hidden docking pop out placement", panels);
 
-    content.getChildren().addAll(
-        header,
-        intro,
-        settingsFilterField,
-        new Separator(),
-        appearanceSection,
-        authoringSection,
-        runtimeSection,
-        startupSection,
-        statusBarSection,
-        fileOpeningSection,
-        new Separator(),
-        sidebarSection);
+    VBox content = new VBox(10);
+    content.getStyleClass().add("editor-preferences-content");
+    content.setMinWidth(0);
+    content.setMaxWidth(700);
+    content.getChildren().setAll(sections.stream().map(Section::pane).toList());
+    noResults.getStyleClass().add("sidebar-tool-summary");
+    noResults.setWrapText(true);
+    content.getChildren().add(noResults);
 
-    ScrollPane scrollPane = new ScrollPane(content);
+    StackPane viewportContent = new StackPane(content);
+    viewportContent.setAlignment(Pos.TOP_LEFT);
+    scrollPane.setContent(viewportContent);
     scrollPane.setFitToWidth(true);
     scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-    scrollPane.getStyleClass().add("editor-settings-scroll");
+    scrollPane.getStyleClass().add("editor-preferences-scroll");
     setCenter(scrollPane);
 
-    statusLabel.getStyleClass().add("editor-settings-status");
+    statusLabel.getStyleClass().addAll("sidebar-tool-status", "editor-settings-footer");
+    statusLabel.setWrapText(true);
+    statusLabel.setMaxWidth(Double.MAX_VALUE);
     setBottom(statusLabel);
 
+    category.getItems().add(ALL_SETTINGS);
+    category.getItems().addAll(sections.stream().map(Section::name).toList());
+    category.setValue(sections.getFirst().name());
+    category.valueProperty().addListener((obs, oldValue, newValue) -> {
+      if (settingsFilterField.getText().isEmpty()) applySettingsFilter();
+      else settingsFilterField.clear();
+    });
+    settingsFilterField.textProperty().addListener((obs, oldValue, newValue) -> applySettingsFilter());
+    settingsFilterField.setOnKeyPressed(event -> {
+      if (event.getCode() == KeyCode.ESCAPE && !settingsFilterField.getText().isBlank()) {
+        settingsFilterField.clear();
+        event.consume();
+      }
+    });
+    addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+      if (event.isShortcutDown() && event.getCode() == KeyCode.F) {
+        settingsFilterField.requestFocus();
+        settingsFilterField.selectAll();
+        event.consume();
+      }
+    });
+    applySettingsFilter();
     reload();
   }
 
@@ -459,75 +418,86 @@ public class EditorSettingsView extends BorderPane {
     }
   }
 
-  private VBox registerSection(VBox section, String searchText) {
-    if (section == null) return null;
-    section.getProperties().put(SETTINGS_SEARCH_TEXT_KEY, normalizeSearchText(searchText));
-    filterableSections.add(section);
-    return section;
+  private void addSection(String name, Region icon, String summary, String keywords, Node... controls) {
+    Label title = new Label(name, icon);
+    title.getStyleClass().add("sidebar-tool-section-title");
+    title.setGraphicTextGap(7);
+    Label description = new Label(summary);
+    description.getStyleClass().add("sidebar-tool-summary");
+    description.setWrapText(true);
+
+    VBox section = new VBox(8, title, description);
+    section.setMinWidth(0);
+    section.getStyleClass().add("editor-preferences-section");
+    section.getChildren().addAll(controls);
+    for (Node control : controls) {
+      if (control instanceof CheckBox check) check.setWrapText(true);
+    }
+    StringBuilder search = new StringBuilder(keywords);
+    appendSearchLabels(section, search);
+    sections.add(new Section(name, section, normalizeSearchText(search.toString())));
+  }
+
+  private static void appendSearchLabels(Node node, StringBuilder search) {
+    if (node instanceof Labeled labeled) {
+      search.append(' ').append(labeled.getText());
+      if (labeled.getTooltip() != null) search.append(' ').append(labeled.getTooltip().getText());
+    }
+    if (node instanceof Parent parent) {
+      for (Node child : parent.getChildrenUnmodifiable()) appendSearchLabels(child, search);
+    }
   }
 
   private void applySettingsFilter() {
-    String filter = normalizeSearchText(settingsFilterField.getText());
-    for (VBox section : filterableSections) {
-      Object raw = section.getProperties().get(SETTINGS_SEARCH_TEXT_KEY);
-      String haystack = raw == null ? "" : raw.toString();
-      boolean match = filter.isBlank() || matchesFilter(haystack, filter);
-      section.setVisible(match);
-      section.setManaged(match);
+    String query = normalizeSearchText(settingsFilterField.getText());
+    String[] tokens = query.split("\s+");
+    String selected = category.getValue();
+    boolean found = false;
+    for (Section section : sections) {
+      boolean show = query.isBlank()
+          ? ALL_SETTINGS.equals(selected) || section.name().equals(selected)
+          : Arrays.stream(tokens).allMatch(section.searchText()::contains);
+      setDisplayed(section.pane(), show);
+      found |= show;
     }
+    setDisplayed(noResults, !found);
+    scrollPane.setVvalue(0);
   }
 
-  private static boolean matchesFilter(String haystack, String filter) {
-    if (filter == null || filter.isBlank()) return true;
-    if (haystack == null || haystack.isBlank()) return false;
-    String[] tokens = filter.split("\\s+");
-    for (String token : tokens) {
-      if (!token.isBlank() && !haystack.contains(token)) return false;
-    }
-    return true;
+  private static void setDisplayed(Node node, boolean shown) {
+    node.setManaged(shown);
+    node.setVisible(shown);
   }
 
   private static String normalizeSearchText(String text) {
     return text == null ? "" : text.trim().toLowerCase(Locale.ROOT);
   }
 
-  private static Label sectionHeader(String text) {
+  private static VBox field(String text, Region control) {
     Label label = new Label(text);
-    label.getStyleClass().add("editor-settings-section-title");
-    return label;
+    label.getStyleClass().add("editor-settings-field-label");
+    label.setLabelFor(control);
+    if (control instanceof ComboBox<?>) control.getStyleClass().add("sidebar-tool-field");
+    control.setMaxWidth(Double.MAX_VALUE);
+    return new VBox(4, label, control);
   }
 
-  private static Label fieldLabel(String text) {
-    Label label = new Label(text);
-    label.getStyleClass().add("editor-settings-label");
-    return label;
+  private static Button action(String text, Region icon, String help, Runnable handler) {
+    Button button = new Button(text, icon);
+    button.getStyleClass().add("sidebar-tool-btn");
+    button.setGraphicTextGap(6);
+    button.setOnAction(event -> handler.run());
+    button.setTooltip(new Tooltip(help));
+    return button;
   }
 
-  private static GridPane settingsGrid(double labelWidth) {
-    GridPane grid = new GridPane();
-    grid.setHgap(10);
-    grid.setVgap(10);
-    ColumnConstraints labelColumn = new ColumnConstraints();
-    labelColumn.setMinWidth(labelWidth);
-    ColumnConstraints fieldColumn = new ColumnConstraints();
-    fieldColumn.setHgrow(Priority.ALWAYS);
-    grid.getColumnConstraints().addAll(labelColumn, fieldColumn);
-    return grid;
+  private static FlowPane actionRow(Button... buttons) {
+    FlowPane row = new FlowPane(4, 4, buttons);
+    row.setAlignment(Pos.CENTER_LEFT);
+    return row;
   }
 
-  private static VBox settingsSection(String title, String description, GridPane grid) {
-    VBox section = new VBox(10);
-    section.getStyleClass().add("editor-settings-section");
-    section.getChildren().add(sectionHeader(title));
-    if (description != null && !description.isBlank()) {
-      Label copy = new Label(description);
-      copy.setWrapText(true);
-      copy.getStyleClass().add("editor-settings-copy");
-      section.getChildren().add(copy);
-    }
-    section.getChildren().add(grid);
-    return section;
-  }
+  private record Section(String name, VBox pane, String searchText) {}
 
   private void updateCustomTextEditorCommandState() {
     boolean custom = TEXT_EDITOR_LABEL_CUSTOM.equals(defaultTextEditorCombo.getValue());

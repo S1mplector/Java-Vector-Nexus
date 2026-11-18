@@ -181,12 +181,17 @@ public class ProjectExplorerView extends VBox {
     Region headerSpacer = new Region();
     HBox.setHgrow(headerSpacer, Priority.ALWAYS);
     Button help = SidebarToolHelp.button(this, "Project Explorer", """
-        Browse and manage the current project's files. Double-click a file or press Enter to open
-        it. Enter on a folder expands or collapses it; F5 rescans the tree; Escape clears the filter.
+        Browse and manage files in the current project.
 
-        Right-click a file or folder to create scripts/folders, rename, delete, or reveal it in JVN
-        Path Explorer. The project root row provides Run and Build actions. Hidden dot-directories
-        are intentionally omitted from the tree.""");
+        ## Shortcuts
+        - **Double-click** or press `Enter` to open a file. On a folder, `Enter` expands or collapses it.
+        - `F5` rescans the tree. `Esc` clears the filter.
+
+        ## Project actions
+        Right-click a file or folder to create scripts or folders, rename or delete items, or reveal
+        them in JVN Path Explorer. Use **Run** and **Build** on the project root.
+
+        *Hidden directories that start with a dot are omitted.*""");
     Button refreshButton = new Button();
     refreshButton.getStyleClass().addAll(
         "project-explorer-refresh-button", "aero-help-button", "aero-icon-button");
@@ -196,7 +201,7 @@ public class ProjectExplorerView extends VBox {
     refreshButton.setPrefSize(30, 30);
     refreshButton.setMaxSize(30, 30);
     refreshButton.setFocusTraversable(false);
-    refreshButton.setTooltip(new Tooltip("Rescan project files (F5)"));
+    refreshButton.setTooltip(EditorTooltip.rich("**Rescan project files** · `F5`"));
     refreshButton.setAccessibleText("Refresh project files");
     refreshButton.setOnAction(event -> refresh());
     HBox headerRow = new HBox(6, header, help, headerSpacer, refreshButton);

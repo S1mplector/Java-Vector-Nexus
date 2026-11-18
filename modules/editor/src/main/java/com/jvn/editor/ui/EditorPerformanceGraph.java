@@ -1,7 +1,6 @@
 package com.jvn.editor.ui;
 
 import javafx.geometry.Insets;
-import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Tooltip;
@@ -13,8 +12,6 @@ import javafx.scene.paint.Stop;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
-import javafx.scene.text.Font;
-import javafx.scene.text.TextAlignment;
 
 /** Live CPU, heap, and FPS history for the editor toolbar. */
 public final class EditorPerformanceGraph extends Region {
@@ -36,13 +33,13 @@ public final class EditorPerformanceGraph extends Region {
   }
 
   private static final int HISTORY_SIZE = 240;
-  private static final Color GRID_LINE = Color.web("#304344");
-  private static final Color GRID_AXIS = Color.web("#516568");
-  private static final Color FACE_SHADOW = Color.web("#10191e");
+  private static final Color GRID_LINE = Color.web("#383838");
+  private static final Color GRID_AXIS = Color.web("#505050");
+  private static final Color FACE_SHADOW = Color.web("#141414");
+  private static final Color AREA_HIGHLIGHT = Color.rgb(180, 180, 180, 0.11);
   private static final LinearGradient FACE = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-      new Stop(0, Color.web("#233238")), new Stop(0.18, Color.web("#172429")),
-      new Stop(1, Color.web("#142025")));
-  private static final Font AXIS_FONT = Font.font("System", 9);
+      new Stop(0, Color.web("#2d2d2d")), new Stop(0.18, Color.web("#232323")),
+      new Stop(1, Color.web("#1d1d1d")));
 
   private final Canvas canvas = new Canvas();
   private final double[] cpu = new double[HISTORY_SIZE];
@@ -63,7 +60,12 @@ public final class EditorPerformanceGraph extends Region {
     String description = "Recent CPU and heap use. FPS is plotted as a percentage of the editor's frame-rate target. "
         + "Latest samples are on the right.";
     setAccessibleText(description);
-    Tooltip.install(this, new Tooltip(description));
+    Tooltip.install(this, EditorTooltip.rich("""
+        **Performance history**
+
+        CPU and heap show recent usage. FPS is relative to the editor’s frame-rate target.
+        The latest samples appear on the right.
+        """));
   }
 
   public void pushSample(double cpuRatio, double heapRatio, double fpsRatio) {
@@ -92,7 +94,7 @@ public final class EditorPerformanceGraph extends Region {
     g.setFill(FACE);
     g.fillRect(0, 0, width, height);
 
-    double left = 38.5;
+    double left = 7.5;
     double right = Math.floor(width) - 7.5;
     double top = 8.5;
     double bottom = Math.floor(height) - 8.5;
@@ -121,14 +123,6 @@ public final class EditorPerformanceGraph extends Region {
     }
     g.setStroke(GRID_AXIS);
     g.strokeLine(left, top, left, bottom);
-
-    g.setTextAlign(TextAlignment.RIGHT);
-    g.setTextBaseline(VPos.CENTER);
-    g.setFont(AXIS_FONT);
-    g.setFill(Color.web("#aebfc0"));
-    g.fillText("100%", left - 6, top);
-    g.fillText("50%", left - 6, (top + bottom) / 2);
-    g.fillText("0%", left - 6, bottom);
   }
 
   private void drawTrace(GraphicsContext g, double[] samples, Color color,
@@ -152,7 +146,7 @@ public final class EditorPerformanceGraph extends Region {
       g.lineTo(start, bottom);
       g.closePath();
       g.setFill(new LinearGradient(0, top, 0, bottom, false, CycleMethod.NO_CYCLE,
-          new Stop(0, Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.18)),
+          new Stop(0, AREA_HIGHLIGHT),
           new Stop(1, Color.TRANSPARENT)));
       g.fill();
     }

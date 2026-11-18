@@ -1425,6 +1425,16 @@ The editor.css file defines the visual styling for the editor module, including 
   -jvn-aero-highlight: #5e5e5e;
   -jvn-aero-focus: #b1b1b1;
   -jvn-aero-focus-halo: rgba(177, 177, 177, 0.58);
+  -jvn-aero-tab-focus-edge: #e3a054;
+  -jvn-aero-tab-focus-rim: #ffd491;
+  -jvn-aero-tab-focus-fill: linear-gradient(to bottom, #80552f, #5b3d28 46%, #473022 49%, #392f28);
+  -jvn-aero-divider-edge: #1d1d1d;
+  -jvn-aero-divider-rail: linear-gradient(to right, #696969, #494949 46%, #393939 54%, #555555);
+  -jvn-aero-divider-active-edge: #233d50;
+  -jvn-aero-divider-active-rail: linear-gradient(to right, #a0cbe2, #658ba5 46%, #41637c 54%, #719ab4);
+  -jvn-aero-divider-grip: linear-gradient(to bottom, #666666, #555555 22%, #b9b9b9 23%,
+      #767676 31%, #555555 32%, #555555 46%, #b9b9b9 47%, #767676 55%, #555555 56%,
+      #555555 70%, #b9b9b9 71%, #767676 79%, #555555 80%, #666666);
   -jvn-aero-chrome: linear-gradient(to bottom, #4a4a4a, #3c3c3c 49%, #333333 51%, #3d3d3d);
   -jvn-aero-menubar: linear-gradient(to bottom, #444444, #383838 49%, #313131 51%, #3d3d3d);
   -jvn-aero-button: linear-gradient(to bottom, #545454, #464646 48%, #3a3a3a 50%, #464646);
@@ -4228,16 +4238,6 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-padding: 0 1 0 1;
 }
 
-/* Main editor sidebars: easier-to-find resize rail with subtle hover glow */
-.editor-main-split-pane:horizontal > .split-pane-divider {
-  -fx-padding: 0 2 0 2;
-  -fx-background-insets: 0;
-}
-
-.editor-main-split-pane:horizontal > .split-pane-divider:hover {
-  -fx-effect: dropshadow(gaussian, -jvn-aero-focus-halo, 7, 0.25, 0, 0);
-}
-
 .editor-main-split-pane:horizontal > .split-pane-divider .sidebar-hidden-drag-arrow {
   -fx-min-width: 10px;
   -fx-min-height: 16px;
@@ -4433,17 +4433,6 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-background-color: #141414;
 }
 
-
-/* Tooltip */
-.tooltip {
-  -fx-background-color: #222;
-  -fx-text-fill: #e6e6e6;
-  -fx-border-color: #3e3e3e;
-  -fx-border-radius: 4;
-  -fx-background-radius: 4;
-  -fx-font-size: 11px;
-  -fx-padding: 4 8;
-}
 
 /* MenuButton */
 .menu-button .label {

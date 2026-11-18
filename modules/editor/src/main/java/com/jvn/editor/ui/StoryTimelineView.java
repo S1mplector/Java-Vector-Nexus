@@ -475,15 +475,14 @@ public class StoryTimelineView extends BorderPane {
     Label titleLabel = new Label("Story Map");
     titleLabel.getStyleClass().add("sidebar-tool-title");
     HBox titleRow = new HBox(6, titleLabel, SidebarToolHelp.button(this, "Story Map", """
-        The Story Map organises .vns scripts into named arcs and links so you can \
-see and edit the structure of a project at a higher level than a single script.
+        The Story Map organises `.vns` scripts into named arcs and links so you can see how the story fits together.
 
-Arcs point at script files and optional entry labels. Links represent story \
-transitions between arcs and can copy goto snippets back into script text.
+        - **Arcs** point to script files and optional entry labels.
+        - **Links** represent transitions between arcs. Use **Copy Goto** to put a transition in your script.
 
-Use the graph to drag arcs into place, run or select nodes, and inspect the \
-flow between story sections. Drop .vns files onto the graph to create arcs \
-quickly, then use Validate to catch missing scripts or labels."""));
+        ## Work with the map
+        Drag arcs into place, run or select nodes, and inspect the flow between story sections.
+        Drop `.vns` files onto the graph to create arcs. Use **Validate** to catch missing scripts or labels."""));
     titleRow.setAlignment(Pos.CENTER_LEFT);
 
     Label clusterLabel = new Label("Cluster");

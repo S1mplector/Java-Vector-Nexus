@@ -52,7 +52,7 @@ final class HubPluginManagerDialog extends JDialog {
       "Any status", "Verified", "Disabled", "Needs attention"});
   private final JLabel visibleCount = label("0 plugins", MUTED, 11, false);
   private final JLabel status = label("Scanning plugin folders…", MUTED, 11, false);
-  private final JButton refreshButton = button("Refresh", false, this::refresh);
+  private final JButton refreshButton = button("Refresh", HubIcon.Kind.REFRESH, false, this::refresh);
   private final CardLayout detailsLayout = new CardLayout();
   private final JPanel details = new JPanel(detailsLayout);
   private final JLabel detailName = label("", TEXT, 18, true);
@@ -61,10 +61,10 @@ final class HubPluginManagerDialog extends JDialog {
   private final JTextArea description = textArea();
   private final JTextArea diagnostics = textArea();
   private final JPanel facts = new JPanel(new GridBagLayout());
-  private final JButton toggle = button("Disable", false, this::toggleSelected);
-  private final JButton reveal = button("Show in Folder", false, this::revealSelected);
-  private final JButton copy = button("Copy Details", false, this::copySelected);
-  private final JButton remove = button("Move to Trash", false, this::removeSelected);
+  private final JButton toggle = button("Disable", HubIcon.Kind.STOP, false, this::toggleSelected);
+  private final JButton reveal = button("Show in Folder", HubIcon.Kind.FOLDER, false, this::revealSelected);
+  private final JButton copy = button("Copy Details", HubIcon.Kind.COPY, false, this::copySelected);
+  private final JButton remove = button("Move to Trash", HubIcon.Kind.TRASH, false, this::removeSelected);
   private final CardLayout inventoryLayout = new CardLayout();
   private final JPanel inventoryCards = new JPanel(inventoryLayout);
   private final JLabel emptyTitle = label("Your plugin library is empty", TEXT, 15, true);
@@ -133,7 +133,7 @@ final class HubPluginManagerDialog extends JDialog {
     emptyContent.add(Box.createVerticalStrut(8));
     emptyContent.add(emptyHint);
     emptyContent.add(Box.createVerticalStrut(20));
-    JButton install = button("Install a plugin…", true, () -> installInto(userPlugins, "User"));
+    JButton install = button("Install a plugin…", HubIcon.Kind.INSTALL, true, () -> installInto(userPlugins, "User"));
     install.setAlignmentX(Component.CENTER_ALIGNMENT);
     emptyContent.add(install);
     emptyLibrary.add(emptyContent);
@@ -264,11 +264,11 @@ final class HubPluginManagerDialog extends JDialog {
     status.setBorder(empty(0, 0, 10, 0));
     root.add(status, BorderLayout.NORTH);
     JPanel actions = panel(new FlowLayout(FlowLayout.RIGHT, 7, 0), RAISED);
-    actions.add(button("Open User Folder", false, () -> openFolder(userPlugins)));
-    if (projectPlugins != null) actions.add(button("Open Project Folder", false, () -> openFolder(projectPlugins)));
-    actions.add(button("Install for User…", true, () -> installInto(userPlugins, "User")));
-    if (projectPlugins != null) actions.add(button("Install for Project…", true, () -> installInto(projectPlugins, "Project")));
-    actions.add(button("Close", false, this::dispose));
+    actions.add(button("Open User Folder", HubIcon.Kind.FOLDER, false, () -> openFolder(userPlugins)));
+    if (projectPlugins != null) actions.add(button("Open Project Folder", HubIcon.Kind.FOLDER, false, () -> openFolder(projectPlugins)));
+    actions.add(button("Install for User…", HubIcon.Kind.INSTALL, true, () -> installInto(userPlugins, "User")));
+    if (projectPlugins != null) actions.add(button("Install for Project…", HubIcon.Kind.INSTALL, true, () -> installInto(projectPlugins, "Project")));
+    actions.add(button("Close", HubIcon.Kind.CLOSE, false, this::dispose));
     root.add(actions, BorderLayout.CENTER);
     return root;
   }
@@ -431,6 +431,7 @@ final class HubPluginManagerDialog extends JDialog {
     diagnostics.setText(note);
     diagnostics.setCaretPosition(0);
     toggle.setText(row.enabled() ? "Disable" : "Enable");
+    toggle.setIcon(JvnHub.uiIcon(row.enabled() ? HubIcon.Kind.STOP : HubIcon.Kind.PLAY, 16));
     toggle.setEnabled(row.verification().isValid());
     detailsLayout.show(details, "selected");
   }
@@ -617,8 +618,8 @@ final class HubPluginManagerDialog extends JDialog {
   private static void styleCombo(JComboBox<String> combo, int width) {
     JvnHub.styleHubComboBox(combo, new Dimension(width, 34));
   }
-  private static JButton button(String text, boolean primary, Runnable action) {
-    JButton button = new JvnHub.FlatButton(text, null, primary ? ACCENT : null);
+  private static JButton button(String text, HubIcon.Kind kind, boolean primary, Runnable action) {
+    JButton button = new JvnHub.FlatButton(text, JvnHub.uiIcon(kind, 16), primary ? ACCENT : null);
     button.addActionListener(e -> action.run());
     return button;
   }
@@ -649,9 +650,8 @@ final class HubPluginManagerDialog extends JDialog {
       card.setBorder(BorderFactory.createCompoundBorder(
           BorderFactory.createMatteBorder(0, selected ? 3 : 0, 1, 0, selected ? JvnHub.FOCUS_RING : BORDER),
           empty(12, selected ? 9 : 12, 12, 12)));
-      JLabel icon = label(row.kind().symbol, row.kind().color, 15, true);
-      icon.setHorizontalAlignment(SwingConstants.CENTER); icon.setOpaque(true); icon.setBackground(dark(row.kind().color));
-      icon.setBorder(BorderFactory.createLineBorder(row.kind().color.darker())); icon.setPreferredSize(new Dimension(38, 38));
+      JLabel icon = new JLabel(JvnHub.uiIcon(row.kind().icon, 30), SwingConstants.CENTER);
+      icon.setPreferredSize(new Dimension(icon.getIcon().getIconWidth() + 4, 38));
       card.add(icon, BorderLayout.WEST);
       JPanel names = vertical(card.getBackground());
       names.add(label(row.name() + (row.version().isBlank() ? "" : "  " + row.version()), TEXT, 12, true));
@@ -664,9 +664,19 @@ final class HubPluginManagerDialog extends JDialog {
   }
 
   private enum Kind {
-    VERIFIED("Verified", "✓", PASS), DISABLED("Disabled", "—", MUTED), ISSUE("Attention", "!", WARN);
-    final String label, symbol; final Color color;
-    Kind(String label, String symbol, Color color) { this.label = label; this.symbol = symbol; this.color = color; }
+    VERIFIED("Verified", HubIcon.Kind.PLUGIN, PASS),
+    DISABLED("Disabled", HubIcon.Kind.PLUGIN_DISABLED, MUTED),
+    ISSUE("Attention", HubIcon.Kind.PLUGIN_ALERT, WARN);
+
+    final String label;
+    final HubIcon.Kind icon;
+    final Color color;
+
+    Kind(String label, HubIcon.Kind icon, Color color) {
+      this.label = label;
+      this.icon = icon;
+      this.color = color;
+    }
   }
 
   private record PluginRow(String scope, Path source, boolean enabled, Verification verification, List<String> notes) {

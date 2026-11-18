@@ -146,15 +146,16 @@ public final class HubAeroControls {
       Graphics2D g2 = (Graphics2D) g.create();
       boolean active = isEnabled();
       paintButton(g2, getWidth(), getHeight(), false, active && getModel().isRollover(), active && getModel().isPressed());
-      g2.translate(getWidth() / 2.0, getHeight() / 2.0);
-      g2.rotate(switch (direction) {
-        case SwingConstants.SOUTH -> Math.PI;
-        case SwingConstants.EAST -> Math.PI / 2;
-        case SwingConstants.WEST -> -Math.PI / 2;
-        default -> 0;
-      });
-      g2.setColor(active ? Color.decode("#e2e2e2") : Color.decode("#777777"));
-      g2.fillPolygon(new int[]{-3, 3, 0}, new int[]{2, 2, -2}, 3);
+      int iconSize = Math.min(getWidth(), getHeight()) * 3 / 4;
+      if (iconSize > 0) {
+        HubIcon arrow = HubIcon.of(switch (direction) {
+          case SwingConstants.SOUTH -> HubIcon.Kind.ARROW_DOWN;
+          case SwingConstants.EAST -> HubIcon.Kind.ARROW_RIGHT;
+          case SwingConstants.WEST -> HubIcon.Kind.ARROW_LEFT;
+          default -> HubIcon.Kind.ARROW_UP;
+        }, iconSize);
+        arrow.paintIcon(this, g2, (getWidth() - iconSize) / 2, (getHeight() - iconSize) / 2);
+      }
       g2.dispose();
     }
   }

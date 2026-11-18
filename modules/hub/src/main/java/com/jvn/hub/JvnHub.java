@@ -1,5 +1,6 @@
 package com.jvn.hub;
 
+import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -33,7 +34,6 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Arc2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
@@ -161,7 +161,8 @@ public final class JvnHub {
   /** Resolved at class-init time from a Gradle-generated resource. */
   private static final String VERSION = readVersion();
   private static final int BASE_HUB_WIDTH = 640;
-  private static final int BASE_HUB_HEIGHT = 540;
+  private static final int BASE_HUB_HEIGHT = 650;
+  private static final int MIN_HUB_HEIGHT = 540;
   private static final double MIN_UI_SCALE = 0.75;
   private static final double MAX_UI_SCALE = 1.85;
   private static final String UI_SCALE_KEY = "ui.scale";
@@ -192,8 +193,8 @@ public final class JvnHub {
     return new EmptyBorder(ui(top), ui(left), ui(bottom), ui(right));
   }
 
-  private static VectorIcon uiIcon(VectorIcon.Kind kind, int size, Color color) {
-    return VectorIcon.of(kind, ui(size), color);
+  static HubIcon uiIcon(HubIcon.Kind kind, int size) {
+    return HubIcon.of(kind, ui(size));
   }
 
   private final Path projectRoot;
@@ -331,6 +332,10 @@ public final class JvnHub {
     HubAeroControls.installDefaults();
     UIManager.put("Panel.background", BG);
     UIManager.put("OptionPane.background", BG);
+    UIManager.put("OptionPane.informationIcon", uiIcon(HubIcon.Kind.ABOUT, 32));
+    UIManager.put("OptionPane.questionIcon", uiIcon(HubIcon.Kind.HELP, 32));
+    UIManager.put("OptionPane.warningIcon", uiIcon(HubIcon.Kind.WARNING, 32));
+    UIManager.put("OptionPane.errorIcon", uiIcon(HubIcon.Kind.ERROR, 32));
     UIManager.put("ToolTip.background", BG);
     UIManager.put("ToolTip.foreground", TEXT_SOFT);
     UIManager.put("ToolTip.border", BorderFactory.createLineBorder(BORDER_NEUTRAL));
@@ -354,6 +359,7 @@ public final class JvnHub {
     UIManager.put("Menu.foreground", TEXT_PRIMARY);
     UIManager.put("Menu.selectionBackground", SELECTION_BG);
     UIManager.put("Menu.selectionForeground", TEXT_PRIMARY);
+    UIManager.put("Menu.arrowIcon", uiIcon(HubIcon.Kind.ARROW_RIGHT, 12));
     UIManager.put("MenuItem.background", PANEL_BG);
     UIManager.put("MenuItem.foreground", TEXT_PRIMARY);
     UIManager.put("MenuItem.selectionBackground", SELECTION_BG);
@@ -364,12 +370,12 @@ public final class JvnHub {
     UIManager.put("CheckBoxMenuItem.foreground", TEXT_PRIMARY);
     UIManager.put("CheckBoxMenuItem.selectionBackground", SELECTION_BG);
     UIManager.put("CheckBoxMenuItem.selectionForeground", TEXT_PRIMARY);
-    UIManager.put("CheckBoxMenuItem.checkIcon", new HubMenuSelectionIcon(false));
+    UIManager.put("CheckBoxMenuItem.checkIcon", HubIcon.selection(false, ui(15)));
     UIManager.put("RadioButtonMenuItem.background", PANEL_BG);
     UIManager.put("RadioButtonMenuItem.foreground", TEXT_PRIMARY);
     UIManager.put("RadioButtonMenuItem.selectionBackground", SELECTION_BG);
     UIManager.put("RadioButtonMenuItem.selectionForeground", TEXT_PRIMARY);
-    UIManager.put("RadioButtonMenuItem.checkIcon", new HubMenuSelectionIcon(true));
+    UIManager.put("RadioButtonMenuItem.checkIcon", HubIcon.selection(true, ui(15)));
     UIManager.put("CheckBox.background", PANEL_BG);
     UIManager.put("CheckBox.foreground", TEXT_SOFT);
     UIManager.put("ComboBox.background", BG);
@@ -638,9 +644,9 @@ public final class JvnHub {
     frame.getContentPane().setBackground(BG);
     installResizeOverlay();
 
-    Dimension hubSize = uiDimension(BASE_HUB_WIDTH, BASE_HUB_HEIGHT);
+    Dimension hubSize = hubSizeForScale(activeUiScale);
     frame.setResizable(true);
-    frame.setMinimumSize(hubSize);
+    frame.setMinimumSize(uiDimension(BASE_HUB_WIDTH, MIN_HUB_HEIGHT));
     frame.setPreferredSize(hubSize);
     frame.pack();
     frame.setSize(hubSize);
@@ -696,32 +702,32 @@ public final class JvnHub {
     file.add(hubMenuItem(
         "Show Engine Folder",
         "Reveal the active engine checkout in the system file manager.",
-        VectorIcon.Kind.INFO,
+        HubIcon.Kind.ABOUT,
         TEXT_SOFT,
         this::revealEngineRoot));
     file.add(hubMenuItem(
         "Show Hub Data Folder",
         "Open user-local JVN Hub state and configuration.",
-        VectorIcon.Kind.SLIDERS,
+        HubIcon.Kind.OPTIONS,
         TEXT_SOFT,
         () -> revealHubFolder("data", Paths.get(System.getProperty("user.home", "."), ".jvn"))));
     file.add(hubMenuItem(
         "Show Hub Logs",
         "Open user-local Hub logs.",
-        VectorIcon.Kind.DOCUMENTATION,
+        HubIcon.Kind.DOCUMENTATION,
         TEXT_SOFT,
         () -> revealHubFolder("logs", Paths.get(System.getProperty("user.home", "."), ".jvn", "logs"))));
     file.add(hubMenuItem(
         "Copy Engine Path",
         "Copy the active engine root to the clipboard.",
-        VectorIcon.Kind.CHECK,
+        HubIcon.Kind.CHECK,
         TEXT_SOFT,
         this::copyEngineRootPath));
     file.addSeparator();
     file.add(withAccelerator(hubMenuItem(
         "Quit Engine Hub",
         "Close the Hub after confirming any running task.",
-        VectorIcon.Kind.CLOSE,
+        HubIcon.Kind.CLOSE,
         TEXT_SOFT,
         this::confirmAndExit), KeyEvent.VK_Q, menuShortcutMask()));
 
@@ -732,26 +738,26 @@ public final class JvnHub {
     engine.add(hubMenuItem(
         "Module Inventory",
         "List every configured JVN module.",
-        VectorIcon.Kind.INFO,
+        HubIcon.Kind.ABOUT,
         ACCENT_NEUTRAL,
         this::showModuleInventory));
     engine.add(hubMenuItem(
         "Engine Configuration",
         "Inspect toolchain, JavaFX, cache, and build settings.",
-        VectorIcon.Kind.SLIDERS,
+        HubIcon.Kind.OPTIONS,
         ACCENT_NEUTRAL,
         this::showEngineConfiguration));
     engine.addSeparator();
     engine.add(hubMenuItem(
         "Open gradle.properties",
         "Edit the root Gradle configuration file.",
-        VectorIcon.Kind.EDIT,
+        HubIcon.Kind.EDIT,
         ACCENT_NEUTRAL,
         this::openEngineConfiguration));
     engine.add(hubMenuItem(
         "Copy Environment Summary",
         "Copy a support-ready engine and host summary.",
-        VectorIcon.Kind.CHECK,
+        HubIcon.Kind.CHECK,
         ACCENT_NEUTRAL,
         this::copyEngineEnvironmentSummary));
     engine.addSeparator();
@@ -764,20 +770,20 @@ public final class JvnHub {
     plugins.add(hubMenuItem(
         "Manage Plugins…",
         "Inspect installed plugin bundles, verify their manifests and entrypoints, or load a verified JAR.",
-        VectorIcon.Kind.HEALTH,
+        HubIcon.Kind.DIAGNOSTICS,
         ACCENT_DEV,
         this::showPluginManager));
     plugins.add(hubMenuItem(
         "Open User Plugin Folder",
         "Open the user-wide plugin folder used by every JVN project.",
-        VectorIcon.Kind.INFO,
+        HubIcon.Kind.ABOUT,
         ACCENT_DEV,
         () -> revealHubFolder("plugins", Paths.get(System.getProperty("user.home", "."), ".jvn", "plugins"))));
     if (projectRoot != null) {
       plugins.add(hubMenuItem(
           "Open Project Plugin Folder",
           "Open this project’s plugin folder.",
-          VectorIcon.Kind.INFO,
+          HubIcon.Kind.ABOUT,
           ACCENT_DEV,
           () -> revealHubFolder("project plugins", projectRoot.resolve("plugins"))));
     }
@@ -786,7 +792,7 @@ public final class JvnHub {
     engine.add(withAccelerator(hubMenuItem(
         "Refresh Engine Metadata",
         "Reload the engine version, rendering preferences, and menu status.",
-        VectorIcon.Kind.REFRESH,
+        HubIcon.Kind.REFRESH,
         ACCENT_NEUTRAL,
         this::refreshFromDisk), KeyEvent.VK_F5, 0));
 
@@ -799,7 +805,7 @@ public final class JvnHub {
     JMenuItem compileAll = hubMenuItem(
         "Compile All Modules",
         "Compile the complete workspace without packaging outputs.",
-        VectorIcon.Kind.HAMMER,
+        HubIcon.Kind.BUILD,
         ACCENT_GREEN,
         () -> guardedRun("Compile All Modules", () -> runGradle("compileAll", "Compile All Modules")));
     compileAll.setEnabled(!busy);
@@ -807,7 +813,7 @@ public final class JvnHub {
     JMenuItem buildAll = hubMenuItem(
         "Build All Modules",
         "Run the full workspace build.",
-        VectorIcon.Kind.ROCKET,
+        HubIcon.Kind.LAUNCHER,
         ACCENT_GREEN,
         () -> clickIfAvailable(buildAllButton));
     buildAll.setEnabled(!busy);
@@ -815,7 +821,7 @@ public final class JvnHub {
     JMenuItem quickCheck = hubMenuItem(
         "Quick Verification",
         "Run the fast engine verification path.",
-        VectorIcon.Kind.CHECK,
+        HubIcon.Kind.CHECK,
         ACCENT_GREEN,
         () -> guardedRun("Quick Verification", () -> runGradle("quickCheck", "Quick Verification")));
     quickCheck.setEnabled(!busy);
@@ -823,7 +829,7 @@ public final class JvnHub {
     JMenuItem tests = hubMenuItem(
         "Run Test Suite",
         "Execute the complete automated test suite.",
-        VectorIcon.Kind.HEALTH,
+        HubIcon.Kind.DIAGNOSTICS,
         ACCENT_GREEN,
         () -> clickIfAvailable(runTestsButton));
     tests.setEnabled(!busy);
@@ -832,13 +838,13 @@ public final class JvnHub {
     build.add(hubMenuItem(
         "Gradle Options",
         "Configure diagnostic and dependency flags used in Developer Mode.",
-        VectorIcon.Kind.SLIDERS,
+        HubIcon.Kind.OPTIONS,
         ACCENT_GREEN,
         this::showGradleOptionsDialog));
     JMenuItem shortcuts = hubMenuItem(
         "Install Platform Shortcuts",
         "Create native desktop and application-menu launchers.",
-        VectorIcon.Kind.SHORTCUT,
+        HubIcon.Kind.SHORTCUT,
         ACCENT_GREEN,
         () -> clickIfAvailable(buildShortcutsButton));
     shortcuts.setEnabled(!busy);
@@ -850,7 +856,7 @@ public final class JvnHub {
     JMenuItem checkUpdates = hubMenuItem(
         "Check for Engine Updates",
         "Fetch and compare the local checkout with origin/stable.",
-        VectorIcon.Kind.REFRESH,
+        HubIcon.Kind.REFRESH,
         ACCENT_MAINTENANCE,
         () -> checkIncomingUpdates(true));
     checkUpdates.setEnabled(!busy && !updateCheckRunning.get());
@@ -858,7 +864,7 @@ public final class JvnHub {
     JMenuItem update = hubMenuItem(
         "Update from Stable",
         "Run the guarded stable update and recovery flow.",
-        VectorIcon.Kind.ROCKET,
+        HubIcon.Kind.LAUNCHER,
         ACCENT_MAINTENANCE,
         () -> clickIfAvailable(updateEngineButton));
     update.setEnabled(!busy);
@@ -867,13 +873,13 @@ public final class JvnHub {
     sourceControl.add(hubMenuItem(
         "Open GitHub Repository",
         "Open the JVN source repository in a browser.",
-        VectorIcon.Kind.DOCUMENTATION,
+        HubIcon.Kind.DOCUMENTATION,
         ACCENT_MAINTENANCE,
         this::openSourceRepository));
     sourceControl.add(hubMenuItem(
         "Copy Current Branch",
         "Copy the active Git branch name.",
-        VectorIcon.Kind.CHECK,
+        HubIcon.Kind.CHECK,
         ACCENT_MAINTENANCE,
         this::copyCurrentBranch));
 
@@ -889,26 +895,26 @@ public final class JvnHub {
     tools.addSeparator();
     JMenu checks = hubMenu("Build & Verify", ACCENT_TOOLS);
     JMenuItem toolsQuickCheck = hubMenuItem("Quick Verification", "Compile all modules and run the core/runtime tests.",
-        VectorIcon.Kind.HEALTH, ACCENT_TOOLS, () -> runGradle("quickCheck", "Quick Verification"));
+        HubIcon.Kind.DIAGNOSTICS, ACCENT_TOOLS, () -> runGradle("quickCheck", "Quick Verification"));
     toolsQuickCheck.setEnabled(!busy);
     checks.add(toolsQuickCheck);
     JMenuItem prepareEditor = hubMenuItem("Prepare Editor Launch", "Compile the editor and refresh its direct-launch cache.",
-        VectorIcon.Kind.REFRESH, ACCENT_TOOLS, () -> runGradle(":editor:prepareFastLaunch", "Prepare Editor Launch"));
+        HubIcon.Kind.REFRESH, ACCENT_TOOLS, () -> runGradle(":editor:prepareFastLaunch", "Prepare Editor Launch"));
     prepareEditor.setEnabled(!busy);
     checks.add(prepareEditor);
     tools.add(checks);
     JMenu profiling = hubMenu("Performance & Recordings", ACCENT_TOOLS);
     JMenuItem record = hubMenuItem("Record Editor Session (JFR)",
         "Record CPU, memory allocation, and garbage collection; close the editor to finish the recording.",
-        VectorIcon.Kind.PLAY, ACCENT_TOOLS, () -> guardedRun("Profile Editor", this::runProfiledEditor));
+        HubIcon.Kind.PLAY, ACCENT_TOOLS, () -> guardedRun("Profile Editor", this::runProfiledEditor));
     record.setEnabled(!busy);
     profiling.add(record);
     profiling.add(hubMenuItem("Open Recordings Folder", "Open saved Java Flight Recorder sessions.",
-        VectorIcon.Kind.DOCUMENTATION, ACCENT_TOOLS, () -> revealHubFolder("recordings",
+        HubIcon.Kind.DOCUMENTATION, ACCENT_TOOLS, () -> revealHubFolder("recordings",
             RenderPipelineSettings.profileDirectory(System.getProperty("os.name", ""),
                 Path.of(System.getProperty("user.home", ".")), System.getenv()))));
     profiling.add(hubMenuItem("Copy Performance Setup", "Copy renderer, preview budget, and JVM settings for comparison.",
-        VectorIcon.Kind.CHECK, ACCENT_TOOLS, () -> {
+        HubIcon.Kind.CHECK, ACCENT_TOOLS, () -> {
           Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
               new StringSelection(renderPipelineSummary() + "\nApplication JVM: " + jvmLaunchSettings.summary()), null);
           setStatus("Performance setup copied", ACCENT_TOOLS);
@@ -917,32 +923,32 @@ public final class JvnHub {
     tools.add(hubMenuItem(
         "JVM Memory Settings...",
         "Set real heap, garbage collector, and out-of-memory options for managed application launches.",
-        VectorIcon.Kind.SLIDERS,
+        HubIcon.Kind.OPTIONS,
         ACCENT_TOOLS,
         this::showJvmMemorySettingsDialog));
     tools.add(hubMenuItem(
         "Run Diagnostics",
         "Run lightweight workspace, toolchain, and repository checks.",
-        VectorIcon.Kind.HEALTH,
+        HubIcon.Kind.DIAGNOSTICS,
         ACCENT_TOOLS,
         this::showDiagnosticsReport));
     tools.add(hubMenuItem(
         "Show Hub Data Folder",
         "Open user-local Hub state.",
-        VectorIcon.Kind.SLIDERS,
+        HubIcon.Kind.OPTIONS,
         ACCENT_TOOLS,
         () -> revealHubFolder("data", Paths.get(System.getProperty("user.home", "."), ".jvn"))));
     tools.add(hubMenuItem(
         "Show Hub Logs",
         "Open Hub process and recovery logs.",
-        VectorIcon.Kind.DOCUMENTATION,
+        HubIcon.Kind.DOCUMENTATION,
         ACCENT_TOOLS,
         () -> revealHubFolder("logs", Paths.get(System.getProperty("user.home", "."), ".jvn", "logs"))));
     tools.addSeparator();
     JMenuItem cancel = hubMenuItem(
         "Cancel Running Task",
         busy ? "Stop the active Hub-managed process." : "No Hub-managed process is running.",
-        VectorIcon.Kind.STOP,
+        HubIcon.Kind.STOP,
         ACCENT_ERROR,
         this::cancelRunning);
     cancel.setEnabled(busy);
@@ -1009,20 +1015,20 @@ public final class JvnHub {
     help.add(hubMenuItem(
         "Documentation",
         "Open the public JVN documentation website.",
-        VectorIcon.Kind.DOCUMENTATION,
+        HubIcon.Kind.DOCUMENTATION,
         TEXT_SOFT,
         this::openDocumentationWebsite));
     help.add(hubMenuItem(
         "License & Terms",
         "Review terms, record acceptance, and export a local receipt.",
-        VectorIcon.Kind.INFO,
+        HubIcon.Kind.ABOUT,
         TEXT_SOFT,
         () -> LicenseAcceptanceDialog.show(frame, version)));
     help.addSeparator();
     help.add(hubMenuItem(
         "About Engine Hub",
         "Show version, revision, install, Java, OS, and display details.",
-        VectorIcon.Kind.INFO,
+        HubIcon.Kind.ABOUT,
         TEXT_SOFT,
         this::showAboutReport));
 
@@ -1062,7 +1068,7 @@ public final class JvnHub {
     JMenuItem compile = hubMenuItem(
         "Compile All Modules",
         "Compile the workspace with Developer Mode launch flags.",
-        VectorIcon.Kind.HAMMER,
+        HubIcon.Kind.BUILD,
         ACCENT_DEV,
         () -> guardedRun("Compile All Modules", () -> runGradle("compileAll", "Compile All Modules")));
     compile.setEnabled(!busy);
@@ -1070,7 +1076,7 @@ public final class JvnHub {
     JMenuItem verify = hubMenuItem(
         "Quick Verification",
         "Run the fast engineering verification path.",
-        VectorIcon.Kind.CHECK,
+        HubIcon.Kind.CHECK,
         ACCENT_DEV,
         () -> guardedRun("Quick Verification", () -> runGradle("quickCheck", "Quick Verification")));
     verify.setEnabled(!busy);
@@ -1078,7 +1084,7 @@ public final class JvnHub {
     JMenuItem tests = hubMenuItem(
         "Run Full Test Suite",
         "Execute every automated test.",
-        VectorIcon.Kind.HEALTH,
+        HubIcon.Kind.DIAGNOSTICS,
         ACCENT_DEV,
         () -> clickIfAvailable(runTestsButton));
     tests.setEnabled(!busy);
@@ -1087,13 +1093,13 @@ public final class JvnHub {
     developer.add(hubMenuItem(
         "Configure Gradle",
         "Configure stacktraces, logging, dependency, cache, daemon, and custom flags.",
-        VectorIcon.Kind.SLIDERS,
+        HubIcon.Kind.OPTIONS,
         ACCENT_DEV,
         this::showGradleOptionsDialog));
     developer.add(hubMenuItem(
         "Inspect Engine Diagnostics",
         "Run the Hub health report.",
-        VectorIcon.Kind.HEALTH,
+        HubIcon.Kind.DIAGNOSTICS,
         ACCENT_DEV,
         this::showDiagnosticsReport));
     return developer;
@@ -1110,7 +1116,7 @@ public final class JvnHub {
     JMenuItem runEditor = hubMenuItem(
         "Run Editor with Guardrails",
         "Launch the editor with safe-mode flags.",
-        VectorIcon.Kind.SHIELD,
+        HubIcon.Kind.SAFE,
         ACCENT_SAFE,
         () -> clickIfAvailable(runEditorButton));
     runEditor.setEnabled(!busy);
@@ -1118,7 +1124,7 @@ public final class JvnHub {
     JMenuItem update = hubMenuItem(
         "Update Stable with Recovery",
         "Update with autostash and interrupted-operation recovery.",
-        VectorIcon.Kind.REFRESH,
+        HubIcon.Kind.REFRESH,
         ACCENT_SAFE,
         () -> clickIfAvailable(updateEngineButton));
     update.setEnabled(!busy);
@@ -1127,19 +1133,19 @@ public final class JvnHub {
     safe.add(hubMenuItem(
         "Recheck Workspace Health",
         "Run workspace and repository diagnostics.",
-        VectorIcon.Kind.HEALTH,
+        HubIcon.Kind.DIAGNOSTICS,
         ACCENT_SAFE,
         this::showDiagnosticsReport));
     safe.add(hubMenuItem(
         "Open Recovery Logs",
         "Open update and process recovery logs.",
-        VectorIcon.Kind.DOCUMENTATION,
+        HubIcon.Kind.DOCUMENTATION,
         ACCENT_SAFE,
         () -> revealHubFolder("logs", Paths.get(System.getProperty("user.home", "."), ".jvn", "logs"))));
     JMenuItem cancel = hubMenuItem(
         "Cancel Running Task",
         busy ? "Stop the active safe-mode process." : "No Hub-managed process is running.",
-        VectorIcon.Kind.STOP,
+        HubIcon.Kind.STOP,
         ACCENT_ERROR,
         this::cancelRunning);
     cancel.setEnabled(busy);
@@ -1287,13 +1293,13 @@ public final class JvnHub {
     diagnostics.add(hubMenuItem(
         "Open Render Graph Viewer...",
         "View, refresh, copy, or clear the latest captured JavaFX render tree.",
-        VectorIcon.Kind.INFO,
+        HubIcon.Kind.ABOUT,
         ACCENT_RENDER,
         this::showRenderGraphViewer));
     JMenuItem profileEditor = hubMenuItem(
         "Launch Editor with Java Flight Recorder...",
         "Record CPU, allocation, GC, and JavaFX submission activity while using the selected GPU pipeline.",
-        VectorIcon.Kind.PLAY,
+        HubIcon.Kind.PLAY,
         ACCENT_RENDER,
         () -> guardedRun("Profile Editor", this::runProfiledEditor));
     profileEditor.setEnabled(!busy);
@@ -1303,7 +1309,7 @@ public final class JvnHub {
         renderPipelineOptions.diagnosticsEnabled()
             ? "Turn off every performance-sensitive render overlay and log."
             : "No render diagnostics are currently active.",
-        VectorIcon.Kind.STOP,
+        HubIcon.Kind.STOP,
         ACCENT_RENDER,
         this::disableRenderDiagnostics);
     disableDiagnostics.setEnabled(renderPipelineOptions.diagnosticsEnabled());
@@ -1327,38 +1333,38 @@ public final class JvnHub {
     JMenuItem launch = hubMenuItem(
         "Launch Editor with This Pipeline",
         "Start the editor with the selected pipeline and tuning options.",
-        VectorIcon.Kind.PLAY,
+        HubIcon.Kind.PLAY,
         ACCENT_RENDER,
         () -> clickIfAvailable(runEditorButton));
     launch.setEnabled(!busy);
     render.add(launch);
     JMenuItem probe = hubMenuItem("Check Actual Renderer", "Start JavaFX briefly and report the initialized backend in the console.",
-        VectorIcon.Kind.HEALTH, ACCENT_RENDER, () -> runGradle(":editor:probeGraphics", "Check Actual Renderer"));
+        HubIcon.Kind.DIAGNOSTICS, ACCENT_RENDER, () -> runGradle(":editor:probeGraphics", "Check Actual Renderer"));
     probe.setEnabled(!busy);
     render.add(probe);
     render.add(hubMenuItem(
         "Inspect Render Stack...",
         "Show the selected backends, active tuning, and host graphics environment.",
-        VectorIcon.Kind.INFO,
+        HubIcon.Kind.ABOUT,
         ACCENT_RENDER,
         this::showRenderPipelineReport));
     render.add(hubMenuItem(
         "Copy Render Stack Summary",
         "Copy a support-ready rendering report.",
-        VectorIcon.Kind.CHECK,
+        HubIcon.Kind.CHECK,
         ACCENT_RENDER,
         this::copyRenderPipelineSummary));
     render.addSeparator();
     render.add(hubMenuItem(
         "Open Render Pipeline Settings",
         "Edit the persisted rendering preferences file.",
-        VectorIcon.Kind.EDIT,
+        HubIcon.Kind.EDIT,
         ACCENT_RENDER,
         this::openRenderPipelinePreferences));
     render.add(hubMenuItem(
         "Reset All Rendering Defaults",
         "Restore adaptive selection and all recommended performance settings.",
-        VectorIcon.Kind.REFRESH,
+        HubIcon.Kind.REFRESH,
         ACCENT_RENDER,
         this::resetRenderPipelineDefaults));
     return render;
@@ -1412,7 +1418,7 @@ public final class JvnHub {
     JMenuItem custom = hubMenuItem(
         "Custom Scale...",
         "Enter a fixed Hub scale from 75% through 185%.",
-        VectorIcon.Kind.SLIDERS,
+        HubIcon.Kind.OPTIONS,
         TEXT_SOFT,
         this::showCustomUiScaleDialog);
     custom.setEnabled(runningProcess.get() == null);
@@ -1466,7 +1472,7 @@ public final class JvnHub {
     size.add(hubMenuItem(
         "Custom Size...",
         "Enter any Project Explorer icon size from 12 through 28 pixels.",
-        VectorIcon.Kind.SLIDERS,
+        HubIcon.Kind.OPTIONS,
         ACCENT_GREEN,
         this::showProjectIconThemeDialog));
     icons.add(size);
@@ -1526,19 +1532,19 @@ public final class JvnHub {
     icons.add(hubMenuItem(
         "Configure and Preview...",
         "Open the complete Project Explorer icon-theme configuration and live preview.",
-        VectorIcon.Kind.SLIDERS,
+        HubIcon.Kind.OPTIONS,
         ACCENT_GREEN,
         this::showProjectIconThemeDialog));
     icons.add(hubMenuItem(
         "Open Settings File",
         "Open the shared project-icons.properties file used by the editor.",
-        VectorIcon.Kind.EDIT,
+        HubIcon.Kind.EDIT,
         ACCENT_GREEN,
         this::openProjectIconSettingsFile));
     icons.add(hubMenuItem(
         "Restore Icon Defaults",
         "Follow the desktop theme at 18 px with semantic icons and safe fallbacks.",
-        VectorIcon.Kind.REFRESH,
+        HubIcon.Kind.REFRESH,
         ACCENT_GREEN,
         this::resetProjectIconOptions));
     return icons;
@@ -1710,7 +1716,7 @@ public final class JvnHub {
 
     FlatButton reset = new FlatButton(
         "Defaults",
-        uiIcon(VectorIcon.Kind.REFRESH, 14, TEXT_SOFT),
+        uiIcon(HubIcon.Kind.REFRESH, 14),
         TEXT_SOFT);
     reset.addActionListener(e -> {
       ProjectIconThemeSettings.Options defaults = ProjectIconThemeSettings.Options.defaults();
@@ -1727,13 +1733,13 @@ public final class JvnHub {
 
     FlatButton cancel = new FlatButton(
         "Cancel",
-        uiIcon(VectorIcon.Kind.CLOSE, 14, TEXT_SOFT),
+        uiIcon(HubIcon.Kind.CLOSE, 14),
         TEXT_SOFT);
     cancel.addActionListener(e -> dialog.dispose());
 
     FlatButton apply = new FlatButton(
         "Apply Icon Theme",
-        uiIcon(VectorIcon.Kind.CHECK, 14, ACCENT_GREEN),
+        uiIcon(HubIcon.Kind.CHECK, 14),
         ACCENT_GREEN);
     apply.addActionListener(e -> {
       ProjectIconThemeSettings.Options requested = projectIconOptionsFromControls(
@@ -1829,10 +1835,10 @@ public final class JvnHub {
       ProjectIconThemeSettings.Options options) {
     preview.removeAll();
     List<ProjectIconPreview> samples = List.of(
-        new ProjectIconPreview("Folder", List.of("folder-pictures", "folder")),
-        new ProjectIconPreview("Java", List.of("text-x-java-source", "text-x-generic")),
-        new ProjectIconPreview("Image", List.of("image-x-generic", "text-x-generic")),
-        new ProjectIconPreview("Script", List.of("text-x-script", "text-x-generic")));
+        new ProjectIconPreview("Folder", List.of("folder-pictures", "folder"), HubIcon.Kind.FOLDER),
+        new ProjectIconPreview("Java", List.of("text-x-java-source", "text-x-generic"), HubIcon.Kind.JAVA),
+        new ProjectIconPreview("Image", List.of("image-x-generic", "text-x-generic"), HubIcon.Kind.IMAGE),
+        new ProjectIconPreview("Script", List.of("text-x-script", "text-x-generic"), HubIcon.Kind.DOCUMENT));
     int resolved = 0;
     for (ProjectIconPreview sample : samples) {
       JLabel tile = new JLabel(sample.label(), SwingConstants.CENTER);
@@ -1849,14 +1855,14 @@ public final class JvnHub {
             ui(options.size()), ui(options.size()), hint)));
         resolved++;
       } else {
-        tile.setIcon(uiIcon(VectorIcon.Kind.SLIDERS, options.size(), ACCENT_GREEN));
+        tile.setIcon(uiIcon(sample.fallback(), options.size()));
       }
       tile.setPreferredSize(uiDimension(76, 56));
       preview.add(tile);
     }
     String theme = ProjectIconThemeSettings.resolvedTheme(options);
     status.setText(options.source() == ProjectIconThemeSettings.Source.BUNDLED
-        ? "JVN default SVG artwork · preview placeholders shown · applies on the next editor launch."
+        ? "JVN default SVG artwork · representative file types · applies on the next editor launch."
         : theme + " · " + resolved + "/" + samples.size()
             + " PNG samples resolved · applies on the next editor launch.");
     preview.revalidate();
@@ -1915,7 +1921,7 @@ public final class JvnHub {
     }
   }
 
-  private record ProjectIconPreview(String label, List<String> names) {}
+  private record ProjectIconPreview(String label, List<String> names, HubIcon.Kind fallback) {}
 
   private void addScaleChoice(JMenu menu, ButtonGroup choices, String label, double value, boolean selected) {
     JRadioButtonMenuItem item = new HelpRadioButtonMenuItem(label, selected);
@@ -1991,13 +1997,13 @@ public final class JvnHub {
 
     FlatButton cancel = new FlatButton(
         "Cancel",
-        uiIcon(VectorIcon.Kind.CLOSE, 14, TEXT_SOFT),
+        uiIcon(HubIcon.Kind.CLOSE, 14),
         TEXT_SOFT);
     cancel.addActionListener(e -> dialog.dispose());
 
     FlatButton apply = new FlatButton(
         "Apply Scale",
-        uiIcon(VectorIcon.Kind.CHECK, 14, ACCENT_NEUTRAL),
+        uiIcon(HubIcon.Kind.CHECK, 14),
         ACCENT_NEUTRAL);
     apply.addActionListener(e -> {
       double scale = parseCustomUiScale(input.getText());
@@ -2125,13 +2131,13 @@ public final class JvnHub {
   private static JMenuItem hubMenuItem(
       String text,
       String tooltip,
-      VectorIcon.Kind iconKind,
+      HubIcon.Kind iconKind,
       Color accent,
       Runnable action) {
     JMenuItem item = new HelpMenuItem(text);
     styleMenuItem(item, accent);
     if (tooltip != null && !tooltip.isBlank()) item.setToolTipText(tooltip);
-    if (iconKind != null) item.setIcon(uiIcon(iconKind, 13, accent == null ? TEXT_SOFT : accent));
+    if (iconKind != null) item.setIcon(uiIcon(iconKind, 15));
     item.addActionListener(e -> action.run());
     return item;
   }
@@ -2205,7 +2211,7 @@ public final class JvnHub {
 
   private static void paintContextHelpIndicator(JMenuItem item, Graphics graphics) {
     if (!hasContextHelp(item)) return;
-    AeroHelpIcon icon = new AeroHelpIcon(ui(16));
+    Icon icon = uiIcon(HubIcon.Kind.HELP, 16);
     int trailing = ui(7);
     if (item instanceof JMenu) trailing += ui(13);
     KeyStroke accelerator = item.getAccelerator();
@@ -2220,7 +2226,9 @@ public final class JvnHub {
     if (item.getModel().isArmed()) {
       Graphics2D glow = (Graphics2D) graphics.create();
       glow.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-      glow.setColor(new Color(169, 229, 251, 55));
+      Color tone = item.getClientProperty("jvn.menu.accent") instanceof Color accent
+          ? accent : Color.decode("#a9e5fb");
+      glow.setColor(alpha(tone, 0.24f));
       glow.fillOval(x - ui(2), y - ui(2), icon.getIconWidth() + ui(4), icon.getIconHeight() + ui(4));
       glow.dispose();
     }
@@ -2335,7 +2343,7 @@ public final class JvnHub {
   }
 
   private static final class HubToolTip extends JToolTip {
-    private final Icon helpIcon = new AeroHelpIcon(ui(18));
+    private final Icon helpIcon = uiIcon(HubIcon.Kind.HELP, 18);
 
     HubToolTip(JComponent owner) {
       setComponent(owner);
@@ -2355,86 +2363,14 @@ public final class JvnHub {
     }
   }
 
-  /** Swing reproduction of the Editor's glossy Aero help orb. */
-  static final class AeroHelpIcon implements Icon {
-    private final int size;
-
-    AeroHelpIcon(int size) {
-      this.size = Math.max(12, size);
-    }
-
-    @Override public int getIconWidth() {
-      return size;
-    }
-
-    @Override public int getIconHeight() {
-      return size;
-    }
-
-    @Override public void paintIcon(Component component, Graphics graphics, int x, int y) {
-      Graphics2D g2 = (Graphics2D) graphics.create();
-      g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-      g2.translate(x, y);
-      float s = size;
-      float diameter = s * 0.78f;
-      float left = (s - diameter) / 2f;
-      float top = (s - diameter) / 2f;
-      float cx = s / 2f;
-      float cy = s / 2f;
-      float radius = diameter / 2f;
-
-      g2.setColor(new Color(0, 10, 20, 125));
-      g2.fill(new Ellipse2D.Float(left, top + s * 0.07f, diameter, diameter));
-
-      g2.setPaint(new RadialGradientPaint(
-          new Point2D.Float(cx, cy),
-          radius,
-          new Point2D.Float(s * 0.36f, s * 0.31f),
-          new float[]{0f, 0.34f, 0.72f, 1f},
-          new Color[]{
-              Color.decode("#f7fdff"),
-              Color.decode("#94d9f4"),
-              Color.decode("#3c7fae"),
-              Color.decode("#173b5a")},
-          java.awt.MultipleGradientPaint.CycleMethod.NO_CYCLE));
-      g2.fill(new Ellipse2D.Float(left, top, diameter, diameter));
-
-      g2.setColor(new Color(5, 28, 45, 150));
-      g2.setStroke(new BasicStroke(Math.max(1f, s * 0.08f)));
-      g2.draw(new Ellipse2D.Float(
-          left + s * 0.045f,
-          top + s * 0.045f,
-          diameter - s * 0.09f,
-          diameter - s * 0.09f));
-      g2.setColor(Color.decode("#e8f8ff"));
-      g2.setStroke(new BasicStroke(Math.max(0.8f, s * 0.045f)));
-      g2.draw(new Ellipse2D.Float(left, top, diameter, diameter));
-
-      Font questionFont = new Font(Font.SANS_SERIF, Font.BOLD, Math.max(9, Math.round(s * 0.55f)));
-      g2.setFont(questionFont);
-      FontMetrics metrics = g2.getFontMetrics();
-      String question = "?";
-      float questionX = cx - metrics.stringWidth(question) / 2f;
-      float questionY = cy + (metrics.getAscent() - metrics.getDescent()) / 2f + s * 0.01f;
-      g2.setColor(new Color(0, 23, 42, 225));
-      g2.drawString(question, questionX, questionY + Math.max(1f, s * 0.04f));
-      g2.setColor(Color.WHITE);
-      g2.drawString(question, questionX, questionY);
-
-      g2.setColor(new Color(255, 255, 255, 132));
-      g2.fill(new Ellipse2D.Float(s * 0.24f, s * 0.19f, s * 0.38f, s * 0.15f));
-      g2.dispose();
-    }
-  }
-
   private static void installApplicationIcon(JFrame frame) {
     if (frame == null) return;
-    BufferedImage icon512 = JvnLogoIcon.renderToImage(512, 512);
+    BufferedImage icon512 = HubIcon.image(HubIcon.Kind.APP, 512);
     frame.setIconImages(List.of(
-        JvnLogoIcon.renderToImage(16, 16),
-        JvnLogoIcon.renderToImage(32, 32),
-        JvnLogoIcon.renderToImage(64, 64),
-        JvnLogoIcon.renderToImage(128, 128),
+        HubIcon.image(HubIcon.Kind.APP, 16),
+        HubIcon.image(HubIcon.Kind.APP, 32),
+        HubIcon.image(HubIcon.Kind.APP, 64),
+        HubIcon.image(HubIcon.Kind.APP, 128),
         icon512));
     try {
       if (java.awt.Taskbar.isTaskbarSupported()) {
@@ -2489,19 +2425,19 @@ public final class JvnHub {
     actionButtons.add(safeModeButton);
 
     diagnosticsButton = new HeaderIconButton(
-        WindowsSevenActionIcon.of(WindowsSevenActionIcon.Kind.DIAGNOSTICS, 24),
+        uiIcon(HubIcon.Kind.DIAGNOSTICS, 24),
         "Diagnostics — run a lightweight health check");
     diagnosticsButton.addActionListener(e -> showDiagnosticsReport());
     actionButtons.add(diagnosticsButton);
 
     aboutButton = new HeaderIconButton(
-        WindowsSevenActionIcon.of(WindowsSevenActionIcon.Kind.ABOUT, 24),
+        uiIcon(HubIcon.Kind.ABOUT, 24),
         "About — version and install details");
     aboutButton.addActionListener(e -> showAboutReport());
     actionButtons.add(aboutButton);
 
     documentationButton = new HeaderIconButton(
-        WindowsSevenActionIcon.of(WindowsSevenActionIcon.Kind.DOCUMENTATION, 24),
+        uiIcon(HubIcon.Kind.DOCUMENTATION, 24),
         "Documentation — open the documentation website");
     documentationButton.addActionListener(e -> openDocumentationWebsite());
     actionButtons.add(documentationButton);
@@ -2531,27 +2467,22 @@ public final class JvnHub {
     actionGrid.setOpaque(false);
 
     runEditorButton = makeAction("Run Editor", "Launch the full JVN editor.",
-        VectorIcon.Kind.EDIT, null, () -> guardedRun("Run Editor", () -> runFastApp("editor", "Run Editor")));
-    runEditorButton.setIcon(WindowsSevenActionIcon.of(WindowsSevenActionIcon.Kind.EDITOR));
+        HubIcon.Kind.EDITOR, null, () -> guardedRun("Run Editor", () -> runFastApp("editor", "Run Editor")));
 
     buildAllButton = makeAction("Build All", "Compile every module.",
-        VectorIcon.Kind.HAMMER, null, () -> guardedRun("Build All", () -> runGradle("build", "Build All")));
-    buildAllButton.setIcon(WindowsSevenActionIcon.of(WindowsSevenActionIcon.Kind.BUILD));
+        HubIcon.Kind.BUILD, null, () -> guardedRun("Build All", () -> runGradle("build", "Build All")));
 
     runTestsButton = makeAction("Run Tests", "Developer Mode: execute the full test suite.",
-        VectorIcon.Kind.CHECK, ACCENT_DEV, () -> runGradle("test", "Run Tests"));
-    runTestsButton.setIcon(WindowsSevenActionIcon.of(WindowsSevenActionIcon.Kind.TESTS));
+        HubIcon.Kind.TESTS, ACCENT_DEV, () -> runGradle("test", "Run Tests"));
 
     gradleOptionsButton = makeAction("Gradle Options", "Developer Mode: configure Gradle flags for hub actions.",
-        VectorIcon.Kind.SLIDERS, ACCENT_DEV, this::showGradleOptionsDialog);
-    gradleOptionsButton.setIcon(WindowsSevenActionIcon.of(WindowsSevenActionIcon.Kind.OPTIONS));
+        HubIcon.Kind.OPTIONS, ACCENT_DEV, this::showGradleOptionsDialog);
 
     buildShortcutsButton = makeAction("Build Shortcuts", "Install Start Menu / Applications shortcuts for this OS.",
-        VectorIcon.Kind.SHORTCUT, null, () -> guardedRun("Build Shortcuts", this::installShortcuts));
-    buildShortcutsButton.setIcon(WindowsSevenActionIcon.of(WindowsSevenActionIcon.Kind.SHORTCUT));
+        HubIcon.Kind.SHORTCUT, null, () -> guardedRun("Build Shortcuts", this::installShortcuts));
 
     updateEngineButton = new UpdateEngineButton("Update Engine",
-        WindowsSevenActionIcon.of(WindowsSevenActionIcon.Kind.UPDATE));
+        uiIcon(HubIcon.Kind.UPDATE, 26));
     updateEngineButton.setToolTipText("git pull --rebase " + ENGINE_UPDATE_REMOTE + " " + ENGINE_UPDATE_BRANCH);
     updateEngineButton.addActionListener(e -> updateEngine());
     actionButtons.add(updateEngineButton);
@@ -2655,15 +2586,15 @@ public final class JvnHub {
     JLabel version = footerLabel(VERSION, TEXT_SOFT);
 
     FlatButton cancel = new FlatButton("Cancel",
-        WindowsSevenActionIcon.of(WindowsSevenActionIcon.Kind.CANCEL, 18), ACCENT_ERROR);
+        uiIcon(HubIcon.Kind.CANCEL, 18), ACCENT_ERROR);
     cancel.addActionListener(e -> cancelRunning());
 
     FlatButton quit = new FlatButton("Quit",
-        WindowsSevenActionIcon.of(WindowsSevenActionIcon.Kind.QUIT, 18), null);
+        uiIcon(HubIcon.Kind.QUIT, 18), null);
     quit.addActionListener(e -> confirmAndExit());
 
     FlatButton more = new FlatButton("More",
-        WindowsSevenActionIcon.of(WindowsSevenActionIcon.Kind.MORE, 18), null);
+        uiIcon(HubIcon.Kind.MORE, 18), null);
     more.addActionListener(e -> showFooterMenu(more));
 
     JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, ui(6), 0));
@@ -2745,14 +2676,14 @@ public final class JvnHub {
     menu.add(popupItem(
         "Run Editor",
         "Launch the JVN editor from this workspace.",
-        VectorIcon.Kind.PLAY,
+        HubIcon.Kind.PLAY,
         ACCENT_TOOLS,
         !busy,
         () -> clickIfAvailable(runEditorButton)));
     menu.add(popupItem(
         "Build All",
         "Run the complete workspace build.",
-        VectorIcon.Kind.HAMMER,
+        HubIcon.Kind.BUILD,
         ACCENT_GREEN,
         !busy,
         () -> clickIfAvailable(buildAllButton)));
@@ -2760,21 +2691,21 @@ public final class JvnHub {
     menu.add(popupItem(
         "Update Engine",
         "Update this checkout from the stable branch.",
-        VectorIcon.Kind.REFRESH,
+        HubIcon.Kind.REFRESH,
         ACCENT_MAINTENANCE,
         !busy,
         this::updateEngine));
     menu.add(popupItem(
         "Diagnostics",
         "Run the Hub health report.",
-        VectorIcon.Kind.HEALTH,
+        HubIcon.Kind.DIAGNOSTICS,
         ACCENT_TOOLS,
         true,
         this::showDiagnosticsReport));
     menu.add(popupItem(
         "Documentation Website",
         "Open the public JVN documentation.",
-        VectorIcon.Kind.DOCUMENTATION,
+        HubIcon.Kind.DOCUMENTATION,
         TEXT_SOFT,
         true,
         this::openDocumentationWebsite));
@@ -2782,14 +2713,14 @@ public final class JvnHub {
     menu.add(popupItem(
         "Reveal Engine Root",
         "Open the active checkout in the system file manager.",
-        VectorIcon.Kind.INFO,
+        HubIcon.Kind.ABOUT,
         TEXT_SOFT,
         true,
         this::revealEngineRoot));
     menu.add(popupItem(
         "Copy Engine Root Path",
         "Copy the active checkout path.",
-        VectorIcon.Kind.CHECK,
+        HubIcon.Kind.CHECK,
         TEXT_SOFT,
         true,
         this::copyEngineRootPath));
@@ -2797,14 +2728,14 @@ public final class JvnHub {
     menu.add(popupItem(
         "Cancel Running Task",
         busy ? "Stop the active Hub-managed process." : "No Hub-managed process is running.",
-        VectorIcon.Kind.STOP,
+        HubIcon.Kind.STOP,
         ACCENT_ERROR,
         busy,
         this::cancelRunning));
     menu.add(popupItem(
         "Quit Hub",
         "Close the Engine Hub after confirming any active task.",
-        VectorIcon.Kind.CLOSE,
+        HubIcon.Kind.CLOSE,
         TEXT_SOFT,
         true,
         this::confirmAndExit));
@@ -2813,7 +2744,7 @@ public final class JvnHub {
   private JMenuItem popupItem(
       String label,
       String tooltip,
-      VectorIcon.Kind iconKind,
+      HubIcon.Kind iconKind,
       Color accent,
       boolean enabled,
       Runnable action) {
@@ -3447,14 +3378,14 @@ public final class JvnHub {
 
     FlatButton launch = new FlatButton(
         "Launch Editor",
-        uiIcon(VectorIcon.Kind.PLAY, 14, ACCENT_RENDER),
+        uiIcon(HubIcon.Kind.PLAY, 14),
         ACCENT_RENDER);
     launch.setToolTipText("Launch the editor with the current Render Pipeline settings.");
     launch.addActionListener(e -> clickIfAvailable(runEditorButton));
 
     FlatButton copy = new FlatButton(
         "Copy Graph",
-        uiIcon(VectorIcon.Kind.CHECK, 14, TEXT_SOFT),
+        uiIcon(HubIcon.Kind.CHECK, 14),
         TEXT_SOFT);
     copy.addActionListener(e -> {
       String graph = renderGraphCapture.snapshot().graph();
@@ -3465,13 +3396,13 @@ public final class JvnHub {
 
     FlatButton clear = new FlatButton(
         "Clear",
-        uiIcon(VectorIcon.Kind.CLOSE, 14, TEXT_SOFT),
+        uiIcon(HubIcon.Kind.CLOSE, 14),
         TEXT_SOFT);
     clear.addActionListener(e -> renderGraphCapture.clear());
 
     FlatButton close = new FlatButton(
         "Close",
-        uiIcon(VectorIcon.Kind.CLOSE, 14, TEXT_PRIMARY),
+        uiIcon(HubIcon.Kind.CLOSE, 14),
         TEXT_PRIMARY);
     close.addActionListener(e -> dialog.dispose());
 
@@ -3660,7 +3591,7 @@ public final class JvnHub {
     FlatButton cancel = new FlatButton("Cancel", null, null);
     cancel.addActionListener(e -> dialog.dispose());
 
-    FlatButton apply = new FlatButton("Apply", uiIcon(VectorIcon.Kind.CHECK, 14, ACCENT_DEV), ACCENT_DEV);
+    FlatButton apply = new FlatButton("Apply", uiIcon(HubIcon.Kind.CHECK, 14), ACCENT_DEV);
     apply.addActionListener(e -> {
       gradleStacktraceEnabled = stacktrace.isSelected();
       gradleInfoLoggingEnabled = info.isSelected();
@@ -3810,7 +3741,7 @@ public final class JvnHub {
     cancel.addActionListener(event -> dialog.dispose());
 
     FlatButton apply = new FlatButton(
-        "Apply to Next Launch", uiIcon(VectorIcon.Kind.CHECK, 14, ACCENT_TOOLS), ACCENT_TOOLS);
+        "Apply to Next Launch", uiIcon(HubIcon.Kind.CHECK, 14), ACCENT_TOOLS);
     apply.addActionListener(event -> {
       JvmLaunchSettings candidate = new JvmLaunchSettings(
           customInitial.isSelected() ? ((Number) initialHeap.getValue()).intValue() : 0,
@@ -3955,10 +3886,9 @@ public final class JvnHub {
     box.setOpaque(false);
     box.setForeground(TEXT_SOFT);
     box.setFocusPainted(false);
-    box.setIcon(new HubCheckIcon(false));
-    box.setSelectedIcon(new HubCheckIcon(true));
-    box.setDisabledIcon(new HubCheckIcon(false));
-    box.setDisabledSelectedIcon(new HubCheckIcon(true));
+    Icon stateIcon = HubIcon.selection(false, ui(16));
+    box.setIcon(stateIcon);
+    box.setDisabledIcon(stateIcon);
     box.setFont(box.getFont().deriveFont(Font.PLAIN, uiFont(12.5f)));
     box.setBorder(uiPadding(4, 2, 4, 2));
     box.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -4297,7 +4227,7 @@ public final class JvnHub {
         BorderFactory.createLineBorder(check.status().color()),
         uiPadding(10, 12, 10, 12)));
 
-    JLabel icon = new JLabel(uiIcon(check.status().icon(), 18, check.status().color()));
+    JLabel icon = new JLabel(uiIcon(check.status().icon(), 18));
     card.add(icon, BorderLayout.WEST);
 
     JPanel text = new JPanel();
@@ -4402,7 +4332,7 @@ public final class JvnHub {
 
   private JPanel dialogFooter(JDialog dialog) {
     FlatButton close = new FlatButton("Close",
-        uiIcon(VectorIcon.Kind.CLOSE, 14, TEXT_PRIMARY), null);
+        uiIcon(HubIcon.Kind.CLOSE, 14), null);
     close.addActionListener(e -> dialog.dispose());
     JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
     footer.setOpaque(false);
@@ -4410,16 +4340,9 @@ public final class JvnHub {
     return footer;
   }
 
-  private JButton makeAction(String label, String tooltip, VectorIcon.Kind iconKind,
-                             boolean accent, Runnable action) {
-    return makeAction(label, tooltip, iconKind, accent ? ACCENT_NEUTRAL : null, action);
-  }
-
-  private JButton makeAction(String label, String tooltip, VectorIcon.Kind iconKind,
+  private JButton makeAction(String label, String tooltip, HubIcon.Kind iconKind,
                              Color accentOrNull, Runnable action) {
-    Color foreground = accentOrNull != null ? accentOrNull : TEXT_PRIMARY;
-    Icon icon = iconKind != null ? uiIcon(iconKind, 16, foreground) : null;
-    FlatButton button = new FlatButton(label, icon, accentOrNull);
+    FlatButton button = new FlatButton(label, uiIcon(iconKind, 26), accentOrNull);
     button.setToolTipText(tooltip);
     button.addActionListener(e -> action.run());
     actionButtons.add(button);
@@ -4835,7 +4758,7 @@ public final class JvnHub {
 
     JPanel header = new JPanel(new BorderLayout(ui(14), 0));
     header.setOpaque(false);
-    header.add(new JLabel(new UpdateDialogIcon(tone, ui(34))), BorderLayout.WEST);
+    header.add(new JLabel(uiIcon(tone.icon, 34)), BorderLayout.WEST);
 
     JPanel titleStack = new JPanel();
     titleStack.setOpaque(false);
@@ -4854,7 +4777,7 @@ public final class JvnHub {
     titleStack.add(messageArea);
     header.add(titleStack, BorderLayout.CENTER);
 
-    JButton close = iconOnlyButton(uiIcon(VectorIcon.Kind.CLOSE, 12, TEXT_MUTED));
+    JButton close = iconOnlyButton(uiIcon(HubIcon.Kind.CLOSE, 12));
     close.addActionListener(e -> {
       result.set(hasSecondaryOption ? 1 : 0);
       dialog.dispose();
@@ -6896,21 +6819,21 @@ public final class JvnHub {
   }
 
   private enum CheckStatus {
-    PASS(ACCENT_GREEN, VectorIcon.Kind.CHECK),
-    WARN(ACCENT_NEUTRAL, VectorIcon.Kind.INFO),
-    FAIL(ACCENT_ERROR, VectorIcon.Kind.CLOSE),
-    INFO(TEXT_MUTED, VectorIcon.Kind.INFO);
+    PASS(ACCENT_GREEN, HubIcon.Kind.CHECK),
+    WARN(ACCENT_NEUTRAL, HubIcon.Kind.WARNING),
+    FAIL(ACCENT_ERROR, HubIcon.Kind.ERROR),
+    INFO(TEXT_MUTED, HubIcon.Kind.ABOUT);
 
     private final Color color;
-    private final VectorIcon.Kind icon;
+    private final HubIcon.Kind icon;
 
-    CheckStatus(Color color, VectorIcon.Kind icon) {
+    CheckStatus(Color color, HubIcon.Kind icon) {
       this.color = color;
       this.icon = icon;
     }
 
     Color color() { return color; }
-    VectorIcon.Kind icon() { return icon; }
+    HubIcon.Kind icon() { return icon; }
   }
 
   private record HealthCheck(CheckStatus status, String title, String summary, String details) {}
@@ -7316,39 +7239,25 @@ public final class JvnHub {
 
     private void drawStepRow(Graphics2D g2, int index, int y, FontMetrics fm, float alpha, boolean softened) {
       StepStatus status = statuses.get(index);
-      Color color = switch (status) {
-        case DONE -> ACCENT_GREEN;
-        case RUNNING -> ACCENT_NEUTRAL;
-        case FAILED -> ACCENT_ERROR;
-        case PENDING -> TEXT_MUTED;
-      };
-
+      HubIcon icon = uiIcon(switch (status) {
+        case DONE -> HubIcon.Kind.CHECK;
+        case RUNNING -> HubIcon.Kind.RUNNING;
+        case FAILED -> HubIcon.Kind.ERROR;
+        case PENDING -> HubIcon.Kind.PENDING;
+      }, 16);
       int cx = ui(8);
-      int r = ui(4);
-      g2.setColor(withAlpha(status == StepStatus.PENDING ? BORDER_NEUTRAL : color, alpha));
-      g2.setStroke(new BasicStroke(uiStroke(1.2f)));
-      g2.drawOval(cx - r, y - r, r * 2, r * 2);
+      int radius = icon.getIconWidth() / 2;
       if (index < steps.size() - 1) {
         g2.setColor(withAlpha(BORDER_NEUTRAL, softened ? 0.24f : 0.75f));
-        g2.drawLine(cx, y + r + ui(2), cx, y + ROW_HEIGHT - r - ui(2));
+        g2.setStroke(new BasicStroke(uiStroke(1.2f)));
+        g2.drawLine(cx, y + radius, cx, y + ROW_HEIGHT - radius);
       }
-
-      if (status == StepStatus.DONE) {
-        g2.setColor(withAlpha(ACCENT_GREEN, alpha));
-        g2.setStroke(new BasicStroke(uiStroke(1.4f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        Path2D check = new Path2D.Float();
-        check.moveTo(cx - ui(5), y);
-        check.lineTo(cx - ui(1), y + ui(4));
-        check.lineTo(cx + ui(6), y - ui(5));
-        g2.draw(check);
-      } else if (status == StepStatus.RUNNING) {
-        g2.setColor(withAlpha(ACCENT_NEUTRAL, alpha));
-        g2.fillOval(cx - ui(2), y - ui(2), ui(4), ui(4));
-      } else if (status == StepStatus.FAILED) {
-        g2.setColor(withAlpha(ACCENT_ERROR, alpha));
-        g2.setStroke(new BasicStroke(uiStroke(1.4f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        g2.drawLine(cx - ui(4), y - ui(4), cx + ui(4), y + ui(4));
-        g2.drawLine(cx + ui(4), y - ui(4), cx - ui(4), y + ui(4));
+      Graphics2D symbol = (Graphics2D) g2.create();
+      try {
+        symbol.setComposite(AlphaComposite.SrcOver.derive(alpha));
+        icon.paintIcon(this, symbol, cx - radius, y - radius);
+      } finally {
+        symbol.dispose();
       }
 
       g2.setColor(withAlpha(status == StepStatus.PENDING ? TEXT_MUTED : TEXT_SOFT, softened ? 0.54f : alpha));
@@ -7449,45 +7358,13 @@ public final class JvnHub {
     }
 
     @Override
-    protected void paintComponent(Graphics g) {
-      Graphics2D g2 = (Graphics2D) g.create();
-      g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-      int w = getWidth();
-      int h = getHeight();
-      float cx = w / 2f;
-      float cy = h / 2f;
-      float radius = Math.min(w, h) * 0.34f;
-      float shellPad = Math.max(3f, Math.min(w, h) * 0.16f);
-
-      g2.setColor(active ? Color.decode("#1f1f1f") : PANEL_BG);
-      g2.fillOval(Math.round(cx - radius - shellPad), Math.round(cy - radius - shellPad),
-          Math.round((radius + shellPad) * 2), Math.round((radius + shellPad) * 2));
-
-      for (int i = 0; i < 12; i++) {
-        int age = active ? Math.floorMod(i - frame, 12) : i;
-        float alpha = active ? (0.22f + (11 - age) * 0.065f) : 0.16f;
-        double angle = (Math.PI * 2.0 * i / 12.0) - Math.PI / 2.0;
-        float x = cx + (float) Math.cos(angle) * radius;
-        float y = cy + (float) Math.sin(angle) * radius;
-        int dot = Math.max(active && age == 0 ? ui(4) : ui(3), Math.round(Math.min(w, h) * (active && age == 0 ? 0.16f : 0.12f)));
-        g2.setColor(withAlpha(active ? ACCENT_NEUTRAL : TEXT_MUTED, Math.min(1.0f, alpha)));
-        g2.fillOval(Math.round(x - dot / 2f), Math.round(y - dot / 2f), dot, dot);
-      }
-
-      if (!active) {
-        g2.setColor(ACCENT_GREEN);
-        g2.setStroke(new BasicStroke(uiStroke(1.8f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        Path2D check = new Path2D.Float();
-        check.moveTo(cx - Math.min(w, h) * 0.25f, cy);
-        check.lineTo(cx - Math.min(w, h) * 0.04f, cy + Math.min(w, h) * 0.21f);
-        check.lineTo(cx + Math.min(w, h) * 0.29f, cy - Math.min(w, h) * 0.25f);
-        g2.draw(check);
-      }
-      g2.dispose();
-    }
-
-    private static Color withAlpha(Color color, float alpha) {
-      return new Color(color.getRed(), color.getGreen(), color.getBlue(), Math.round(alpha * 255f));
+    protected void paintComponent(Graphics graphics) {
+      int size = Math.min(getWidth(), getHeight());
+      if (size <= 0) return;
+      int x = (getWidth() - size) / 2;
+      int y = (getHeight() - size) / 2;
+      if (active) HubIcon.paintSpinner((Graphics2D) graphics, x, y, size, frame);
+      else HubIcon.of(HubIcon.Kind.IDLE, size).paintIcon(this, graphics, x, y);
     }
   }
 
@@ -7510,7 +7387,7 @@ public final class JvnHub {
 
       JPanel header = new JPanel(new BorderLayout(ui(14), 0));
       header.setOpaque(false);
-      iconLabel.setIcon(new UpdateDialogIcon(tone, ui(34)));
+      iconLabel.setIcon(uiIcon(tone.icon, 34));
       header.add(iconLabel, BorderLayout.WEST);
 
       JPanel titleStack = new JPanel();
@@ -7525,7 +7402,7 @@ public final class JvnHub {
       titleStack.add(messageArea);
       header.add(titleStack, BorderLayout.CENTER);
 
-      JButton hide = iconOnlyButton(uiIcon(VectorIcon.Kind.CLOSE, 12, TEXT_MUTED));
+      JButton hide = iconOnlyButton(uiIcon(HubIcon.Kind.CLOSE, 12));
       hide.setToolTipText("Hide update details");
       hide.addActionListener(e -> dialog.setVisible(false));
       header.add(hide, BorderLayout.EAST);
@@ -7594,23 +7471,25 @@ public final class JvnHub {
     private void applyTone(UpdateDialogTone nextTone) {
       tone = nextTone;
       dialog.getRootPane().setBorder(BorderFactory.createLineBorder(tone.borderColor(), 1));
-      iconLabel.setIcon(new UpdateDialogIcon(tone, ui(34)));
+      iconLabel.setIcon(uiIcon(tone.icon, 34));
       progress.setForeground(tone.primaryColor());
     }
   }
 
   private enum UpdateDialogTone {
-    QUESTION(ACCENT_NEUTRAL, BORDER_NEUTRAL),
-    SUCCESS(ACCENT_GREEN, Color.decode("#376347")),
-    WARNING(Color.decode("#d7b56d"), Color.decode("#6d5830")),
-    DANGER(ACCENT_ERROR, Color.decode("#6d3440"));
+    QUESTION(ACCENT_NEUTRAL, BORDER_NEUTRAL, HubIcon.Kind.UPDATE),
+    SUCCESS(ACCENT_GREEN, Color.decode("#376347"), HubIcon.Kind.CHECK),
+    WARNING(Color.decode("#d7b56d"), Color.decode("#6d5830"), HubIcon.Kind.WARNING),
+    DANGER(ACCENT_ERROR, Color.decode("#6d3440"), HubIcon.Kind.ERROR);
 
     private final Color primary;
     private final Color border;
+    private final HubIcon.Kind icon;
 
-    UpdateDialogTone(Color primary, Color border) {
+    UpdateDialogTone(Color primary, Color border, HubIcon.Kind icon) {
       this.primary = primary;
       this.border = border;
+      this.icon = icon;
     }
 
     Color primaryColor() {
@@ -7619,62 +7498,6 @@ public final class JvnHub {
 
     Color borderColor() {
       return border;
-    }
-  }
-
-  private static final class UpdateDialogIcon implements Icon {
-    private final UpdateDialogTone tone;
-    private final int size;
-
-    private UpdateDialogIcon(UpdateDialogTone tone, int size) {
-      this.tone = tone == null ? UpdateDialogTone.WARNING : tone;
-      this.size = Math.max(24, size);
-    }
-
-    @Override public int getIconWidth() { return size; }
-    @Override public int getIconHeight() { return size; }
-
-    @Override
-    public void paintIcon(Component c, Graphics g, int x, int y) {
-      Graphics2D g2 = (Graphics2D) g.create();
-      g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-      g2.translate(x, y);
-
-      float s = size;
-      Color accent = tone.primaryColor();
-      g2.setPaint(new LinearGradientPaint(
-          0f, 0f, 0f, s,
-          new float[] {0f, 1f},
-          new Color[] {alpha(accent, 0.22f), alpha(accent, 0.08f)}));
-      g2.fillOval(1, 1, size - 2, size - 2);
-
-      g2.setColor(accent);
-      g2.setStroke(new BasicStroke(uiStroke(1.3f)));
-      g2.drawOval(1, 1, size - 2, size - 2);
-
-      g2.setStroke(new BasicStroke(Math.max(2f, s * 0.09f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-      if (tone == UpdateDialogTone.QUESTION) {
-        g2.draw(new Arc2D.Float(s * 0.24f, s * 0.24f, s * 0.52f, s * 0.52f, 35f, 285f, Arc2D.OPEN));
-        Path2D arrow = new Path2D.Float();
-        arrow.moveTo(s * 0.28f, s * 0.50f);
-        arrow.lineTo(s * 0.62f, s * 0.50f);
-        arrow.lineTo(s * 0.50f, s * 0.38f);
-        g2.draw(arrow);
-      } else if (tone == UpdateDialogTone.SUCCESS) {
-        Path2D check = new Path2D.Float();
-        check.moveTo(s * 0.25f, s * 0.52f);
-        check.lineTo(s * 0.43f, s * 0.69f);
-        check.lineTo(s * 0.75f, s * 0.34f);
-        g2.draw(check);
-      } else {
-        g2.drawLine(Math.round(s * 0.50f), Math.round(s * 0.24f), Math.round(s * 0.50f), Math.round(s * 0.58f));
-        g2.fillOval(Math.round(s * 0.45f), Math.round(s * 0.70f), Math.round(s * 0.10f), Math.round(s * 0.10f));
-      }
-      g2.dispose();
-    }
-
-    private static Color alpha(Color color, float alpha) {
-      return new Color(color.getRed(), color.getGreen(), color.getBlue(), Math.round(Math.max(0f, Math.min(1f, alpha)) * 255f));
     }
   }
 
@@ -7833,8 +7656,8 @@ public final class JvnHub {
 
     void setDeveloperModeEnabled(boolean enabled) {
       setSelected(enabled);
-      setIcon(WindowsSevenActionIcon.of(
-          enabled ? WindowsSevenActionIcon.Kind.DEVELOPER_ACTIVE : WindowsSevenActionIcon.Kind.DEVELOPER, 24));
+      setIcon(uiIcon(
+          enabled ? HubIcon.Kind.DEVELOPER_ACTIVE : HubIcon.Kind.DEVELOPER, 24));
       setToolTipText(enabled
           ? "Developer Mode ON — tests and engineering launch flags are enabled"
           : "Developer Mode OFF — click to show developer actions");
@@ -7878,8 +7701,8 @@ public final class JvnHub {
 
     void setSafeModeEnabled(boolean enabled) {
       setSelected(enabled);
-      setIcon(WindowsSevenActionIcon.of(
-          enabled ? WindowsSevenActionIcon.Kind.SAFE_ACTIVE : WindowsSevenActionIcon.Kind.SAFE, 24));
+      setIcon(uiIcon(
+          enabled ? HubIcon.Kind.SAFE_ACTIVE : HubIcon.Kind.SAFE, 24));
       setToolTipText(enabled
           ? "Safe Mode ON — launches use safe-mode flags; Update Engine uses guarded Git recovery"
           : "Safe Mode OFF — click to launch with safe-mode flags; Update Engine uses normal Git update");
@@ -8032,737 +7855,10 @@ public final class JvnHub {
     }
   }
 
-  /** Glass-and-chrome action glyphs inspired by the Windows 7 desktop era. */
-  private static final class WindowsSevenActionIcon implements Icon {
-    enum Kind {
-      EDITOR, LAUNCHER, LAUNCHER_MAINTENANCE, BUILD, SHORTCUT, UPDATE, TESTS, OPTIONS,
-      MORE, CANCEL, QUIT,
-      DEVELOPER, DEVELOPER_ACTIVE, SAFE, SAFE_ACTIVE,
-      DIAGNOSTICS, ABOUT, DOCUMENTATION
-    }
-
-    private final Kind kind;
-    private final int size;
-
-    private WindowsSevenActionIcon(Kind kind, int size) {
-      this.kind = kind;
-      this.size = size;
-    }
-
-    static WindowsSevenActionIcon of(Kind kind) {
-      return new WindowsSevenActionIcon(kind, ui(26));
-    }
-
-    static WindowsSevenActionIcon of(Kind kind, int logicalSize) {
-      return new WindowsSevenActionIcon(kind, ui(logicalSize));
-    }
-
-    @Override public int getIconWidth() { return size; }
-    @Override public int getIconHeight() { return size; }
-
-    @Override
-    public void paintIcon(Component component, Graphics graphics, int x, int y) {
-      Graphics2D g = (Graphics2D) graphics.create();
-      try {
-        g.translate(x, y);
-        g.scale(size / 24.0, size / 24.0);
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g.setStroke(new BasicStroke(1.25f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        if (WindowsSevenHubIconPainter.paint(g, kind.name())) return;
-        switch (kind) {
-          case EDITOR -> paintEditor(g);
-          case LAUNCHER -> paintLauncher(g, false);
-          case LAUNCHER_MAINTENANCE -> paintLauncher(g, true);
-          case BUILD -> paintBuild(g);
-          case SHORTCUT -> paintShortcut(g);
-          case UPDATE -> paintUpdate(g);
-          case TESTS -> paintTests(g);
-          case OPTIONS -> paintOptions(g);
-          case MORE -> paintMore(g);
-          case CANCEL -> paintCancel(g);
-          case QUIT -> paintQuit(g);
-          case DEVELOPER -> paintDeveloper(g, false);
-          case DEVELOPER_ACTIVE -> paintDeveloper(g, true);
-          case SAFE -> paintSafe(g, false);
-          case SAFE_ACTIVE -> paintSafe(g, true);
-          case DIAGNOSTICS -> paintDiagnostics(g);
-          case ABOUT -> paintAbout(g);
-          case DOCUMENTATION -> paintDocumentation(g);
-        }
-      } finally {
-        g.dispose();
-      }
-    }
-
-    private static void paintEditor(Graphics2D g) {
-      shadow(g, 3, 3, 18, 15, 3);
-      g.setPaint(new java.awt.GradientPaint(0, 3, Color.decode("#65c9ff"), 0, 18, Color.decode("#1265b5")));
-      g.fillRoundRect(3, 2, 18, 15, 3, 3);
-      g.setColor(Color.decode("#b9eaff"));
-      g.drawRoundRect(3, 2, 17, 14, 3, 3);
-      gloss(g, 4, 3, 16, 6, 3);
-      g.setColor(Color.decode("#d8e9f4"));
-      g.fillRoundRect(9, 17, 6, 2, 1, 1);
-      g.fillRoundRect(6, 19, 12, 2, 2, 2);
-      g.rotate(-0.72, 17, 14);
-      g.setPaint(new java.awt.GradientPaint(14, 8, Color.decode("#ffe77a"), 20, 18, Color.decode("#f28b19")));
-      g.fillRoundRect(16, 7, 4, 13, 2, 2);
-      g.setColor(Color.decode("#7a491c"));
-      g.drawRoundRect(16, 7, 3, 12, 2, 2);
-      g.setColor(Color.decode("#f8d8b4"));
-      g.fillPolygon(new int[] {16, 20, 18}, new int[] {20, 20, 23}, 3);
-    }
-
-    private static void paintLauncher(Graphics2D g, boolean maintenance) {
-      Color top = maintenance ? Color.decode("#ffd36e") : Color.decode("#74ddff");
-      Color bottom = maintenance ? Color.decode("#b76513") : Color.decode("#1769b5");
-      glassOrb(g, top, bottom);
-
-      Path2D rocket = new Path2D.Float();
-      rocket.moveTo(13, 5);
-      rocket.curveTo(17, 6, 19, 9, 19, 12);
-      rocket.lineTo(14, 17);
-      rocket.lineTo(10, 17);
-      rocket.lineTo(6, 21);
-      rocket.lineTo(7, 15);
-      rocket.lineTo(12, 10);
-      rocket.curveTo(12, 8, 12, 6, 13, 5);
-      rocket.closePath();
-      g.setPaint(new LinearGradientPaint(
-          7f, 5f, 18f, 19f,
-          new float[] {0f, 0.45f, 1f},
-          new Color[] {Color.WHITE, Color.decode("#dceaf3"), Color.decode("#8297a8")}));
-      g.fill(rocket);
-      g.setColor(maintenance ? Color.decode("#7b3b0c") : Color.decode("#174b74"));
-      g.setStroke(new BasicStroke(1.05f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-      g.draw(rocket);
-      g.setPaint(new RadialGradientPaint(
-          new Point2D.Float(15f, 10f), 3.2f,
-          new float[] {0f, 0.62f, 1f},
-          new Color[] {Color.WHITE, Color.decode("#7fdcff"), Color.decode("#1765a2")}));
-      g.fillOval(13, 8, 4, 4);
-      g.setColor(new Color(255, 255, 255, 190));
-      g.drawOval(13, 8, 4, 4);
-      g.setPaint(new LinearGradientPaint(
-          7f, 17f, 7f, 23f,
-          new float[] {0f, 0.5f, 1f},
-          new Color[] {Color.decode("#fff4a0"), Color.decode("#ff9b28"), new Color(214, 48, 18, 40)}));
-      g.fillPolygon(new int[] {8, 11, 7}, new int[] {17, 18, 23}, 3);
-    }
-
-    private static void paintBuild(Graphics2D g) {
-      shadow(g, 2, 10, 15, 11, 3);
-      for (int row = 0; row < 2; row++) {
-        for (int col = 0; col < 2; col++) {
-          int bx = 2 + col * 7;
-          int by = 9 + row * 6;
-          g.setPaint(new java.awt.GradientPaint(bx, by, Color.decode("#6fd7ff"), bx, by + 6, Color.decode("#1670be")));
-          g.fillRoundRect(bx, by, 6, 5, 2, 2);
-          g.setColor(Color.decode("#bcecff"));
-          g.drawRoundRect(bx, by, 5, 4, 2, 2);
-        }
-      }
-      g.rotate(-0.68, 16, 10);
-      g.setPaint(new java.awt.GradientPaint(14, 2, Color.decode("#fff0a0"), 19, 8, Color.decode("#d78919")));
-      g.fillRoundRect(13, 2, 9, 6, 2, 2);
-      g.setColor(Color.decode("#76501f"));
-      g.drawRoundRect(13, 2, 8, 5, 2, 2);
-      g.setPaint(new java.awt.GradientPaint(16, 7, Color.decode("#a96b37"), 18, 21, Color.decode("#5b2e18")));
-      g.fillRoundRect(16, 7, 3, 14, 2, 2);
-    }
-
-    private static void paintShortcut(Graphics2D g) {
-      shadow(g, 4, 2, 16, 18, 4);
-      g.setPaint(new java.awt.GradientPaint(0, 2, Color.decode("#76e1ff"), 0, 21, Color.decode("#1575c7")));
-      g.fillRoundRect(4, 2, 16, 18, 4, 4);
-      g.setColor(Color.decode("#c7f4ff"));
-      g.drawRoundRect(4, 2, 15, 17, 4, 4);
-      gloss(g, 5, 3, 14, 7, 3);
-      g.setColor(Color.WHITE);
-      g.setStroke(new BasicStroke(2.1f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-      g.drawLine(8, 15, 16, 7);
-      g.drawLine(11, 7, 16, 7);
-      g.drawLine(16, 7, 16, 12);
-      g.setColor(Color.decode("#75d04a"));
-      g.fillRoundRect(1, 14, 10, 8, 4, 4);
-      g.setColor(Color.decode("#eaffdf"));
-      g.drawLine(3, 18, 8, 18);
-      g.drawLine(6, 16, 8, 18);
-      g.drawLine(6, 20, 8, 18);
-    }
-
-    private static void paintUpdate(Graphics2D g) {
-      shadow(g, 3, 3, 18, 18, 9);
-      g.setPaint(new java.awt.GradientPaint(4, 3, Color.decode("#79dcff"), 19, 21, Color.decode("#1976bd")));
-      g.fillOval(3, 3, 18, 18);
-      g.setColor(Color.decode("#b9f2ff"));
-      g.drawOval(3, 3, 17, 17);
-      g.setColor(new Color(255, 255, 255, 100));
-      g.fillOval(6, 4, 10, 5);
-      g.setColor(Color.decode("#79d34f"));
-      g.setStroke(new BasicStroke(2.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-      g.drawArc(5, 5, 14, 14, 30, 145);
-      g.fillPolygon(new int[] {5, 4, 9}, new int[] {8, 14, 11}, 3);
-      g.setColor(Color.decode("#f2fbff"));
-      g.drawArc(5, 5, 14, 14, 210, 140);
-      g.fillPolygon(new int[] {19, 20, 15}, new int[] {16, 10, 13}, 3);
-    }
-
-    private static void paintTests(Graphics2D g) {
-      glassTile(g, 3, 2, 18, 20, Color.decode("#80e77b"), Color.decode("#258b35"));
-      g.setColor(Color.decode("#f5fff2"));
-      g.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-      g.drawLine(7, 8, 9, 10);
-      g.drawLine(9, 10, 13, 6);
-      g.drawLine(7, 15, 9, 17);
-      g.drawLine(9, 17, 13, 13);
-      g.setColor(Color.decode("#d8f6ff"));
-      g.setStroke(new BasicStroke(1.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-      g.drawLine(15, 8, 19, 8);
-      g.drawLine(15, 15, 19, 15);
-    }
-
-    private static void paintOptions(Graphics2D g) {
-      glassTile(g, 2, 3, 20, 18, Color.decode("#c09aff"), Color.decode("#6740a8"));
-      g.setColor(Color.decode("#f8f2ff"));
-      g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-      int[] ys = {8, 12, 16};
-      int[] knobs = {9, 16, 12};
-      for (int i = 0; i < ys.length; i++) {
-        g.drawLine(6, ys[i], 18, ys[i]);
-        g.setColor(Color.decode("#ffd66d"));
-        g.fillOval(knobs[i] - 2, ys[i] - 2, 4, 4);
-        g.setColor(Color.decode("#fff5c7"));
-        g.drawOval(knobs[i] - 2, ys[i] - 2, 3, 3);
-        g.setColor(Color.decode("#f8f2ff"));
-      }
-    }
-
-    private static void paintMore(Graphics2D g) {
-      glassTile(g, 2, 3, 20, 18, Color.decode("#77d9ff"), Color.decode("#266da9"));
-      g.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-      for (int i = 0; i < 3; i++) {
-        int y = 8 + i * 4;
-        g.setColor(Color.decode("#eaf9ff"));
-        g.drawLine(7, y, 18, y);
-        g.setPaint(new java.awt.GradientPaint(4, y - 2, Color.WHITE, 7, y + 2, Color.decode("#9daab4")));
-        g.fillOval(4, y - 2, 4, 4);
-      }
-    }
-
-    private static void paintCancel(Graphics2D g) {
-      glassOrb(g, Color.decode("#ff8b8b"), Color.decode("#b51f31"));
-      g.setPaint(new java.awt.GradientPaint(8, 7, Color.WHITE, 16, 17, Color.decode("#e4e9ed")));
-      g.fillRoundRect(7, 7, 10, 10, 2, 2);
-      g.setColor(Color.decode("#8d1727"));
-      g.drawRoundRect(7, 7, 9, 9, 2, 2);
-    }
-
-    private static void paintQuit(Graphics2D g) {
-      glassOrb(g, Color.decode("#ff876f"), Color.decode("#a71920"));
-      g.setColor(Color.decode("#fff9f4"));
-      g.setStroke(new BasicStroke(2.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-      g.drawArc(6, 5, 12, 14, 42, 276);
-      g.drawLine(12, 3, 12, 11);
-    }
-
-    private static void paintDeveloper(Graphics2D g, boolean active) {
-      glassOrb(g,
-          active ? Color.decode("#66d8ff") : Color.decode("#87a8c4"),
-          active ? Color.decode("#1764bc") : Color.decode("#405467"));
-      g.setColor(Color.WHITE);
-      g.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-      g.drawLine(9, 7, 5, 12);
-      g.drawLine(5, 12, 9, 17);
-      g.drawLine(15, 7, 19, 12);
-      g.drawLine(19, 12, 15, 17);
-      g.setColor(Color.decode("#ffe879"));
-      g.drawLine(14, 6, 10, 18);
-    }
-
-    private static void paintSafe(Graphics2D g, boolean active) {
-      shadow(g, 3, 2, 18, 20, 7);
-      Path2D shield = new Path2D.Float();
-      shield.moveTo(12, 2);
-      shield.curveTo(16, 5, 19, 5, 21, 6);
-      shield.lineTo(20, 13);
-      shield.curveTo(19, 18, 15, 21, 12, 22);
-      shield.curveTo(9, 21, 5, 18, 4, 13);
-      shield.lineTo(3, 6);
-      shield.curveTo(7, 5, 9, 4, 12, 2);
-      shield.closePath();
-      g.setPaint(new java.awt.GradientPaint(4, 3,
-          active ? Color.decode("#a8ef72") : Color.decode("#b1bec6"), 19, 22,
-          active ? Color.decode("#318638") : Color.decode("#53626c")));
-      g.fill(shield);
-      g.setColor(active ? Color.decode("#eaffd8") : Color.decode("#edf3f6"));
-      g.draw(shield);
-      g.setColor(new Color(255, 255, 255, 105));
-      g.fillOval(7, 5, 10, 5);
-      g.setColor(active ? Color.decode("#fff078") : Color.WHITE);
-      g.setStroke(new BasicStroke(2.1f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-      g.drawLine(8, 12, 11, 15);
-      g.drawLine(11, 15, 17, 9);
-    }
-
-    private static void paintDiagnostics(Graphics2D g) {
-      glassTile(g, 2, 3, 20, 18, Color.decode("#74dcff"), Color.decode("#176da8"));
-      g.setColor(Color.decode("#102a3a"));
-      g.fillRoundRect(5, 7, 14, 10, 2, 2);
-      g.setColor(Color.decode("#83f18b"));
-      g.setStroke(new BasicStroke(1.7f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-      Path2D pulse = new Path2D.Float();
-      pulse.moveTo(6, 13);
-      pulse.lineTo(9, 13);
-      pulse.lineTo(11, 9);
-      pulse.lineTo(14, 16);
-      pulse.lineTo(16, 12);
-      pulse.lineTo(19, 12);
-      g.draw(pulse);
-    }
-
-    private static void paintAbout(Graphics2D g) {
-      glassOrb(g, Color.decode("#83d8ff"), Color.decode("#235cae"));
-      g.setColor(Color.WHITE);
-      g.fillOval(11, 6, 3, 3);
-      g.setStroke(new BasicStroke(2.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-      g.drawLine(12, 11, 12, 17);
-    }
-
-    private static void paintDocumentation(Graphics2D g) {
-      shadow(g, 3, 3, 18, 18, 3);
-      g.setPaint(new java.awt.GradientPaint(3, 3, Color.decode("#72cfff"), 20, 21, Color.decode("#225aa8")));
-      g.fillRoundRect(3, 3, 18, 18, 3, 3);
-      g.setColor(Color.decode("#d9f3ff"));
-      g.drawRoundRect(3, 3, 17, 17, 3, 3);
-      g.setColor(Color.WHITE);
-      g.fillRoundRect(6, 6, 5, 12, 1, 1);
-      g.fillRoundRect(13, 6, 5, 12, 1, 1);
-      g.setColor(Color.decode("#6d92b8"));
-      g.drawLine(12, 7, 12, 18);
-      g.drawLine(7, 9, 10, 9);
-      g.drawLine(14, 9, 17, 9);
-    }
-
-    private static void glassTile(Graphics2D g, int x, int y, int width, int height,
-                                  Color top, Color bottom) {
-      shadow(g, x, y, width, height, 4);
-      g.setPaint(new LinearGradientPaint(
-          x, y, x, y + height,
-          new float[] {0f, 0.14f, 0.55f, 1f},
-          new Color[] {
-              brighter(top, 0.26f),
-              top,
-              blend(top, bottom, 0.58f),
-              darker(bottom, 0.18f)
-          }));
-      g.fillRoundRect(x, y, width, height, 4, 4);
-      g.setColor(new Color(255, 255, 255, 185));
-      g.drawRoundRect(x, y, width - 1, height - 1, 4, 4);
-      g.setColor(new Color(0, 18, 34, 105));
-      g.drawRoundRect(x + 1, y + 1, width - 3, height - 3, 3, 3);
-      gloss(g, x + 1, y + 1, width - 2, Math.max(4, height / 2), 3);
-      g.setColor(new Color(255, 255, 255, 72));
-      g.drawLine(x + 3, y + height - 2, x + width - 4, y + height - 2);
-    }
-
-    private static void glassOrb(Graphics2D g, Color top, Color bottom) {
-      shadow(g, 3, 3, 18, 18, 18);
-      g.setPaint(new RadialGradientPaint(
-          new Point2D.Float(8.5f, 6.5f), 18f,
-          new float[] {0f, 0.30f, 0.72f, 1f},
-          new Color[] {
-              brighter(top, 0.38f),
-              top,
-              blend(top, bottom, 0.64f),
-              darker(bottom, 0.25f)
-          }));
-      g.fillOval(3, 3, 18, 18);
-      g.setColor(new Color(255, 255, 255, 205));
-      g.drawOval(3, 3, 17, 17);
-      g.setColor(new Color(0, 18, 34, 100));
-      g.drawOval(4, 4, 15, 15);
-      g.setPaint(new LinearGradientPaint(
-          0f, 4f, 0f, 11f,
-          new float[] {0f, 1f},
-          new Color[] {new Color(255, 255, 255, 175), new Color(255, 255, 255, 12)}));
-      g.fillOval(6, 4, 12, 7);
-      g.setColor(new Color(255, 255, 255, 70));
-      g.drawArc(6, 7, 12, 11, 205, 128);
-    }
-
-    private static Color brighter(Color color, float amount) {
-      float safe = Math.max(0f, Math.min(1f, amount));
-      return new Color(
-          Math.round(color.getRed() + (255 - color.getRed()) * safe),
-          Math.round(color.getGreen() + (255 - color.getGreen()) * safe),
-          Math.round(color.getBlue() + (255 - color.getBlue()) * safe));
-    }
-
-    private static Color darker(Color color, float amount) {
-      float safe = Math.max(0f, Math.min(1f, amount));
-      return new Color(
-          Math.round(color.getRed() * (1f - safe)),
-          Math.round(color.getGreen() * (1f - safe)),
-          Math.round(color.getBlue() * (1f - safe)),
-          color.getAlpha());
-    }
-
-    private static Color blend(Color first, Color second, float secondWeight) {
-      float weight = Math.max(0f, Math.min(1f, secondWeight));
-      float firstWeight = 1f - weight;
-      return new Color(
-          Math.round(first.getRed() * firstWeight + second.getRed() * weight),
-          Math.round(first.getGreen() * firstWeight + second.getGreen() * weight),
-          Math.round(first.getBlue() * firstWeight + second.getBlue() * weight));
-    }
-
-    private static void shadow(Graphics2D g, int x, int y, int width, int height, int arc) {
-      g.setColor(new Color(0, 0, 0, 24));
-      g.fillRoundRect(x - 1, y + 1, width + 2, height + 3, arc + 2, arc + 2);
-      g.setColor(new Color(0, 0, 0, 48));
-      g.fillRoundRect(x, y + 2, width, height + 1, arc + 1, arc + 1);
-      g.setColor(new Color(0, 0, 0, 82));
-      g.fillRoundRect(x + 1, y + 2, width - 2, height, arc, arc);
-    }
-
-    private static void gloss(Graphics2D g, int x, int y, int width, int height, int arc) {
-      g.setPaint(new LinearGradientPaint(
-          0f, y, 0f, y + height,
-          new float[] {0f, 0.48f, 1f},
-          new Color[] {
-              new Color(255, 255, 255, 180),
-              new Color(255, 255, 255, 76),
-              new Color(255, 255, 255, 5)
-          }));
-      g.fillRoundRect(x, y, width, height, arc, arc);
-    }
-  }
-
-  /**
-   * Resolution-independent vector icon painted via Java2D. Color and size are both
-   * configurable so the same {@link Kind} can be reused across contexts.
-   */
-  private static final class VectorIcon implements Icon {
-    enum Kind { PLAY, EDIT, ROCKET, HAMMER, CHECK, REFRESH, STOP, CLOSE, SHORTCUT, DOCUMENTATION, HEALTH, INFO, SHIELD, DEVELOPER, SLIDERS }
-
-    private final Kind kind;
-    private final int size;
-    private final Color color;
-
-    private VectorIcon(Kind kind, int size, Color color) {
-      this.kind = kind;
-      this.size = size;
-      this.color = color;
-    }
-
-    static VectorIcon of(Kind kind, int size, Color color) {
-      return new VectorIcon(kind, size, color);
-    }
-
-    @Override public int getIconWidth()  { return size; }
-    @Override public int getIconHeight() { return size; }
-
-    @Override
-    public void paintIcon(Component c, Graphics g, int x, int y) {
-      Graphics2D g2 = (Graphics2D) g.create();
-      g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-      g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
-      g2.translate(x, y);
-      g2.setColor(color);
-      float s = size;
-      // Strokes are sized as a fraction of the icon so all icons read consistently
-      // at any size and never look hairline at large sizes.
-      float strokeMain = Math.max(1.4f, s * 0.10f);
-      float strokeBold = Math.max(1.6f, s * 0.13f);
-      g2.setStroke(new BasicStroke(strokeMain, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-
-      switch (kind) {
-        case PLAY -> {
-          // Equilateral-ish triangle, fill + stroke gives slightly rounded corners.
-          Path2D tri = new Path2D.Float();
-          tri.moveTo(s * 0.30f, s * 0.20f);
-          tri.lineTo(s * 0.80f, s * 0.50f);
-          tri.lineTo(s * 0.30f, s * 0.80f);
-          tri.closePath();
-          g2.setStroke(new BasicStroke(s * 0.14f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-          g2.draw(tri);
-          g2.fill(tri);
-        }
-        case EDIT -> {
-          // Pencil drawn vertically into a rotated frame, then tilted -45°
-          // (eraser at top-right, graphite tip at bottom-left).
-          AffineTransform saved = g2.getTransform();
-          g2.translate(s * 0.50f, s * 0.50f);
-          g2.rotate(Math.PI / 4);
-
-          float w = s * 0.22f;          // pencil width
-          float halfBody = s * 0.24f;   // half the wood body length
-          float eraserH = s * 0.08f;
-          float ferruleH = s * 0.04f;
-          float tipH = s * 0.12f;
-          float corner = s * 0.04f;
-
-          // Eraser — small rounded rectangle above the wood body.
-          g2.fill(new RoundRectangle2D.Float(
-              -w / 2f, -halfBody - eraserH - ferruleH,
-              w, eraserH, corner, corner));
-          // Ferrule (metal band) — same width, no rounding.
-          g2.fillRect(
-              (int) Math.round(-w / 2f), (int) Math.round(-halfBody - ferruleH),
-              (int) Math.round(w), (int) Math.round(ferruleH));
-          // Wood body — long rectangle.
-          g2.fillRect(
-              (int) Math.round(-w / 2f), (int) Math.round(-halfBody),
-              (int) Math.round(w), (int) Math.round(halfBody * 2));
-          // Graphite tip — triangle below the body.
-          Path2D tip = new Path2D.Float();
-          tip.moveTo(-w / 2f, halfBody);
-          tip.lineTo(0f, halfBody + tipH);
-          tip.lineTo(w / 2f, halfBody);
-          tip.closePath();
-          g2.fill(tip);
-
-          g2.setTransform(saved);
-        }
-        case ROCKET -> {
-          // Pointed-nose capsule with two angled side fins and a small tail flame.
-          Path2D body = new Path2D.Float();
-          body.moveTo(s * 0.50f, s * 0.08f);
-          body.curveTo(s * 0.66f, s * 0.18f, s * 0.66f, s * 0.32f, s * 0.66f, s * 0.42f);
-          body.lineTo(s * 0.66f, s * 0.74f);
-          body.lineTo(s * 0.34f, s * 0.74f);
-          body.lineTo(s * 0.34f, s * 0.42f);
-          body.curveTo(s * 0.34f, s * 0.32f, s * 0.34f, s * 0.18f, s * 0.50f, s * 0.08f);
-          body.closePath();
-          g2.fill(body);
-
-          // Side fins — sweep down and out from the lower body.
-          Path2D finL = new Path2D.Float();
-          finL.moveTo(s * 0.34f, s * 0.56f);
-          finL.lineTo(s * 0.16f, s * 0.84f);
-          finL.lineTo(s * 0.34f, s * 0.78f);
-          finL.closePath();
-          g2.fill(finL);
-
-          Path2D finR = new Path2D.Float();
-          finR.moveTo(s * 0.66f, s * 0.56f);
-          finR.lineTo(s * 0.84f, s * 0.84f);
-          finR.lineTo(s * 0.66f, s * 0.78f);
-          finR.closePath();
-          g2.fill(finR);
-
-          // Tail flame — small downward triangle exiting the bottom of the body.
-          Path2D flame = new Path2D.Float();
-          flame.moveTo(s * 0.42f, s * 0.78f);
-          flame.lineTo(s * 0.50f, s * 0.92f);
-          flame.lineTo(s * 0.58f, s * 0.78f);
-          flame.closePath();
-          g2.fill(flame);
-        }
-        case HAMMER -> {
-          // Classic T-shape: wide rounded head sitting on a vertical handle.
-          float headW = s * 0.72f;
-          float headH = s * 0.26f;
-          float headX = (s - headW) / 2f;
-          float headY = s * 0.18f;
-          float handleW = s * 0.18f;
-          float handleX = (s - handleW) / 2f;
-          float handleY = headY + headH - s * 0.02f;
-          float handleH = s - handleY - s * 0.10f;
-          float corner = s * 0.06f;
-
-          g2.fill(new RoundRectangle2D.Float(headX, headY, headW, headH, corner, corner));
-          g2.fill(new RoundRectangle2D.Float(handleX, handleY, handleW, handleH, corner, corner));
-        }
-        case CHECK -> {
-          // Bold tick with rounded joins; balanced inside the icon box.
-          Path2D check = new Path2D.Float();
-          check.moveTo(s * 0.18f, s * 0.52f);
-          check.lineTo(s * 0.42f, s * 0.76f);
-          check.lineTo(s * 0.84f, s * 0.28f);
-          g2.setStroke(new BasicStroke(strokeBold, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-          g2.draw(check);
-        }
-        case REFRESH -> {
-          // Open circle with a tangent arrowhead at the start, pointing into the rotation direction.
-          float r = s * 0.34f;
-          float cx = s * 0.50f;
-          float cy = s * 0.50f;
-          // Arc spans 290° starting at 50° (top-right gap) — leaves room for the arrow.
-          Shape arc = new Arc2D.Float(cx - r, cy - r, r * 2f, r * 2f, 50f, 290f, Arc2D.OPEN);
-          g2.setStroke(new BasicStroke(strokeBold, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-          g2.draw(arc);
-
-          // Arrowhead at the arc's start point (50 degrees), pointing tangent to the circle.
-          double theta = Math.toRadians(50);
-          float ax = (float) (cx + r * Math.cos(theta));
-          float ay = (float) (cy - r * Math.sin(theta));
-          // Tangent direction for clockwise traversal at this point: (sin θ, cos θ) in screen coords.
-          float tx = (float) Math.sin(theta);
-          float ty = (float) Math.cos(theta);
-          // Perpendicular for arrow width.
-          float px = -ty;
-          float py = tx;
-          float headLen = s * 0.22f;
-          float headWid = s * 0.11f;
-          Path2D head = new Path2D.Float();
-          head.moveTo(ax + tx * headLen * 0.5f, ay + ty * headLen * 0.5f);
-          head.lineTo(ax - tx * headLen * 0.5f + px * headWid,
-                      ay - ty * headLen * 0.5f + py * headWid);
-          head.lineTo(ax - tx * headLen * 0.5f - px * headWid,
-                      ay - ty * headLen * 0.5f - py * headWid);
-          head.closePath();
-          g2.fill(head);
-        }
-        case STOP -> {
-          // Slightly-rounded filled square; corner radius scales with icon size.
-          float pad = s * 0.22f;
-          float r = s * 0.10f;
-          g2.fill(new RoundRectangle2D.Float(pad, pad, s - pad * 2f, s - pad * 2f, r, r));
-        }
-        case CLOSE -> {
-          g2.setStroke(new BasicStroke(strokeBold, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-          g2.drawLine((int) Math.round(s * 0.26f), (int) Math.round(s * 0.26f),
-                      (int) Math.round(s * 0.74f), (int) Math.round(s * 0.74f));
-          g2.drawLine((int) Math.round(s * 0.74f), (int) Math.round(s * 0.26f),
-                      (int) Math.round(s * 0.26f), (int) Math.round(s * 0.74f));
-        }
-        case SHORTCUT -> {
-          // Desktop/app shortcut: small window tile with a launch arrow.
-          // Holy fuck! This is the last of the bunch. 
-          float pad = s * 0.16f;
-          float corner = s * 0.08f;
-          g2.setStroke(new BasicStroke(strokeMain, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-          g2.draw(new RoundRectangle2D.Float(pad, pad, s * 0.58f, s * 0.58f, corner, corner));
-          g2.setStroke(new BasicStroke(strokeBold, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-          Path2D arrow = new Path2D.Float();
-          arrow.moveTo(s * 0.42f, s * 0.68f);
-          arrow.lineTo(s * 0.82f, s * 0.28f);
-          g2.draw(arrow);
-          Path2D head = new Path2D.Float();
-          head.moveTo(s * 0.82f, s * 0.28f);
-          head.lineTo(s * 0.80f, s * 0.52f);
-          head.lineTo(s * 0.58f, s * 0.30f);
-          head.closePath();
-          g2.fill(head);
-        }
-        case DOCUMENTATION -> {
-          // Document sheet with a folded corner and two guide lines.
-          float pad = s * 0.16f;
-          float fold = s * 0.22f;
-          Path2D sheet = new Path2D.Float();
-          sheet.moveTo(pad, pad);
-          sheet.lineTo(s - pad - fold, pad);
-          sheet.lineTo(s - pad, pad + fold);
-          sheet.lineTo(s - pad, s - pad);
-          sheet.lineTo(pad, s - pad);
-          sheet.closePath();
-          g2.fill(sheet);
-
-          g2.setColor(BG);
-          Path2D cut = new Path2D.Float();
-          cut.moveTo(s - pad - fold, pad);
-          cut.lineTo(s - pad - fold, pad + fold);
-          cut.lineTo(s - pad, pad + fold);
-          cut.closePath();
-          g2.fill(cut);
-
-          g2.setColor(color);
-          g2.setStroke(new BasicStroke(strokeMain, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-          Path2D foldLine = new Path2D.Float();
-          foldLine.moveTo(s - pad - fold, pad);
-          foldLine.lineTo(s - pad - fold, pad + fold);
-          foldLine.lineTo(s - pad, pad + fold);
-          g2.draw(foldLine);
-
-          g2.setColor(BG);
-          g2.setStroke(new BasicStroke(Math.max(1.2f, s * 0.08f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-          g2.drawLine(Math.round(pad + s * 0.12f), Math.round(s * 0.50f),
-                      Math.round(s - pad - s * 0.12f), Math.round(s * 0.50f));
-          g2.drawLine(Math.round(pad + s * 0.12f), Math.round(s * 0.66f),
-                      Math.round(s - pad - s * 0.22f), Math.round(s * 0.66f));
-        }
-        case HEALTH -> {
-          // Pulse line inside a rounded monitor frame.
-          float pad = s * 0.12f;
-          float corner = s * 0.10f;
-          g2.setStroke(new BasicStroke(strokeMain, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-          g2.draw(new RoundRectangle2D.Float(pad, pad, s - pad * 2f, s - pad * 2f, corner, corner));
-          Path2D pulse = new Path2D.Float();
-          pulse.moveTo(s * 0.22f, s * 0.56f);
-          pulse.lineTo(s * 0.36f, s * 0.56f);
-          pulse.lineTo(s * 0.45f, s * 0.34f);
-          pulse.lineTo(s * 0.56f, s * 0.70f);
-          pulse.lineTo(s * 0.66f, s * 0.48f);
-          pulse.lineTo(s * 0.80f, s * 0.48f);
-          g2.setStroke(new BasicStroke(strokeBold, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-          g2.draw(pulse);
-        }
-        case INFO -> {
-          g2.setStroke(new BasicStroke(strokeMain, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-          g2.draw(new Ellipse2D.Float(s * 0.16f, s * 0.16f, s * 0.68f, s * 0.68f));
-          g2.fill(new Ellipse2D.Float(s * 0.46f, s * 0.28f, s * 0.08f, s * 0.08f));
-          g2.setStroke(new BasicStroke(strokeBold, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-          g2.drawLine(Math.round(s * 0.50f), Math.round(s * 0.46f),
-                      Math.round(s * 0.50f), Math.round(s * 0.70f));
-        }
-        case SHIELD -> {
-          Path2D shield = new Path2D.Float();
-          shield.moveTo(s * 0.50f, s * 0.10f);
-          shield.curveTo(s * 0.66f, s * 0.20f, s * 0.78f, s * 0.22f, s * 0.84f, s * 0.24f);
-          shield.lineTo(s * 0.80f, s * 0.54f);
-          shield.curveTo(s * 0.76f, s * 0.74f, s * 0.62f, s * 0.86f, s * 0.50f, s * 0.92f);
-          shield.curveTo(s * 0.38f, s * 0.86f, s * 0.24f, s * 0.74f, s * 0.20f, s * 0.54f);
-          shield.lineTo(s * 0.16f, s * 0.24f);
-          shield.curveTo(s * 0.28f, s * 0.22f, s * 0.40f, s * 0.20f, s * 0.50f, s * 0.10f);
-          shield.closePath();
-          g2.fill(shield);
-          g2.setColor(BG);
-          g2.setStroke(new BasicStroke(Math.max(1.4f, s * 0.10f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-          Path2D check = new Path2D.Float();
-          check.moveTo(s * 0.34f, s * 0.52f);
-          check.lineTo(s * 0.46f, s * 0.64f);
-          check.lineTo(s * 0.68f, s * 0.40f);
-          g2.draw(check);
-        }
-        case DEVELOPER -> {
-          g2.setStroke(new BasicStroke(strokeBold, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-          Path2D left = new Path2D.Float();
-          left.moveTo(s * 0.38f, s * 0.30f);
-          left.lineTo(s * 0.18f, s * 0.50f);
-          left.lineTo(s * 0.38f, s * 0.70f);
-          g2.draw(left);
-
-          Path2D right = new Path2D.Float();
-          right.moveTo(s * 0.62f, s * 0.30f);
-          right.lineTo(s * 0.82f, s * 0.50f);
-          right.lineTo(s * 0.62f, s * 0.70f);
-          g2.draw(right);
-
-          g2.drawLine(Math.round(s * 0.54f), Math.round(s * 0.22f),
-                      Math.round(s * 0.46f), Math.round(s * 0.78f));
-        }
-        case SLIDERS -> {
-          g2.setStroke(new BasicStroke(strokeMain, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-          float[] ys = {s * 0.28f, s * 0.50f, s * 0.72f};
-          float[] knobs = {s * 0.66f, s * 0.36f, s * 0.58f};
-          for (int i = 0; i < ys.length; i++) {
-            g2.drawLine(Math.round(s * 0.18f), Math.round(ys[i]), Math.round(s * 0.82f), Math.round(ys[i]));
-            g2.fill(new Ellipse2D.Float(knobs[i] - s * 0.07f, ys[i] - s * 0.07f, s * 0.14f, s * 0.14f));
-          }
-        }
-      }
-      g2.dispose();
-    }
-  }
-
   /**
    * Vector logomark for the JVN engine, fully painted with no PNG dependency.
    * Renders "JVN" in bold sans-serif with the same white-to-gray treatment used
    * by the editor and launcher wordmark.
-   * {@link #renderToImage(int, int)} exposes the same artwork as a raster so
-   * the OS window/dock icon stays in sync.
    */
   static final class JvnLogoIcon implements Icon {
     private static final Color WORDMARK_TOP = Color.decode("#ffffff");
@@ -8779,18 +7875,6 @@ public final class JvnHub {
     JvnLogoIcon(int width, int height) {
       this.width = width;
       this.height = height;
-    }
-
-    /** Render the logo into a fresh ARGB raster suitable for {@link JFrame#setIconImage}. */
-    static BufferedImage renderToImage(int w, int h) {
-      BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-      Graphics2D g = img.createGraphics();
-      try {
-        new JvnLogoIcon(w, h).paintIcon(null, g, 0, 0);
-      } finally {
-        g.dispose();
-      }
-      return img;
     }
 
     @Override public int getIconWidth()  { return width; }
@@ -8893,65 +7977,6 @@ public final class JvnHub {
     }
   }
 
-  /**
-   * Plain menu indicator used instead of host look-and-feel artwork. Aqua may
-   * otherwise supply light or offset check/radio glyphs inside the dark menus.
-   */
-  private static final class HubMenuSelectionIcon implements Icon {
-    private final boolean radio;
-
-    HubMenuSelectionIcon(boolean radio) {
-      this.radio = radio;
-    }
-
-    @Override
-    public int getIconWidth() {
-      return ui(14);
-    }
-
-    @Override
-    public int getIconHeight() {
-      return ui(14);
-    }
-
-    @Override
-    public void paintIcon(Component component, Graphics graphics, int x, int y) {
-      Graphics2D g2 = (Graphics2D) graphics.create();
-      g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-      ButtonModel model = component instanceof AbstractButton button ? button.getModel() : null;
-      boolean selected = model != null && model.isSelected();
-      boolean enabled = component == null || component.isEnabled();
-      Color accent = component instanceof JComponent jc
-          && jc.getClientProperty("jvn.menu.accent") instanceof Color color
-              ? color
-              : TEXT_SOFT;
-      Color outline = enabled ? (selected ? accent : BORDER_NEUTRAL) : Color.decode("#303030");
-      int size = Math.min(getIconWidth(), getIconHeight());
-
-      g2.setStroke(new BasicStroke(uiStroke(1f)));
-      g2.setColor(outline);
-      if (radio) {
-        g2.drawOval(x + ui(1), y + ui(1), size - ui(3), size - ui(3));
-        if (selected) {
-          int dot = Math.max(ui(5), size / 2);
-          int inset = (size - dot) / 2;
-          g2.fillOval(x + inset, y + inset, dot, dot);
-        }
-      } else {
-        g2.drawRoundRect(x + ui(1), y + ui(1), size - ui(3), size - ui(3), ui(3), ui(3));
-        if (selected) {
-          g2.setStroke(new BasicStroke(uiStroke(1.8f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-          Path2D mark = new Path2D.Double();
-          mark.moveTo(x + size * 0.25, y + size * 0.52);
-          mark.lineTo(x + size * 0.43, y + size * 0.70);
-          mark.lineTo(x + size * 0.76, y + size * 0.30);
-          g2.draw(mark);
-        }
-      }
-      g2.dispose();
-    }
-  }
-
   /** Basic combo delegate with a host-independent popup and arrow button. */
   private static final class HubComboBoxUI extends BasicComboBoxUI {
     @Override
@@ -9016,17 +8041,9 @@ public final class JvnHub {
       g2.setColor(BORDER_NEUTRAL);
       g2.drawLine(0, 0, 0, getHeight());
 
-      int centerX = getWidth() / 2;
-      int centerY = getHeight() / 2;
-      int halfWidth = ui(4);
-      int halfHeight = ui(2);
-      Path2D arrow = new Path2D.Double();
-      arrow.moveTo(centerX - halfWidth, centerY - halfHeight);
-      arrow.lineTo(centerX + halfWidth, centerY - halfHeight);
-      arrow.lineTo(centerX, centerY + halfHeight);
-      arrow.closePath();
-      g2.setColor(isEnabled() ? TEXT_SOFT : TEXT_MUTED.darker());
-      g2.fill(arrow);
+      Icon arrow = uiIcon(HubIcon.Kind.ARROW_DOWN, 12);
+      arrow.paintIcon(this, g2, (getWidth() - arrow.getIconWidth()) / 2,
+          (getHeight() - arrow.getIconHeight()) / 2);
       g2.dispose();
     }
   }
@@ -9075,73 +8092,9 @@ public final class JvnHub {
       g2.drawLine(0, 0, 0, getHeight());
       if (pointsUp) g2.drawLine(0, getHeight() - 1, getWidth(), getHeight() - 1);
 
-      int centerX = getWidth() / 2;
-      int centerY = getHeight() / 2;
-      int halfWidth = ui(4);
-      int halfHeight = ui(2);
-      Path2D arrow = new Path2D.Double();
-      if (pointsUp) {
-        arrow.moveTo(centerX, centerY - halfHeight);
-        arrow.lineTo(centerX + halfWidth, centerY + halfHeight);
-        arrow.lineTo(centerX - halfWidth, centerY + halfHeight);
-      } else {
-        arrow.moveTo(centerX - halfWidth, centerY - halfHeight);
-        arrow.lineTo(centerX + halfWidth, centerY - halfHeight);
-        arrow.lineTo(centerX, centerY + halfHeight);
-      }
-      arrow.closePath();
-      g2.setColor(isEnabled() ? TEXT_SOFT : TEXT_MUTED.darker());
-      g2.fill(arrow);
-      g2.dispose();
-    }
-  }
-
-  private static final class HubCheckIcon implements Icon {
-    private final boolean selected;
-
-    HubCheckIcon(boolean selected) {
-      this.selected = selected;
-    }
-
-    @Override
-    public int getIconWidth() {
-      return ui(15);
-    }
-
-    @Override
-    public int getIconHeight() {
-      return ui(15);
-    }
-
-    @Override
-    public void paintIcon(Component c, Graphics g, int x, int y) {
-      Graphics2D g2 = (Graphics2D) g.create();
-      g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-      ButtonModel model = c instanceof AbstractButton button ? button.getModel() : null;
-      boolean enabled = c == null || c.isEnabled();
-      boolean rollover = model != null && model.isRollover();
-      boolean pressed = model != null && model.isPressed();
-      int size = Math.min(getIconWidth(), getIconHeight());
-      Color border = enabled ? (rollover ? ACCENT_DEV : BORDER_NEUTRAL) : Color.decode("#2b2b2b");
-      Color fill = selected
-          ? (enabled ? Color.decode("#1e3450") : Color.decode("#242424"))
-          : (enabled ? BG : Color.decode("#181818"));
-      if (pressed && enabled) fill = Color.decode("#16283d");
-
-      g2.setColor(fill);
-      g2.fillRoundRect(x, y, size, size, ui(4), ui(4));
-      g2.setColor(border);
-      g2.drawRoundRect(x, y, size - 1, size - 1, ui(4), ui(4));
-
-      if (selected) {
-        g2.setStroke(new BasicStroke(Math.max(1.6f, ui(2)), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        g2.setColor(enabled ? ACCENT_DEV : TEXT_MUTED);
-        Path2D mark = new Path2D.Double();
-        mark.moveTo(x + size * 0.26, y + size * 0.54);
-        mark.lineTo(x + size * 0.44, y + size * 0.72);
-        mark.lineTo(x + size * 0.76, y + size * 0.30);
-        g2.draw(mark);
-      }
+      Icon arrow = uiIcon(pointsUp ? HubIcon.Kind.ARROW_UP : HubIcon.Kind.ARROW_DOWN, 12);
+      arrow.paintIcon(this, g2, (getWidth() - arrow.getIconWidth()) / 2,
+          (getHeight() - arrow.getIconHeight()) / 2);
       g2.dispose();
     }
   }

@@ -1,5 +1,91 @@
 /* Shared Aero controls. The light and dark stylesheets supply the paints. */
 
+/* Tooltips and sidebar help */
+.tooltip {
+  -fx-skin: "com.jvn.editor.ui.EditorTooltipSkin";
+  -fx-background-color: -jvn-aero-field;
+  -fx-background-insets: 0;
+  -fx-background-radius: 5;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-border-width: 1;
+  -fx-border-radius: 5;
+  -fx-text-fill: -jvn-aero-text;
+  -fx-font-size: 11px;
+  -fx-font-weight: normal;
+  -fx-padding: 6 9;
+  -fx-wrap-text: true;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.24), 8, 0.12, 0, 2);
+}
+
+.tooltip.editor-rich-tooltip > .help-text {
+  -fx-spacing: 4;
+}
+
+.editor-help-window .editor-help-scroll,
+.editor-help-window .editor-help-scroll > .viewport,
+.editor-help-window .editor-help-footer {
+  -fx-background-color: -jvn-aero-surface;
+}
+
+.editor-help-window .editor-help-scroll {
+  -fx-padding: 0;
+}
+
+.editor-help-window .help-text {
+  -fx-padding: 16 18 10 18;
+}
+
+.editor-help-footer {
+  -fx-padding: 2 12 10 12;
+}
+
+.help-paragraph,
+.help-code-block {
+  -fx-line-spacing: 2px;
+}
+
+.help-run {
+  -fx-fill: -jvn-aero-text;
+  -fx-font-size: 12px;
+}
+
+.editor-rich-tooltip .help-run {
+  -fx-font-size: 11px;
+}
+
+.help-heading .help-run {
+  -fx-font-size: 13px;
+  -fx-font-weight: bold;
+}
+
+.help-run.help-strong {
+  -fx-font-weight: bold;
+}
+
+.help-run.help-emphasis {
+  -fx-font-style: italic;
+}
+
+.help-run.help-code {
+  -fx-font-family: "Monospaced";
+  -fx-fill: -jvn-code-command;
+}
+
+.help-code-block {
+  -fx-background-color: -jvn-aero-field;
+  -fx-background-radius: 4;
+  -fx-padding: 6 8;
+}
+
+.help-list-row {
+  -fx-alignment: baseline-left;
+}
+
+.help-list-row .help-list-marker {
+  -fx-font-size: 12px;
+  -fx-text-fill: -jvn-aero-muted;
+}
+
 /* Window chrome */
 .master-toolbar-shell {
   -fx-background-color: -jvn-aero-chrome;
@@ -95,11 +181,26 @@
 }
 
 .editor-main-split-pane:horizontal > .split-pane-divider {
-  -fx-background-color: -jvn-aero-edge;
+  -fx-padding: 0 3;
+  -fx-background-color: -jvn-aero-divider-edge, -jvn-aero-divider-rail;
+  -fx-background-insets: 0, 0 1 0 1;
 }
 
-.editor-main-split-pane:horizontal > .split-pane-divider:hover {
-  -fx-background-color: -jvn-aero-focus;
+.editor-main-split-pane:horizontal > .split-pane-divider:hover,
+.editor-main-split-pane:horizontal > .split-pane-divider:pressed {
+  -fx-background-color: -jvn-aero-divider-active-edge, -jvn-aero-divider-active-rail;
+}
+
+.editor-main-split-pane:horizontal > .split-pane-divider > .horizontal-grabber {
+  -fx-padding: 12 2;
+  -fx-background-color: -jvn-aero-divider-edge, -jvn-aero-divider-grip;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 2, 1;
+}
+
+.editor-main-split-pane:horizontal > .split-pane-divider:hover > .horizontal-grabber,
+.editor-main-split-pane:horizontal > .split-pane-divider:pressed > .horizontal-grabber {
+  -fx-background-color: -jvn-aero-divider-active-edge, -jvn-aero-divider-grip;
 }
 
 .jvn-status-bar,
@@ -180,7 +281,8 @@
   -fx-padding: 4 4 2 4;
 }
 
-.sidebar-tool-root .sidebar-tool-header .combo-box {
+.sidebar-tool-root .sidebar-tool-header .combo-box,
+.sidebar-tool-root .combo-box.sidebar-tool-field {
   -fx-background-color: -jvn-aero-field;
   -fx-background-insets: 0;
   -fx-background-radius: 8;
@@ -190,18 +292,21 @@
   -fx-padding: 0;
 }
 
-.sidebar-tool-root .sidebar-tool-header .combo-box:focused {
+.sidebar-tool-root .sidebar-tool-header .combo-box:focused,
+.sidebar-tool-root .combo-box.sidebar-tool-field:focused {
   -fx-border-color: -jvn-aero-focus;
 }
 
-.sidebar-tool-root .sidebar-tool-header .combo-box > .arrow-button {
+.sidebar-tool-root .sidebar-tool-header .combo-box > .arrow-button,
+.sidebar-tool-root .combo-box.sidebar-tool-field > .arrow-button {
   -fx-background-color: derive(-jvn-aero-field, 9%);
   -fx-background-radius: 0 7 7 0;
   -fx-border-color: transparent transparent transparent derive(-jvn-aero-control-edge, -12%);
   -fx-border-width: 0 0 0 1;
 }
 
-.sidebar-tool-root .sidebar-tool-header .combo-box > .list-cell {
+.sidebar-tool-root .sidebar-tool-header .combo-box > .list-cell,
+.sidebar-tool-root .combo-box.sidebar-tool-field > .list-cell {
   -fx-background-color: transparent;
   -fx-text-fill: -jvn-aero-text;
   -fx-padding: 6 10;
@@ -222,6 +327,83 @@
   -fx-border-color: -jvn-aero-edge;
   -fx-background-radius: 8;
   -fx-border-radius: 8;
+}
+
+/* Editor preferences use the tools' header, form controls, and panel surface. */
+.editor-preferences-view .editor-preferences-scroll,
+.editor-preferences-view .editor-preferences-scroll > .viewport {
+  -fx-background-color: -jvn-aero-surface;
+  -fx-padding: 0;
+}
+
+.editor-preferences-content {
+  -fx-padding: 2 10 10 10;
+}
+
+.editor-preferences-section {
+  -fx-padding: 10;
+  -fx-background-color: derive(-jvn-aero-surface, -4%);
+  -fx-background-radius: 6;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-border-radius: 6;
+}
+
+.editor-preferences-section .editor-settings-field-label {
+  -fx-text-fill: -jvn-aero-text;
+  -fx-font-size: 11px;
+  -fx-font-weight: 700;
+}
+
+.editor-preferences-section .editor-settings-panel-row {
+  -fx-padding: 8 0;
+  -fx-border-color: transparent transparent -jvn-aero-edge transparent;
+  -fx-border-width: 0 0 0.5 0;
+}
+
+.editor-preferences-view.sidebar-tool-root .button.editor-settings-save {
+  -fx-background-color: -jvn-aero-button;
+  -fx-border-color: -jvn-aero-control-edge;
+}
+
+.editor-preferences-view.sidebar-tool-root .button.editor-settings-save:hover,
+.editor-preferences-view.sidebar-tool-root .button.editor-settings-save:focused {
+  -fx-background-color: -jvn-aero-hover;
+  -fx-border-color: -jvn-aero-focus;
+}
+
+.editor-preferences-view.sidebar-tool-root .button.editor-settings-save:pressed {
+  -fx-background-color: -jvn-aero-pressed;
+}
+
+.editor-preferences-view .editor-settings-footer {
+  -fx-padding: 7 10;
+  -fx-background-color: -jvn-aero-surface;
+  -fx-border-color: -jvn-aero-edge transparent transparent transparent;
+}
+
+.editor-preferences-section .spinner {
+  -fx-background-color: -jvn-aero-field;
+  -fx-border-color: -jvn-aero-control-edge;
+  -fx-background-radius: 6;
+  -fx-border-radius: 6;
+  -fx-background-insets: 0;
+}
+
+.editor-preferences-section .spinner:focus-within {
+  -fx-border-color: -jvn-aero-focus;
+}
+
+.editor-preferences-section .spinner > .text-field {
+  -fx-background-color: transparent;
+  -fx-border-width: 0;
+  -fx-padding: 7 10;
+  -fx-font-size: 11px;
+}
+
+.editor-preferences-section .spinner > .increment-arrow-button,
+.editor-preferences-section .spinner > .decrement-arrow-button {
+  -fx-background-color: -jvn-aero-button;
+  -fx-background-insets: 0;
 }
 
 .storyboard-tool-scroll,
@@ -382,12 +564,22 @@
   -fx-effect: none;
 }
 
-.tab-pane.sidebar-tab-pane:focused .tab:selected .focus-indicator {
-  -fx-border-color: -jvn-aero-muted;
-  -fx-border-style: dotted;
-  -fx-border-width: 1;
-  -fx-border-radius: 2;
-  -fx-border-insets: 3;
+.tab-pane.sidebar-tab-pane .tab .focus-indicator {
+  -fx-border-width: 0;
+}
+
+.tab-pane.sidebar-tab-pane:focused > .tab-header-area > .headers-region > .tab:selected {
+  -fx-background-color: -jvn-aero-tab-focus-rim, -jvn-aero-tab-focus-fill;
+  -fx-background-insets: 0, 2 1 0 1;
+  -fx-background-radius: 4 4 0 0, 2 2 0 0;
+  -fx-border-color: -jvn-aero-tab-focus-edge;
+}
+
+.tab-pane.sidebar-tab-pane:focused > .tab-header-area > .headers-region > .tab.sidebar-add-tab:selected {
+  -fx-background-color: #193322;
+  -fx-background-insets: 0;
+  -fx-background-radius: 4 4 0 0;
+  -fx-border-color: #2f6d43;
 }
 
 .sidebar-tab-pane .tab .tab-close-button {

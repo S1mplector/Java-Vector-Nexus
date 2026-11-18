@@ -28,14 +28,14 @@ class JvnHubDisplayScaleTest {
 
   @Test
   void compactAndDefaultPresetsResizeTheWholeHubFootprint() {
-    assertEquals(new Dimension(480, 405), JvnHub.hubSizeForScale(0.75));
-    assertEquals(new Dimension(640, 540), JvnHub.hubSizeForScale(1.0));
+    assertEquals(new Dimension(480, 488), JvnHub.hubSizeForScale(0.75));
+    assertEquals(new Dimension(640, 650), JvnHub.hubSizeForScale(1.0));
   }
 
   @Test
   void explicitScaleIsClampedToSupportedBounds() {
-    assertEquals(new Dimension(480, 405), JvnHub.hubSizeForScale(0.1));
-    assertEquals(new Dimension(1184, 999), JvnHub.hubSizeForScale(3.0));
+    assertEquals(new Dimension(480, 488), JvnHub.hubSizeForScale(0.1));
+    assertEquals(new Dimension(1184, 1203), JvnHub.hubSizeForScale(3.0));
   }
 
   @Test

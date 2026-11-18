@@ -27,8 +27,8 @@ class JvnHubAeroHelpIconTest {
   }
 
   @Test
-  void helpOrbKeepsTheEditorAeroPaletteAndQuestionHighlight() {
-    JvnHub.AeroHelpIcon icon = new JvnHub.AeroHelpIcon(64);
+  void helpOrbKeepsTheAeroPaletteAndQuestionHighlight() {
+    HubIcon icon = HubIcon.of(HubIcon.Kind.HELP, 64);
     BufferedImage image = new BufferedImage(64, 64, BufferedImage.TYPE_INT_ARGB);
     Graphics2D graphics = image.createGraphics();
     try {
@@ -53,7 +53,7 @@ class JvnHubAeroHelpIconTest {
     assertEquals(64, icon.getIconWidth());
     assertEquals(64, icon.getIconHeight());
     assertTrue(visible > 1_500, "the circular help artwork should be clearly visible");
-    assertTrue(glossyBlue > 500, "the Editor's blue glass gradient should dominate the orb");
+    assertTrue(glossyBlue > 500, "the blue glass gradient should dominate the orb");
     assertTrue(brightHighlight > 40, "the white question mark, rim, and reflection should remain visible");
   }
 }

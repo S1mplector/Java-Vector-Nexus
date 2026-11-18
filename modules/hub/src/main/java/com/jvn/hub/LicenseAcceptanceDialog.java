@@ -47,7 +47,7 @@ public final class LicenseAcceptanceDialog {
       Runnable refresh = () -> status.setText(store.status(terms).detail());
       refresh.run();
       JPanel heading = new JPanel(new BorderLayout(0, 10));
-      JLabel title = new JLabel("License & Terms", aero("DOCUMENTATION", 28), JLabel.LEADING);
+      JLabel title = new JLabel("License & Terms", HubIcon.of(HubIcon.Kind.DOCUMENTATION, 28), JLabel.LEADING);
       title.setFont(title.getFont().deriveFont(java.awt.Font.BOLD, 19f));
       JPanel titleRow = new JPanel(new BorderLayout(16, 0));
       titleRow.add(title, BorderLayout.WEST);
@@ -58,9 +58,11 @@ public final class LicenseAcceptanceDialog {
           : "Review the documents below. Closing this page does not record acceptance."), BorderLayout.SOUTH);
       content.add(heading, BorderLayout.NORTH);
       JTabbedPane documents = new JTabbedPane();
-      documents.addTab("License " + terms.licenseVersion(), aero("DOCUMENTATION", 20), LegalMarkdown.view(terms.license(), scale));
-      documents.addTab("Terms " + terms.termsVersion(), aero("DOCUMENTATION", 20), LegalMarkdown.view(terms.terms(), scale));
-      documents.addTab("Receipt details", text("Storage: " + store.root() + "\n\nBundle SHA-256:\n" + terms.bundleHash()
+      documents.addTab("License " + terms.licenseVersion(), HubIcon.of(HubIcon.Kind.DOCUMENTATION, 20),
+          LegalMarkdown.view(terms.license(), scale));
+      documents.addTab("Terms " + terms.termsVersion(), HubIcon.of(HubIcon.Kind.DOCUMENT, 20),
+          LegalMarkdown.view(terms.terms(), scale));
+      documents.addTab("Receipt details", HubIcon.of(HubIcon.Kind.RECEIPT, 20), text("Storage: " + store.root() + "\n\nBundle SHA-256:\n" + terms.bundleHash()
           + "\n\nReceipts contain your supplied name, optional organization, local time, document copies and a local signature."
           + "\nNothing is uploaded. Local signatures do not verify identity or provide a trusted timestamp."
           + "\nYou can export the receipt or delete local records at the storage location."
@@ -86,7 +88,7 @@ public final class LicenseAcceptanceDialog {
       actions.add(consentPanel, BorderLayout.CENTER);
       JPanel buttons = new JPanel(new BorderLayout(12, 0));
       buttons.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
-      JButton save = new JButton("Save documents…");
+      JButton save = new JButton("Save documents…", HubIcon.of(HubIcon.Kind.SAVE, 16));
       save.addActionListener(event -> {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -98,7 +100,7 @@ public final class LicenseAcceptanceDialog {
           JOptionPane.showMessageDialog(dialog, "Documents saved to " + folder);
         } catch (Exception e) { error(dialog, e); }
       });
-      JButton export = new JButton("Export receipt…");
+      JButton export = new JButton("Export receipt…", HubIcon.of(HubIcon.Kind.EXPORT, 16));
       export.setEnabled(store.status(terms).receipt() != null);
       export.addActionListener(event -> {
         var current = store.status(terms);
@@ -112,7 +114,7 @@ public final class LicenseAcceptanceDialog {
           JOptionPane.showMessageDialog(dialog, "Receipt exported. Keep your copy secure.");
         } catch (Exception e) { error(dialog, e); }
       });
-      JButton accept = new JButton("Accept and save receipt");
+      JButton accept = new JButton("Accept and save receipt", HubIcon.of(HubIcon.Kind.CHECK, 16));
       accept.setName("acceptanceSave");
       accept.setEnabled(false);
       Runnable enable = () -> accept.setEnabled(consent.isSelected() && !name.getText().isBlank());
@@ -131,7 +133,8 @@ public final class LicenseAcceptanceDialog {
           else JOptionPane.showMessageDialog(dialog, "Acceptance saved locally. You can now export your receipt.");
         } catch (Exception e) { error(dialog, e); }
       });
-      JButton close = new JButton(required ? "Decline and exit" : "Close");
+      JButton close = new JButton(required ? "Decline and exit" : "Close",
+          HubIcon.of(required ? HubIcon.Kind.CANCEL : HubIcon.Kind.CLOSE, 16));
       close.addActionListener(event -> dialog.dispose());
       JPanel utilities = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
       utilities.add(save); utilities.add(export);
@@ -202,20 +205,6 @@ public final class LicenseAcceptanceDialog {
         var g = (java.awt.Graphics2D) graphics.create();
         try { g.translate(x, y); g.scale(scale, scale); icon.paintIcon(c, g, 0, 0); }
         finally { g.dispose(); }
-      }
-    };
-  }
-
-  private static Icon aero(String kind, int size) {
-    return new Icon() {
-      public int getIconWidth() { return size; }
-      public int getIconHeight() { return size; }
-      public void paintIcon(java.awt.Component c, java.awt.Graphics graphics, int x, int y) {
-        var g = (java.awt.Graphics2D) graphics.create();
-        try {
-          g.translate(x, y); g.scale(size / 24.0, size / 24.0);
-          WindowsSevenHubIconPainter.paint(g, kind);
-        } finally { g.dispose(); }
       }
     };
   }
@@ -292,24 +281,7 @@ public final class LicenseAcceptanceDialog {
     if (component instanceof JCheckBox box) {
       box.setUI(new javax.swing.plaf.basic.BasicCheckBoxUI());
       box.setOpaque(false);
-      box.setIcon(new Icon() {
-        public int getIconWidth() { return 20; }
-        public int getIconHeight() { return 20; }
-        public void paintIcon(java.awt.Component c, java.awt.Graphics graphics, int x, int y) {
-          var g = (java.awt.Graphics2D) graphics.create();
-          g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-          g.setColor(java.awt.Color.decode(box.isSelected() ? "#666666" : "#1c1c1c"));
-          g.fillRoundRect(x + 1, y + 1, 17, 17, 4, 4);
-          g.setColor(java.awt.Color.decode(box.hasFocus() ? "#dddddd" : "#888888"));
-          g.drawRoundRect(x + 1, y + 1, 17, 17, 4, 4);
-          if (box.isSelected()) {
-            g.setColor(java.awt.Color.WHITE); g.setStroke(new java.awt.BasicStroke(2));
-            g.drawLine(x + 5, y + 10, x + 8, y + 13);
-            g.drawLine(x + 8, y + 13, x + 14, y + 6);
-          }
-          g.dispose();
-        }
-      });
+      box.setIcon(HubIcon.selection(false, 20));
       box.setIconTextGap(8);
     }
     if ("legalMuted".equals(component.getName()) || "legalStatus".equals(component.getName()))

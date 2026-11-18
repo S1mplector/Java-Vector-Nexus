@@ -1292,6 +1292,16 @@
   -jvn-aero-highlight: #fcfeff;
   -jvn-aero-focus: #2975a2;
   -jvn-aero-focus-halo: rgba(50, 138, 194, 0.57);
+  -jvn-aero-tab-focus-edge: #b96728;
+  -jvn-aero-tab-focus-rim: #fff0c7;
+  -jvn-aero-tab-focus-fill: linear-gradient(to bottom, #fff3d3, #ffdea3 46%, #ffc481 49%, #fff0d7);
+  -jvn-aero-divider-edge: #9badbd;
+  -jvn-aero-divider-rail: linear-gradient(to right, #f5fbff, #dce9f3 46%, #c7d7e4 54%, #e4edf4);
+  -jvn-aero-divider-active-edge: #5182a6;
+  -jvn-aero-divider-active-rail: linear-gradient(to right, #effcff, #b4dff2 46%, #81b9d9 54%, #c3e9f7);
+  -jvn-aero-divider-grip: linear-gradient(to bottom, #dfeaf3, #cbd9e5 22%, #8297a8 23%,
+      #fbfdff 31%, #cbd9e5 32%, #cbd9e5 46%, #8297a8 47%, #fbfdff 55%, #cbd9e5 56%,
+      #cbd9e5 70%, #8297a8 71%, #fbfdff 79%, #cbd9e5 80%, #dfeaf3);
   -jvn-aero-chrome: linear-gradient(to bottom, #fcfeff, #e7eff7 49%, #dbe6f0 51%, #e8f0f7);
   -jvn-aero-menubar: linear-gradient(to bottom, #f9fcff, #ebf1fb 49%, #dce6f5 51%, #edf3fb);
   -jvn-aero-button: linear-gradient(to bottom, #fdfefe, #eef2f6 48%, #dfe7ef 50%, #eef3f7);
@@ -4034,16 +4044,6 @@
   -fx-padding: 0 1 0 1;
 }
 
-/* Main editor sidebars: easier-to-find resize rail with subtle hover glow */
-.editor-main-split-pane:horizontal > .split-pane-divider {
-  -fx-padding: 0 2 0 2;
-  -fx-background-insets: 0;
-}
-
-.editor-main-split-pane:horizontal > .split-pane-divider:hover {
-  -fx-effect: dropshadow(gaussian, -jvn-aero-focus-halo, 7, 0.25, 0, 0);
-}
-
 .editor-main-split-pane:horizontal > .split-pane-divider .sidebar-hidden-drag-arrow {
   -fx-min-width: 10px;
   -fx-min-height: 16px;
@@ -4239,17 +4239,6 @@
   -fx-background-color: #eaeff5;
 }
 
-
-/* Tooltip */
-.tooltip {
-  -fx-background-color: #222;
-  -fx-text-fill: #191919;
-  -fx-border-color: #c1c6cc;
-  -fx-border-radius: 4;
-  -fx-background-radius: 4;
-  -fx-font-size: 11px;
-  -fx-padding: 4 8;
-}
 
 /* MenuButton */
 .menu-button .label {
