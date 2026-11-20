@@ -2,11 +2,11 @@
 
 Choose **Start tutorial** and select a topic. Each example explains one feature, shows the relevant commands, and suggests an edit to try. Choose **Back to topics** to finish, or take the optional review question. Replaying a topic counts once.
 
-Use **Progress and motion** to check completion or toggle movement. Try **Character movement** to see Pip walk, **Puppeteer timelines** to edit a camera move, or **Stage lighting** to compare the room before and after applying a preset.
+Use **Progress and motion** to check completion or toggle movement. Try **Character movement** to see Pip walk, **Puppeteer timelines** to edit Pip’s movement, or **Stage lighting** to compare the stage before and after applying a preset.
 
 The topic menu is in `scripts/story/tutorial_hub.vns`. The examples are in `scripts/tutorial/` and the background and character poses are in `assets/tutorial/`.
 
-![Tutorial title and topic menu](../assets/images/tutorial/jvn-tutorial.webp)
+![Pip introducing dialogue on the tutorial stage](../assets/images/tutorial/jvn-tutorial.webp)
 
 [Watch the character movement example.](../assets/images/tutorial/pip-walk.mp4)
 

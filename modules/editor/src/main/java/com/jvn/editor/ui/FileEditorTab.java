@@ -475,6 +475,16 @@ public class FileEditorTab extends BorderPane {
   public Kind getKind() { return kind; }
   public File getFile() { return file; }
 
+  public void setStoryMapActions(Consumer<StoryTimelineView.Arc> open, Consumer<StoryTimelineView.Arc> run) {
+    if (timelineView == null) return;
+    timelineView.setOnOpenArc(open);
+    timelineView.setOnRunArc(run);
+    timelineView.setOnRunLink(link -> {
+      var target = timelineView.findArc(link.toArc);
+      if (target != null) open.accept(target);
+    });
+  }
+
   public void setOnSelected(Consumer<Entity2D> c) { this.onSelected = c; }
   public void setOnStatus(Consumer<String> c) { this.onStatus = c; }
   public void setOnStoryboardOverlayAdjusted(Consumer<StoryboardOverlayState> c) { this.onStoryboardOverlayAdjusted = c; }

@@ -888,7 +888,7 @@ public class JvnLauncherApp extends Application {
       RunConsoleView console = new RunConsoleView(title);
       console.setLaunchContext(gradlew.exists() ? "Gradle wrapper" : "Gradle CLI", task, runRoot.getName());
       RunConsoleView.ProcessStarter starter =
-          options -> GradleRuntimeLauncher.start(runRoot, gradlew, task, args, options);
+          options -> GradleRuntimeLauncher.start(runRoot, gradlew, task, args, options, console.prepareInspector(task));
       console.setProcessStarter(starter);
 
       Stage logStage = new Stage();

@@ -1,6 +1,6 @@
 @character pip "Pip"
 @character narrator "Narrator"
-@background room assets/tutorial/window-room.jpg
+@background room assets/tutorial/white.png
 @stagepreset dusk /definitions/dusk.stagepreset
 @charimg pip wave assets/tutorial/wave.png
 @charimg pip neutral assets/tutorial/neutral.png
@@ -11,8 +11,9 @@
 @charimg pip cheer assets/tutorial/cheer.png
 @charimg pip present assets/tutorial/present.png
 @charimg pip notes assets/tutorial/notes.png
-@position guide 0.30 0.795
-@position window 0.62 0.795
+@position guide 0.50 0.99
+@position topics 0.26 0.99
+@position rightmark 0.78 0.99
 @charimg pip stride-a-right assets/tutorial/stride-a-right.png
 @charimg pip stride-a-left assets/tutorial/stride-a-left.png
 @charimg pip stride-b-right assets/tutorial/stride-b-right.png

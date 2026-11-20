@@ -144,6 +144,13 @@ public class StoryTimelineView extends BorderPane {
     // Check links
     for (Link l : links.getItems()) {
       if (l == null) continue;
+      Arc source = findArc(l.fromArc);
+      if (source == null) sb.append("Link from unknown arc: ").append(l.fromArc).append("\n");
+      else if (l.fromLabel != null && !l.fromLabel.isBlank()) {
+        File sourceFile = resolveFile(source.script);
+        if (sourceFile != null && sourceFile.isFile())
+          sb.append(validateLabel(sourceFile, l.fromLabel, "Link source " + source.name, "label missing"));
+      }
       Arc ta = findArc(l.toArc);
       if (ta == null) { sb.append("Link to unknown arc: ").append(l.toArc).append("\n"); continue; }
       File f = resolveFile(ta.script);
@@ -312,14 +319,16 @@ public class StoryTimelineView extends BorderPane {
   private final ListView<Arc> arcs = new ListView<>();
   private final ListView<Link> links = new ListView<>();
   private final StoryGraphPane graph = new StoryGraphPane();
-  private final ScrollPane graphScroll = new ScrollPane(graph);
+  private final ScrollPane graphScroll = new ScrollPane(new javafx.scene.Group(graph));
   private final Label graphHint = new Label("Add an arc or drag a .vns script here to start your story map.");
   private static final double MIN_ZOOM = 0.6;
   private static final double MAX_ZOOM = 2.0;
   private double zoomLevel = 1.0;
+  private boolean focusOnLoad;
   private ComboBox<String> clusterFilter;
   private File projectRoot;
   private File timelineFile;
+  private Consumer<Arc> onOpenArc;
   private Consumer<Arc> onRunArc;
   private Consumer<Link> onRunLink;
   private Runnable onChanged;
@@ -391,7 +400,9 @@ public class StoryTimelineView extends BorderPane {
     miArcEdit.setOnAction(e -> editArc());
     MenuItem miArcDelete = new MenuItem("Delete Arc");
     miArcDelete.setOnAction(e -> deleteSelected());
-    arcMenu.getItems().addAll(miArcOpen, miArcEdit, miArcDelete);
+    MenuItem runEntry = new MenuItem("Run from Entry", AeroIcon.runProject(16));
+    runEntry.setOnAction(e -> runSelectedArc());
+    arcMenu.getItems().addAll(miArcOpen, runEntry, miArcEdit, miArcDelete);
     arcs.setContextMenu(arcMenu);
     ContextMenu linkMenu = new ContextMenu();
     MenuItem miLinkRun = new MenuItem("Open Target Arc");
@@ -441,6 +452,30 @@ public class StoryTimelineView extends BorderPane {
     Button bCopyGoto = iconButton("Copy Goto", SidebarToolIcon.copy(), e -> copyGoto());
     Button bRefresh = iconButton("Refresh", SidebarToolIcon.refresh(), e -> syncFromDisk(true));
     Button bAuto = iconButton("Auto Layout", SidebarToolIcon.auto(), e -> { graph.autoLayout(); onGraphChanged(); });
+    Button bRun = iconButton("Run entry", AeroIcon.runProject(18), e -> runSelectedArc());
+    bRun.disableProperty().bind(arcs.getSelectionModel().selectedItemProperty().isNull());
+    var routes = new javafx.scene.control.MenuButton("Connections", AeroIcon.of(AeroIcon.Kind.LABEL_FLOW, 18));
+    routes.disableProperty().bind(arcs.getSelectionModel().selectedItemProperty().isNull());
+    routes.setOnShowing(e -> {
+      routes.getItems().clear();
+      Arc selected = arcs.getSelectionModel().getSelectedItem();
+      if (selected == null) return;
+      for (Link link : links.getItems()) {
+        boolean outgoing = selected.name.equals(link.fromArc);
+        if (!outgoing && !selected.name.equals(link.toArc)) continue;
+        Arc other = findArc(outgoing ? link.toArc : link.fromArc);
+        if (other == null) continue;
+        MenuItem jump = new MenuItem((outgoing ? "To " : "From ") +
+            formatEndpoint(other.name, outgoing ? link.toLabel : link.fromLabel));
+        jump.setOnAction(event -> focusArc(other));
+        routes.getItems().add(jump);
+      }
+      if (routes.getItems().isEmpty()) {
+        MenuItem empty = new MenuItem("No connected arcs");
+        empty.setDisable(true);
+        routes.getItems().add(empty);
+      }
+    });
     Button bFit = iconButton("Fit", SidebarToolIcon.rectSelect(), e -> zoomToFit());
     Button bValidate = iconButton("Validate", SidebarToolIcon.check(), e -> validate());
     TextField tfSearch = new TextField();
@@ -451,6 +486,13 @@ public class StoryTimelineView extends BorderPane {
     tfSearch.setMinWidth(72);
     tfSearch.textProperty().addListener((o, ov, nv) -> graph.highlight(nv));
     HBox.setHgrow(tfSearch, Priority.ALWAYS);
+    tfSearch.setOnAction(e -> {
+      List<Arc> matches = graph.searchMatches();
+      if (matches.isEmpty()) return;
+      int current = matches.indexOf(arcs.getSelectionModel().getSelectedItem());
+      focusArc(matches.get((current + 1) % matches.size()));
+    });
+    tfSearch.setTooltip(new Tooltip("Find by name, script, label, tag or cluster. Enter moves to the next match."));
     bAddArc.setTooltip(new Tooltip("Create a story arc from a .vns script"));
     bAddLink.setTooltip(new Tooltip("Connect two arcs"));
     bEdit.setTooltip(new Tooltip("Edit selected arc or link"));
@@ -491,8 +533,13 @@ public class StoryTimelineView extends BorderPane {
     clusterLabel.setLabelFor(clusterFilter);
     HBox filters = new HBox(8, tfSearch, clusterLabel, clusterFilter);
     filters.setAlignment(Pos.CENTER_LEFT);
-    FlowPane actions = new FlowPane(4, 4,
-        bAddArc, bAddLink, bEdit, bOpen, bDelete, bCopyGoto, bRefresh, bAuto, bFit, bValidate);
+    var tools = new javafx.scene.control.MenuButton("Map tools", AeroIcon.of(AeroIcon.Kind.SETTINGS, 18));
+    for (Button action : List.of(bEdit, bCopyGoto, bAuto, bFit, bValidate, bRefresh, bDelete)) {
+      MenuItem item = new MenuItem(action.getText(), action.getGraphic());
+      item.setOnAction(event -> action.fire());
+      tools.getItems().add(item);
+    }
+    FlowPane actions = new FlowPane(4, 4, bRun, bOpen, bAddArc, bAddLink, routes, tools);
     actions.setAlignment(Pos.CENTER_LEFT);
 
     VBox toolbar = new VBox(6, titleRow, filters, actions);
@@ -501,6 +548,7 @@ public class StoryTimelineView extends BorderPane {
     setGraphZoom(1.0);
 
     // Graph actions wiring
+    graph.setOnOpenArc(a -> { if (onOpenArc != null) onOpenArc.accept(a); });
     graph.setOnRunArc(a -> { if (onRunArc != null) onRunArc.accept(a); });
     graph.setOnSelectArc(a -> {
       if (a == null) return;
@@ -579,14 +627,38 @@ public class StoryTimelineView extends BorderPane {
   }
 
   public void setProjectRoot(File dir) {
-    this.projectRoot = dir;
-    syncFromDisk(true);
+    setProjectMap(dir, timelineFile);
   }
 
+  public void setProjectMap(File root, File file) {
+    boolean changed = !java.util.Objects.equals(projectRoot, root)
+        || !java.util.Objects.equals(timelineFile, file);
+    this.projectRoot = root;
+    this.timelineFile = file;
+    if (changed) {
+      arcs.getItems().clear();
+      links.getItems().clear();
+      focusOnLoad = true;
+    }
+    syncFromDisk(true);
+    requestLayout();
+  }
+
+  @Override protected void layoutChildren() {
+    super.layoutChildren();
+    if (focusOnLoad && !arcs.getItems().isEmpty() && graphScroll.getViewportBounds().getWidth() > 0) {
+      focusOnLoad = false;
+      Arc entry = arcs.getItems().stream().filter(a -> java.util.Arrays.asList(nn(a.tags).split(",")).contains("entry"))
+          .findFirst().orElse(arcs.getItems().getFirst());
+      focusArc(entry);
+    }
+  }
+
+  public void setOnOpenArc(Consumer<Arc> c) { this.onOpenArc = c; }
   public void setOnRunArc(Consumer<Arc> c) { this.onRunArc = c; }
   public void setOnRunLink(Consumer<Link> c) { this.onRunLink = c; }
   public void setOnChanged(Runnable r) { this.onChanged = r; }
-  public void setTimelineFile(File f) { this.timelineFile = f; syncFromDisk(true); }
+  public void setTimelineFile(File f) { setProjectMap(projectRoot, f); }
   public List<Arc> getArcs() { return new ArrayList<>(arcs.getItems()); }
   public List<Link> getLinks() { return new ArrayList<>(links.getItems()); }
   public Arc findArc(String name) {
@@ -848,11 +920,35 @@ public class StoryTimelineView extends BorderPane {
     }
   }
 
+  private void runSelectedArc() {
+    Arc arc = arcs.getSelectionModel().getSelectedItem();
+    if (onRunArc != null && arc != null) onRunArc.accept(arc);
+  }
+
+  private void focusArc(Arc arc) {
+    String cluster = clusterFilter.getValue();
+    if (cluster != null && !cluster.equals("All") && !cluster.equals(arc.cluster)) clusterFilter.setValue("All");
+    arcs.getSelectionModel().select(arc);
+    arcs.scrollTo(arc);
+    centerGraphAt(arc.x + StoryGraphPane.nodeWidthForArc(arc) / 2,
+        arc.y + StoryGraphPane.nodeHeightForArc(arc) / 2);
+  }
+
+  private void centerGraphAt(double x, double y) {
+    var point = graph.localToParent(x, y);
+    var bounds = graphScroll.getContent().getLayoutBounds();
+    var viewport = graphScroll.getViewportBounds();
+    graphScroll.setHvalue(Math.clamp((point.getX() - bounds.getMinX() - viewport.getWidth() / 2)
+        / Math.max(1, bounds.getWidth() - viewport.getWidth()), 0, 1));
+    graphScroll.setVvalue(Math.clamp((point.getY() - bounds.getMinY() - viewport.getHeight() / 2)
+        / Math.max(1, bounds.getHeight() - viewport.getHeight()), 0, 1));
+  }
+
   private void openArc() {
     Arc a = arcs.getSelectionModel().getSelectedItem();
     if (a == null) return;
-    if (onRunArc != null) {
-      onRunArc.accept(a);
+    if (onOpenArc != null) {
+      onOpenArc.accept(a);
       return;
     }
     try { java.awt.Desktop.getDesktop().open(resolveFile(a.script)); } catch (Exception ignored) {
@@ -1374,14 +1470,7 @@ public class StoryTimelineView extends BorderPane {
     if (vw <= 0 || vh <= 0) return;
     double s = Math.min(vw / widthNeeded, vh / heightNeeded);
     setGraphZoom(s);
-    double contentW = Math.max(widthNeeded * s, vw);
-    double contentH = Math.max(heightNeeded * s, vh);
-    double centerX = (minX + maxX) / 2 * s;
-    double centerY = (minY + maxY) / 2 * s;
-    double hx = (centerX - vw / 2) / Math.max(1, (contentW - vw));
-    double vy = (centerY - vh / 2) / Math.max(1, (contentH - vh));
-    graphScroll.setHvalue(Math.max(0, Math.min(1, hx)));
-    graphScroll.setVvalue(Math.max(0, Math.min(1, vy)));
+    centerGraphAt((minX + maxX) / 2, (minY + maxY) / 2);
   }
 
   private void setGraphZoom(double zoom) {

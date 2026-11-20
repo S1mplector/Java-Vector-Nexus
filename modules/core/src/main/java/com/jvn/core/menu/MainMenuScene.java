@@ -268,10 +268,21 @@ public class MainMenuScene implements Scene {
   }
 
   private void startNewGame(String scriptName) {
+    startFromEntry(scriptName, "");
+  }
+
+  /** Start gameplay directly at an authored arc entry, with normal settings, audio and interop. */
+  public void startFromEntry(String scriptName, String entryLabel) {
     String resolvedScript = normalize(scriptName, defaultScriptName);
     VnScene vnScene;
+    int startIndex = 0;
     try {
       VnScenario scenario = scenarioLoader.load(resolvedScript);
+      if (entryLabel != null && !entryLabel.isBlank()) {
+        Integer index = scenario.getLabelIndex(entryLabel);
+        if (index == null) throw new IllegalArgumentException("Unknown entry label @" + entryLabel);
+        startIndex = index;
+      }
       vnScene = new VnScene(scenario);
     } catch (Exception e) {
       LOG.warn("Failed to load script '{}': {}", resolvedScript, e.toString());
@@ -293,6 +304,10 @@ public class MainMenuScene implements Scene {
     if (engine != null) {
       engine.setFixedUpdateStepMs(settingsModel.getPhysicsFixedStepMs(), settingsModel.getPhysicsMaxSubSteps());
       MenuAudioLifecycle.beginGameplay(audio);
+      if (startIndex > 0) {
+        vnScene.preflightState(startIndex);
+        vnScene.getState().setCurrentNodeIndex(startIndex);
+      }
       engine.scenes().push(vnScene);
     }
   }

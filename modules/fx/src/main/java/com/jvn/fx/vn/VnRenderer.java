@@ -4443,6 +4443,24 @@ public class VnRenderer {
     }
   }
 
+  public List<com.jvn.core.diagnostics.RunTelemetry.Cache> inspectImageCaches() {
+    return List.of(imageCache.inspect("Sprite and UI images"), backgroundImageCache.inspect("Background images"),
+        compositeSpriteCache.inspect("Sprite composites"), stageBackgroundCache.inspect("Lit backgrounds"),
+        stageCharacterCache.inspect("Lit characters"), stageSourcePixels.inspect("Lighting source pixels"));
+  }
+
+  /** Copy keys on the render thread before the inspector walks the project on a worker. */
+  public Map<String, List<String>> residentImageKeys() {
+    var keys = new LinkedHashMap<String, List<String>>();
+    keys.put("Sprite / UI", imageCache.residentKeys());
+    keys.put("Background", backgroundImageCache.residentKeys());
+    keys.put("Composite", compositeSpriteCache.residentKeys());
+    keys.put("Lit background", stageBackgroundCache.residentKeys());
+    keys.put("Lit character", stageCharacterCache.residentKeys());
+    keys.put("Source pixels", stageSourcePixels.residentKeys());
+    return keys;
+  }
+
   public void clearCache() {
     imageCache.clear();
     imageEffects.clear();

@@ -95,6 +95,7 @@ fun requestedGraphicsModeForLaunch(): String {
 }
 
 tasks.named<JavaExec>("run") {
+  providers.environmentVariable("JVN_RUN_INSPECTOR").orNull?.let { environment("JVN_RUN_INSPECTOR", it) }
   configureFlightRecordingForLaunch()
   configureManagedJvmLaunchSettings()
   when (requestedGraphicsModeForLaunch().lowercase()) {

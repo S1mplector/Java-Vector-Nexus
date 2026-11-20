@@ -3,6 +3,7 @@ import groovy.json.JsonSlurper
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.api.tasks.bundling.Zip
+import org.gradle.api.tasks.bundling.ZipEntryCompression
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.SourceSetContainer
@@ -2386,6 +2387,20 @@ fun externalRuntimeJars(): List<File> {
     .sortedBy { it.name }
 }
 
+fun Zip.configureGameArchive() {
+  destinationDirectory.set(bundledRuntimeZipDir())
+  val compression = providers.gradleProperty("jvnZipCompression").orNull ?: "deflate"
+  entryCompression = when (compression) {
+    "deflate" -> ZipEntryCompression.DEFLATED
+    "store" -> ZipEntryCompression.STORED
+    else -> throw GradleException("Unknown jvnZipCompression: $compression")
+  }
+  if (jvnPropertyEnabled("jvnNormalizeArchive")) {
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
+  }
+}
+
 val gameZipTasks = jvnGameTargets.map { target ->
   val javaFxConfiguration = configurations.create("jvn${target.taskSuffix}JavaFx") {
     isCanBeResolved = true
@@ -2428,7 +2443,7 @@ val gameZipTasks = jvnGameTargets.map { target ->
     archiveBaseName.set(providers.provider { sanitizeGameName(gameDisplayNameForTaskDiscovery()) })
     archiveVersion.set(providers.provider { sanitizeGameName(gameVersionForTaskDiscovery()) })
     archiveClassifier.set(target.id)
-    destinationDirectory.set(layout.buildDirectory.dir("distributions/games"))
+    configureGameArchive()
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     dependsOn("validateJvnGameProject")
     dependsOn(prepareTask)
@@ -2783,7 +2798,7 @@ val bundledRuntimeZipTasks = jvnGameTargets.map { target ->
     description = "Assembles a self-contained game zip with a bundled runtime for ${target.id}."
     dependsOn(prepareTask)
     archiveFileName.set(providers.provider { "${gameBundledDistName(target)}.zip" })
-    destinationDirectory.set(layout.buildDirectory.dir("distributions/games"))
+    configureGameArchive()
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from(providers.provider { bundledRuntimeRootDir(target) }) {
       into(providers.provider { gameBundledDistName(target) })

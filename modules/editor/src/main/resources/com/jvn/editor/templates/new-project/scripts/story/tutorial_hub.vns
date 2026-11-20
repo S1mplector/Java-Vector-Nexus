@@ -10,7 +10,7 @@
 [if !tutorial_count]
 [set tutorial_count 0]
 [endif]
-[show pip guide wave]
+[show pip topics wave]
 @label topics
 > Writing and branching -> topics_page_1
 > Characters and backgrounds -> topics_page_2
@@ -34,7 +34,7 @@ pip: You have completed ${tutorial_count} of 30 topics. You can replay any examp
 [jump topics]
 @label topics_page_1
 [bg room]
-[show pip guide point]
+[show pip topics point]
 > Dialogue -> open_dialogue
 > Pauses and timing -> open_narration
 > Variables and conditions -> open_variables
@@ -43,7 +43,7 @@ pip: You have completed ${tutorial_count} of 30 topics. You can replay any examp
 > All topics -> topics
 @label topics_page_2
 [bg room]
-[show pip guide point]
+[show pip topics point]
 > Expressions -> open_expressions
 > Backgrounds -> open_images
 > Transitions -> open_transitions
@@ -52,7 +52,7 @@ pip: You have completed ${tutorial_count} of 30 topics. You can replay any examp
 > All topics -> topics
 @label topics_page_3
 [bg room]
-[show pip guide point]
+[show pip topics point]
 > Sound effects -> open_audio
 > Puppeteer timelines -> open_puppeteer
 > Sprite effects -> open_plugins_and_line_boil
@@ -61,7 +61,7 @@ pip: You have completed ${tutorial_count} of 30 topics. You can replay any examp
 > All topics -> topics
 @label topics_page_4
 [bg room]
-[show pip guide point]
+[show pip topics point]
 > Localization -> open_localization
 > Dialogue layout -> open_ui_layout
 > Dialogue and narration -> open_dialogue_presentation
@@ -70,7 +70,7 @@ pip: You have completed ${tutorial_count} of 30 topics. You can replay any examp
 > All topics -> topics
 @label topics_page_5
 [bg room]
-[show pip guide point]
+[show pip topics point]
 > Opening a JES scene -> open_vns_jes
 > Saving and rollback -> open_saves_rollback_persistence
 > Editing JES entities -> open_jes_entities_input_widgets
@@ -79,7 +79,7 @@ pip: You have completed ${tutorial_count} of 30 topics. You can replay any examp
 > All topics -> topics
 @label topics_page_6
 [bg room]
-[show pip guide point]
+[show pip topics point]
 > Debugging a scene -> open_best_practices
 > Testing a build -> open_testing_release
 > Previewing an edit -> open_editor_workflows

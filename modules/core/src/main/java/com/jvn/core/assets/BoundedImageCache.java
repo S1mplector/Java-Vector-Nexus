@@ -30,6 +30,7 @@ public class BoundedImageCache<V> {
   private final AtomicLong hits = new AtomicLong();
   private final AtomicLong misses = new AtomicLong();
   private long currentWeight;
+  private String lastMiss = "";
 
   public BoundedImageCache(int maxEntries) {
     this(maxEntries, Long.MAX_VALUE, ignored -> 1L);
@@ -59,7 +60,8 @@ public class BoundedImageCache<V> {
   public synchronized V get(String key) {
     Entry<V> entry = map.get(key);
     V v = entry == null ? null : entry.value();
-    if (v != null) hits.incrementAndGet(); else misses.incrementAndGet();
+    if (v != null) hits.incrementAndGet();
+    else { misses.incrementAndGet(); lastMiss = key; }
     return v;
   }
 
@@ -76,6 +78,7 @@ public class BoundedImageCache<V> {
       return existing;
     }
     misses.incrementAndGet();
+    lastMiss = key;
     V computed = loader.apply(key);
     if (computed != null) {
       putInternal(key, computed);
@@ -145,6 +148,17 @@ public class BoundedImageCache<V> {
   /** Returns the cumulative miss count since construction or last reset. */
   public long missCount() {
     return misses.get();
+  }
+
+  public synchronized java.util.List<String> residentKeys() {
+    return new java.util.ArrayList<>(map.keySet());
+  }
+
+  /** Snapshot without changing LRU order or adding diagnostic cache hits. */
+  public synchronized com.jvn.core.diagnostics.RunTelemetry.Cache inspect(String name) {
+    String resident = map.isEmpty() ? "" : map.lastEntry().getKey();
+    return new com.jvn.core.diagnostics.RunTelemetry.Cache(name, map.size(), currentWeight,
+        hits.get(), misses.get(), resident == null ? "" : resident, lastMiss == null ? "" : lastMiss);
   }
 
   private void putInternal(String key, V value) {

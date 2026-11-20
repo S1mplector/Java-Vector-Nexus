@@ -11,8 +11,7 @@ import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Comparator;
-import java.util.List;
+import java.io.DataOutputStream;
 import java.util.Locale;
 import javax.imageio.ImageIO;
 
@@ -36,7 +35,7 @@ final class GamePackageIconService {
     switch (normalizeHost(hostOs)) {
       case "macos" -> {
         platformIcon = new File(packagingDir, "icon.icns");
-        writeIcns(storedSource, platformIcon);
+        writeIcns(image, platformIcon);
       }
       case "windows" -> {
         platformIcon = new File(packagingDir, "icon.ico");
@@ -86,30 +85,30 @@ final class GamePackageIconService {
     }
   }
 
-  private static void writeIcns(File source, File destination) throws IOException, InterruptedException {
-    Path iconset = destination.toPath().getParent().resolve(".jvn-icon.iconset");
-    deleteTree(iconset);
-    Files.createDirectories(iconset);
-    List<Integer> sizes = List.of(16, 32, 128, 256, 512);
-    try {
-      for (int size : sizes) {
-        run("sips", "-z", Integer.toString(size), Integer.toString(size), source.getAbsolutePath(),
-            "--out", iconset.resolve("icon_" + size + "x" + size + ".png").toString());
-        int retina = size * 2;
-        run("sips", "-z", Integer.toString(retina), Integer.toString(retina), source.getAbsolutePath(),
-            "--out", iconset.resolve("icon_" + size + "x" + size + "@2x.png").toString());
+  private static void writeIcns(BufferedImage source, File destination) throws IOException {
+    int[] sizes = {16, 32, 128, 256, 512, 1024};
+    String[] types = {"icp4", "icp5", "ic07", "ic08", "ic09", "ic10"};
+    var chunks = new ByteArrayOutputStream();
+    try (var content = new DataOutputStream(chunks)) {
+      for (int i = 0; i < sizes.length; i++) {
+        var png = new ByteArrayOutputStream();
+        if (!ImageIO.write(resize(source, sizes[i]), "png", png)) throw new IOException("PNG encoder unavailable");
+        content.writeBytes(types[i]);
+        content.writeInt(8 + png.size());
+        png.writeTo(content);
       }
-      run("iconutil", "-c", "icns", iconset.toString(), "-o", destination.getAbsolutePath());
-    } finally {
-      deleteTree(iconset);
     }
-  }
-
-  private static void run(String... command) throws IOException, InterruptedException {
-    Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
-    String output = new String(process.getInputStream().readAllBytes());
-    int exit = process.waitFor();
-    if (exit != 0) throw new IOException(command[0] + " failed: " + output.trim());
+    Path temp = Files.createTempFile(destination.toPath().getParent(), "icon-", ".icns");
+    try {
+      try (var output = new DataOutputStream(Files.newOutputStream(temp))) {
+        output.writeBytes("icns");
+        output.writeInt(8 + chunks.size());
+        chunks.writeTo(output);
+      }
+      Files.move(temp, destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+    } finally {
+      Files.deleteIfExists(temp);
+    }
   }
 
   private static BufferedImage resize(BufferedImage source, int size) {
@@ -141,10 +140,4 @@ final class GamePackageIconService {
     return "linux";
   }
 
-  private static void deleteTree(Path root) throws IOException {
-    if (!Files.exists(root)) return;
-    try (var paths = Files.walk(root)) {
-      for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(path);
-    }
-  }
 }

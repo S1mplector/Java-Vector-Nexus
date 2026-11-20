@@ -28,8 +28,8 @@ class GameBuildPublisherViewFxTest {
       scene.getRoot().applyCss();
       scene.getRoot().layout();
 
-      assertTrue(view.preflightButtonForTest().getGraphic() == null);
-      assertTrue(view.dependencyScanButtonForTest().getGraphic() == null);
+      assertTrue(view.preflightButtonForTest().getGraphic() instanceof AeroIcon);
+      assertTrue(view.dependencyScanButtonForTest().getGraphic() instanceof AeroIcon);
       assertTrue(view.preflightButtonForTest().minHeight(-1) <= 40);
       assertTrue(view.dependencyScanButtonForTest().minHeight(-1) <= 40);
       assertTrue(view.preflightButtonForTest().minWidth(-1) < 220);
@@ -78,7 +78,58 @@ class GameBuildPublisherViewFxTest {
     });
   }
 
+  @Test void packageOptionsReachTheActualBuildRequest() throws Exception {
+    var requests = new java.util.ArrayList<GameBuildPublisherView.BuildRequest>();
+    runFx(() -> {
+      var view = createView(requests::add);
+      var scene = style(new Scene(view, 980, 720));
+      scene.getRoot().applyCss();
+      scene.getRoot().layout();
+      ((javafx.scene.control.CheckBox) view.lookupAll(".check-box").stream()
+          .filter(n -> n instanceof javafx.scene.control.CheckBox c && c.getText().startsWith("Store ZIP"))
+          .findFirst().orElseThrow()).fire();
+      var ship = (javafx.scene.control.Button) view.lookupAll(".button").stream()
+          .filter(n -> n instanceof javafx.scene.control.Button b && "Ship Portable".equals(b.getText()))
+          .findFirst().orElseThrow();
+      ship.fire();
+      assertTrue(java.util.List.of(requests.getLast().args()).contains("-PjvnZipCompression=store"));
+      view.selectNativeModeForTest();
+      ship.fire();
+      assertFalse(java.util.List.of(requests.getLast().args()).contains("-PjvnZipCompression=store"));
+      return null;
+    });
+  }
+
+  @Test void selectedChecksRunTogetherWithStrictWarnings() throws Exception {
+    var requests = new java.util.ArrayList<GameBuildPublisherView.BuildRequest>();
+    runFx(() -> {
+      var view = createView(requests::add);
+      var scene = style(new Scene(view, 980, 720));
+      var tabs = (javafx.scene.control.TabPane) view.getCenter();
+      assertEquals(java.util.List.of("Package", "Checks", "Release", "Artifacts"),
+          tabs.getTabs().stream().map(javafx.scene.control.Tab::getText).toList());
+      tabs.getSelectionModel().select(1);
+      scene.getRoot().applyCss();
+      scene.getRoot().layout();
+      var checks = view.lookupAll(".check-box").stream().map(n -> (javafx.scene.control.CheckBox)n).toList();
+      checks.stream().filter(c -> c.getText().equals("Renderer tests") || c.getText().startsWith("Fail dependency"))
+          .forEach(javafx.scene.control.CheckBox::fire);
+      ((javafx.scene.control.Button) view.lookupAll(".button").stream()
+          .filter(n -> n instanceof javafx.scene.control.Button b && "Run selected checks".equals(b.getText()))
+          .findFirst().orElseThrow()).fire();
+      var request = requests.getFirst();
+      assertEquals("validateJvnGameProject", request.taskName());
+      assertTrue(java.util.List.of(request.args()).containsAll(java.util.List.of("validateJvnGameDependencies",
+          "preflightJvnGameBuild", ":fx:test", "-PjvnFailOnWarning=true")));
+      return null;
+    });
+  }
+
   private GameBuildPublisherView createView() throws Exception {
+    return createView(request -> {});
+  }
+
+  private GameBuildPublisherView createView(java.util.function.Consumer<GameBuildPublisherView.BuildRequest> consumer) throws Exception {
     Path workspace = Files.createDirectories(tempDir.resolve("workspace"));
     Path project = Files.createDirectories(tempDir.resolve("game"));
     Files.createDirectories(project.resolve("scripts/story"));
@@ -90,7 +141,7 @@ class GameBuildPublisherViewFxTest {
         entryVns=scripts/story/prologue.vns
         runtime.ui=fx
         """);
-    return new GameBuildPublisherView(workspace.toFile(), project.toFile(), request -> {});
+    return new GameBuildPublisherView(workspace.toFile(), project.toFile(), consumer);
   }
 
   private static Scene style(Scene scene) {

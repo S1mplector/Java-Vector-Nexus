@@ -582,8 +582,7 @@ public class EditorApp extends Application {
       }
     }
     if (timelineView != null) {
-      timelineView.setTimelineFile(resolveStoryMapFile(root, mf));
-      timelineView.setProjectRoot(root);
+      timelineView.setProjectMap(root, resolveStoryMapFile(root, mf));
     }
     if (settingsEditor != null) settingsEditor.setProjectRoot(root);
     if (menuThemeEditor != null) menuThemeEditor.setProjectRoot(root);
@@ -624,7 +623,7 @@ public class EditorApp extends Application {
       RunConsoleView console = new RunConsoleView(title);
       console.setLaunchContext(gradlew.exists() ? "Gradle wrapper" : "Gradle CLI", task, root.getName());
       RunConsoleView.ProcessStarter starter =
-          options -> GradleRuntimeLauncher.start(root, gradlew, task, args, options);
+          options -> GradleRuntimeLauncher.start(root, gradlew, task, args, options, console.prepareInspector(task));
       console.setProcessStarter(starter);
 
       javafx.stage.Stage logStage = new javafx.stage.Stage();
@@ -692,7 +691,10 @@ public class EditorApp extends Application {
   }
 
   private void runVnProjectInRuntime(File root, Properties mf) {
-    String entryVns = mf.getProperty("entryVns", "").trim();
+    runVnProjectInRuntime(root, mf, mf.getProperty("entryVns", ""), null);
+  }
+
+  private void runVnProjectInRuntime(File root, Properties mf, String entryVns, String entryLabel) {
     String runtimeScript = normalizeRuntimeScriptPath(entryVns);
     File workspaceRoot = resolveWorkspaceRoot();
     if (workspaceRoot == null) {
@@ -706,6 +708,7 @@ public class EditorApp extends Application {
       runtimeArgs.append(" --script ").append(quoteCliArg(runtimeScript));
     }
 
+    if (entryLabel != null) runtimeArgs.append(" ").append(quoteCliArg("--play-from=" + entryLabel));
     String title = mf.getProperty("name", "").trim();
     if (!title.isBlank()) runtimeArgs.append(" --title ").append(quoteCliArg(title));
 
@@ -896,6 +899,24 @@ public class EditorApp extends Application {
     } else {
       status.setText("Opened arc " + arc.name);
     }
+  }
+
+  private void runTimelineArc(StoryTimelineView.Arc arc) {
+    if (arc == null || projectRoot == null) return;
+    File script = resolveProjectFile(arc.script);
+    if (script == null || !script.isFile()) {
+      status.setText("Arc script not found: " + arc.script);
+      return;
+    }
+    Properties manifest = loadManifest(projectRoot);
+    var rootPath = projectRoot.toPath().toAbsolutePath().normalize();
+    var scriptPath = script.toPath().toAbsolutePath().normalize();
+    if (!scriptPath.startsWith(rootPath)) {
+      status.setText("Arc script must be inside the current game project: " + arc.script);
+      return;
+    }
+    runVnProjectInRuntime(projectRoot, manifest == null ? new Properties() : manifest,
+        rootPath.relativize(scriptPath).toString(), arc.entryLabel == null ? "" : arc.entryLabel.trim());
   }
 
   private void openTimelineLinkTarget(StoryTimelineView.Link link) {
@@ -4124,6 +4145,7 @@ public class EditorApp extends Application {
     }
     // Create new tab
     FileEditorTab editor = new FileEditorTab(f);
+    editor.setStoryMapActions(this::openTimelineArc, this::runTimelineArc);
     if (projectRoot != null) editor.setProjectRoot(projectRoot);
     editor.setCodeEditorFontSize(editorPreferences.getCodeEditorFontSize());
     editor.setVnsAuthoringPreferences(
@@ -4702,14 +4724,12 @@ public class EditorApp extends Application {
     timelineView = new StoryTimelineView();
     timelineView.setMinWidth(240);
     timelineView.setPrefWidth(320);
-    timelineView.setOnRunArc(this::openTimelineArc);
+    timelineView.setOnOpenArc(this::openTimelineArc);
+    timelineView.setOnRunArc(this::runTimelineArc);
     timelineView.setOnRunLink(this::openTimelineLinkTarget);
     if (projectRoot != null) {
       Properties mf = loadManifest(projectRoot);
-      if (mf != null) {
-        timelineView.setTimelineFile(resolveStoryMapFile(projectRoot, mf));
-      }
-      timelineView.setProjectRoot(projectRoot);
+      timelineView.setProjectMap(projectRoot, resolveStoryMapFile(projectRoot, mf));
     }
     return timelineView;
   }
@@ -6673,7 +6693,7 @@ public class EditorApp extends Application {
       }
       case TIMELINE -> {
         if (timelineView != null) {
-          timelineView.setProjectRoot(null);
+          timelineView.setProjectMap(null, null);
         }
         timelineView = null;
       }

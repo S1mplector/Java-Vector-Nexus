@@ -58,6 +58,7 @@ import com.jvn.fx.vn.VnRenderer;
 import com.sun.management.OperatingSystemMXBean;
 
 import javafx.animation.AnimationTimer;
+import com.jvn.core.diagnostics.RunTelemetry;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
@@ -97,6 +98,10 @@ public class FxLauncher extends Application {
   private static String pendingAccessibilityTheme = "none";
   private static double pendingUiFontScale = 1.0;
   private AnimationTimer timer;
+  private final String inspectorSession = System.getenv(RunTelemetry.SESSION_ENV);
+  private long inspectorStart, renderNanos;
+  private int measuredFrames;
+  private volatile boolean inventoryBusy;
   private Canvas canvas;
   private GraphicsContext gc;
   private VnRenderer vnRenderer;
@@ -536,6 +541,7 @@ public class FxLauncher extends Application {
 
         // Render
         if (gc != null && canvas != null) {
+          long renderStart = inspectorSession == null ? 0 : System.nanoTime();
           double w = canvas.getWidth();
           double h = canvas.getHeight();
           gc.setFill(Color.BLACK);
@@ -568,10 +574,53 @@ public class FxLauncher extends Application {
           }
           hudOverlay.render(gc, w, h);
           hideRuntimeLoadingOverlayAfterFirstFrame();
+          if (inspectorSession != null) sampleInspector(now, System.nanoTime() - renderStart, currentScene, w, h);
         }
       }
     };
     timer.start();
+  }
+
+  private void sampleInspector(long now, long renderDuration, com.jvn.core.scene.Scene scene, double w, double h) {
+    if (inspectorStart == 0) { inspectorStart = now; return; }
+    measuredFrames++;
+    renderNanos += renderDuration;
+    long interval = now - inspectorStart;
+    if (interval < 1_000_000_000L) return;
+    var draws = vnRenderer.getDrawCallStats();
+    boolean vn = scene instanceof VnScene;
+    Runtime runtime = Runtime.getRuntime();
+    var sample = new RunTelemetry(scene == null ? "None" : scene.getClass().getSimpleName(),
+        measuredFrames * 1e9 / interval, renderNanos / (measuredFrames * 1e6),
+        runtime.totalMemory() - runtime.freeMemory(), (int) w, (int) h,
+        vn ? draws.getCharacterLayerDraws() : -1, vn ? draws.getOtherDraws() : -1,
+        vn ? draws.getStageLightingRecomposites() : -1, osBean == null ? -1 : osBean.getProcessCpuLoad() * 100, vnRenderer.inspectImageCaches());
+    System.out.println(sample.encode());
+    inspectorStart = now;
+    measuredFrames = 0;
+    renderNanos = 0;
+    try {
+      var session = java.nio.file.Path.of(inspectorSession);
+      if (!inventoryBusy && java.nio.file.Files.deleteIfExists(session.resolve(RunTelemetry.INVENTORY_REQUEST))) {
+        inventoryBusy = true;
+        var resident = vnRenderer.residentImageKeys();
+        var root = runtimeProjectRoot == null ? null : runtimeProjectRoot.toPath();
+        Thread.ofPlatform().daemon().name("jvn-cache-inventory").start(() -> {
+          try {
+            VnCacheInventory.write(session, root, resident);
+            System.out.println(RunTelemetry.INVENTORY_READY);
+          } catch (java.io.IOException ex) {
+            log.warn("Could not write cache inventory: {}", ex.getMessage());
+          } finally { inventoryBusy = false; }
+        });
+      }
+      if (java.nio.file.Files.deleteIfExists(session.resolve(RunTelemetry.RELOAD))) {
+        handleManualHotReload();
+        log.info("Applied editor hot-reload request");
+      }
+    } catch (java.io.IOException ex) {
+      log.warn("Could not read editor reload request: {}", ex.getMessage());
+    }
   }
 
   private StackPane createRuntimeLoadingOverlay() {

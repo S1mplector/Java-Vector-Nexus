@@ -42,6 +42,14 @@ class GuidedTutorialIntegrationTest {
     });
     assertFalse(Files.exists(project.resolve("assets/demo/backgrounds/game.png")));
     assertFalse(Files.exists(project.resolve("assets/tutorial/lofi-music-2.mp3")));
+    assertFalse(Files.exists(project.resolve("assets/tutorial/window-room.jpg")));
+    var backdrop = ImageIO.read(project.resolve("assets/tutorial/white.png").toFile());
+    for (int y = 0; y < backdrop.getHeight(); y++)
+      for (int x = 0; x < backdrop.getWidth(); x++) assertEquals(0xffffffff, backdrop.getRGB(x, y));
+    Properties layout = new Properties();
+    try (var reader = Files.newBufferedReader(project.resolve("config/ui/dialogue.layout"))) { layout.load(reader); }
+    assertEquals("#FFFFFF", layout.getProperty("nameTextColor"));
+    assertEquals("#000000B8", layout.getProperty("textBoxColor"));
     for (String image : List.of("icon", "tutorial/wave", "tutorial/neutral", "tutorial/curious", "tutorial/point",
         "tutorial/surprised", "tutorial/listen", "tutorial/cheer", "tutorial/notes", "tutorial/present", "tutorial/stride-a-left", "tutorial/stride-b-left",
         "tutorial/stride-c-left", "tutorial/stride-a-right", "tutorial/stride-b-right", "tutorial/stride-c-right")) {
@@ -245,7 +253,7 @@ class GuidedTutorialIntegrationTest {
           return (pixel & 0xFFFFFF) > 0x101010;
         });
       } while ((!ready || System.nanoTime() < readyAfter) && System.nanoTime() < limit);
-      assertTrue(ready, "Room failed to render at " + name);
+      assertTrue(ready, "Background failed to render at " + name);
       FxToolkit.runFx(() -> { save(canvas, name); return null; });
     } finally { FxToolkit.runFx(renderer::dispose); }
   }

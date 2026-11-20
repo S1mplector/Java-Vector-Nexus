@@ -13,7 +13,7 @@ pip: A particle effect draws many small moving sprites. This example uses dust.
 [if !tutorial_still]
 [particles dust intensity=0.24 opacity=0.52 speed=0.30 duration=3000]
 [endif]
-pip: Watch the particles in front of the window. Reduced motion keeps the example still.
+pip: Watch the particles against the white background. Reduced motion keeps the example still.
 [particles stop]
 pip: Change the intensity in the particles command, then replay.
 > Review question -> check

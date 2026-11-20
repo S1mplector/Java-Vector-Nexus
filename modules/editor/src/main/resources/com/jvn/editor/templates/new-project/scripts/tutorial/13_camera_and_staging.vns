@@ -9,30 +9,30 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show pip guide point]
-pip: This example pans and zooms the background while Pip stays in place.
+pip: This example moves in for a closer shot of Pip.
 [if !tutorial_still]
 timeline {
   parallel {
-    move "bg_current" { x:-64 y:-36 dur:640 easing:ease_out }
-    scale "bg_current" { sx:1.08 sy:1.08 dur:640 easing:ease_out }
+    move "pip" { x:-48 y:24 dur:640 easing:ease_out }
+    scale "pip" { sx:1.16 sy:1.16 dur:640 easing:ease_out }
   }
 }
 [endif]
-pip: Compare the two keyframes in Puppeteer. Watch the far edge as the scale increases.
+pip: Compare the two keyframes in Puppeteer. Watch Pip as the scale increases.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
 pip: Why pair a small pan with a zoom?
-> To keep the frame filled while the subject shifts. -> correct
+> To adjust the subject’s framing as it grows. -> correct
 > To change the speaker name. -> retry
 > Back to topics -> return_hub
 @label retry
 [show pip guide curious]
-pip: A zoom can cover the edge exposed by a pan. Give it another try.
+pip: Position and scale together control where the subject lands in the frame. Give it another try.
 [jump check]
 @label correct
 [show pip guide cheer]
-pip: A zoom can cover the edge exposed by a pan.
+pip: Position and scale together control where the subject lands in the frame.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

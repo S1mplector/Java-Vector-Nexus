@@ -300,6 +300,7 @@ public class StoryGraphPane extends Pane {
   private boolean denseMode;
   private static boolean HANDLE_TIP_SHOWN = false;
 
+  private Consumer<StoryTimelineView.Arc> onOpenArc;
   private Consumer<StoryTimelineView.Arc> onRunArc;
   private Consumer<StoryTimelineView.Arc> onSelectArc;
   private Consumer<StoryTimelineView.Link> onRunLink;
@@ -339,6 +340,7 @@ public class StoryGraphPane extends Pane {
     setOnKeyPressed(this::handleKeyPressed);
   }
 
+  public void setOnOpenArc(Consumer<StoryTimelineView.Arc> c) { this.onOpenArc = c; }
   public void setOnRunArc(Consumer<StoryTimelineView.Arc> c) { this.onRunArc = c; }
   public void setOnSelectArc(Consumer<StoryTimelineView.Arc> c) { this.onSelectArc = c; }
   public void setOnRunLink(Consumer<StoryTimelineView.Link> c) { this.onRunLink = c; }
@@ -561,7 +563,7 @@ public class StoryGraphPane extends Pane {
 
       ContextMenu menu = new ContextMenu();
       MenuItem miOpen = new MenuItem("Open");
-      miOpen.setOnAction(e -> { if (onRunArc != null) onRunArc.accept(arc); });
+      miOpen.setOnAction(e -> { if (onOpenArc != null) onOpenArc.accept(arc); });
       MenuItem miRun = new MenuItem("Run from Entry");
       miRun.setOnAction(e -> { if (onRunArc != null) onRunArc.accept(arc); });
       MenuItem miCopyGoto = new MenuItem("Copy Goto (entry)");
@@ -592,14 +594,14 @@ public class StoryGraphPane extends Pane {
       });
       menu.getItems().addAll(miOpen, miRun, miCopyGoto, miRename, miDuplicate, miCluster, miDelete);
 
+      view.setOnContextMenuRequested(e -> {
+        selectArcInternal(arc, true);
+        menu.show(view, e.getScreenX(), e.getScreenY());
+        e.consume();
+      });
       view.setOnMouseClicked(e -> {
-        if (e.getButton() == MouseButton.SECONDARY) {
-          selectArcInternal(arc, true);
-          menu.show(view, e.getScreenX(), e.getScreenY());
-          return;
-        }
-        menu.hide();
         if (e.getButton() != MouseButton.PRIMARY) return;
+        menu.hide();
         if (e.getTarget() == view.outHandle || e.getTarget() == view.inHandle) return;
         selectArcInternal(arc, true);
         if (e.getClickCount() == 2) {
@@ -646,8 +648,8 @@ public class StoryGraphPane extends Pane {
           menu.show(rendered, e.getScreenX(), e.getScreenY());
           return;
         }
-        menu.hide();
         if (e.getButton() != MouseButton.PRIMARY) return;
+        menu.hide();
         selectLinkInternal(link, true);
         if (e.getClickCount() == 2 && onRunLink != null) {
           onRunLink.accept(link);
@@ -1002,8 +1004,8 @@ public class StoryGraphPane extends Pane {
           menu.show(rendered, e.getScreenX(), e.getScreenY());
           return;
         }
-        menu.hide();
         if (e.getButton() != MouseButton.PRIMARY) return;
+        menu.hide();
         selectLinkInternal(link, true);
         if (e.getClickCount() == 2 && onRunLink != null) {
           onRunLink.accept(link);
@@ -1183,6 +1185,10 @@ public class StoryGraphPane extends Pane {
         chip.setOpacity(showChip ? 1.0 : 0.0);
       }
     }
+  }
+
+  List<StoryTimelineView.Arc> searchMatches() {
+    return visibleArcs().stream().filter(this::matchesHighlight).toList();
   }
 
   private boolean matchesHighlight(StoryTimelineView.Arc arc) {

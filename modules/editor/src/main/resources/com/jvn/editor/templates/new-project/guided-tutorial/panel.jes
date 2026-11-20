@@ -1,6 +1,6 @@
 scene "PanelExample" {
   entity "room" {
-    component Sprite2D { image: "assets/tutorial/window-room.jpg" x: 0 y: 0 w: 1920 h: 1080 }
+    component Sprite2D { image: "assets/tutorial/white.png" x: 0 y: 0 w: 1920 h: 1080 }
   }
   entity "panel" {
     component Panel2D { x: 110 y: 110 w: 790 h: 235 fill: rgb(0.12, 0.24, 0.22, 1) }

@@ -44,6 +44,7 @@ public class JvnApp {
     RuntimeCrashSupport.install();
     ApplicationConfig.Builder builder = ApplicationConfig.builder().title("JVN Runtime").width(960).height(540);
     String scriptName = null;
+    String playFrom = null;
     String locale = "en";
     String ui = "fx"; // fx | swing
     String audioBackend = "auto"; // fx | simp3 | auto
@@ -81,6 +82,11 @@ public class JvnApp {
       String inlineScript = inlineOptionValue(a, "--script");
       if (inlineScript != null) {
         scriptName = cleanCliValue(inlineScript);
+        continue;
+      }
+      String inlineEntry = inlineOptionValue(a, "--play-from");
+      if (inlineEntry != null) {
+        playFrom = cleanCliValue(inlineEntry);
         continue;
       }
       String inlineLocale = inlineOptionValue(a, "--locale");
@@ -339,6 +345,7 @@ public class JvnApp {
         engine.setFixedUpdateStepMs(settingsModel.getPhysicsFixedStepMs(), settingsModel.getPhysicsMaxSubSteps());
       }
       engine.scenes().push(menu);
+      if (playFrom != null) menu.startFromEntry(resolvedEntryScript, playFrom);
     }
 
     if ("swing".equalsIgnoreCase(ui)) {

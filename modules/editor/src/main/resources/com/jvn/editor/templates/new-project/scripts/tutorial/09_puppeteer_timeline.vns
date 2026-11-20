@@ -9,12 +9,12 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show pip guide neutral]
-pip: A Puppeteer timeline can pan and scale the background. Watch the window frame.
+pip: A Puppeteer timeline can move and scale a character. Watch Pip.
 [if !tutorial_still]
 timeline {
   parallel {
-    move "bg_current" { x:-64 y:-36 dur:640 easing:ease_out }
-    scale "bg_current" { sx:1.08 sy:1.08 dur:640 easing:ease_out }
+    move "pip" { x:96 y:-12 dur:640 easing:ease_out }
+    scale "pip" { sx:1.08 sy:1.08 dur:640 easing:ease_out }
   }
 }
 [endif]
@@ -22,17 +22,17 @@ pip: Open this timeline in Puppeteer. Change the final X position or duration, a
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: Which target moves the current background?
-> bg_current -> correct
-> pip -> retry
+pip: Which target moves this character?
+> pip -> correct
+> bg_current -> retry
 > Back to topics -> return_hub
 @label retry
 [show pip guide curious]
-pip: The background has its own timeline target. Its lighting follows the background. Give it another try.
+pip: Use the character ID to animate Pip. Give it another try.
 [jump check]
 @label correct
 [show pip guide cheer]
-pip: The background has its own timeline target. Its lighting follows the background.
+pip: Use the character ID to animate Pip.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

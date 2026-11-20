@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show pip guide wave]
-pip: Watch the window as the scene fades and its lighting changes.
+pip: Watch the stage as the scene fades and its lighting changes.
 [if !tutorial_still]
 [transition fade 380]
 [endif]

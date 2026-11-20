@@ -1221,7 +1221,7 @@ public class NewProjectWizard extends Stage {
     sb.append("\u251c\u2500\u2500 assets/\n");
     if (includeTutorialPack) {
       sb.append("│   ├── icon.png\n");
-      sb.append("│   └── tutorial/ (window room, Pip, interface, sound)\n");
+      sb.append("│   └── tutorial/ (white stage, Pip, interface, sound)\n");
     } else if (includeDemoAssets) {
       sb.append("\u2502   \u2514\u2500\u2500 demo/\n");
       sb.append("\u2502       \u251c\u2500\u2500 backgrounds/\n");

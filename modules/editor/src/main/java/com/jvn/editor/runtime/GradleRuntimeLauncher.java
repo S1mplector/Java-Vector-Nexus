@@ -18,6 +18,12 @@ public final class GradleRuntimeLauncher {
       String task,
       String @Nullable [] taskArguments,
       @Nullable RuntimeGradleOptions requestedOptions) throws IOException {
+    return start(runRoot, gradleWrapper, task, taskArguments, requestedOptions, null);
+  }
+
+  public static Process start(File runRoot, @Nullable File gradleWrapper, String task,
+      String @Nullable [] taskArguments, @Nullable RuntimeGradleOptions requestedOptions,
+      @Nullable Path inspectorSession) throws IOException {
     RuntimeGradleOptions options =
         requestedOptions == null ? RuntimeGradleOptions.fastDefaults() : requestedOptions;
     Path gradleHome = gradleHome(runRoot, options);
@@ -28,6 +34,9 @@ public final class GradleRuntimeLauncher {
     builder.directory(runRoot);
     builder.redirectErrorStream(true);
     builder.environment().put("GRADLE_USER_HOME", gradleHome.toAbsolutePath().toString());
+    if (inspectorSession != null) builder.environment().put(
+        com.jvn.core.diagnostics.RunTelemetry.SESSION_ENV, inspectorSession.toString());
+    else builder.environment().remove(com.jvn.core.diagnostics.RunTelemetry.SESSION_ENV);
     return builder.start();
   }
 

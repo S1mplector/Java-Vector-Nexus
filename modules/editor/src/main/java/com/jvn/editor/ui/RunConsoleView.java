@@ -4,9 +4,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -18,10 +15,16 @@ import java.util.regex.Pattern;
 
 import com.jvn.editor.runtime.RuntimeGradleOptions;
 import com.jvn.editor.runtime.RuntimeGradleOptionsStore;
-import com.sun.management.OperatingSystemMXBean;
 import org.jspecify.annotations.Nullable;
 
-import javafx.animation.AnimationTimer;
+import com.jvn.core.diagnostics.RunTelemetry;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TableColumn;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -88,15 +91,15 @@ public class RunConsoleView extends BorderPane {
     private final Label stateLabel = new Label();
     private final Label elapsedLabel = new Label();
     private final ToggleButton showAllToggle =
-        iconToggle(RuntimeConsoleIcon.Kind.BUILD_OUTPUT, "Include full Gradle/build output");
+        iconToggle(AeroIcon.buildProject(22), "Include full Gradle/build output");
     private final Button runBtn =
-        iconButton(RuntimeConsoleIcon.Kind.RUN, "Run current build again");
+        iconButton(AeroIcon.runProject(22), "Run current build again");
     private final Button copyBtn =
-        iconButton(RuntimeConsoleIcon.Kind.COPY, "Copy visible output to clipboard");
+        iconButton(PuppeteerAeroIcon.of(PuppeteerAeroIcon.Kind.COPY, 22), "Copy visible output to clipboard");
     private final Button clearBtn =
-        iconButton(RuntimeConsoleIcon.Kind.CLEAR, "Clear output");
+        iconButton(AeroIcon.of(AeroIcon.Kind.TRASHMAN, 22), "Clear output");
     private final Button stopBtn =
-        iconButton(RuntimeConsoleIcon.Kind.STOP, "Stop current build");
+        iconButton(PuppeteerAeroIcon.of(PuppeteerAeroIcon.Kind.STOP, 22), "Stop current build");
     private final MenuButton launchOptionsButton = new MenuButton();
 
     // Enhanced UI components
@@ -104,9 +107,9 @@ public class RunConsoleView extends BorderPane {
     private final ComboBox<String> logLevelFilter = new ComboBox<>(
         FXCollections.observableArrayList("All", "Engine", "Errors", "Warnings"));
     private final ToggleButton autoScrollBtn =
-        iconToggle(RuntimeConsoleIcon.Kind.AUTO_SCROLL, "Auto-scroll to latest output");
+        iconToggle(SidebarToolIcon.arrowDown(), "Auto-scroll to latest output");
     private final ToggleButton wordWrapBtn =
-        iconToggle(RuntimeConsoleIcon.Kind.WORD_WRAP, "Wrap long output lines");
+        iconToggle(AeroIcon.of(AeroIcon.Kind.VNS_WORD_WRAP, 22), "Wrap long output lines");
     private final Label lineCountLabel = new Label("0 lines");
     private final Label errorCountLabel = new Label("0 errors");
     private final Label warnCountLabel = new Label("0 warnings");
@@ -130,15 +133,12 @@ public class RunConsoleView extends BorderPane {
     private int errorCount = 0;
     private int warnCount = 0;
     private String currentSearchTerm = "";
-    private final OperatingSystemMXBean osBean =
-        ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
-    private final MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
-    private final AnimationTimer perfHudTimer;
-    private long lastPerfHudUpdateNs = -1L;
-    private long lastFrameNs = -1L;
-    private long lastPerfHudFrameNs = -1L;
-    private double smoothedProcessCpu = Double.NaN;
-    private double smoothedFps = Double.NaN;
+    private Path inspectorSession;
+    private final Label frameStats = new Label("Waiting for a frame from the game…");
+    private final TableView<RunTelemetry.Cache> caches = new TableView<>();
+    private final Button inspectAssets = new Button("Capture asset inventory", AeroIcon.of(AeroIcon.Kind.ASSETS, 18));
+    private final Button reload = new Button("Hot reload", AeroIcon.of(AeroIcon.Kind.REFRESH, 20));
+    private final Tab inspectTab = new Tab("Render inspector");
     private final Set<String> compiledModules = Collections.synchronizedSet(new LinkedHashSet<>());
     private volatile boolean sawGradleBootstrap = false;
     private volatile boolean compileMilestoneAnnounced = false;
@@ -191,9 +191,6 @@ public class RunConsoleView extends BorderPane {
     private static final Color PERF_CPU_COLOR = Color.web("#f27333");
     private static final Color PERF_JVM_COLOR = Color.web("#49a5ff");
     private static final Color PERF_FPS_COLOR = Color.web("#f4f4f4");
-    private static final long PERF_HUD_UPDATE_INTERVAL_NS = 300_000_000L;
-    private static final double PERF_CPU_SMOOTH_ALPHA = 0.28;
-    private static final double PERF_FPS_SMOOTH_ALPHA = 0.20;
     private static final Pattern COMPILE_TASK = Pattern.compile("^> Task (:[^\\s]+):compileJava(?:\\s+.*)?$");
 
     public RunConsoleView(String title) {
@@ -226,10 +223,22 @@ public class RunConsoleView extends BorderPane {
         outputList.getStyleClass().add("run-console-output");
         outputList.setCellFactory(list -> new LogLineCell());
         outputList.setFocusTraversable(true);
-        VBox centerBox = new VBox(8, createLaunchBanner(), outputList);
+        var launchBanner = createLaunchBanner();
+        launchBanner.visibleProperty().bind(stateLabel.textProperty().isNotEqualTo("Running"));
+        launchBanner.managedProperty().bind(launchBanner.visibleProperty());
+        HBox filters = new HBox(8, searchField, logLevelFilter);
+        HBox.setHgrow(searchField, Priority.ALWAYS);
+        VBox centerBox = new VBox(6, launchBanner, filters, outputList);
         centerBox.getStyleClass().add("run-console-content");
         VBox.setVgrow(outputList, Priority.ALWAYS);
-        setCenter(centerBox);
+        Tab logTab = new Tab("Output", centerBox);
+        logTab.setGraphic(AeroIcon.of(AeroIcon.Kind.SCRIPT_EDITOR, 18));
+        inspectTab.setGraphic(AeroIcon.of(AeroIcon.Kind.DIAGNOSTICS, 18));
+        inspectTab.setContent(createInspector());
+        inspectTab.setDisable(true);
+        TabPane tabs = new TabPane(logTab, inspectTab);
+        tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        setCenter(tabs);
 
         // ─── Status bar ──────────────────────────────────────────────
         HBox statusBar = createStatusBar();
@@ -242,38 +251,28 @@ public class RunConsoleView extends BorderPane {
         perfJvmValue.getStyleClass().addAll("run-console-perf-value", "run-console-perf-value-jvm");
         perfFpsValue.getStyleClass().addAll("run-console-perf-value", "run-console-perf-value-fps");
 
-        perfHudTimer = new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-                updatePerfHud(now);
-            }
-        };
-        perfHudTimer.start();
-
         setState(EngineState.BUILDING);
         refreshLaunchBanner();
     }
 
-    private static Button iconButton(RuntimeConsoleIcon.Kind kind, String tooltipText) {
+    private static Button iconButton(Node icon, String tooltipText) {
         Button btn = new Button();
         btn.getStyleClass().add("run-console-icon-btn");
-        RuntimeConsoleIcon icon = RuntimeConsoleIcon.of(kind);
         btn.setGraphic(icon);
-        icon.installButtonTreatment(btn);
+        btn.setAccessibleText(tooltipText);
         btn.setTooltip(new Tooltip(tooltipText));
-        btn.setFocusTraversable(false);
+        btn.setFocusTraversable(true);
         return btn;
     }
 
     private static ToggleButton iconToggle(
-        RuntimeConsoleIcon.Kind kind, String tooltipText) {
+        Node icon, String tooltipText) {
         ToggleButton button = new ToggleButton();
-        RuntimeConsoleIcon icon = RuntimeConsoleIcon.of(kind);
         button.setGraphic(icon);
-        icon.installButtonTreatment(button);
+        button.setAccessibleText(tooltipText);
         button.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
         button.setTooltip(new Tooltip(tooltipText));
-        button.setFocusTraversable(false);
+        button.setFocusTraversable(true);
         return button;
     }
 
@@ -299,6 +298,7 @@ public class RunConsoleView extends BorderPane {
             attachProcess(processStarter.start(gradleOptions));
             return true;
         } catch (Exception ex) {
+            closeInspector();
             setState(EngineState.FAILED);
             appendInfoMessage("Failed to start process: " + ex.getMessage());
             return false;
@@ -309,10 +309,7 @@ public class RunConsoleView extends BorderPane {
         this.runningProcess = process;
         activeGradleOptions = gradleOptions;
         startTime = System.currentTimeMillis();
-        lineCount = 0;
-        errorCount = 0;
-        warnCount = 0;
-        rawLineBuffer.clear();
+        clearOutput();
         compiledModules.clear();
         sawGradleBootstrap = false;
         compileMilestoneAnnounced = false;
@@ -329,7 +326,8 @@ public class RunConsoleView extends BorderPane {
             try (BufferedReader r = new BufferedReader(new InputStreamReader(active.getInputStream()))) {
                 String line;
                 while ((line = r.readLine()) != null) {
-                    appendLine(line);
+                    String next = line;
+                    Platform.runLater(() -> { if (runningProcess == active) appendLine(next); });
                 }
             } catch (Exception ignored) {
             // reason: non-critical operation; exception swallowed to prevent crash propagation
@@ -341,17 +339,15 @@ public class RunConsoleView extends BorderPane {
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
             }
-            onProcessExit(exitCode);
+            int result = exitCode;
+            Platform.runLater(() -> { if (runningProcess == active) onProcessExit(result); });
         }, "jvn-run-console-reader");
         reader.setDaemon(true);
         reader.start();
     }
 
     public void setState(EngineState state) {
-        if (state != EngineState.RUNNING) {
-            smoothedFps = Double.NaN;
-            lastFrameNs = -1L;
-        }
+
         this.engineState = state;
         Platform.runLater(() -> {
             String label;
@@ -394,6 +390,27 @@ public class RunConsoleView extends BorderPane {
 
     /** Append a raw line from the process. Handles filtering and coloring. */
     public void appendLine(String rawLine) {
+        if (!Platform.isFxApplicationThread()) {
+            Platform.runLater(() -> appendLine(rawLine));
+            return;
+        }
+        if (inspectorSession != null && RunTelemetry.INVENTORY_READY.equals(rawLine)) {
+            Path session = inspectorSession;
+            java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                try { return Files.readString(session.resolve(RunTelemetry.INVENTORY_REPORT)); }
+                catch (java.io.IOException ex) { return "Could not read cache inventory: " + ex.getMessage(); }
+            }).thenAccept(report -> Platform.runLater(() -> {
+                if (inspectorSession == session && getScene() != null)
+                    EditorDialogs.showTextBlock(getScene().getWindow(), "VN asset cache", "Asset inventory",
+                        report.isEmpty() ? "No project images or resident entries." : report, "Close");
+            }));
+            return;
+        }
+        if (inspectorSession != null && rawLine.startsWith(RunTelemetry.PREFIX)) {
+            try { showSample(RunTelemetry.decode(rawLine)); }
+            catch (IllegalArgumentException e) { appendInfoMessage("Invalid render sample"); }
+            return;
+        }
         observeBuildProgress(rawLine);
         lineCount++;
         rawLineBuffer.add(rawLine);
@@ -415,24 +432,15 @@ public class RunConsoleView extends BorderPane {
         if (isErr) errorCount++;
         if (isWarn) warnCount++;
 
-        Platform.runLater(() -> {
-            if (!passesFilter(rawLine)) return;
-
+        if (passesFilter(rawLine)) {
             outputList.getItems().add(rawLine);
-
-            // Auto-scroll to bottom (unless user disabled it)
-            if (autoScrollBtn.isSelected()) {
-                scrollToBottom();
-            }
-
-            // Update counters
-            long elapsed = (System.currentTimeMillis() - startTime) / 1000;
-            elapsedLabel.setText(formatElapsed(elapsed));
-            lineCountLabel.setText(lineCount + " lines");
-            errorCountLabel.setText(errorCount + " errors");
-            warnCountLabel.setText(warnCount + " warnings");
-            updateCounterBadgeStyles();
-        });
+            if (autoScrollBtn.isSelected()) scrollToBottom();
+        }
+        elapsedLabel.setText(formatElapsed((System.currentTimeMillis() - startTime) / 1000));
+        lineCountLabel.setText(lineCount + " lines");
+        errorCountLabel.setText(errorCount + " errors");
+        warnCountLabel.setText(warnCount + " warnings");
+        updateCounterBadgeStyles();
     }
 
     private void updateCounterBadgeStyles() {
@@ -523,6 +531,8 @@ public class RunConsoleView extends BorderPane {
                 appendInfoMessage("Process exited with code " + exitCode);
             }
             processExited = true;
+            reload.setDisable(true);
+            closeInspector();
             long elapsed = (System.currentTimeMillis() - startTime) / 1000;
             elapsedLabel.setText(formatElapsed(elapsed) + " (finished)");
             refreshLaunchBanner();
@@ -749,6 +759,7 @@ public class RunConsoleView extends BorderPane {
             Process process = processStarter.start(gradleOptions);
             attachProcess(process);
         } catch (Exception ex) {
+            closeInspector();
             setState(EngineState.FAILED);
             appendInfoMessage("Failed to start process: " + ex.getMessage());
         }
@@ -944,9 +955,23 @@ public class RunConsoleView extends BorderPane {
         logLevelFilter.setTooltip(new Tooltip("Filter by log level"));
         logLevelFilter.setOnAction(e -> rebuildOutput());
 
-        Label searchLabel = new Label("Filter:");
-        searchLabel.getStyleClass().add("run-console-search-label");
 
+        reload.setDisable(true);
+        reload.setTooltip(new Tooltip("Reload scripts, images, layouts and menus from disk"));
+        reload.setOnAction(e -> {
+            if (inspectorSession == null) return;
+            try {
+                Files.writeString(inspectorSession.resolve(RunTelemetry.RELOAD), "");
+                appendInfoMessage("Requested hot reload from the game.");
+            } catch (java.io.IOException ex) { appendInfoMessage("Reload failed: " + ex.getMessage()); }
+        });
+
+        bar.getChildren().addAll(runBtn, stopBtn, reload, launchOptionsButton, verticalSeparator(),
+            clearBtn, copyBtn, showAllToggle, autoScrollBtn, wordWrapBtn, verticalSeparator(), stateLabel, elapsedLabel);
+        return bar;
+    }
+
+    private VBox createInspector() {
         VBox perfValues = new VBox(2, perfCpuValue, perfJvmValue, perfFpsValue);
         perfValues.setAlignment(Pos.CENTER_LEFT);
         perfValues.getStyleClass().add("run-console-perf-values");
@@ -961,15 +986,81 @@ public class RunConsoleView extends BorderPane {
         perfGraphShell.setPrefWidth(260);
         perfGraphShell.setMaxWidth(Region.USE_PREF_SIZE);
 
-        bar.getChildren().addAll(
-            runBtn, stopBtn, verticalSeparator(),
-            clearBtn, copyBtn, launchOptionsButton, verticalSeparator(),
-            perfGraphShell, verticalSeparator(),
-            showAllToggle, autoScrollBtn, wordWrapBtn, verticalSeparator(),
-            searchLabel, searchField, logLevelFilter,
-            stateLabel, elapsedLabel
-        );
-        return bar;
+        frameStats.setWrapText(true);
+        caches.getStyleClass().add("layout-studio-table");
+        addCacheColumn("VN cache", c -> c.name(), 140);
+        addCacheColumn("Entries", c -> Integer.toString(c.entries()), 60);
+        addCacheColumn("MiB", c -> String.format(Locale.ROOT, "%.2f", bytesToMb(c.bytes())), 65);
+        addCacheColumn("Hits", c -> Long.toString(c.hits()), 70);
+        addCacheColumn("Misses", c -> Long.toString(c.misses()), 65);
+        addCacheColumn("Most recent resident", c -> c.recentResident(), 215);
+        addCacheColumn("Last lookup miss", c -> c.lastMiss(), 215);
+        caches.setPlaceholder(new Label("Waiting for renderer cache data"));
+        inspectAssets.disableProperty().bind(reload.disableProperty());
+        inspectAssets.setTooltip(new Tooltip("List resident VN image keys and project images outside the source caches"));
+        inspectAssets.setOnAction(e -> {
+            if (inspectorSession == null) return;
+            try { Files.writeString(inspectorSession.resolve(RunTelemetry.INVENTORY_REQUEST), ""); }
+            catch (java.io.IOException ex) { appendInfoMessage("Cache inspection failed: " + ex.getMessage()); }
+        });
+        VBox inspector = new VBox(12, perfGraphShell, frameStats, inspectAssets, caches);
+        inspector.setPadding(new Insets(12));
+        VBox.setVgrow(caches, Priority.ALWAYS);
+        return inspector;
+    }
+
+    private void addCacheColumn(String title, java.util.function.Function<RunTelemetry.Cache, String> value,
+                                int width) {
+        TableColumn<RunTelemetry.Cache, String> column = new TableColumn<>(title);
+        column.setCellValueFactory(c -> new ReadOnlyStringWrapper(value.apply(c.getValue())));
+        column.setPrefWidth(width);
+        caches.getColumns().add(column);
+    }
+
+    public Path prepareInspector(String task) throws java.io.IOException {
+        closeInspector();
+        if (!":runtime:run".equals(task)) return null;
+        inspectorSession = Files.createTempDirectory("jvn-run-");
+        inspectTab.setDisable(false);
+        reload.setDisable(true);
+        frameStats.setText("Waiting for a frame from the game…");
+        caches.getItems().clear();
+        perfGraph.index = 0;
+        perfGraph.filled = false;
+        perfGraph.redraw();
+        perfCpuValue.setText("CPU —");
+        perfJvmValue.setText("Heap —");
+        perfFpsValue.setText("FPS —");
+        return inspectorSession;
+    }
+
+    private void closeInspector() {
+        if (inspectorSession == null) return;
+        try {
+            Files.deleteIfExists(inspectorSession.resolve(RunTelemetry.INVENTORY_REQUEST));
+            Files.deleteIfExists(inspectorSession.resolve(RunTelemetry.INVENTORY_REPORT));
+            Files.deleteIfExists(inspectorSession.resolve(RunTelemetry.RELOAD));
+            Files.deleteIfExists(inspectorSession);
+        } catch (java.io.IOException ex) { inspectorSession.toFile().deleteOnExit(); }
+        inspectorSession = null;
+    }
+
+    private void showSample(RunTelemetry s) {
+        if (processExited) return;
+        reload.setDisable(false);
+        elapsedLabel.setText(formatElapsed((System.currentTimeMillis() - startTime) / 1000));
+        double heap = bytesToMb(s.heapBytes());
+        if (engineState == EngineState.STARTING || engineState == EngineState.BUILDING) setState(EngineState.RUNNING);
+        perfCpuValue.setText(s.cpuPercent() < 0 ? "CPU —" : String.format(Locale.ROOT, "CPU %.0f%%", s.cpuPercent()));
+        perfJvmValue.setText(String.format(Locale.ROOT, "Heap %.0f MiB", heap));
+        perfFpsValue.setText(String.format(Locale.ROOT, "%.1f FPS", s.fps()));
+        perfGraphTooltip.setText("Game process • last 120 samples • CPU, heap and frame rate");
+        perfGraph.pushSample(s.cpuPercent(), heap, s.fps(), heap);
+        String draws = s.layerDraws() < 0 ? "" : String.format(Locale.ROOT,
+            "   •   VN draws %d character / %d other   •   %d relights", s.layerDraws(), s.otherDraws(), s.relights());
+        frameStats.setText(String.format(Locale.ROOT, "%s   •   %d × %d   •   %.2f ms mean render submission time%s",
+            s.scene(), s.width(), s.height(), s.renderMs(), draws));
+        caches.getItems().setAll(s.caches());
     }
 
     private static Separator verticalSeparator() {
@@ -981,10 +1072,7 @@ public class RunConsoleView extends BorderPane {
     private void configureLaunchOptionsButton() {
         launchOptionsButton.getStyleClass().addAll(
             "run-console-icon-btn", "run-console-launch-options-btn");
-        RuntimeConsoleIcon icon =
-            RuntimeConsoleIcon.of(RuntimeConsoleIcon.Kind.LAUNCH_OPTIONS);
-        launchOptionsButton.setGraphic(icon);
-        icon.installButtonTreatment(launchOptionsButton);
+        launchOptionsButton.setGraphic(AeroIcon.of(AeroIcon.Kind.SETTINGS, 22));
         launchOptionsButton.setContentDisplay(ContentDisplay.LEFT);
         launchOptionsButton.setFocusTraversable(false);
 
@@ -1212,7 +1300,7 @@ public class RunConsoleView extends BorderPane {
     }
 
     public void dispose() {
-        perfHudTimer.stop();
+        closeInspector();
         if (runningProcess != null && runningProcess.isAlive()) {
             terminateProcessTree(runningProcess, activeGradleOptions.reuseDaemon());
         }
@@ -1245,83 +1333,6 @@ public class RunConsoleView extends BorderPane {
         if (process == null) return false;
         String commandLine = process.info().commandLine().orElse("");
         return commandLine.contains("org.gradle.launcher.daemon.bootstrap.GradleDaemon");
-    }
-
-    private void updatePerfHud(long nowNs) {
-        // Throttle AnimationTimer to ~16.67ms (60fps) to avoid interfering with editor frame rate limiting.
-        // Without this, the perfHudTimer can pull the shared JavaFX pulse faster, breaking the editor's FPS cap.
-        if (lastPerfHudFrameNs > 0L && (nowNs - lastPerfHudFrameNs) < 16_667_000L) return;
-        lastPerfHudFrameNs = nowNs;
-
-        // Skip all work when the window is not on screen (minimized, hidden, or closed).
-        // The timer stays alive so it resumes correctly if the window is restored.
-        Scene scene = getScene();
-        if (scene == null || scene.getWindow() == null || !scene.getWindow().isShowing()) return;
-
-        // Only track per-frame FPS while the engine is actively running.
-        // During BUILDING/STARTING the FPS measurement is meaningless (no game frame is running).
-        if (engineState == EngineState.RUNNING) {
-            if (lastFrameNs > 0L) {
-                double instantFps = 1_000_000_000.0 / Math.max(1L, nowNs - lastFrameNs);
-                smoothedFps = smoothRatio(smoothedFps, instantFps, PERF_FPS_SMOOTH_ALPHA);
-            }
-            lastFrameNs = nowNs;
-        }
-
-        if (lastPerfHudUpdateNs > 0L && (nowNs - lastPerfHudUpdateNs) < PERF_HUD_UPDATE_INTERVAL_NS) {
-            return;
-        }
-        lastPerfHudUpdateNs = nowNs;
-
-        double processCpu = Double.NaN;
-        if (osBean != null) {
-            processCpu = osBean.getProcessCpuLoad();
-        }
-        smoothedProcessCpu = smoothRatio(smoothedProcessCpu, processCpu, PERF_CPU_SMOOTH_ALPHA);
-
-        MemoryUsage heap = memoryBean.getHeapMemoryUsage();
-        MemoryUsage nonHeap = memoryBean.getNonHeapMemoryUsage();
-        double heapUsedMb = Math.max(0.0, bytesToMb(heap == null ? -1L : heap.getUsed()));
-        long heapMaxBytes = heap == null ? -1L : heap.getMax();
-        if (heapMaxBytes <= 0L && heap != null) {
-            heapMaxBytes = heap.getCommitted();
-        }
-        if (heapMaxBytes <= 0L) {
-            heapMaxBytes = Runtime.getRuntime().maxMemory();
-        }
-        double heapMaxMb = Math.max(1.0, bytesToMb(heapMaxBytes));
-        double nonHeapMb = Math.max(0.0, bytesToMb(nonHeap == null ? -1L : nonHeap.getUsed()));
-        long nonHeapCeilingBytes = nonHeap == null ? -1L : nonHeap.getCommitted();
-        if (nonHeapCeilingBytes <= 0L && nonHeap != null) {
-            nonHeapCeilingBytes = nonHeap.getUsed();
-        }
-        double nonHeapCeilingMb = Math.max(nonHeapMb, bytesToMb(nonHeapCeilingBytes));
-        double jvmUsedMb = Math.max(0.0, heapUsedMb + nonHeapMb);
-        double jvmCeilingMb = Math.max(1.0, heapMaxMb + nonHeapCeilingMb);
-        double cpuRatio = isRatioValid(smoothedProcessCpu) ? clamp01(smoothedProcessCpu) : 0.0;
-        double cpuPercent = cpuRatio * 100.0;
-        double fpsValue = Math.max(0.0, smoothedFps);
-
-        String fpsText;
-        double fpsSampleValue;
-        if (engineState == EngineState.RUNNING && isRatioValid(smoothedFps)) {
-            fpsText = String.format(Locale.ROOT, "FPS %.0f", fpsValue);
-            fpsSampleValue = fpsValue;
-        } else {
-            fpsText = "FPS --";
-            fpsSampleValue = 0.0;
-        }
-
-        perfGraphTooltip.setText(String.format(
-            Locale.ROOT,
-            "CPU %.0f%% | JVM %.0f MB | %s",
-            cpuPercent,
-            jvmUsedMb,
-            fpsText));
-        perfCpuValue.setText(String.format(Locale.ROOT, "CPU %.0f%%", cpuPercent));
-        perfJvmValue.setText(String.format(Locale.ROOT, "JVM %.0f MB", jvmUsedMb));
-        perfFpsValue.setText(fpsText);
-        perfGraph.pushSample(cpuPercent, jvmUsedMb, fpsSampleValue, jvmCeilingMb);
     }
 
     private static final class PerfGraph {
@@ -1457,22 +1468,7 @@ public class RunConsoleView extends BorderPane {
         return bytes < 0L ? -1.0 : bytes / (1024.0 * 1024.0);
     }
 
-    private static boolean isRatioValid(double value) {
-        return !Double.isNaN(value) && !Double.isInfinite(value) && value >= 0.0;
-    }
 
-    private static double smoothRatio(double current, double target, double alpha) {
-        if (!isRatioValid(target)) return current;
-        if (!isRatioValid(current)) return target;
-        return current + ((target - current) * alpha);
-    }
-
-    private static double clamp01(double value) {
-        if (!Double.isFinite(value)) return 0.0;
-        if (value < 0.0) return 0.0;
-        if (value > 1.0) return 1.0;
-        return value;
-    }
 
     private static boolean isMac() {
         return System.getProperty("os.name", "").toLowerCase().contains("mac");

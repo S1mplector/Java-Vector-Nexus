@@ -56,10 +56,6 @@ final class DockMenuPresentation implements AutoCloseable {
     gc.save();
     gc.setTextAlign(TextAlignment.CENTER);
     gc.setTextBaseline(VPos.BASELINE);
-    gc.setFill(theme.getHintColor());
-    gc.setFont(Font.font("SansSerif", FontWeight.BOLD, Math.min(13, w * .012) * fontScale));
-    gc.fillText("THE LAVENDER WORKSHOP", w / 2, h * .19);
-
     String title = scene.getDisplayTitle();
     if (title == null || title.isBlank()) title = theme.getTitleText();
     if (title == null || title.isBlank()) title = "JVN";
@@ -92,7 +88,7 @@ final class DockMenuPresentation implements AutoCloseable {
 
     if (count > 0) {
       Bounds first = bounds(0, count, w, h), last = bounds(count - 1, count, w, h);
-      gc.setFill(Color.web("#f5f1fa"));
+      gc.setFill(Color.WHITE.interpolate(theme.getAccentColor(), .08));
       gc.fillRoundRect(first.x() - 16, first.y() + 20, last.x() + last.width() - first.x() + 32, first.height() + 2, 32, 32);
     }
     for (int i = 0; i < count; i++) {
@@ -102,11 +98,11 @@ final class DockMenuPresentation implements AutoCloseable {
       Bounds b = bounds(i, count, w, h);
       double y = b.y() - (theme.isMenuMotion() ? focus[i] * 14 : 0);
       gc.setGlobalAlpha(scene.isItemEnabled(i) ? 1 : .4);
-      gc.setFill(Color.web("#e9e0f1"));
+      gc.setFill(Color.WHITE.interpolate(theme.getAccentColor(), .20));
       gc.fillRoundRect(b.x(), y + 5, b.width(), b.height(), 20, 20);
-      gc.setFill(Color.WHITE.interpolate(Color.web("#f3eafb"), focus[i]));
+      gc.setFill(Color.WHITE.interpolate(Color.WHITE.interpolate(theme.getAccentColor(), .12), focus[i]));
       gc.fillRoundRect(b.x(), y, b.width(), b.height(), 20, 20);
-      gc.setStroke(Color.web("#ded5e7").interpolate(theme.getAccentColor(), focus[i]));
+      gc.setStroke(Color.WHITE.interpolate(theme.getAccentColor(), .24).interpolate(theme.getAccentColor(), focus[i]));
       gc.setLineWidth(selected ? 2 : 1);
       gc.strokeRoundRect(b.x(), y, b.width(), b.height(), 20, 20);
       Color ink = selected ? theme.getItemSelectedColor() : theme.getItemColor();

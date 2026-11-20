@@ -108,10 +108,12 @@ public class VersionControlView extends BorderPane {
   private final Label initializingTitleLabel = new Label("Initializing version control");
   private final Label initializingBodyLabel = new Label("Reading project status and preparing Git controls.");
   private final Label initTitleLabel = new Label(
-      "Repository Not Initialized",
-      VersionControlIcon.of(VersionControlIcon.Kind.WARNING, 18));
+      "Start version control",
+      AeroIcon.of(AeroIcon.Kind.VERSION_CONTROL, 28));
   private final Label initHintLabel = new Label("Repository is not initialized for this project.");
-  private final VBox initBox = new VBox(6);
+  private final VBox initBox = new VBox(10);
+  private final VBox repositoryTools = new VBox(6);
+  private final javafx.scene.control.ToggleButton hints = new javafx.scene.control.ToggleButton("Hints");
 
   private final VBox setupBox = new VBox(8);
 
@@ -362,44 +364,35 @@ public class VersionControlView extends BorderPane {
     });
 
     // Sync toolbar: refresh, fetch, pull, push
-    HBox syncRow = new HBox(6, btnRefresh, btnFetch, btnPull, btnPush);
+    var syncRow = new javafx.scene.layout.FlowPane(6, 4, btnFetch, btnPull, btnPush);
     syncRow.setAlignment(Pos.CENTER_LEFT);
 
     // Danger zone: force pull (hard reset to remote) / force push (force-with-lease)
-    Label dangerZoneLabel = new Label("Danger Zone");
-    dangerZoneLabel.getStyleClass().add("vcs-danger-zone-label");
-    HBox dangerRow = new HBox(6, btnForcePull, btnForcePush);
-    dangerRow.setAlignment(Pos.CENTER_LEFT);
-    VBox dangerZoneBox = new VBox(4, dangerZoneLabel, dangerRow);
-    dangerZoneBox.getStyleClass().add("vcs-danger-zone");
+    var dangerRow = new javafx.scene.layout.FlowPane(6, 4, btnForcePull, btnForcePush);
+    var advancedSync = new javafx.scene.control.TitledPane("Advanced sync", dangerRow);
+    advancedSync.setExpanded(false);
+    advancedSync.setAnimated(false);
 
     // Stash toolbar
     HBox stashRow = new HBox(6, btnStash, btnStashPop);
     stashRow.setAlignment(Pos.CENTER_LEFT);
 
     // Combined toolbar
-    VBox toolbar = new VBox(6, syncRow, dangerZoneBox, stashRow);
+    VBox toolbar = new VBox(6, syncRow, stashRow, advancedSync);
     toolbar.setAlignment(Pos.CENTER_LEFT);
     toolbar.setPadding(new Insets(4, 0, 4, 0));
 
     // Init controls - styled as prominent warning banner
     HBox initOptionsRow = new HBox(12, chkInitCommit);
     HBox initActionRow = new HBox(6, btnInitialize);
-    initTitleLabel.getStyleClass().addAll("vcs-banner-title", "vcs-banner-title-warn");
-    initBox.getStyleClass().addAll("vcs-banner", "vcs-banner-warn");
+    initTitleLabel.getStyleClass().add("sidebar-tool-title");
+    initBox.getStyleClass().add("vcs-status-stack");
+    initHintLabel.setWrapText(true);
     initBox.getChildren().addAll(initTitleLabel, initHintLabel, initOptionsRow, initActionRow);
 
     // Setup guide banner - shown when repo exists but no remote configured
-    Label setupTitle = new Label(
-        "Setup Required",
-        VersionControlIcon.of(VersionControlIcon.Kind.SETUP, 18));
-    setupTitle.getStyleClass().addAll("vcs-banner-title", "vcs-banner-title-info");
-    Label setupDesc = new Label("Your project needs a remote repository to push, pull, and collaborate.");
-    setupDesc.getStyleClass().add("vcs-banner-copy");
-    setupDesc.setWrapText(true);
-
     // Option A: Create GitHub repo directly via GitHub API
-    Label optionALabel = new Label("Option A — Create a new GitHub repository:");
+    Label optionALabel = new Label("Create on GitHub");
     optionALabel.getStyleClass().add("vcs-option-label");
     ComboBox<String> cbVisibility = new ComboBox<>(FXCollections.observableArrayList("Private", "Public"));
     cbVisibility.setValue("Private");
@@ -418,7 +411,7 @@ public class VersionControlView extends BorderPane {
     VBox optionA = new VBox(4, optionALabel, ghRow, ghHint);
 
     // Option B: Manually connect existing repo
-    Label optionBLabel = new Label("Option B — Connect an existing remote repository:");
+    Label optionBLabel = new Label("Existing remote");
     optionBLabel.getStyleClass().add("vcs-option-label");
     Button btnSetupRemote = new Button("Connect to Remote Repository");
     btnSetupRemote.getStyleClass().addAll("vcs-action-button", "vcs-action-button-accent");
@@ -427,11 +420,12 @@ public class VersionControlView extends BorderPane {
     manualHint.getStyleClass().add("vcs-hint");
     VBox optionB = new VBox(4, optionBLabel, btnSetupRemote, manualHint);
 
-    Label setupSkip = new Label("You can also work offline and add a remote later.");
-    setupSkip.getStyleClass().add("vcs-hint");
 
-    setupBox.getStyleClass().addAll("vcs-banner", "vcs-banner-info");
-    setupBox.getChildren().addAll(setupTitle, setupDesc, optionA, optionB, setupSkip);
+    var remoteSetup = new javafx.scene.control.TitledPane("Connect a remote",
+        new VBox(8, optionA, optionB));
+    remoteSetup.setExpanded(false);
+    remoteSetup.setAnimated(false);
+    setupBox.getChildren().add(remoteSetup);
     setupBox.setVisible(false);
     setupBox.setManaged(false);
 
@@ -460,9 +454,7 @@ public class VersionControlView extends BorderPane {
     summaryLabel.getStyleClass().add("vcs-status-chip");
     remoteLabel.getStyleClass().addAll("vcs-status-chip", "vcs-remote");
 
-    Region statusSpacer = new Region();
-    HBox.setHgrow(statusSpacer, Priority.ALWAYS);
-    HBox statusRow = new HBox(8, branchChip, syncLabel, summaryLabel, statusSpacer, remoteLabel, btnConfigureRemote, btnRemoveRemote);
+    var statusRow = new javafx.scene.layout.FlowPane(6, 4, branchChip, syncLabel, summaryLabel);
     statusRow.setAlignment(Pos.CENTER_LEFT);
     statusRow.getStyleClass().add("vcs-status-row");
 
@@ -477,7 +469,12 @@ public class VersionControlView extends BorderPane {
     githubTokenRow.setAlignment(Pos.CENTER_LEFT);
     githubTokenRow.getStyleClass().add("vcs-status-row");
 
-    VBox statusBox = new VBox(4, statusRow, githubTokenRow, nextStepLabel, conflictLabel);
+    var remoteActions = new javafx.scene.layout.FlowPane(6, 4, remoteLabel, btnConfigureRemote, btnRemoveRemote);
+    var repositoryMenu = new javafx.scene.control.TitledPane("Repository and sync",
+        new VBox(6, remoteActions, githubTokenRow, setupBox, branchRow, toolbar));
+    repositoryMenu.setExpanded(false);
+    repositoryMenu.setAnimated(false);
+    VBox statusBox = new VBox(4, statusRow, conflictLabel);
     statusBox.getStyleClass().add("vcs-status-stack");
 
     HBox titleRow = new HBox(6, titleLabel, SidebarToolHelp.button(this, "Version Control", """
@@ -509,29 +506,25 @@ Switch to the Graph view to see commit history. The Log below shows the \
 result of your most recent actions."""));
     titleRow.setAlignment(Pos.CENTER_LEFT);
 
+    hints.setAccessibleText("Show contextual version control hints");
+    hints.setTooltip(new Tooltip("Show a hint for the next Git action"));
+    hints.setOnAction(e -> { dismissedGuideKey = ""; updateGuidance(); });
+    Region titleSpace = new Region();
+    HBox.setHgrow(titleSpace, Priority.ALWAYS);
+    titleRow.getChildren().addAll(titleSpace, btnRefresh, hints);
     VBox identityBox = new VBox(2, titleRow, repoLabel);
+    repositoryTools.getChildren().setAll(statusBox, repositoryMenu, commitRow);
 
-    VBox top = new VBox(
-        6,
-        identityBox,
-        statusBox,
-        initBox,
-        setupBox,
-        toolbar,
-        branchRow,
-        commitRow
-    );
+    VBox top = new VBox(6, identityBox, initBox, nextStepLabel, repositoryTools);
     top.getStyleClass().add("sidebar-tool-header");
 
-    Label changesLabel = new Label("Changes");
-    changesLabel.getStyleClass().add("vcs-section-label");
     Label logLabel = new Label("Log");
     logLabel.getStyleClass().add("vcs-section-label");
     HBox viewModeRow = new HBox(0, btnChangesView, btnGraphView);
     viewModeRow.getStyleClass().add("vcs-view-mode");
     viewModeRow.setAlignment(Pos.CENTER_LEFT);
-    VBox changesView = new VBox(4, changesLabel, fileActionRow, listChanges);
-    VBox graphView = new VBox(4, sectionLabel("Changes Graph"), listGraph);
+    VBox changesView = new VBox(4, fileActionRow, listChanges);
+    VBox graphView = new VBox(4, sectionLabel("Commit history"), listGraph);
     changesView.getStyleClass().add("vcs-center-view");
     graphView.getStyleClass().add("vcs-center-view");
     centerViewStack.getChildren().setAll(changesView, graphView);
@@ -549,6 +542,8 @@ result of your most recent actions."""));
     VBox.setVgrow(centerSplit, Priority.ALWAYS);
 
     VBox center = new VBox(6, viewModeRow, centerSplit);
+    center.visibleProperty().bind(repositoryTools.visibleProperty());
+    center.managedProperty().bind(center.visibleProperty());
     center.getStyleClass().add("vcs-center");
     center.setPadding(new Insets(0, 10, 10, 10));
     updateCenterViewMode();
@@ -662,7 +657,8 @@ result of your most recent actions."""));
     this.projectRoot = projectRoot;
     statusLoaded = false;
     dismissedGuideKey = "";
-    repoLabel.setText(projectRoot == null ? "No project loaded" : "Project: " + projectRoot.getAbsolutePath());
+    repoLabel.setText(projectRoot == null ? "No project loaded" : projectRoot.getName());
+    repoLabel.setTooltip(projectRoot == null ? null : new Tooltip(projectRoot.getAbsolutePath()));
     refreshStatus(true);
   }
 
@@ -814,7 +810,7 @@ result of your most recent actions."""));
     listGraph.getItems().clear();
     cbBranch.getItems().clear();
     setSetupVisible(false);
-    setInitControlsVisible(true, "This project is not a repository yet. Initialize it to enable snapshots, backup, and sync.");
+    setInitControlsVisible(true, "Track changes to this project and save snapshots locally. You can connect a remote later.");
     setNextStep("Start here: initialize version control for this project.", "vcs-next-step-warning");
     updateControlsForState();
   }
@@ -1020,7 +1016,7 @@ result of your most recent actions."""));
   private void updateGuidance() {
     clearGuideTargets();
     GuidanceStep step = computeGuidanceStep();
-    if (step == null || step.targets().isEmpty() || !guideTabActive) {
+    if (!hints.isSelected() || step == null || step.targets().isEmpty() || !guideTabActive) {
       lastGuideKey = "";
       guidePopup.hide();
       return;
@@ -2308,6 +2304,10 @@ result of your most recent actions."""));
   private void updateControlsForState() {
     boolean hasProject = projectRoot != null;
     boolean repoReady = hasProject && gitAvailable && repositoryInitialized;
+    repositoryTools.setVisible(repoReady);
+    repositoryTools.setManaged(repoReady);
+    nextStepLabel.setVisible(!initBox.isVisible());
+    nextStepLabel.setManaged(!initBox.isVisible());
     boolean hasSelection = !listChanges.getSelectionModel().getSelectedItems().isEmpty();
     boolean hasChanges = currentChangeCount > 0;
     boolean canSync = repoReady && currentHasRemote && !currentHasConflicts;
