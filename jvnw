@@ -258,6 +258,7 @@ show_help() {
   print_help_row "./jvnw native -PjvnGameProject=<dir>" "Create a native package for this host"
   print_help_row "./jvnw release-native -PjvnGameProject=<dir>" "Build native package and run release profile hooks for this host"
   print_help_row "./jvnw build-info" "Print Java, Gradle, JavaFX, and module configuration"
+  print_help_row "./jvnw ship VERSION [--dry-run]" "Publish native Engine Hub apps on GitHub"
   print_help_row "./jvnw doctor" "Print local Java, Gradle, cache, and module diagnostics"
   print_help_row "./jvnw jar" "Build the runtime jar"
   printf '\n'
@@ -552,6 +553,11 @@ if [[ "$raw_mode" != "1" ]]; then
         exit 0
         ;;
     esac
+  fi
+
+  if [[ "${input_args[0]}" == "ship" ]]; then
+    shift
+    exec python3 "$SCRIPT_DIR/scripts/ship-engine.py" "$@"
   fi
 
   if [[ "${input_args[0]}" == "doctor" ]]; then

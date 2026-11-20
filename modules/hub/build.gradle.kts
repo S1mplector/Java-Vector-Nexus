@@ -82,7 +82,14 @@ val packagedEngineWorkspaceZip = tasks.register<Zip>("packagedEngineWorkspaceZip
   destinationDirectory.set(layout.buildDirectory.dir("packaged-engine"))
   isZip64 = true
 
+  val engineVersion = rootProject.version.toString()
+  inputs.property("engineVersion", engineVersion)
   from(rootProject.rootDir) {
+    filesMatching("**/gradle.properties") {
+      if (file == rootProject.file("gradle.properties")) {
+        filter { line: String -> if (line.startsWith("jvnVersion=")) "jvnVersion=$engineVersion" else line }
+      }
+    }
     into("engine")
     includeEmptyDirs = false
     exclude(

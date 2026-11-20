@@ -5145,6 +5145,7 @@ public final class JvnHub {
         ProcessBuilder pb = new ProcessBuilder(command)
             .directory(projectRoot.toFile())
             .redirectErrorStream(true);
+        configurePackagedJava(pb);
         pb.environment().putAll(extraEnvironment);
         boolean managedGraphicsLaunch = RenderPipelineSettings.applyLaunchEnvironment(
             pb.environment(), command, launchPipelineMode, launchPipelineOptions);
@@ -5386,6 +5387,7 @@ public final class JvnHub {
               .directory(projectRoot.toFile())
               .redirectErrorStream(true)
               .redirectOutput(ProcessBuilder.Redirect.appendTo(logFile.toFile()));
+          configurePackagedJava(builder);
           builder.environment().put("JVN_HUB_RELAUNCH_READY_FILE", readyFile.toString());
           Process replacement = builder.start();
           appendLog("[hub] replacement Hub command started: " + quoteCommandForLog(command));
@@ -6267,13 +6269,20 @@ public final class JvnHub {
     return runLocalCommand(command, timeoutSeconds);
   }
 
+  private static void configurePackagedJava(ProcessBuilder child) {
+    if (System.getProperty("jpackage.app-path") == null) return;
+    Path javaHome = Path.of(System.getProperty("java.home"));
+    var environment = child.environment();
+    environment.put("JAVA_HOME", javaHome.toString());
+    environment.put("PATH", javaHome.resolve("bin") + java.io.File.pathSeparator + environment.getOrDefault("PATH", ""));
+  }
+
   private CommandResult runLocalCommand(List<String> command, long timeoutSeconds) {
     Process process;
     try {
-      process = new ProcessBuilder(command)
-          .directory(projectRoot.toFile())
-          .redirectErrorStream(true)
-          .start();
+      ProcessBuilder builder = new ProcessBuilder(command).directory(projectRoot.toFile()).redirectErrorStream(true);
+      configurePackagedJava(builder);
+      process = builder.start();
     } catch (IOException e) {
       return new CommandResult(-1, e.getMessage());
     }

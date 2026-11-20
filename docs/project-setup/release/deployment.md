@@ -288,3 +288,11 @@ The Simp3 audio module must be on the classpath. Verify the audio JAR is include
 - [Project Structure Conventions](../onboarding/project-structure.md)
 - [Performance](../../architecture/quality/performance.md)
 - [Getting Started](../../guides/getting-started.md)
+
+## Publish the Engine Hub desktop apps
+
+Run `./jvnw ship 0.8.1` from the commit to release. On Windows use `jvnw.bat ship 0.8.1`. Substitute the intended version. Add `--dry-run` to print the commit and tag locally. The command uses Python 3 and your existing Git push credentials for `origin`.
+
+The command pushes the tag `engine-v0.8.1`. The **Engine Hub release** workflow builds Windows x64, macOS Apple Silicon and Linux x64 apps on native runners. Each build starts the Hub executable in extraction mode and checks that the editor workspace is present. GitHub publishes the release after all three archives pass verification. Each download has a SHA-256 file. Rerun a failed job from Actions to finish the same release.
+
+Extract the archive and open **JVN Engine Hub.exe** on Windows, **JVN Engine Hub.app** on macOS, or **bin/JVN Engine Hub** on Linux. Each archive includes JDK 21 and the engine workspace. The first Editor build downloads Gradle and project dependencies. These packages use the existing Hub icon and ship without a publisher signing identity. A manual Actions run builds downloadable test artifacts without publishing a release.

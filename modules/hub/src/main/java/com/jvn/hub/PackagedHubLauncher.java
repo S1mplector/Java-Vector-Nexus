@@ -235,7 +235,8 @@ public final class PackagedHubLauncher {
     if (Files.isRegularFile(wrapper)) {
       wrapper.toFile().setExecutable(true, false);
     }
-    for (String script : List.of("install-macos-launcher.sh", "install-linux-launcher.sh")) {
+    for (String script : List.of("jvnw", "scripts/launch-app.sh", "scripts/launch-hub.sh",
+        "install-macos-launcher.sh", "install-linux-launcher.sh")) {
       Path path = projectRoot.resolve(script);
       if (Files.isRegularFile(path)) {
         path.toFile().setExecutable(true, false);

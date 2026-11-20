@@ -40,6 +40,8 @@ goto collect_args
 :dispatch
 if "%raw%"=="1" goto run_raw
 
+if /I "%command%"=="ship" goto ship
+
 set "resolved="
 if /I "%command%"=="launcher" set "resolved=:editor:runLauncher"
 if /I "%command%"=="editor" set "resolved=:editor:run"
@@ -130,7 +132,12 @@ if defined forwarded (
 )
 exit /b %ERRORLEVEL%
 
+:ship
+python "%~dp0scripts\ship-engine.py" %forwarded%
+exit /b %errorlevel%
+
 :help
+echo   jvnw ship VERSION [--dry-run]   Publish native Engine Hub apps on GitHub
 echo jvnw
 echo.
 echo Use jvnw for common tasks. Known commands map to Gradle tasks; everything else passes through.
