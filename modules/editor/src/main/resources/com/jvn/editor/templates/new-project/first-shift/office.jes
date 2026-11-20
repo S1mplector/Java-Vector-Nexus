@@ -1,0 +1,19 @@
+scene "OfficeBoard" {
+  entity "office" {
+    component Sprite2D { image: "assets/tutorial/office.jpg" x: 0 y: 0 w: 1920 h: 1080 }
+  }
+  entity "board" {
+    component Panel2D { x: 110 y: 110 w: 790 h: 235 fill: rgb(0.12, 0.24, 0.22, 1) }
+  }
+  entity "lamp" {
+    component Panel2D { x: 840 y: 138 w: 28 h: 28 fill: rgb(1, 0.65, 0.48, 1) }
+  }
+  entity "title" {
+    component Label2D { text: "Project board" x: 148 y: 168 size: 52 bold: true color: rgb(1, 0.96, 0.88, 1) }
+  }
+  entity "hint" {
+    component Label2D { text: "Press Enter to return to Pip." x: 148 y: 252 size: 29 color: rgb(1, 0.96, 0.88, 1) }
+  }
+  on key "ENTER" do return
+  on key "ESCAPE" do return
+}

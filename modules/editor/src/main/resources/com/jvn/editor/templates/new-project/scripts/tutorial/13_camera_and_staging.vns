@@ -1,186 +1,41 @@
-# Tutorial 13 — Camera and Staging
-# [camera pan], [camera zoom], multi-character blocking, and visual composition.
-
-@scenario {{SCENARIO_PREFIX}}_tutorial_13_camera_staging
-@include {{CHARACTERS_INCLUDE}}
-{{BG_DECL}}@label start
+# Frame the equipment
+@scenario office_lesson_13
+@include /definitions/characters.vns
+@label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[set ui.textBoxAsset none]
-[set ui.continueIndicator spinning_arrow]
-[if tutorial_still]
-[set ui.reduceMotion true]
-[else]
-[set ui.reduceMotion false]
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage clear]
+[show pip desk point]
+pip: A slow push shifts attention toward the desk without moving Pip.
+[if !tutorial_still]
+timeline {
+  parallel {
+    move "bg_current" { x:-64 y:-36 dur:640 easing:ease_out }
+    scale "bg_current" { sx:1.08 sy:1.08 dur:640 easing:ease_out }
+  }
+}
 [endif]
-[if !tutorial_initialized]
-[set tutorial_count 0]
-[flag tutorial_initialized]
-[endif]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-[set character.lavender.imageEffect none]
-{{BG_START}}
-[textspeed 28]
-[autodelay 1650]
-[show lavender center happy]
-[wait 200]
-Lavender: Tutorial 03 covered where characters stand. This tutorial covers where the {b}camera{/b} looks and how to stage scenes with intention.
-[show lavender center talking]
-Lavender: Two commands: {b}[camera pan]{/b} and {b}[camera zoom]{/b}. Plus staging principles.
-
-@label lesson_menu
-[show lavender far_left talking]
-> [camera pan] — moving the viewport -> section_pan
-> [camera zoom] — close-ups and wide shots -> section_zoom
-> Staging two characters -> section_two_char
-> Composition principles -> section_composition
-> Quick reference: staging commands -> quick_reference
-> Practice: three staged scenes -> practice_scene
-> Back to Tutorial Hub -> return_hub
-
-# ─── Quick Reference ─────────────────────────────────────────────
-
-@label quick_reference
-[show lavender center talking]
-Lavender: Camera work should direct attention:
-narrator: {color=#8888cc}[camera pan 0,0 100,0 easeInOut 1000]{/color}
-narrator: {color=#8888cc}[camera zoom 1.0 1.12 easeIn 600]{/color}
-narrator: {color=#8888cc}[show lavender left talking]{/color}
-narrator: {color=#8888cc}[show alex right neutral]{/color}
-narrator: {color=#8888cc}[move lavender center easeInOut 400]{/color}
-[show lavender center happy]
-Lavender: Checklist: establish the scene, keep speakers readable, and reset camera moves when the moment ends.
-> Start the lesson sections -> section_pan
-> Back to menu -> lesson_menu
-
-# ─── Camera Pan ──────────────────────────────────────────────────
-
-@label section_pan
-[show lavender left talking]
-Lavender: {b}[camera pan x1,y1 x2,y2 easing duration]{/b} — slides the viewport across the scene.
-narrator: {color=#8888cc}[camera pan 0,0 100,0 easeInOut 1000]{/color}
-narrator: Pans from left to right over 1 second. Characters stay put — the world moves behind them.
-[show lavender center talking]
-Lavender: When to pan:
-narrator: {b}Establishing shots{/b} — slowly reveal a new location before characters appear.
-narrator: {b}Following a character{/b} — pair with [move] for a tracking shot.
-narrator: {b}Shifting attention{/b} — pan toward a new character entering from offscreen.
-Lavender: When {b}not{/b} to pan:
-narrator: During emotional dialogue. Movement competes with the words. Let the scene be still.
-[show lavender center happy]
-Lavender: Reset the camera after panning: {color=#8888cc}[camera pan 100,0 0,0 easeOut 600]{/color}
-> Next: camera zoom -> section_zoom
-> Back to menu -> lesson_menu
-
-# ─── Camera Zoom ─────────────────────────────────────────────────
-
-@label section_zoom
-[show lavender right talking]
-Lavender: {b}[camera zoom from to easing duration]{/b} — changes the camera's magnification.
-narrator: {color=#8888cc}[camera zoom 1.0 1.2 easeIn 600]{/color}
-narrator: Zooms in 20% over 600ms. Subtle, but the player feels the scene become more personal.
-[show lavender center talking]
-Lavender: Zoom levels:
-narrator: {b}0.8–0.9{/b} — wide shot. Establishing, showing the full scene, isolation.
-narrator: {b}1.0{/b} — neutral. Default. Most dialogue lives here.
-narrator: {b}1.1–1.2{/b} — close-up. Emotional beats, confessions, tension.
-narrator: {b}1.3+{/b} — extreme close-up. Revelations, breakdowns. Use very sparingly.
-[show lavender left talking]
-Lavender: Always reset when the moment passes:
-narrator: {color=#8888cc}[camera zoom 1.2 1.0 easeOut 400]{/color}
-narrator: A lingering zoom that the player didn't ask for feels like a bug, not a cinematic choice.
-[show lavender center happy]
-Lavender: Even a 5% zoom (1.0 → 1.05) during dialogue creates a subtle sense of focus.
-> Next: staging two characters -> section_two_char
-> Back to menu -> lesson_menu
-
-# ─── Two-Character Staging ───────────────────────────────────────
-
-@label section_two_char
-[show lavender center talking]
-Lavender: The classic two-person conversation: one character on left, one on right.
-narrator: {color=#8888cc}[show lavender left talking]{/color}
-narrator: {color=#8888cc}[show alex right happy]{/color}
-Lavender: Staging rules for two characters:
-narrator: {b}Speaker active, listener neutral.{/b} Change the speaker's expression. Keep the other in a resting state.
-narrator: {b}Side = role.{/b} The questioner is often on the left, the responder on the right. Swap sides to signal a power shift.
-narrator: {b}Don't stack same-side.{/b} Two characters on the left reads as confusion.
-[show lavender left talking]
-Lavender: Use [move] to shift balance mid-scene:
-narrator: {color=#8888cc}[move lavender center easeInOut 400]{/color}
-narrator: Lavender steps to center — she's taking control of the conversation.
-[show lavender center happy]
-Lavender: Position changes tell the player something shifted before the dialogue confirms it.
-> Next: composition -> section_composition
-> Back to menu -> lesson_menu
-
-# ─── Composition ─────────────────────────────────────────────────
-
-@label section_composition
-[show lavender center talking]
-Lavender: Four principles that work for any scene:
-narrator: {b}1. Rule of thirds.{/b} Place characters at 1/3 or 2/3 of the screen width. Dead center is for authority or isolation.
-narrator: {b}2. Empty space carries meaning.{/b} A character alone on a wide shot reads as lonely. Fill or empty the frame deliberately.
-narrator: {b}3. Match framing to mood.{/b} Close for intimate, wide for epic, off-center for unease.
-narrator: {b}4. Background supports tone.{/b} A cluttered background behind a serious conversation is distracting.
-[show lavender left talking]
-Lavender: The test: play your scene, notice where your eyes go. If they go to the wrong place, adjust the staging.
-[show lavender center happy]
-Lavender: Stillness is underrated. Not every scene needs camera movement. Sometimes the best shot is the steady one.
-> Practice: staged scenes -> practice_scene
-> Back to menu -> lesson_menu
-
-# ─── Practice ────────────────────────────────────────────────────
-
-@label practice_scene
-[show lavender center talking]
-Lavender: Three staged scenes. Each uses camera and positioning differently. I'll annotate the script after each.
-
-@label practice_demos
-Lavender: {b}Scene 1: Confrontation{/b} — closing distance.
-[show lavender far_left talking]
-Lavender: We need to talk.
-[move lavender left easeInOut 500]
-[wait 500]
-[show lavender left emphasis]
-Lavender: Now.
-[wait 300]
-[show lavender center talking]
-narrator: {color=#8888cc}[show far_left] → [move left 500ms] → [show emphasis]{/color}. The shrinking gap is the escalation. No camera needed.
-[wait 400]
-
-Lavender: {b}Scene 2: Confession{/b} — zoom in, slow down.
-[show lavender center talking]
-[textspeed 38]
-Lavender: I should have told you sooner.
-[wait 400]
-Lavender: I'm sorry.
-[textspeed 28]
-[show lavender center happy]
-narrator: {color=#8888cc}[textspeed 38]{/color} slowed the pace. A {color=#8888cc}[camera zoom 1.0 1.15 easeIn 800]{/color} here would close the emotional distance.
-[wait 400]
-
-Lavender: {b}Scene 3: Reveal{/b} — enter from nothing.
-[hide lavender]
-[wait 600]
-narrator: The room was empty. Dust hung in the air.
-[wait 400]
-[show lavender far_right talking]
-[move lavender center easeOut 500]
-[wait 500]
-[show lavender center happy]
-Lavender: Surprise.
-narrator: {color=#8888cc}[hide] → [wait] → narrator → [show far_right] → [move center easeOut]{/color}. The emptiness set up the entrance.
-
-[show lavender center talking]
-Lavender: Three scenes, three staging strategies: movement as tension, zoom as intimacy, absence as setup.
-> Replay demos -> practice_demos
-> Back to menu -> lesson_menu
-
+pip: Compare the two background keyframes in Puppeteer. Watch the far edge as the scale increases.
+@label check
+pip: Why pair a small pan with a zoom?
+> To keep the frame filled while the subject shifts. -> correct
+> To change the speaker name. -> retry
+@label retry
+[show pip desk curious]
+pip: A zoom can cover the edge exposed by a pan. Give it another try.
+[jump check]
+@label correct
+[show pip desk cheer]
+pip: A zoom can cover the edge exposed by a pan.
+> Finish this lesson -> return_hub
+> Try the lesson again -> start
 @label return_hub
 [if !tutorial_done_13]
 [flag tutorial_done_13]
 [inc tutorial_count]
 [endif]
-[goto {{HUB_TARGET}}:topics_page_3]
+[stage clear]
+[goto TutorialHub:topics_page_3]

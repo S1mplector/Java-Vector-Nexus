@@ -51,7 +51,7 @@ import javafx.stage.*;
 public class NewProjectWizard extends Stage {
   private enum ProjectTemplate {
     STARTER_STORY("Starter Story", "A lean starter project with a playable story flow, menu pack, and demo assets."),
-    TUTORIAL_WORKSPACE("Tutorial Workspace", "A full learning scaffold with the starter story, 30 tutorial scripts, and demo content."),
+    TUTORIAL_WORKSPACE("Tutorial Workspace", "Pip’s First Shift. Thirty playable exercises, an illustrated office and a branching story."),
     BLANK_SANDBOX("Blank Sandbox", "A stripped-down project for custom pipelines, no demo assets, and blank menu wiring."),
     CUSTOM("Custom", "A manual combination of modules and starter content.");
 
@@ -154,45 +154,11 @@ public class NewProjectWizard extends Stage {
   private static final String STORY_TUTORIAL_SCRIPT_PATH = "scripts/story/tutorial_hub.vns";
   private static final String STORY_BRANCH_SCRIPT_PATH = "scripts/story/branch_demo.vns";
   private static final String STORY_EPILOGUE_SCRIPT_PATH = "scripts/story/epilogue.vns";
-  private static final String TUTORIAL_DIALOGUE_SCRIPT_PATH = "scripts/tutorial/01_dialogue_basics.vns";
-  private static final String TUTORIAL_NARRATION_SCRIPT_PATH = "scripts/tutorial/02_narration_and_pacing.vns";
-  private static final String TUTORIAL_EXPRESSIONS_SCRIPT_PATH = "scripts/tutorial/03_expressions_and_characters.vns";
-  private static final String TUTORIAL_IMAGES_SCRIPT_PATH = "scripts/tutorial/04_images_and_backgrounds.vns";
-  private static final String TUTORIAL_TRANSITIONS_SCRIPT_PATH = "scripts/tutorial/05_transitions_and_effects.vns";
-  private static final String TUTORIAL_AUDIO_SCRIPT_PATH = "scripts/tutorial/06_audio_and_music.vns";
-  private static final String TUTORIAL_VARIABLES_SCRIPT_PATH = "scripts/tutorial/07_variables_and_conditions.vns";
-  private static final String TUTORIAL_MOVEMENT_SCRIPT_PATH = "scripts/tutorial/08_character_movement.vns";
-  private static final String TUTORIAL_PUPPETEER_SCRIPT_PATH = "scripts/tutorial/09_puppeteer_timeline.vns";
-  private static final String TUTORIAL_MENUS_SCRIPT_PATH = "scripts/tutorial/10_choices_and_menus.vns";
-  private static final String TUTORIAL_SUBROUTINES_SCRIPT_PATH = "scripts/tutorial/11_subroutines_and_flow.vns";
-  private static final String TUTORIAL_BEST_PRACTICES_SCRIPT_PATH = "scripts/tutorial/12_best_practices.vns";
-  private static final String TUTORIAL_CAMERA_SCRIPT_PATH = "scripts/tutorial/13_camera_and_staging.vns";
-  private static final String TUTORIAL_LOCALIZATION_SCRIPT_PATH = "scripts/tutorial/14_localization_and_textkeys.vns";
-  private static final String TUTORIAL_UI_LAYOUT_SCRIPT_PATH = "scripts/tutorial/15_ui_layout_and_theme.vns";
-  private static final String TUTORIAL_TESTING_RELEASE_SCRIPT_PATH = "scripts/tutorial/16_testing_and_release.vns";
-  private static final String TUTORIAL_VNS_JES_SCRIPT_PATH = "scripts/tutorial/17_vns_jes_integration.vns";
   private static final String JES_STUDIO_SCENE_PATH = "scripts/scenes/studio_tour.jes";
   private static final String ARC_PROLOGUE = "Prologue";
   private static final String ARC_TUTORIAL_HUB = "TutorialHub";
   private static final String ARC_BRANCH_DEMO = "BranchDemo";
   private static final String ARC_EPILOGUE = "Epilogue";
-  private static final String ARC_T01_DIALOGUE = "T01_Dialogue";
-  private static final String ARC_T02_NARRATION = "T02_Narration";
-  private static final String ARC_T03_EXPRESSIONS = "T03_Expressions";
-  private static final String ARC_T04_IMAGES = "T04_Images";
-  private static final String ARC_T05_TRANSITIONS = "T05_Transitions";
-  private static final String ARC_T06_AUDIO = "T06_Audio";
-  private static final String ARC_T07_VARIABLES = "T07_Variables";
-  private static final String ARC_T08_MOVEMENT = "T08_Movement";
-  private static final String ARC_T09_PUPPETEER = "T09_Puppeteer";
-  private static final String ARC_T10_MENUS = "T10_Menus";
-  private static final String ARC_T11_SUBROUTINES = "T11_Subroutines";
-  private static final String ARC_T12_BEST_PRACTICES = "T12_BestPractices";
-  private static final String ARC_T13_CAMERA = "T13_Camera";
-  private static final String ARC_T14_LOCALIZATION = "T14_Localization";
-  private static final String ARC_T15_UI_LAYOUT = "T15_UILayout";
-  private static final String ARC_T16_TESTING_RELEASE = "T16_TestingRelease";
-  private static final String ARC_T17_VNS_JES = "T17_VnsJes";
   private static final String CHARACTERS_SCRIPT_PATH = "scripts/definitions/characters.vns";
   private static final String CHARACTERS_INCLUDE_PATH = "/definitions/characters.vns";
   private static final String STORY_MAP_PATH = StoryMapPaths.DEFAULT_PATH;
@@ -629,8 +595,8 @@ public class NewProjectWizard extends Stage {
     addStyleClasses(intro, "new-project-wizard-summary");
 
     chkStarterStory = createCheckBox("Starter Story Flow", true);
-    chkTutorialPack = createCheckBox("Guided Tutorial Pack (16 scripts)", false);
-    chkBundledDemoAssets = createCheckBox("Bundled Demo Assets (Lavender/White Stage/BGM)", true);
+    chkTutorialPack = createCheckBox("First Shift tutorial with Pip (30 exercises)", false);
+    chkBundledDemoAssets = createCheckBox("Starter story artwork and music", true);
     chkTitleScreen = createCheckBox("Main Menu Profile Pack", true);
     chkSaveSystem = createCheckBox("Load/Save Menu Profiles", true);
     chkSettingsMenu = createCheckBox("Settings Menu Profile", true);
@@ -655,6 +621,7 @@ public class NewProjectWizard extends Stage {
     lblBlankMenuWarning.setManaged(false);
 
     chkStarterStory.selectedProperty().addListener((o, ov, nv) -> updateDerivedFields());
+    chkBundledDemoAssets.disableProperty().bind(chkTutorialPack.selectedProperty());
     chkTutorialPack.selectedProperty().addListener((o, ov, nv) -> updateDerivedFields());
     chkBundledDemoAssets.selectedProperty().addListener((o, ov, nv) -> updateDerivedFields());
     chkTitleScreen.selectedProperty().addListener((o, ov, nv) -> updateDerivedFields());
@@ -915,7 +882,7 @@ public class NewProjectWizard extends Stage {
       boolean blank = template == ProjectTemplate.BLANK_SANDBOX;
       if (chkStarterStory != null) chkStarterStory.setSelected(template != ProjectTemplate.BLANK_SANDBOX);
       if (chkTutorialPack != null) chkTutorialPack.setSelected(template == ProjectTemplate.TUTORIAL_WORKSPACE);
-      if (chkBundledDemoAssets != null) chkBundledDemoAssets.setSelected(!blank);
+      if (chkBundledDemoAssets != null) chkBundledDemoAssets.setSelected(template == ProjectTemplate.STARTER_STORY);
       if (chkTitleScreen != null) chkTitleScreen.setSelected(!blank);
       if (chkSaveSystem != null) chkSaveSystem.setSelected(!blank);
       if (chkSettingsMenu != null) chkSettingsMenu.setSelected(!blank);
@@ -954,7 +921,7 @@ public class NewProjectWizard extends Stage {
     if (starterStory && !tutorialPack && demoAssets && titleScreen && saveSystem && settingsMenu && historyBacklog && !blankMenus) {
       return ProjectTemplate.STARTER_STORY;
     }
-    if (starterStory && tutorialPack && demoAssets && titleScreen && saveSystem && settingsMenu && historyBacklog && !blankMenus) {
+    if (starterStory && tutorialPack && titleScreen && saveSystem && settingsMenu && historyBacklog && !blankMenus) {
       return ProjectTemplate.TUTORIAL_WORKSPACE;
     }
     if (!starterStory && !tutorialPack && !demoAssets && !titleScreen && !saveSystem && !settingsMenu && !historyBacklog && blankMenus) {
@@ -1148,11 +1115,11 @@ public class NewProjectWizard extends Stage {
 
   private long estimateProjectSizeKb() {
     long kb = 36;
-    if (chkBundledDemoAssets != null && chkBundledDemoAssets.isSelected()) {
+    if (chkTutorialPack != null && chkTutorialPack.isSelected()) kb += 3300;
+    else if (chkBundledDemoAssets != null && chkBundledDemoAssets.isSelected()) {
       kb += estimateBundledDemoAssetsKb();
     }
     if (chkStarterStory != null && chkStarterStory.isSelected()) kb += 4;
-    if (chkTutorialPack != null && chkTutorialPack.isSelected()) kb += 8;
     if (shouldCreateMenuPack()) kb += 8;
     if (chkSaveSystem != null && chkSaveSystem.isSelected()) kb += 3;
     if (chkSettingsMenu != null && chkSettingsMenu.isSelected()) kb += 2;
@@ -1229,38 +1196,28 @@ public class NewProjectWizard extends Stage {
     sb.append("\u2502   \u2502   \u2514\u2500\u2500 epilogue.vns\n");
     sb.append("\u2502   \u251c\u2500\u2500 tutorial/\n");
     if (includeTutorialPack) {
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 01_dialogue_basics.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 02_narration_and_pacing.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 03_expressions_and_characters.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 04_images_and_backgrounds.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 05_transitions_and_effects.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 06_audio_and_music.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 07_variables_and_conditions.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 08_character_movement.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 09_puppeteer_timeline.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 10_choices_and_menus.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 11_subroutines_and_flow.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 12_best_practices.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 13_camera_and_staging.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 14_localization_and_textkeys.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 15_ui_layout_and_theme.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 16_testing_and_release.vns\n");
-      sb.append("\u2502   \u2502   \u2514\u2500\u2500 17_vns_jes_integration.vns\n");
-      sb.append("│   │   └── 18–30: plugins, systems, tools and production\n");
+      for (int i = 0; i < TutorialCatalog.LESSONS.size(); i++) {
+        String path = TutorialCatalog.LESSONS.get(i).path();
+        sb.append(i + 1 == TutorialCatalog.LESSONS.size() ? "│   │   └── " : "│   │   ├── ")
+            .append(path.substring(path.lastIndexOf('/') + 1)).append("\n");
+      }
     } else {
       sb.append("\u2502   \u2502   \u2514\u2500\u2500 (empty until tutorial pack is added)\n");
     }
     sb.append("\u2502   \u251c\u2500\u2500 routes/\n");
     sb.append("\u2502   \u251c\u2500\u2500 scenes/\n");
     if (includeStarterStory || includeTutorialPack) {
-      sb.append("\u2502   \u2502   \u2514\u2500\u2500 studio_tour.jes\n");
+      sb.append("\u2502   \u2502   \u2514\u2500\u2500 ").append(includeTutorialPack ? "office_board.jes\n" : "studio_tour.jes\n");
     }
     sb.append("\u2502   \u251c\u2500\u2500 definitions/\n");
     sb.append("\u2502   \u2502   \u2514\u2500\u2500 characters.vns\n");
     sb.append("\u2502   \u251c\u2500\u2500 common/\n");
     sb.append("\u2502   \u2514\u2500\u2500 system/\n");
     sb.append("\u251c\u2500\u2500 assets/\n");
-    if (includeDemoAssets) {
+    if (includeTutorialPack) {
+      sb.append("│   ├── icon.png\n");
+      sb.append("│   └── tutorial/ (office, Pip, interface, welcome chime)\n");
+    } else if (includeDemoAssets) {
       sb.append("\u2502   \u2514\u2500\u2500 demo/\n");
       sb.append("\u2502       \u251c\u2500\u2500 backgrounds/\n");
       sb.append("\u2502       \u2502   \u2514\u2500\u2500 field/\n");
@@ -1476,22 +1433,18 @@ public class NewProjectWizard extends Stage {
       throw new Exception("Project path is not a directory: " + dir.getAbsolutePath());
     }
     createDirectories(dir, includeMenuPack);
-    boolean useLayeredLavenderDemo = false;
-    if (includeDemoAssets) {
-      useLayeredLavenderDemo = copyBundledDemoAssets(dir);
-    }
-
-    createCharactersScript(dir, includeDemoAssets, useLayeredLavenderDemo);
-    createStoryScripts(
-        dir,
-        displayName,
-        includeStarterStory,
-        includeTutorialPack,
-        includeDemoAssets,
-        useLayeredLavenderDemo
-    );
-    if (includeStarterStory || includeTutorialPack) {
-      createJesStudioScene(dir, includeDemoAssets);
+    if (includeTutorialPack) {
+      OfficeTutorial.installContent(dir.toPath());
+    } else {
+      boolean layered = includeDemoAssets && copyBundledDemoAssets(dir);
+      createCharactersScript(dir, includeDemoAssets, layered);
+      createBlankTutorialHubScript(dir, displayName, includeDemoAssets, layered);
+      if (includeStarterStory) {
+        createSampleArcEntryAndBranchScripts(dir, displayName, includeDemoAssets);
+        createJesStudioScene(dir, includeDemoAssets);
+      } else {
+        createBlankArcEntryAndBranchScripts(dir, displayName, includeDemoAssets, layered);
+      }
     }
     createStoryMap(dir, displayName, includeTutorialPack);
 
@@ -1506,7 +1459,7 @@ public class NewProjectWizard extends Stage {
       createBlankMenuScaffold(dir);
     }
 
-    if (includeTutorialPack) configureTutorialPresentation(dir, includeMenuPack);
+    if (includeTutorialPack) OfficeTutorial.installPresentation(dir.toPath(), getScaledResolution()[1], includeMenuPack);
 
     if (gitRequested) {
       GitVcsService vcs = new GitVcsService();
@@ -1542,6 +1495,10 @@ public class NewProjectWizard extends Stage {
         gitInitialCommit
     );
 
+    if (includeTutorialPack) {
+      OfficeTutorial.copyGuide(dir.toPath());
+      return;
+    }
     createReadme(
         dir,
         displayName,
@@ -1552,78 +1509,6 @@ public class NewProjectWizard extends Stage {
         gitEnabled,
         gitInitialCommit
     );
-  }
-
-  private void configureTutorialPresentation(File dir, boolean menus) throws Exception {
-    for (String name : List.of("lofi-music-2.mp3", "CaveatBrush-Regular.ttf", "CaveatBrush-OFL.txt", "CREDITS.txt")) {
-      String path = "assets/tutorial/" + name;
-      Path target = dir.toPath().resolve(path);
-      Files.createDirectories(target.getParent());
-      try (var input = getClass().getResourceAsStream("/com/jvn/editor/templates/new-project/" + path)) {
-        if (input == null) throw new java.io.IOException("Missing tutorial asset: " + path);
-        Files.copy(input, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-      }
-    }
-    // Each entry remains independently previewable; shared story variables keep the loop uninterrupted.
-    try (var scripts = Files.walk(dir.toPath().resolve("scripts"))) {
-      for (Path script : scripts.filter(p -> p.toString().endsWith(".vns")).toList()) {
-        String source = Files.readString(script);
-        source = source.replace("assets/demo/audio/03 - Definitely Our Town.mp3", "assets/tutorial/lofi-music-2.mp3");
-        source = source.replace("@label start\n", "@label start\n[if !tutorial_music_started]\n[bgm \"assets/tutorial/lofi-music-2.mp3\"]\n[flag tutorial_music_started]\n[endif]\n");
-        Files.writeString(script, source);
-      }
-    }
-    Files.writeString(dir.toPath().resolve(DIALOGUE_LAYOUT_PATH), """
-
-        # Lavender workshop: translucent black panel, clear white text, waist-up framing.
-        textBoxColor=#000000B8
-        textBoxOpacity=0.72
-        nameBoxColor=#000000B8
-        nameTextColor=#E3D2F4
-        dialogueTextColor=#FFFFFF
-        dialogueTextRightPadding=54
-        characterHeightFactor=1.5
-        characterBaselineY=1.5
-        """, java.nio.file.StandardOpenOption.APPEND);
-    double uiScale = getScaledResolution()[1] / 720.0;
-    Files.writeString(dir.toPath().resolve(DIALOGUE_LAYOUT_PATH), String.format(Locale.ROOT, """
-        textBoxHeight=0.22
-        textBoxY=0.74
-        dialogueTextFontSize=%d
-        nameTextFontSize=%d
-        nameBoxHeight=%d
-        nameBoxYOffset=-%d
-        nameBoxWidth=%d
-        nameTextBaselineOffset=%d
-        dialogueTextHorizontalPadding=%d
-        dialogueTextTopPadding=%d
-        choiceFontSize=%d
-        choiceHeight=%d
-        """, Math.max(18, (int) Math.round(24 * uiScale)), Math.max(14, (int) Math.round(18 * uiScale)),
-        (int) Math.round(32 * uiScale), (int) Math.round(32 * uiScale), (int) Math.round(160 * uiScale),
-        (int) Math.round(22 * uiScale), (int) Math.round(24 * uiScale), (int) Math.round(24 * uiScale),
-        Math.max(15, (int) Math.round(20 * uiScale)), Math.max(32, (int) Math.round(44 * uiScale))),
-        java.nio.file.StandardOpenOption.APPEND);
-    if (!menus) return;
-    Files.writeString(dir.toPath().resolve(MENU_THEME_PATH), """
-
-        # Tutorial presentation: animated dock and still handwritten title.
-        mainMenuPresentation=dock
-        titleFontFamily=assets/tutorial/CaveatBrush-Regular.ttf
-        titleFontSize=108
-        titleColor=#27242d
-        itemColor=#332d40
-        itemSelectedColor=#64478b
-        hintColor=#716779
-        accentColor=#a88ac5
-        bgm=assets/tutorial/lofi-music-2.mp3
-        bgmVolume=0.55
-        """, java.nio.file.StandardOpenOption.APPEND);
-    Path main = dir.toPath().resolve(MENU_MAIN_PATH);
-    String menu = Files.readString(main).replaceAll("(?m)^titleText=.*$", "titleText=JVN v0.8.0 Tutorial");
-    menu = menu.replace("item.new_game.label=Start New Game", "item.new_game.label=Begin");
-    menu = menu.replace("hintsText=Enter/Click: Select    Esc: Back", "hintsText=Arrow keys to explore  /  Enter or click to open");
-    Files.writeString(main, menu + "\nsubtitleText=A white page. Thirty lessons. One curious Lavender.\n");
   }
 
   private void cleanupFailedProjectCreation(File projectDir, File baseLocation, boolean createdBaseLocation) {
@@ -1931,7 +1816,7 @@ public class NewProjectWizard extends Stage {
     manifest.setProperty("feature.sampleContent", Boolean.toString(starterStory || tutorialPack));
     manifest.setProperty("feature.starterStory", Boolean.toString(starterStory));
     manifest.setProperty("feature.tutorialPack", Boolean.toString(tutorialPack));
-    manifest.setProperty("feature.demoAssets", Boolean.toString(chkBundledDemoAssets != null && chkBundledDemoAssets.isSelected()));
+    manifest.setProperty("feature.demoAssets", Boolean.toString(!tutorialPack && chkBundledDemoAssets != null && chkBundledDemoAssets.isSelected()));
     manifest.setProperty("feature.titleScreen", Boolean.toString(chkTitleScreen.isSelected() && includeMenuPack));
     manifest.setProperty("feature.menuProfiles", Boolean.toString(includeMenuPack));
     manifest.setProperty("feature.saveSystem", Boolean.toString(includeSave));
@@ -1988,28 +1873,6 @@ public class NewProjectWizard extends Stage {
     }
   }
 
-  private void createStoryScripts(
-      File dir,
-      String name,
-      boolean includeStarterStory,
-      boolean includeTutorialPack,
-      boolean includeDemoAssets,
-      boolean useLayeredLavenderDemo
-  ) throws Exception {
-    if (includeTutorialPack) {
-      createTutorialHubScript(dir, name, includeDemoAssets);
-      createTutorialTopicScripts(dir, name, includeDemoAssets, useLayeredLavenderDemo);
-    } else {
-      createBlankTutorialHubScript(dir, name, includeDemoAssets, useLayeredLavenderDemo);
-    }
-
-    if (includeStarterStory) {
-      createSampleArcEntryAndBranchScripts(dir, name, includeDemoAssets);
-    } else {
-      createBlankArcEntryAndBranchScripts(dir, name, includeDemoAssets, useLayeredLavenderDemo);
-    }
-  }
-
   private void createBlankTutorialHubScript(
       File dir,
       String name,
@@ -2033,89 +1896,6 @@ public class NewProjectWizard extends Stage {
         "scripts/story/tutorial_hub_blank.vns",
         tokens
     );
-  }
-
-  private void createTutorialHubScript(File dir, String name, boolean includeDemoAssets) throws Exception {
-    String scenarioPrefix = sanitizeName(name).toLowerCase(Locale.ROOT);
-    String backgroundDecl = includeDemoAssets
-        ? "@background white_stage assets/demo/backgrounds/game.png\n"
-            + "@background white_stage_alt assets/demo/backgrounds/game.png\n\n"
-        : "";
-    String backgroundStart = includeDemoAssets ? "[bg white_stage]\n[transition fade 450]\n" : "";
-
-    java.util.Map<String, String> tokens = new java.util.LinkedHashMap<>();
-    tokens.put("PROJECT_NAME", name);
-    tokens.put("SCENARIO_PREFIX", scenarioPrefix);
-    tokens.put("CHARACTERS_INCLUDE", CHARACTERS_INCLUDE_PATH);
-    tokens.put("BG_DECL", backgroundDecl);
-    tokens.put("BG_START", backgroundStart);
-    tokens.put("DIALOGUE_TARGET", ARC_T01_DIALOGUE);
-    tokens.put("NARRATION_TARGET", ARC_T02_NARRATION);
-    tokens.put("EXPRESSIONS_TARGET", ARC_T03_EXPRESSIONS);
-    tokens.put("IMAGES_TARGET", ARC_T04_IMAGES);
-    tokens.put("TRANSITIONS_TARGET", ARC_T05_TRANSITIONS);
-    tokens.put("AUDIO_TARGET", ARC_T06_AUDIO);
-    tokens.put("VARIABLES_TARGET", ARC_T07_VARIABLES);
-    tokens.put("MOVEMENT_TARGET", ARC_T08_MOVEMENT);
-    tokens.put("PUPPETEER_TARGET", ARC_T09_PUPPETEER);
-    tokens.put("MENUS_TARGET", ARC_T10_MENUS);
-    tokens.put("SUBROUTINES_TARGET", ARC_T11_SUBROUTINES);
-    tokens.put("BEST_PRACTICES_TARGET", ARC_T12_BEST_PRACTICES);
-    tokens.put("CAMERA_TARGET", ARC_T13_CAMERA);
-    tokens.put("LOCALIZATION_TARGET", ARC_T14_LOCALIZATION);
-    tokens.put("UI_LAYOUT_TARGET", ARC_T15_UI_LAYOUT);
-    tokens.put("TESTING_RELEASE_TARGET", ARC_T16_TESTING_RELEASE);
-    tokens.put("VNS_JES_TARGET", ARC_T17_VNS_JES);
-
-    writeScaffoldTemplateScript(
-        dir,
-        STORY_TUTORIAL_SCRIPT_PATH,
-        "scripts/story/tutorial_hub.vns",
-        tokens
-    );
-  }
-
-  private void createTutorialTopicScripts(
-      File dir,
-      String name,
-      boolean includeDemoAssets,
-      boolean useLayeredLavenderDemo
-  ) throws Exception {
-    String scenarioPrefix = sanitizeName(name).toLowerCase(Locale.ROOT);
-    String hubTarget = ARC_TUTORIAL_HUB;
-    String tutorialBgDecl = includeDemoAssets
-        ? "@background white_stage assets/demo/backgrounds/game.png\n"
-            + "@background white_stage_alt assets/demo/backgrounds/game.png\n\n"
-        : "";
-    String tutorialBgStart = includeDemoAssets ? "[bg white_stage]\n[transition fade 350]\n" : "";
-    String tutorialBgCrossfade = includeDemoAssets ? "[transition crossfade 600 white_stage_alt]\n" : "";
-    String tutorialBgmStart = includeDemoAssets ? "[bgm \"assets/demo/audio/03 - Definitely Our Town.mp3\"]\n" : "";
-    String tutorialBgmFade = includeDemoAssets ? "[bgm_fadeout 1200]\n[wait 1300]\n" : "";
-    String expressionHint = useLayeredLavenderDemo
-        ? "Lavender: This project uses layered presets (@charlayer + @charpreset), so expressions are composited from parts."
-        : "Lavender: This project uses simple @charimg declarations. You can switch to layered presets later.";
-
-    java.util.Map<String, String> baseTokens = new java.util.LinkedHashMap<>();
-    baseTokens.put("SCENARIO_PREFIX", scenarioPrefix);
-    baseTokens.put("CHARACTERS_INCLUDE", CHARACTERS_INCLUDE_PATH);
-    baseTokens.put("BG_DECL", tutorialBgDecl);
-    baseTokens.put("BG_START", tutorialBgStart);
-    baseTokens.put("HUB_TARGET", hubTarget);
-    baseTokens.put("CHARACTERS_SCRIPT_PATH", CHARACTERS_SCRIPT_PATH);
-    baseTokens.put("BG_CROSSFADE", tutorialBgCrossfade);
-    baseTokens.put("BGM_START", tutorialBgmStart);
-    baseTokens.put("BGM_FADE", tutorialBgmFade);
-    baseTokens.put("EXPRESSION_HINT", expressionHint);
-    baseTokens.put("JES_SCENE_PATH", JES_STUDIO_SCENE_PATH);
-
-    for (TutorialCatalog.Lesson lesson : TutorialCatalog.LESSONS) {
-      writeScaffoldTemplateScript(dir, lesson.path(), lesson.path(), baseTokens);
-    }
-    for (String path : List.of("config/facets/tutorial_card.facet", "config/phone/phone.properties",
-        "scripts/tutorial/README.md")) {
-      Files.createDirectories(dir.toPath().resolve(path).getParent());
-      writeScaffoldTemplateScript(dir, path, path, baseTokens);
-    }
   }
 
   private void createJesStudioScene(File dir, boolean includeDemoAssets) throws Exception {

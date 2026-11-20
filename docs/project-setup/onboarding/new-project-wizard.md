@@ -267,8 +267,7 @@ Default main-menu style points to the bundled background asset so new projects d
 
 The Tutorial Workspace adds 30 VNS lessons and authoring workshops under `scripts/tutorial/`. Each generated lesson
 is rendered from the same templates tested in the editor build, then parsed by the runtime VNS parser.
-The final lesson uses the current VNS/JES bridge rather than treating inline Java as the primary
-extension path. The bundled `studio_tour.jes` fixture is also loaded through `JesLoader` in tests.
+Lesson 17 opens the interactive JES project board in `scripts/scenes/office_board.jes`. The final lesson asks you to build and package a three-beat scene.
 
 Tutorials are working scripts, but they are also source examples: keep the editor and running game
 side by side, change one command, and rerun. Start at `scripts/story/tutorial_hub.vns`, or run an
@@ -322,10 +321,6 @@ When enabled, creates:
 - If Git is enabled, the wizard writes managed blocks into `.gitignore` and `.gitattributes`.
 - Re-running Git setup from editor is safe; managed blocks are replaced in place.
 
-## Lavender’s complete workshop
+## First Shift
 
-The Tutorial Workspace uses a six-page hub with 30 lessons covering VNS, presentation, animation, audio, state and branching, localization, menus, saves and rollback, reactive UI and facets, phone storytelling, particles, stage lighting, JES entities and gameplay systems, editor tools, assets and performance, accessibility, Java extensions, and release preparation.
-
-Lavender appears waist-up on a plain white stage, with a translucent black textbox and spinning 3D continue arrow. The main menu uses a handwritten title and animated button dock. The supplied Apalonbeats track plays by default. Pikupiku remains an optional editor tool and is not applied to the tutorial. Choose a still arrow in the hub or accessibility lesson. Lesson completion is counted once on return to the hub and follows ordinary save/rollback state. Each lesson remains runnable from its `start` label. The generated `scripts/tutorial/README.md` maps the whole course to reference guides and distinguishes live demonstrations from authoring exercises.
-
-New projects include a working facet and phone seed file. Existing projects are not rewritten. To adopt the new course, create a Tutorial Workspace and deliberately copy the lessons/configuration you want into your project. See the [workshop guide](../../guides/lavender-workshop.md) and [Pikupiku documentation](../../plugins/image-effects.md).
+Choose **Tutorial Workspace** and start the project to meet Pip at the office. The project board opens 30 lessons. Each has an edit to try, a checkpoint, and a route back to its page. The opening also offers a short branching welcome story. Use **Progress and motion** on the board for a still version of the movement cues. For the full lesson list, see [First Shift](../../guides/first-shift.md).

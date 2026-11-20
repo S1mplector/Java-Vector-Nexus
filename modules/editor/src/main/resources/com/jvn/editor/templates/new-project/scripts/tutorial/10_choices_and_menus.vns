@@ -1,200 +1,33 @@
-# Tutorial 10 — Choices and Branching
-# Choice syntax (>), [jump], [goto], branch/merge patterns, and conditional gating.
-
-@scenario {{SCENARIO_PREFIX}}_tutorial_10_menus
-@include {{CHARACTERS_INCLUDE}}
-{{BG_DECL}}@label start
+# Offer a choice
+@scenario office_lesson_10
+@include /definitions/characters.vns
+@label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[set ui.textBoxAsset none]
-[set ui.continueIndicator spinning_arrow]
-[if tutorial_still]
-[set ui.reduceMotion true]
-[else]
-[set ui.reduceMotion false]
-[endif]
-[if !tutorial_initialized]
-[set tutorial_count 0]
-[flag tutorial_initialized]
-[endif]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-[set character.lavender.imageEffect none]
-{{BG_START}}
-[textspeed 28]
-[autodelay 1650]
-[show lavender center happy]
-[wait 200]
-Lavender: Every menu you've clicked in these tutorials is a choice. The syntax is one line:
-narrator: {color=#8888cc}> Display text -> target_label{/color}
-[show lavender center talking]
-Lavender: That's a {b}>{/b}, the button text, an arrow {b}->{/b}, and the label name to jump to.
-
-@label lesson_menu
-[show lavender far_left talking]
-> Choice syntax -> section_basic
-> Branch and merge pattern -> section_branching
-> Gated (conditional) choices -> section_gated
-> [jump] vs [goto] -> section_jump_goto
-> Writing effective choice text -> section_writing
-> Quick reference: choice flow -> quick_reference
-> Practice: a branching scene -> practice_scene
-> Back to Tutorial Hub -> return_hub
-
-# ─── Quick Reference ─────────────────────────────────────────────
-
-@label quick_reference
-[show lavender center talking]
-Lavender: Choices are labels plus visible options:
-narrator: {color=#8888cc}> Ask about the key -> ask_key{/color}
-narrator: {color=#8888cc}> Leave quietly [if courage < 2] -> leave{/color}
-narrator: {color=#8888cc}@label ask_key{/color}
-narrator: {color=#8888cc}[jump merge]{/color}
-narrator: {color=#8888cc}@label merge{/color}
-[show lavender center happy]
-Lavender: Checklist: every target label exists, choices say what the player means, and branches merge when they should.
-> Start the lesson sections -> section_basic
-> Back to menu -> lesson_menu
-
-# ─── Choice Syntax ───────────────────────────────────────────────
-
-@label section_basic
-[show lavender left talking]
-Lavender: A choice block is a group of {b}>{/b} lines. The player sees them as buttons.
-narrator: {color=#8888cc}Lavender: Where should we eat?{/color}
-narrator: {color=#8888cc}> The cafe downtown -> cafe_scene{/color}
-narrator: {color=#8888cc}> That new ramen place -> ramen_scene{/color}
-narrator: {color=#8888cc}> Let's just cook -> cook_scene{/color}
-[show lavender center talking]
-Lavender: When the player clicks a button, execution jumps to the matching {b}@label{/b}.
-Lavender: Every choice target must have a matching @label in the same file. Missing labels cause errors.
-narrator: {b}Sweet spot:{/b} 2–4 choices. More than 4 overwhelms the player. Fewer than 2 isn't a choice.
-[show lavender center happy]
-Lavender: Place choices after a character line — it reads naturally as "the character asks, the player answers."
-> Next: branch and merge -> section_branching
-> Back to menu -> lesson_menu
-
-# ─── Branch and Merge ────────────────────────────────────────────
-
-@label section_branching
-[show lavender right talking]
-Lavender: After a choice, the story {b}branches{/b}. The key design question: do branches stay separate or merge back?
-[show lavender center talking]
-Lavender: {b}Merge pattern{/b} — each branch ends with [jump] to the same label:
-narrator: {color=#8888cc}@label cafe_scene{/color}
-narrator: {color=#8888cc}Lavender: The cappuccino here is incredible.{/color}
-narrator: {color=#8888cc}[jump after_dinner]{/color}
-narrator: {color=#8888cc}@label ramen_scene{/color}
-narrator: {color=#8888cc}Lavender: Extra noodles, obviously.{/color}
-narrator: {color=#8888cc}[jump after_dinner]{/color}
-narrator: {color=#8888cc}@label after_dinner{/color}
-narrator: {color=#8888cc}Lavender: That was great. What's next?{/color}
-[show lavender left talking]
-Lavender: Merging keeps the story manageable. You don't maintain parallel plotlines for every minor choice.
-Lavender: {b}Split pattern{/b} — branches never rejoin. Use this only for major route decisions (ending paths, character routes).
-[show lavender center happy]
-Lavender: Rule of thumb: 90% of choices should merge. 10% should split. Never split unless it's a major story fork.
-> Next: gated choices -> section_gated
-> Back to menu -> lesson_menu
-
-# ─── Gated Choices ───────────────────────────────────────────────
-
-@label section_gated
-[show lavender center talking]
-Lavender: Wrap a choice in {b}[if]/[endif]{/b} to show it only when a condition is met:
-narrator: {color=#8888cc}> Go to the park -> park_scene{/color}
-narrator: {color=#8888cc}[if has_key == 1]{/color}
-narrator: {color=#8888cc}> Unlock the shed -> shed_scene{/color}
-narrator: {color=#8888cc}[endif]{/color}
-narrator: {color=#8888cc}> Stay home -> home_scene{/color}
-[show lavender left talking]
-Lavender: Players without the key see two choices. Players with the key see three.
-Lavender: Gated choices reward exploration — the player earned access to a new option through earlier actions.
-[show lavender center happy]
-Lavender: Pair this with Tutorial 07's [set]/[inc] system: choices set variables, variables gate future choices.
-> Next: jump vs goto -> section_jump_goto
-> Back to menu -> lesson_menu
-
-# ─── [jump] vs [goto] ───────────────────────────────────────────
-
-@label section_jump_goto
-[show lavender right talking]
-Lavender: Two navigation commands:
-narrator: {b}[jump label]{/b} — moves to a label in the {b}same file{/b}.
-narrator: {color=#8888cc}[jump after_dinner]{/color}
-narrator: {b}[goto scenario:label]{/b} — moves to a label in a {b}different scenario file{/b}.
-narrator: {color=#8888cc}[goto chapter_2:start]{/color}
-[show lavender center talking]
-Lavender: Use [jump] for everything inside one file — choice targets, merge points, loops.
-Lavender: Use [goto] for cross-file navigation — changing chapters, returning to a hub, loading a new scene.
-narrator: The scenario name comes from the {b}@scenario{/b} declaration at the top of the target file.
-[show lavender center happy]
-Lavender: This tutorial uses [jump] everywhere internally and [goto] only to return to the hub.
-> Next: writing choice text -> section_writing
-> Back to menu -> lesson_menu
-
-# ─── Writing Choice Text ────────────────────────────────────────
-
-@label section_writing
-[show lavender center talking]
-Lavender: The text on a choice button shapes the player's expectation. Write it carefully.
-narrator: {b}Be specific:{/b} "Climb the fire escape" beats "Go up."
-narrator: {b}Hint at tone:{/b} "Confront him (risky)" vs "Ask him calmly."
-narrator: {b}Match the voice:{/b} if the protagonist is sarcastic, the choices should sound sarcastic.
-narrator: {b}Keep it short:{/b} one line per choice. If it wraps in the button, it's too long.
-[show lavender left talking]
-Lavender: Avoid {b}false choices{/b} — two options that lead to the same outcome. Players notice.
-Lavender: Even small branches should differ. A single [inc] or different narrator line is enough to make a choice feel real.
-> Practice: a branching scene -> practice_scene
-> Back to menu -> lesson_menu
-
-# ─── Practice ────────────────────────────────────────────────────
-
-@label practice_scene
-[set kindness 0]
-[show lavender center talking]
-Lavender: A rainy afternoon. You're in a cafe. Someone left an umbrella on the chair next to you.
-> Take it to the front counter -> pc_counter
-> Leave it — not your problem -> pc_leave
-> Wait to see if someone comes back -> pc_wait
-
-@label pc_counter
-[inc kindness]
-[show lavender center happy]
-Lavender: The barista takes it with a nod. "Thanks — people forget these every day."
-narrator: {color=#8888cc}[inc kindness]{/color} — this choice incremented a variable.
-[jump pc_merge]
-
-@label pc_leave
-[show lavender center talking]
-narrator: The umbrella sits there. Eventually another customer picks it up and walks out.
-narrator: No [inc] — the variable stays unchanged. The story remembers inaction too.
-[jump pc_merge]
-
-@label pc_wait
-[inc kindness]
-[show lavender center talking]
-Lavender: Ten minutes pass. A woman rushes in, soaked, and spots the umbrella.
-[show lavender center happy]
-Lavender: "Oh, thank goodness!" She gives you a grateful look.
-narrator: {color=#8888cc}[inc kindness]{/color} — patience was rewarded.
-[jump pc_merge]
-
-@label pc_merge
-[show lavender center talking]
-Lavender: All three branches just merged here at {b}pc_merge{/b}. The story continues as one path.
-[if kindness >= 1]
-Lavender: But the variable remembers: kindness is now 1. Future [if] blocks can react to that.
-[else]
-Lavender: Kindness stayed at 0. A future [if kindness >= 1] check would skip its content.
-[endif]
-Lavender: That's the complete choice lifecycle: present options, branch, optionally track state, merge.
-> Replay the scene -> practice_scene
-> Back to menu -> lesson_menu
-
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage clear]
+[show pip desk present]
+pip: A teammate has two requests and there is only time for one. Route the response by label.
+pip: Read the two destinations below the question. Change one response, then pick both branches.
+@label check
+pip: What does the arrow after a choice point to?
+> A sprite expression. -> retry
+> A destination label. -> correct
+@label retry
+[show pip desk curious]
+pip: Each branch can perform different work before both paths meet. Give it another try.
+[jump check]
+@label correct
+[show pip desk cheer]
+pip: Each branch can perform different work before both paths meet.
+> Finish this lesson -> return_hub
+> Try the lesson again -> start
 @label return_hub
 [if !tutorial_done_10]
 [flag tutorial_done_10]
 [inc tutorial_count]
 [endif]
-[goto {{HUB_TARGET}}:topics_page_2]
+[stage clear]
+[goto TutorialHub:topics_page_2]

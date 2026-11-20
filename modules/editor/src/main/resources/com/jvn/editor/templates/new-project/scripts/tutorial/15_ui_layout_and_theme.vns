@@ -1,216 +1,33 @@
-# Tutorial 15 — UI Layout and Theme
-# Dialogue box layout, menu screen files, style properties, and the config file structure.
-
-@scenario {{SCENARIO_PREFIX}}_tutorial_15_ui_layout
-@include {{CHARACTERS_INCLUDE}}
-{{BG_DECL}}@label start
+# Design for the reader
+@scenario office_lesson_15
+@include /definitions/characters.vns
+@label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[set ui.textBoxAsset none]
-[set ui.continueIndicator spinning_arrow]
-[if tutorial_still]
-[set ui.reduceMotion true]
-[else]
-[set ui.reduceMotion false]
-[endif]
-[if !tutorial_initialized]
-[set tutorial_count 0]
-[flag tutorial_initialized]
-[endif]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-[set character.lavender.imageEffect none]
-{{BG_START}}
-[textspeed 28]
-[autodelay 1650]
-[show lavender center happy]
-[wait 200]
-Lavender: The text box you're reading right now, the name label above it, the choice buttons — all configurable through layout and style files.
-[show lavender center talking]
-Lavender: This tutorial covers the config file structure for dialogue and menus.
-
-@label lesson_menu
-[show lavender far_left talking]
-> Dialogue box — layout properties -> section_dialogue_box
-> Menu screens — the three-file system -> section_menus
-> Style properties — colors and fonts -> section_styles
-> Layout properties — positioning values -> section_layout_files
-> The menu registry -> section_registry
-> Quick reference: UI files -> quick_reference
-> Practice: design by genre -> practice_scene
-> Back to Tutorial Hub -> return_hub
-
-# ─── Quick Reference ─────────────────────────────────────────────
-
-@label quick_reference
-[show lavender center talking]
-Lavender: UI customization lives in config files:
-narrator: {color=#8888cc}config/ui/dialogue.layout{/color} — text box position and size.
-narrator: {color=#8888cc}config/ui/dialogue.style{/color} — dialogue colors and fonts.
-narrator: {color=#8888cc}config/menu/menus/main.menu{/color} — items and actions.
-narrator: {color=#8888cc}config/menu/layouts/default.layout{/color} — menu placement.
-narrator: {color=#8888cc}config/menu/styles/default.style{/color} — menu appearance.
-[show lavender center happy]
-Lavender: Checklist: edit one file type at a time, test at multiple resolutions, and keep readable contrast.
-> Start the lesson sections -> section_dialogue_box
-> Back to menu -> lesson_menu
-
-# ─── Dialogue Box ────────────────────────────────────────────────
-
-@label section_dialogue_box
-[show lavender left talking]
-Lavender: The dialogue box is configured in {b}config/ui/dialogue.layout{/b}. Key properties:
-narrator: {color=#8888cc}textBoxX = 0.10{/color} — horizontal position (0 = left edge, 1 = right edge).
-narrator: {color=#8888cc}textBoxY = 0.72{/color} — vertical position (0 = top, 1 = bottom).
-narrator: {color=#8888cc}textBoxWidth = 0.80{/color} — width as fraction of screen.
-narrator: {color=#8888cc}textBoxHeight = 0.22{/color} — height as fraction of screen.
-narrator: {color=#8888cc}textBoxOpacity = 0.75{/color} — background transparency (0 = invisible, 1 = solid).
-narrator: {color=#8888cc}textBoxAsset = assets/ui/textbox.png{/color} — custom background image (optional).
-[show lavender center talking]
-Lavender: The style file {b}config/ui/dialogue.style{/b} controls appearance:
-narrator: {color=#8888cc}textColor = #ffffff{/color}
-narrator: {color=#8888cc}nameTextColor = #aaddff{/color}
-narrator: {color=#8888cc}fontFamily = Noto Sans{/color}
-narrator: {color=#8888cc}fontSize = 22{/color}
-[show lavender center happy]
-Lavender: Edit these files directly, or use the visual editor: drag the text box, change colors, see updates live.
-> Next: menu screens -> section_menus
-> Back to menu -> lesson_menu
-
-# ─── Menu Screens ────────────────────────────────────────────────
-
-@label section_menus
-[show lavender right talking]
-Lavender: Each menu screen (title, save, load, settings) uses three files:
-narrator: {b}Screen definition:{/b} {color=#8888cc}config/menu/screens/main.menu{/color}
-narrator: Declares menu items, their labels, and their actions (new_game, load, settings, quit).
-narrator: {b}Layout:{/b} {color=#8888cc}config/menu/layouts/main.layout{/color}
-narrator: Where items appear — list position, line height, text alignment.
-narrator: {b}Style:{/b} {color=#8888cc}config/menu/styles/main.style{/color}
-narrator: How items look — colors, fonts, selected/disabled states, button assets.
-[show lavender center talking]
-Lavender: The screen file references its layout and style by ID. Change the style → different look, same positions. Change the layout → items move, colors stay.
-[show lavender center happy]
-Lavender: This separation lets an artist tweak colors while a designer repositions elements — independently.
-> Next: style properties -> section_styles
-> Back to menu -> lesson_menu
-
-# ─── Style Properties ───────────────────────────────────────────
-
-@label section_styles
-[show lavender center talking]
-Lavender: Style files are key-value properties. Menu style properties:
-narrator: {color=#8888cc}itemColor = #cccccc{/color} — default text color.
-narrator: {color=#8888cc}itemSelectedColor = #ffffff{/color} — hovered or selected.
-narrator: {color=#8888cc}itemDisabledColor = #555555{/color} — grayed-out items.
-narrator: {color=#8888cc}fontFamily = Noto Sans{/color}
-narrator: {color=#8888cc}fontSize = 28{/color}
-narrator: {color=#8888cc}fontWeight = NORMAL{/color}
-[show lavender left talking]
-Lavender: Dialogue style adds:
-narrator: {color=#8888cc}choiceBgColor = #333333{/color} — choice button background.
-narrator: {color=#8888cc}choiceTextColor = #ffffff{/color} — choice button text.
-narrator: {color=#8888cc}choiceSelectedBgColor = #4a6eaa{/color} — highlighted choice.
-narrator: {color=#8888cc}nameBoxOpacity = 0.8{/color}
-[show lavender center happy]
-Lavender: Design rule: use 2–3 colors max. Derive selected, disabled, and hover variants from the same base hue.
-> Next: layout properties -> section_layout_files
-> Back to menu -> lesson_menu
-
-# ─── Layout Properties ──────────────────────────────────────────
-
-@label section_layout_files
-[show lavender right talking]
-Lavender: Layout files control positioning. Menu layout example:
-narrator: {color=#8888cc}listYStart = 0.35{/color} — vertical start of the item list (normalized).
-narrator: {color=#8888cc}lineHeight = 50.0{/color} — pixels between items.
-narrator: {color=#8888cc}listWidthFactor = 0.56{/color} — width of the list area as screen fraction.
-narrator: {color=#8888cc}textAlign = center{/color} — left, center, or right.
-narrator: {color=#8888cc}titleY = 0.12{/color} — title position.
-narrator: {color=#8888cc}hintsBottomMargin = 0.07{/color} — hint text margin from bottom.
-[show lavender center talking]
-Lavender: Values are either {b}normalized (0–1){/b} for positions or {b}pixel-based{/b} for sizes.
-Lavender: You can edit these directly for precision, or use the visual editor for drag-and-drop adjustment.
-[show lavender center happy]
-Lavender: Raw files are version-controllable and diffable. Visual editors are faster for iteration. Use both.
-> Next: registry -> section_registry
-> Back to menu -> lesson_menu
-
-# ─── Menu Registry ──────────────────────────────────────────────
-
-@label section_registry
-[show lavender center talking]
-Lavender: The {b}menu registry{/b} ties everything together:
-narrator: {color=#8888cc}config/menu/registry/menu.registry{/color}
-narrator: It declares which menus exist, which is the default, and which layouts/styles they use:
-narrator: {color=#8888cc}defaultMenu = main{/color}
-narrator: {color=#8888cc}menus = main, save, load, settings{/color}
-narrator: {color=#8888cc}layouts = main, save, load, settings{/color}
-narrator: {color=#8888cc}styles = main, save, load, settings{/color}
-[show lavender left talking]
-Lavender: When you add a new menu screen, register it here. If a menu isn't in the registry, the engine won't load it.
-[show lavender center happy]
-Lavender: Four files per menu: .menu (definition), .layout (positioning), .style (appearance), plus the registry entry.
-> Practice: design by genre -> practice_scene
-> Back to menu -> lesson_menu
-
-# ─── Practice ────────────────────────────────────────────────────
-
-@label practice_scene
-[show lavender center talking]
-Lavender: Different genres need different UI personalities. Pick one and I'll describe the properties to change.
-> Horror game UI -> practice_horror
-> Cozy/cheerful VN -> practice_cheerful
-> Minimalist design -> practice_minimal
-
-@label practice_horror
-[show lavender center talking]
-Lavender: Horror: the UI should feel like it's barely there.
-narrator: {color=#8888cc}textBoxOpacity = 0.35{/color} — almost transparent. The scene dominates.
-narrator: {color=#8888cc}textColor = #cccccc{/color} — muted, not bright white.
-narrator: {color=#8888cc}itemSelectedColor = #882222{/color} — dark red accent.
-narrator: {color=#8888cc}fontFamily = Crimson Text{/color} — serif, slightly formal.
-narrator: {color=#8888cc}choiceBgColor = #1a1a1a{/color} — nearly invisible buttons.
-[show lavender center happy]
-Lavender: The player should feel uneasy even reading the menu. The UI lurks instead of announcing itself.
-[jump practice_done]
-
-@label practice_cheerful
-[show lavender center talking]
-Lavender: Cozy: warm, readable, inviting.
-narrator: {color=#8888cc}textBoxOpacity = 0.85{/color} — high opacity for comfort.
-narrator: {color=#8888cc}textColor = #3a2a1a{/color} — dark brown on cream.
-narrator: {color=#8888cc}itemColor = #6b4226{/color} — warm earth tones.
-narrator: {color=#8888cc}itemSelectedColor = #ff9944{/color} — bright orange highlight.
-narrator: {color=#8888cc}fontFamily = Quicksand{/color} — rounded, friendly.
-narrator: {color=#8888cc}choiceBgColor = #fff3e0{/color} — soft cream buttons.
-[show lavender center happy]
-Lavender: The UI should make the player smile before they read a word. Warmth and readability together.
-[jump practice_done]
-
-@label practice_minimal
-[show lavender center talking]
-Lavender: Minimal: clean, typographic, nothing extra.
-narrator: {color=#8888cc}textBoxOpacity = 0.60{/color} — present but unobtrusive.
-narrator: {color=#8888cc}textColor = #e0e0e0{/color} — off-white.
-narrator: {color=#8888cc}itemColor = #aaaaaa{/color} — soft gray.
-narrator: {color=#8888cc}itemSelectedColor = #ffffff{/color} — pure white selected.
-narrator: {color=#8888cc}fontFamily = Inter{/color} — clean sans-serif.
-narrator: {color=#8888cc}lineHeight = 60.0{/color} — generous spacing.
-narrator: {color=#8888cc}textBoxAsset ={/color} — no background image. Solid color only.
-[show lavender center happy]
-Lavender: Minimalism works when every remaining element earns its place. Nothing decorative, everything functional.
-[jump practice_done]
-
-@label practice_done
-[show lavender center talking]
-Lavender: Copy any of these property sets into your style and layout files to start from a genre-appropriate base.
-Lavender: Test with live dialogue and real menu density — mockups are always more forgiving than the real thing.
-> Back to menu -> lesson_menu
-
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage clear]
+[show pip desk notes]
+pip: I can read the noticeboard from the back of the room. Give dialogue the same breathing space.
+pip: Open config/ui/dialogue.layout and increase dialogueTextHorizontalPadding. Compare two window sizes.
+@label check
+pip: Which setting changes text inset inside the panel?
+> dialogueTextHorizontalPadding -> correct
+> characterBaselineY -> retry
+@label retry
+[show pip desk curious]
+pip: Padding changes the inner margin. Character framing is independent. Give it another try.
+[jump check]
+@label correct
+[show pip desk cheer]
+pip: Padding changes the inner margin. Character framing is independent.
+> Finish this lesson -> return_hub
+> Try the lesson again -> start
 @label return_hub
 [if !tutorial_done_15]
 [flag tutorial_done_15]
 [inc tutorial_count]
 [endif]
-[goto {{HUB_TARGET}}:topics_page_3]
+[stage clear]
+[goto TutorialHub:topics_page_3]

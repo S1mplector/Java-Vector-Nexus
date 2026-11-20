@@ -1,227 +1,33 @@
-# Tutorial 16 — Testing and Release
-# Validation, playtesting, save/load testing, the release checklist, and post-release.
-
-@scenario {{SCENARIO_PREFIX}}_tutorial_16_testing_release
-@include {{CHARACTERS_INCLUDE}}
-{{BG_DECL}}@label start
+# Test a packaged game
+@scenario office_lesson_16
+@include /definitions/characters.vns
+@label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[set ui.textBoxAsset none]
-[set ui.continueIndicator spinning_arrow]
-[if tutorial_still]
-[set ui.reduceMotion true]
-[else]
-[set ui.reduceMotion false]
-[endif]
-[if !tutorial_initialized]
-[set tutorial_count 0]
-[flag tutorial_initialized]
-[endif]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-[set character.lavender.imageEffect none]
-{{BG_START}}
-[textspeed 28]
-[autodelay 1650]
-[show lavender center happy]
-[wait 200]
-Lavender: This is the last tutorial. Everything you've learned only matters if the game ships and works.
-[show lavender center talking]
-Lavender: Testing, validation, and the release checklist. Let's finish strong.
-
-@label lesson_menu
-[show lavender far_left talking]
-> Editor validation — automated checks -> section_validation
-> Playtesting — systematic manual testing -> section_playtesting
-> Save/load testing — the subtle bugs -> section_saves
-> The release checklist -> section_release
-> Post-release — what happens after you ship -> section_post_release
-> Quick reference: release gate -> quick_reference
-> Final quiz -> practice_scene
-> Back to Tutorial Hub -> return_hub
-
-# ─── Quick Reference ─────────────────────────────────────────────
-
-@label quick_reference
-[show lavender center talking]
-Lavender: Do not ship from vibes. Ship from a checklist:
-narrator: {b}Validate{/b}: parser, assets, labels, menu config.
-narrator: {b}Playtest{/b}: every branch, every ending, every tutorial or route entry.
-narrator: {b}Save/load{/b}: before choices, after branches, inside subroutines, near scene exits.
-narrator: {b}Package{/b}: clean build, fresh install, launch from shortcut, verify logs.
-[show lavender center happy]
-Lavender: Checklist: one final pass on a clean machine or clean folder before you call the build done.
-> Start the lesson sections -> section_validation
-> Back to menu -> lesson_menu
-
-# ─── Validation ──────────────────────────────────────────────────
-
-@label section_validation
-[show lavender left talking]
-Lavender: The editor catches structural errors before you play. Three automated checks:
-narrator: {b}Parser validation{/b} — syntax errors, missing [endif], malformed commands, broken tag nesting.
-narrator: {b}Asset validation{/b} — every @background, @charimg, [bgm], and [sfx] path points to a file that actually exists.
-narrator: {b}Label graph{/b} — every [jump], [goto], and choice arrow {b}>{/b} target resolves to an existing @label.
-[show lavender center talking]
-Lavender: Run validation before every playtest. It takes seconds. It catches hours of debugging.
-[show lavender center happy]
-Lavender: A clean validation pass means the script is {b}structurally sound{/b}. It doesn't mean the game is correct — logic bugs need human eyes.
-> Next: playtesting -> section_playtesting
-> Back to menu -> lesson_menu
-
-# ─── Playtesting ─────────────────────────────────────────────────
-
-@label section_playtesting
-[show lavender right talking]
-Lavender: No tool replaces playing your own game. Here's the systematic approach:
-narrator: {b}1. Play every branch.{/b} Click every choice. Follow every path to its end. No shortcuts.
-narrator: {b}2. Watch pacing.{/b} Does textspeed feel right? Are waits too long? Lines too short?
-narrator: {b}3. Check staging.{/b} Is anyone on the wrong side? Do expressions match the dialogue?
-narrator: {b}4. Listen.{/b} Does music loop cleanly? Are SFX timed correctly? Any silence gaps?
-narrator: {b}5. Read the text.{/b} Spelling, grammar, punctuation. Read every line as if seeing it for the first time.
-[show lavender center talking]
-Lavender: Keep a notepad open. Write down every issue, no matter how small. Fix in batches after the session.
-Lavender: Then get someone else to play. Watch them — don't explain anything. Fresh eyes catch what you've gone blind to.
-[show lavender center happy]
-Lavender: Test after each chapter, not only at the end. Small frequent tests beat one marathon debugging session.
-> Next: save/load -> section_saves
-> Back to menu -> lesson_menu
-
-# ─── Save/Load Testing ──────────────────────────────────────────
-
-@label section_saves
-[show lavender center talking]
-Lavender: Save/load is where the subtlest bugs live. Test each of these:
-narrator: {b}Save mid-dialogue.{/b} Reload. Does text resume from the correct line?
-narrator: {b}Save before a choice.{/b} Reload. Are the choice buttons still present?
-narrator: {b}Save after a branch.{/b} Reload. Are variables correct? Does the story remember your path?
-narrator: {b}Save inside a [call] block.{/b} Reload. Does [return] still work?
-[show lavender left talking]
-Lavender: Edge cases:
-narrator: {b}Save at the very first line of a file.{/b} Reload.
-narrator: {b}Save at the last line of a scene.{/b} Reload.
-narrator: {b}Overwrite an existing save.{/b} Load the overwritten slot. Does it load the new state?
-narrator: {b}Save in one chapter, load in another.{/b} Does the engine restore the correct scene?
-[show lavender center happy]
-Lavender: If save/load works at every scene transition and branch point, you're in good shape.
-> Next: release checklist -> section_release
-> Back to menu -> lesson_menu
-
-# ─── Release Checklist ───────────────────────────────────────────
-
-@label section_release
-[show lavender right talking]
-Lavender: Run this checklist before shipping. Every item must pass.
-narrator: {b}☐ All branches tested.{/b} Every choice leads somewhere. No dead ends.
-narrator: {b}☐ All assets present.{/b} No placeholder images, no missing audio files.
-narrator: {b}☐ Variables verified.{/b} Counters and flags produce correct outcomes in every path.
-narrator: {b}☐ Text proofread.{/b} Spelling, grammar, punctuation — every line.
-narrator: {b}☐ UI tested at target resolution.{/b} Nothing overlaps, nothing is cut off.
-[show lavender center talking]
-narrator: {b}☐ Locale files complete{/b} (if localized). No raw key names visible in any language.
-narrator: {b}☐ Save/load verified{/b} at every critical point.
-narrator: {b}☐ Menu navigation works.{/b} Title, settings, save, load — all reachable and functional.
-narrator: {b}☐ All endings reachable.{/b} Can the player actually finish the game from every route?
-narrator: {b}☐ Audio levels balanced.{/b} No track is too loud or too quiet relative to others.
-[show lavender center happy]
-Lavender: If any item fails, you're not ready. Fix it, retest, then check the list again.
-> Next: post-release -> section_post_release
-> Back to menu -> lesson_menu
-
-# ─── Post-Release ────────────────────────────────────────────────
-
-@label section_post_release
-[show lavender center talking]
-Lavender: You shipped. Congratulations. But it's not quite over:
-narrator: {b}Monitor feedback.{/b} Players will find bugs you didn't. Respond quickly to critical ones.
-narrator: {b}Keep a changelog.{/b} Document every fix and update. Players appreciate transparency.
-narrator: {b}Don't panic-patch.{/b} Test your fixes before pushing them. A bad hotfix is worse than the original bug.
-narrator: {b}Take a break.{/b} You earned it. Come back to feedback with fresh energy.
-[show lavender center happy]
-Lavender: Every shipped game teaches you more than ten unfinished ones. Be proud of what you built.
-> Final quiz -> practice_scene
-> Back to menu -> lesson_menu
-
-# ─── Final Quiz ──────────────────────────────────────────────────
-
-@label practice_scene
-[set final_score 0]
-[show lavender center talking]
-Lavender: Last tutorial, last quiz. Three questions about shipping discipline.
-
-@label fq1
-Lavender: Q1: A choice leads to a blank screen. Most likely cause?
-> Missing @label for the target -> fq1_correct
-> A typo in a variable name -> fq1_wrong
-> Save file corruption -> fq1_wrong
-
-@label fq1_correct
-[inc final_score]
-[show lavender center happy]
-Lavender: Right. The choice arrow points to a label that doesn't exist or is misspelled.
-[jump fq2]
-
-@label fq1_wrong
-[show lavender center talking]
-Lavender: This is a navigation error — the choice target has no matching @label. Variable typos and save bugs cause different symptoms.
-[jump fq2]
-
-@label fq2
-[show lavender center talking]
-Lavender: Q2: When should you start testing?
-> After each major section -> fq2_correct
-> After the game is completely finished -> fq2_wrong
-> Testing is optional for small projects -> fq2_wrong
-
-@label fq2_correct
-[inc final_score]
-[show lavender center happy]
-Lavender: Exactly. Test as you go. Bugs caught early are cheap. Bugs caught at release are expensive.
-[jump fq3]
-
-@label fq2_wrong
-[show lavender center talking]
-Lavender: Waiting until the end piles up all bugs at once. Test each section as you finish it — no exceptions, no matter the project size.
-[jump fq3]
-
-@label fq3
-[show lavender center talking]
-Lavender: Q3: You find a critical bug 2 hours after release. What do you do?
-> Push a fix immediately without testing -> fq3_wrong
-> Test the fix, then push a patch -> fq3_correct
-> Ignore it and hope nobody notices -> fq3_wrong
-
-@label fq3_correct
-[inc final_score]
-[show lavender center happy]
-Lavender: Right. Test before you push. A bad hotfix is worse than the original bug.
-[jump final_result]
-
-@label fq3_wrong
-[show lavender center talking]
-Lavender: Always test your fix first. Panic-patching often creates new bugs. And ignoring critical bugs destroys player trust.
-[jump final_result]
-
-@label final_result
-[show lavender center talking]
-[if final_score >= 3]
-Lavender: 3/3. Shipping discipline is solid. You'll release with confidence.
-[elif final_score == 2]
-Lavender: 2/3. Almost there. Tighten the weak spot before it matters.
-[elif final_score == 1]
-Lavender: 1/3. Worth reviewing the checklist section before your first release.
-[else]
-Lavender: 0/3. Better to learn these here than in front of players. That's what tutorials are for.
-[endif]
-[show lavender center happy]
-Lavender: That's the full tour — from the first dialogue line to the last release checklist.
-Lavender: Build something, test it honestly, and ship it. I'll be here when you need a second pass.
-> Retake the quiz -> practice_scene
-> Back to menu -> lesson_menu
-
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage clear]
+[show pip desk listen]
+pip: A project that opens in your editor can still be missing an asset on another machine.
+pip: Use the game build tools for a test export. Launch it from outside the project and play the welcome chime.
+@label check
+pip: Which check exercises the files your audience receives?
+> Play only from the editor. -> retry
+> Run the exported package. -> correct
+@label retry
+[show pip desk curious]
+pip: A packaged run resolves assets through the shipped project. Give it another try.
+[jump check]
+@label correct
+[show pip desk cheer]
+pip: A packaged run resolves assets through the shipped project.
+> Finish this lesson -> return_hub
+> Try the lesson again -> start
 @label return_hub
 [if !tutorial_done_16]
 [flag tutorial_done_16]
 [inc tutorial_count]
 [endif]
-[goto {{HUB_TARGET}}:topics_page_3]
+[stage clear]
+[goto TutorialHub:topics_page_4]

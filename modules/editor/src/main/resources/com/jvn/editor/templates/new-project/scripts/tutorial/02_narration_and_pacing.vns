@@ -1,214 +1,35 @@
-# Tutorial 02 — Narration and Pacing
-# textspeed, autodelay, wait, and line length — the tools that control how your scene breathes.
-
-@scenario {{SCENARIO_PREFIX}}_tutorial_02_narration
-@include {{CHARACTERS_INCLUDE}}
-{{BG_DECL}}@label start
+# Leave a beat
+@scenario office_lesson_02
+@include /definitions/characters.vns
+@label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[set ui.textBoxAsset none]
-[set ui.continueIndicator spinning_arrow]
-[if tutorial_still]
-[set ui.reduceMotion true]
-[else]
-[set ui.reduceMotion false]
-[endif]
-[if !tutorial_initialized]
-[set tutorial_count 0]
-[flag tutorial_initialized]
-[endif]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-[set character.lavender.imageEffect none]
-{{BG_START}}
-[textspeed 28]
-[autodelay 1650]
-[show lavender center talking]
-[wait 200]
-Lavender: Read this line. It's arriving at textspeed 28 — the default. Now watch:
-[textspeed 45]
-Lavender: This line is textspeed 45. Each letter takes longer. The pace changes.
-[textspeed 28]
-[show lavender center happy]
-Lavender: That's the core of this lesson — three commands that control rhythm.
-
-@label lesson_menu
-[show lavender far_left talking]
-> [textspeed] — character reveal speed -> section_textspeed
-> [autodelay] — pause between lines -> section_autodelay
-> [wait] — hard pauses -> section_waits
-> Line length as a pacing tool -> section_line_length
-> Live demo: all tools combined -> section_rhythm
-> Quick reference: pacing commands -> quick_reference
-> Practice: pace a scene -> practice_scene
-> Back to Tutorial Hub -> return_hub
-
-# ─── Quick Reference ─────────────────────────────────────────────
-
-@label quick_reference
-[show lavender center talking]
-Lavender: Pacing is three dials and one writing habit:
-narrator: {color=#8888cc}[textspeed 28]{/color} — milliseconds between revealed characters.
-narrator: {color=#8888cc}[autodelay 1650]{/color} — auto-play pause after each line.
-narrator: {color=#8888cc}[wait 600]{/color} — a hard pause everyone feels.
-narrator: Keep most dialogue lines short enough to read in one comfortable breath.
-[show lavender center happy]
-Lavender: Default recipe: textspeed 28, autodelay 1200-1800, wait only for intentional beats.
-> Start the lesson sections -> section_textspeed
-> Back to menu -> lesson_menu
-
-# ─── Text Speed ──────────────────────────────────────────────────
-
-@label section_textspeed
-[show lavender left talking]
-Lavender: {b}[textspeed N]{/b} sets milliseconds between each character appearing on screen.
-narrator: {color=#8888cc}[textspeed 28]{/color}
-narrator: Lower = faster. Higher = slower. The value persists until you change it.
-[show lavender center talking]
-Lavender: Feel the difference:
-[textspeed 12]
-Lavender: Textspeed 12 — almost instant. Action scenes, rapid banter, impatient characters.
-[textspeed 28]
-Lavender: Textspeed 28 — the default. Comfortable for most dialogue.
-[textspeed 50]
-Lavender: Textspeed 50 — slow and weighty. Dramatic reveals, final words, narrated dread.
-[textspeed 28]
-[show lavender center happy]
-Lavender: Change speed mid-scene to match the energy. A confrontation might start at 28 and drop to 40 for the final line.
-narrator: {b}Typical range:{/b} 12–20 fast, 22–35 normal, 38–55 slow.
-> Next: autodelay -> section_autodelay
-> Back to menu -> lesson_menu
-
-# ─── Auto-Delay ──────────────────────────────────────────────────
-
-@label section_autodelay
-[show lavender right talking]
-Lavender: {b}[autodelay N]{/b} controls how long the engine waits after a line finishes before advancing in auto-play mode.
-narrator: {color=#8888cc}[autodelay 1650]{/color}
-narrator: Only affects auto-play. Manual clicking ignores this value.
-[show lavender center talking]
-[autodelay 600]
-Lavender: Autodelay 600 — barely a breath between lines. Feels rushed.
-[autodelay 2800]
-Lavender: Autodelay 2800 — a long, contemplative pause. Each line sits.
-[autodelay 1650]
-Lavender: Autodelay 1650 — the default. A comfortable reading gap.
-[show lavender center happy]
-Lavender: Match autodelay to the weight of the scene. A fast conversation wants 800–1200. A eulogy wants 2000+.
-> Next: wait -> section_waits
-> Back to menu -> lesson_menu
-
-# ─── Wait ────────────────────────────────────────────────────────
-
-@label section_waits
-[show lavender center talking]
-Lavender: {b}[wait N]{/b} freezes the scene for N milliseconds. It affects {i}everyone{/i} — manual clickers included.
-narrator: {color=#8888cc}[wait 800]{/color}
-Lavender: Three...
-[wait 400]
-Lavender: Two...
-[wait 400]
-Lavender: One.
-[wait 800]
-narrator: ...
-[wait 600]
-[show lavender center happy]
-Lavender: That silence was four [wait] commands. 400ms, 400ms, 800ms, 600ms.
-[show lavender center talking]
-Lavender: When to use [wait]:
-narrator: {b}Before a reveal{/b} — build anticipation with 400–800ms of nothing.
-narrator: {b}After a shock{/b} — let the moment sit before the next line.
-narrator: {b}During hesitation{/b} — a character pauses mid-thought.
-narrator: {b}Between actions{/b} — [hide], [wait 500], [show] feels like real movement.
-Lavender: Keep waits under 1200ms in most cases. Longer pauses test the player's patience.
-> Next: line length -> section_line_length
-> Back to menu -> lesson_menu
-
-# ─── Line Length ─────────────────────────────────────────────────
-
-@label section_line_length
-[show lavender left talking]
-Lavender: No command for this one — it's a writing technique. Compare:
-[show lavender center talking]
-Lavender: Run.
-Lavender: Now.
-Lavender: Don't look back.
-[show lavender right talking]
-Lavender: She sat by the window for a long time, watching the fog erase the hills one ridge at a time, and thought about everything she hadn't said.
-[show lavender center talking]
-Lavender: Short lines are fast, urgent, punchy. Long lines are slow, contemplative, immersive.
-narrator: {b}Rule of thumb:{/b} two sentences max per dialogue line. If it wraps in the text box, consider splitting it.
-Lavender: Vary line length deliberately. Ten short lines feel breathless. Five long lines feel heavy. Alternate.
-> Next: all tools combined -> section_rhythm
-> Back to menu -> lesson_menu
-
-# ─── Live Demo ───────────────────────────────────────────────────
-
-@label section_rhythm
-[show lavender center talking]
-Lavender: Watch how textspeed, wait, and line length work together. I'll annotate after.
-[wait 400]
-[textspeed 20]
-narrator: The hallway was empty.
-[wait 300]
-[show lavender right talking]
-[textspeed 40]
-Lavender: Hello?
-[wait 700]
-[textspeed 18]
-narrator: No answer.
-[wait 400]
-[show lavender center emphasis]
-[textspeed 35]
-Lavender: {i}I swear I heard something.{/i}
-[wait 600]
-[textspeed 16]
-narrator: A door at the end of the hall creaked open — just an inch.
-[textspeed 28]
-[show lavender center talking]
-Lavender: Here's what drove that scene:
-narrator: {color=#8888cc}[textspeed 20]{/color} — narrator line appears quickly, setting up the space.
-narrator: {color=#8888cc}[textspeed 40]{/color} — "Hello?" crawls out. Hesitation is in the speed.
-narrator: {color=#8888cc}[wait 700]{/color} — long silence after the question. No one answers.
-narrator: {color=#8888cc}[textspeed 16]{/color} — the final narrator line snaps in fast. The door moves before you process it.
-narrator: Line lengths shrank as tension rose: 5 words, 1 word, 2 words, 6 words, then a longer payoff.
-> Practice: pace a scene -> practice_scene
-> Back to menu -> lesson_menu
-
-# ─── Practice ────────────────────────────────────────────────────
-
-@label practice_scene
-[show lavender center talking]
-Lavender: I'll play the same three lines with different pacing. Your job: identify which tools changed.
-
-@label practice_round_1
-Lavender: Round 1 — fast:
-[textspeed 12]
-narrator: She opened the letter.
-Lavender: It's from him.
-narrator: Her hands were steady.
-[textspeed 28]
-Lavender: Round 2 — slow:
-[textspeed 42]
-narrator: She opened the letter.
-[wait 500]
-Lavender: It's from him.
-[wait 600]
-narrator: Her hands were steady.
-[textspeed 28]
-[show lavender center happy]
-Lavender: Same words. Completely different scene. The fast version felt routine. The slow version felt heavy.
-[show lavender center talking]
-Lavender: What changed:
-narrator: {b}Round 1:{/b} textspeed 12, no waits. Brisk, unemotional, informational.
-narrator: {b}Round 2:{/b} textspeed 42, [wait 500] and [wait 600] between lines. Loaded with dread.
-Lavender: Now try it yourself — open this file and change the numbers. Move the waits. Add a [wait 1000] after "It's from him." and feel what happens.
-> Replay the demo -> practice_round_1
-> Back to menu -> lesson_menu
-
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage clear]
+[show pip desk curious]
+pip: Silence can make a tiny sound feel enormous. Count the beat before the welcome chime.
+[wait 320]
+[sfx assets/tutorial/welcome.wav]
+pip: Change the wait from 320 to 800 milliseconds. Listen to the gap, then put it back.
+@label check
+pip: Which change delays the chime without slowing the words?
+> Lower the text speed. -> retry
+> Increase the wait before the sound. -> correct
+@label retry
+[show pip desk curious]
+pip: A wait holds the scene. Text speed controls how the current line appears. Give it another try.
+[jump check]
+@label correct
+[show pip desk cheer]
+pip: A wait holds the scene. Text speed controls how the current line appears.
+> Finish this lesson -> return_hub
+> Try the lesson again -> start
 @label return_hub
 [if !tutorial_done_02]
 [flag tutorial_done_02]
 [inc tutorial_count]
 [endif]
-[goto {{HUB_TARGET}}:topics_page_1]
+[stage clear]
+[goto TutorialHub:topics_page_1]

@@ -81,10 +81,9 @@ class NewProjectScaffoldTemplateWiringTest {
   @Test
   void lavenderUsesWaistUpFramingInStarterScenes() throws Exception {
     String prologue = render("scripts/story/prologue_sample.vns");
-    String tutorialHub = render("scripts/story/tutorial_hub.vns");
 
     assertTrue(prologue.contains("@position desk_left 0.28 0.96"));
-    for (String scene : List.of(prologue, tutorialHub)) {
+    for (String scene : List.of(prologue)) {
       assertTrue(scene.contains("[set ui.characterHeightFactor 1.5]"));
       assertTrue(scene.contains("[set ui.characterBaselineY 1.5]"));
       assertFalse(scene.contains("[set ui.characterHeightFactor 1.28]"));
@@ -120,13 +119,13 @@ class NewProjectScaffoldTemplateWiringTest {
     for (String path : TUTORIAL_TEMPLATE_PATHS) {
       String rendered = render(path);
       assertTrue(
-          rendered.contains("[mode dialogue standard]\n[set ui.dialogueUi project]\n[set ui.textBoxAsset none]"),
+          rendered.contains("[mode dialogue standard]\n[set ui.dialogueUi project]"),
           () -> "Tutorial does not reset dialogue presentation mode at entry: " + path);
     }
 
     String hub = render("scripts/story/tutorial_hub.vns");
     assertTrue(
-        hub.contains("[mode dialogue standard]\n[set ui.dialogueUi project]\n[set ui.textBoxAsset none]"),
+        hub.contains("[mode dialogue standard]\n[set ui.dialogueUi project]"),
         "Tutorial hub does not reset dialogue presentation mode at entry");
   }
 
@@ -177,13 +176,12 @@ class NewProjectScaffoldTemplateWiringTest {
   }
 
   @Test
-  void lessonsRecordCompletionOnceAtReturnAndDefaultToStillArtwork() throws Exception {
+  void lessonsRecordCompletionOnceAtReturn() throws Exception {
     int number = 0;
     for (String path : TUTORIAL_TEMPLATE_PATHS) {
       String rendered = render(path);
       String done = String.format(java.util.Locale.ROOT, "tutorial_done_%02d", ++number);
-      assertTrue(rendered.contains("[set character.lavender.imageEffect none]"), path);
-      assertTrue(rendered.contains("[if tutorial_still]"), path);
+      assertTrue(rendered.contains("[show pip desk "), path);
       assertTrue(rendered.contains("[if !" + done + "]\n[flag " + done + "]\n[inc tutorial_count]\n[endif]"), path);
       assertTrue(rendered.indexOf("[inc tutorial_count]") > rendered.indexOf("@label return_hub"), path);
     }
@@ -227,10 +225,12 @@ class NewProjectScaffoldTemplateWiringTest {
         @charimg lavender happy assets/lavender.png
         @charimg lavender emphasis assets/lavender.png
         """;
+    String definitions = rendered.contains("pip ") ? loadTemplate("first-shift/characters.vns") : sharedCharacters;
+    String stage = loadTemplate("assets/tutorial/dusk.stagepreset");
     new VnScriptParser().parse(
         new ByteArrayInputStream(rendered.getBytes(StandardCharsets.UTF_8)),
         "scaffold-test.vns",
-        ignored -> new ByteArrayInputStream(sharedCharacters.getBytes(StandardCharsets.UTF_8)));
+        path -> new ByteArrayInputStream((path.endsWith(".stagepreset") ? stage : definitions).getBytes(StandardCharsets.UTF_8)));
   }
 
   private static void assertWhiteBackground(String relativePath) throws Exception {

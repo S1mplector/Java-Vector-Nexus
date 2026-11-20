@@ -1,209 +1,36 @@
-# Tutorial 03 — Expressions and Characters
-# The full pipeline: @character, @charimg, @charlayer, @charpreset, [show], [hide].
-
-@scenario {{SCENARIO_PREFIX}}_tutorial_03_expressions
-@include {{CHARACTERS_INCLUDE}}
-{{BG_DECL}}@label start
+# Read the room
+@scenario office_lesson_03
+@include /definitions/characters.vns
+@label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[set ui.textBoxAsset none]
-[set ui.continueIndicator spinning_arrow]
-[if tutorial_still]
-[set ui.reduceMotion true]
-[else]
-[set ui.reduceMotion false]
-[endif]
-[if !tutorial_initialized]
-[set tutorial_count 0]
-[flag tutorial_initialized]
-[endif]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-[set character.lavender.imageEffect none]
-{{BG_START}}
-[textspeed 28]
-[autodelay 1650]
-[show lavender center happy]
-[wait 200]
-[show lavender center talking]
-Lavender: Right now I'm on screen with expression {b}talking{/b} at position {b}center{/b}.
-[show lavender center happy]
-Lavender: Now it's {b}happy{/b}. Same position, different sprite. That swap is one line of script.
-{{EXPRESSION_HINT}}
-
-@label lesson_menu
-[show lavender far_left talking]
-> Step 1: @character — declaring a character -> section_declare
-> Step 2: @charimg — simple sprites -> section_charimg
-> Step 3: @charlayer + @charpreset — layered sprites -> section_layers
-> Step 4: [show] and [hide] — putting characters on screen -> section_show_hide
-> Step 5: Positions — where characters stand -> section_positions
-> Quick reference: character pipeline -> quick_reference
-> Live gallery: Lavender's expressions -> practice_scene
-> Back to Tutorial Hub -> return_hub
-
-# ─── Quick Reference ─────────────────────────────────────────────
-
-@label quick_reference
-[show lavender center talking]
-Lavender: Character setup usually follows this order:
-narrator: {color=#8888cc}@character lavender "Lavender"{/color}
-narrator: {color=#8888cc}@charimg lavender happy assets/characters/lavender_happy.png{/color}
-narrator: {color=#8888cc}@charlayer lavender eyes_happy assets/characters/lavender/eyes_happy.png{/color}
-narrator: {color=#8888cc}@charpreset lavender happy $base | $eyes_happy | $mouth_smile{/color}
-narrator: {color=#8888cc}[show lavender center happy]{/color}
-narrator: {color=#8888cc}[hide lavender]{/color}
-[show lavender center happy]
-Lavender: Checklist: declare once, use stable expression names, and keep positions readable before adding motion.
-> Start the lesson sections -> section_declare
-> Back to menu -> lesson_menu
-
-# ─── Step 1: @character ──────────────────────────────────────────
-
-@label section_declare
-[show lavender left talking]
-Lavender: Every character starts with a declaration:
-narrator: {color=#8888cc}@character lavender "Lavender"{/color}
-narrator: {color=#8888cc}@character alex "Alexander"{/color}
-narrator: {color=#8888cc}@character narrator "Narrator"{/color}
-[show lavender center talking]
-Lavender: {b}lavender{/b} is the script ID — you'll type this in every [show] and dialogue line.
-Lavender: {b}"Lavender"{/b} is the display name — what the player sees in the name box.
-Lavender: The ID can be short ({b}lav{/b}) while the display name is full ({b}"Lavender Ashford"{/b}).
-narrator: Declarations go in a shared file so every script can use them. For this project: {b}{{CHARACTERS_SCRIPT_PATH}}{/b}.
-[show lavender center happy]
-Lavender: Declare once, use everywhere. Never duplicate @character lines across files.
-> Next: @charimg -> section_charimg
-> Back to menu -> lesson_menu
-
-# ─── Step 2: @charimg ────────────────────────────────────────────
-
-@label section_charimg
-[show lavender right talking]
-Lavender: {b}@charimg{/b} assigns a single image to an expression name:
-narrator: {color=#8888cc}@charimg lavender happy assets/characters/sprites/lavender_happy.png{/color}
-narrator: {color=#8888cc}@charimg lavender sad assets/characters/sprites/lavender_sad.png{/color}
-narrator: {color=#8888cc}@charimg lavender talking assets/characters/sprites/lavender_talking.png{/color}
-[show lavender center talking]
-Lavender: Structure: {b}@charimg{/b} {i}characterId{/i} {i}expressionName{/i} {i}imagePath{/i}
-Lavender: One image per expression. When the engine shows "happy", it loads that exact file.
-narrator: {b}Tip:{/b} Name files consistently: {b}charname_expression.png{/b} — lavender_happy.png, alex_angry.png.
-[show lavender center happy]
-Lavender: Simple sprites are the fastest way to get a character on screen. One file = one face.
-> Next: layered sprites -> section_layers
-> Back to menu -> lesson_menu
-
-# ─── Step 3: Layered Sprites ────────────────────────────────────
-
-@label section_layers
-[show lavender center talking]
-Lavender: For more expressions with fewer art files, use {b}layered sprites{/b}. Two directives:
-narrator: {b}@charlayer{/b} — registers an individual art layer (base body, eye variant, mouth variant):
-narrator: {color=#8888cc}@charlayer lavender base assets/characters/lavender/base.png{/color}
-narrator: {color=#8888cc}@charlayer lavender eyes_happy assets/characters/lavender/eyes_happy.png{/color}
-narrator: {color=#8888cc}@charlayer lavender eyes_sad assets/characters/lavender/eyes_sad.png{/color}
-narrator: {color=#8888cc}@charlayer lavender mouth_smile assets/characters/lavender/mouth_smile.png{/color}
-narrator: {color=#8888cc}@charlayer lavender mouth_frown assets/characters/lavender/mouth_frown.png{/color}
-[show lavender left talking]
-narrator: {b}@charpreset{/b} — combines layers into a named expression:
-narrator: {color=#8888cc}@charpreset lavender happy $base | $eyes_happy | $mouth_smile{/color}
-narrator: {color=#8888cc}@charpreset lavender sad $base | $eyes_sad | $mouth_frown{/color}
-narrator: {color=#8888cc}@charpreset lavender bittersweet $base | $eyes_sad | $mouth_smile{/color}
-[show lavender center happy]
-Lavender: See the power? 5 layers created 3 expressions. With 10 layers you could have 20+ combinations.
-Lavender: Use @charimg for small casts. Use @charlayer + @charpreset when you need expression variety.
-> Next: show and hide -> section_show_hide
-> Back to menu -> lesson_menu
-
-# ─── Step 4: [show] and [hide] ──────────────────────────────────
-
-@label section_show_hide
-[show lavender center talking]
-Lavender: {b}[show]{/b} places a character on screen. {b}[hide]{/b} removes them.
-narrator: {color=#8888cc}[show lavender center happy]{/color}
-narrator: Structure: [show] {i}characterId{/i} {i}position{/i} {i}expression{/i}
-Lavender: Watch:
-[hide lavender]
-[wait 500]
-narrator: She's gone. That was {b}[hide lavender]{/b}.
-[wait 400]
-[show lavender left happy]
-Lavender: Back on the left with {b}happy{/b}. That was {b}[show lavender left happy]{/b}.
-[show lavender center talking]
-Lavender: Change expression without moving — just keep the same position:
-[show lavender center happy]
-narrator: {color=#8888cc}[show lavender center happy]{/color}
-[show lavender center emphasis]
-narrator: {color=#8888cc}[show lavender center emphasis]{/color}
-[show lavender center talking]
-narrator: {color=#8888cc}[show lavender center talking]{/color}
-Lavender: Each [show] is instant. The sprite swaps on the same frame — no animation.
-> Next: positions -> section_positions
-> Back to menu -> lesson_menu
-
-# ─── Step 5: Positions ──────────────────────────────────────────
-
-@label section_positions
-[show lavender far_left talking]
-Lavender: This is {b}far_left{/b}.
-[show lavender left talking]
-Lavender: {b}left{/b}.
-[show lavender center talking]
-Lavender: {b}center{/b}.
-[show lavender right talking]
-Lavender: {b}right{/b}.
-[show lavender far_right talking]
-Lavender: {b}far_right{/b}.
-[show lavender center talking]
-Lavender: Five named positions. For precise placement, use normalized coordinates:
-narrator: {color=#8888cc}[show lavender at 0.70,0.84]{/color}
-narrator: X = 0.70 means 70% from the left edge. Y = 0.84 means 84% from the top.
-Lavender: You can also define reusable custom positions:
-narrator: {color=#8888cc}@position doorway 0.85 0.82{/color}
-narrator: {color=#8888cc}[show lavender doorway talking]{/color}
-[show lavender center happy]
-Lavender: Named positions for most scenes. Custom coordinates when you need pixel precision.
-> Expression gallery -> practice_scene
-> Back to menu -> lesson_menu
-
-# ─── Expression Gallery ──────────────────────────────────────────
-
-@label practice_scene
-[show lavender center talking]
-Lavender: Let me cycle through my expressions so you can see each one. Watch the sprite change.
-[wait 300]
-[show lavender center happy]
-narrator: {b}happy{/b} — {color=#8888cc}[show lavender center happy]{/color}
-[wait 600]
-[show lavender center talking]
-narrator: {b}talking{/b} — {color=#8888cc}[show lavender center talking]{/color}
-[wait 600]
-[show lavender center emphasis]
-narrator: {b}emphasis{/b} — {color=#8888cc}[show lavender center emphasis]{/color}
-[wait 600]
-[show lavender center talking]
-Lavender: Now watch position and expression change together in a mini-scene:
-[wait 300]
-[hide lavender]
-[wait 500]
-narrator: The door swung open.
-[show lavender far_right happy]
-[wait 300]
-Lavender: There you are!
-[show lavender center talking]
-Lavender: I've been looking everywhere.
-[show lavender left emphasis]
-Lavender: ...wait. What happened here?
-[wait 400]
-[show lavender center talking]
-Lavender: That was four [show] commands: far_right happy, center talking, left emphasis, center talking.
-Lavender: Each one told the player where I was and how I felt — without a single narrator line explaining it.
-Lavender: Open {b}{{CHARACTERS_SCRIPT_PATH}}{/b} to see how these expressions are declared, then try adding your own.
-> Back to menu -> lesson_menu
-
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage clear]
+[show pip desk point]
+pip: I just heard a knock behind the glass. Watch my face before I tell you what it means.
+[show pip desk surprised]
+pip: Did you hear that?
+[show pip desk curious]
+pip: Swap surprised for curious in the second show command. Compare the meaning of the same line.
+@label check
+pip: How do you change my reaction in place?
+> Show pip in the same slot with another expression. -> correct
+> Declare a new background named curious. -> retry
+@label retry
+[show pip desk curious]
+pip: The slot stays occupied while its expression changes. Give it another try.
+[jump check]
+@label correct
+[show pip desk cheer]
+pip: The slot stays occupied while its expression changes.
+> Finish this lesson -> return_hub
+> Try the lesson again -> start
 @label return_hub
 [if !tutorial_done_03]
 [flag tutorial_done_03]
 [inc tutorial_count]
 [endif]
-[goto {{HUB_TARGET}}:topics_page_1]
+[stage clear]
+[goto TutorialHub:topics_page_1]

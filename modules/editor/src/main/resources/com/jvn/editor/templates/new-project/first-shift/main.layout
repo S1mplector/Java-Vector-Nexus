@@ -1,0 +1,12 @@
+listYStart=0.35
+lineHeight=52
+listWidthFactor=0.31
+listXCenter=0.256
+textAlign=left
+titleAlign=left
+titleY=0.235
+titleX=0.258
+subtitleGap=9
+hintsAlign=left
+hintsX=0.258
+hintsBottomMargin=108

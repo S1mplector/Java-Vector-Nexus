@@ -1,216 +1,33 @@
-# Tutorial 12 — Best Practices
-# Naming, structure, common bugs, and the habits that keep projects maintainable.
-
-@scenario {{SCENARIO_PREFIX}}_tutorial_12_best_practices
-@include {{CHARACTERS_INCLUDE}}
-{{BG_DECL}}@label start
+# Find the first bad beat
+@scenario office_lesson_12
+@include /definitions/characters.vns
+@label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[set ui.textBoxAsset none]
-[set ui.continueIndicator spinning_arrow]
-[if tutorial_still]
-[set ui.reduceMotion true]
-[else]
-[set ui.reduceMotion false]
-[endif]
-[if !tutorial_initialized]
-[set tutorial_count 0]
-[flag tutorial_initialized]
-[endif]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-[set character.lavender.imageEffect none]
-{{BG_START}}
-[textspeed 28]
-[autodelay 1650]
-[show lavender center happy]
-[wait 200]
-Lavender: Every tutorial so far taught syntax. This one teaches the habits that keep a project alive past week two.
-[show lavender center talking]
-Lavender: Naming, structure, writing craft, and the bugs that bite everyone exactly once.
-
-@label lesson_menu
-[show lavender far_left talking]
-> Naming: files, labels, variables -> section_naming
-> Project structure -> section_structure
-> Writing craft -> section_writing
-> The six most common bugs -> section_bugs
-> Quick reference: project hygiene -> quick_reference
-> Quiz: spot the problem -> practice_scene
-> Back to Tutorial Hub -> return_hub
-
-# ─── Quick Reference ─────────────────────────────────────────────
-
-@label quick_reference
-[show lavender center talking]
-Lavender: Good projects are boring to navigate:
-narrator: Use stable names: {color=#8888cc}chapter02_rooftop.vns{/color}, {color=#8888cc}trust_lavender{/color}, {color=#8888cc}@label confession_merge{/color}.
-narrator: Keep declarations shared, scene scripts focused, and assets sorted by type.
-narrator: Validate before playtesting. Commit working milestones. Back up art and audio sources.
-[show lavender center happy]
-Lavender: Checklist: readable names, shallow folders, one scenario per file, and every branch tested before you build.
-> Start the lesson sections -> section_naming
-> Back to menu -> lesson_menu
-
-# ─── Naming ──────────────────────────────────────────────────────
-
-@label section_naming
-[show lavender left talking]
-Lavender: Three naming domains. Same rule for all: {b}the name should explain itself without context{/b}.
-narrator: {b}Files:{/b}
-narrator: {color=#66bb88}Good:{/color} ch1_rooftop_confrontation.vns, ch2_library_escape.vns
-narrator: {color=#ff6666}Bad:{/color} scene3.vns, new_file_FINAL_v2.vns
-[show lavender center talking]
-narrator: {b}Labels:{/b}
-narrator: {color=#66bb88}Good:{/color} rooftop_choice, after_confrontation, ending_brave
-narrator: {color=#ff6666}Bad:{/color} label1, temp, here
-narrator: {b}Variables:{/b}
-narrator: {color=#66bb88}Good:{/color} courage, met_librarian, ch1_route_active
-narrator: {color=#ff6666}Bad:{/color} x, flag, val
-[show lavender center happy]
-Lavender: Use {b}snake_case{/b} everywhere. Prefix chapter-scoped variables: ch1_courage, ch2_trust.
-> Next: project structure -> section_structure
-> Back to menu -> lesson_menu
-
-# ─── Project Structure ───────────────────────────────────────────
-
-@label section_structure
-[show lavender right talking]
-Lavender: A scalable folder layout:
-narrator: {color=#8888cc}scripts/chapter_01/{/color} — one .vns file per scene.
-narrator: {color=#8888cc}scripts/definitions/{/color} — shared @character, @background includes.
-narrator: {color=#8888cc}assets/characters/sprites/{/color} — character art.
-narrator: {color=#8888cc}assets/backgrounds/{/color} — scene backgrounds.
-narrator: {color=#8888cc}assets/audio/bgm/{/color} — music. {color=#8888cc}sfx/{/color} — effects. {color=#8888cc}voice/{/color} — clips.
-narrator: {color=#8888cc}config/menu/{/color} — menu screens, layouts, styles.
-narrator: {color=#8888cc}config/ui/{/color} — dialogue box layout and style.
-[show lavender center talking]
-Lavender: Rules:
-narrator: {b}One scenario per file.{/b} Don't pack multiple scenes into one script.
-narrator: {b}Group by type.{/b} Scripts with scripts, art with art, audio with audio.
-narrator: {b}Never nest more than 3 folders deep.{/b} Deep trees are hard to navigate.
-[show lavender center happy]
-Lavender: Test: can a new team member find any file in under 30 seconds? If not, reorganize.
-> Next: writing craft -> section_writing
-> Back to menu -> lesson_menu
-
-# ─── Writing Craft ───────────────────────────────────────────────
-
-@label section_writing
-[show lavender center talking]
-Lavender: Technical skill runs the engine. Writing skill makes the player care.
-narrator: {b}Two sentences max per dialogue line.{/b} If it fills the text box, split it.
-narrator: {b}Read lines aloud.{/b} If it sounds awkward spoken, it reads awkward.
-narrator: {b}Give each character a distinct voice.{/b} Vocabulary, rhythm, attitude should differ.
-narrator: {b}Use narration for atmosphere{/b}, not for repeating what the player can see.
-[show lavender left talking]
-Lavender: The golden rule:
-narrator: {b}Every line should advance the plot, reveal character, or create mood.{/b}
-narrator: If a line does none of those, cut it. The player's time is not free.
-[show lavender center happy]
-Lavender: The best VN dialogue sounds like real people talking — not like someone writing dialogue.
-> Next: common bugs -> section_bugs
-> Back to menu -> lesson_menu
-
-# ─── Common Bugs ─────────────────────────────────────────────────
-
-@label section_bugs
-[show lavender center talking]
-Lavender: Six bugs that hit every project. Learn them here instead of in production.
-narrator: {b}1. Missing [endif].{/b} Every [if] needs one. The error is silent — wrong branches run and you won't know why.
-narrator: {b}2. Typo in [goto] scenario ID.{/b} The script can't find the target. Hard to debug because it fails at runtime, not parse time.
-narrator: {b}3. Missing [return].{/b} A [call] without [return] falls through into the next label. Chaos.
-narrator: {b}4. Orphaned labels.{/b} A choice points to "park_scen" but the label is "park_scene". One letter.
-narrator: {b}5. Untested branches.{/b} You wrote it, but did you click it? There's always one path nobody played.
-narrator: {b}6. Variable sprawl.{/b} 100 flags, half undocumented. Simplify before it buries you.
-[show lavender center happy]
-Lavender: All six are caught by one habit: play your own game start to finish before anyone else does.
-> Quiz: spot the problem -> practice_scene
-> Back to menu -> lesson_menu
-
-# ─── Quiz ────────────────────────────────────────────────────────
-
-@label practice_scene
-[set quiz 0]
-[show lavender center talking]
-Lavender: Three questions. Let's see if you can spot the issue.
-
-@label pq1
-Lavender: Q1: This script has a bug. What is it?
-narrator: {color=#8888cc}[if courage >= 3]{/color}
-narrator: {color=#8888cc}Lavender: You're very brave.{/color}
-narrator: {color=#8888cc}[elif courage >= 1]{/color}
-narrator: {color=#8888cc}Lavender: Not bad.{/color}
-> Missing [endif] -> pq1_correct
-> Missing [return] -> pq1_wrong
-> The variable name is bad -> pq1_wrong
-
-@label pq1_correct
-[inc quiz]
-[show lavender center happy]
-Lavender: Right. Every [if] block must close with [endif]. Without it, the engine doesn't know where the block ends.
-[jump pq2]
-
-@label pq1_wrong
-[show lavender center talking]
-Lavender: Not quite. The block is missing {b}[endif]{/b} at the end. Without it, everything after runs unconditionally.
-[jump pq2]
-
-@label pq2
-[show lavender center talking]
-Lavender: Q2: What's wrong with this choice target?
-narrator: {color=#8888cc}> Visit the library -> libary_scene{/color}
-narrator: {color=#8888cc}@label library_scene{/color}
-> The label name is misspelled in the choice -> pq2_correct
-> The choice text is too long -> pq2_wrong
-> Nothing is wrong -> pq2_wrong
-
-@label pq2_correct
-[inc quiz]
-[show lavender center happy]
-Lavender: Exactly. "libary_scene" vs "library_scene" — one missing letter. The engine can't find the target.
-[jump pq3]
-
-@label pq2_wrong
-[show lavender center talking]
-Lavender: Look again: the choice says "libary_scene" but the label says "library_scene". Typo.
-[jump pq3]
-
-@label pq3
-[show lavender center talking]
-Lavender: Q3: You have a greeting used in 5 different scenes. What's the cleanest approach?
-> Copy-paste into each scene -> pq3_wrong
-> [call] a shared greeting label -> pq3_correct
-> Write 5 unique greetings -> pq3_wrong
-
-@label pq3_correct
-[inc quiz]
-[show lavender center happy]
-Lavender: Perfect. One source of truth, called from anywhere. Change it once, it updates everywhere.
-[jump quiz_result]
-
-@label pq3_wrong
-[show lavender center talking]
-Lavender: The cleanest approach is {b}[call]{/b} — one greeting label, called from all 5 scenes. No duplication.
-[jump quiz_result]
-
-@label quiz_result
-[show lavender center talking]
-[if quiz >= 3]
-Lavender: 3/3. Clean instincts. You'll catch these bugs before they ship.
-[elif quiz == 2]
-Lavender: 2/3. Solid. Review the one you missed — it'll save you a debugging session later.
-[elif quiz == 1]
-Lavender: 1/3. These are the bugs that eat hours. Worth re-reading the common bugs section.
-[else]
-Lavender: 0/3. Better to miss here than in production. That's what tutorials are for.
-[endif]
-> Retake the quiz -> practice_scene
-> Back to menu -> lesson_menu
-
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage clear]
+[show pip desk curious]
+pip: Someone reported a broken pose. Find the exact line so your teammate can reproduce it.
+pip: Change a single pose on one line. Run from that line, then run through it from the opening.
+@label check
+pip: Which report makes a timing bug reproducible?
+> A screenshot of the project folder. -> retry
+> The script, source line and exact preceding choice. -> correct
+@label retry
+[show pip desk curious]
+pip: The same state and cursor give the reviewer a repeatable starting point. Give it another try.
+[jump check]
+@label correct
+[show pip desk cheer]
+pip: The same state and cursor give the reviewer a repeatable starting point.
+> Finish this lesson -> return_hub
+> Try the lesson again -> start
 @label return_hub
 [if !tutorial_done_12]
 [flag tutorial_done_12]
 [inc tutorial_count]
 [endif]
-[goto {{HUB_TARGET}}:topics_page_2]
+[stage clear]
+[goto TutorialHub:topics_page_3]

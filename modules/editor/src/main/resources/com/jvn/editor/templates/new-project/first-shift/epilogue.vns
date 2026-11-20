@@ -1,0 +1,33 @@
+@scenario closing_time
+@include /definitions/characters.vns
+@label start
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage dusk]
+[if sent_chime]
+[show pip desk cheer]
+pip: Two notes rolled across the empty office. Tomorrow, those will be the first thing our teammate hears.
+[else]
+[show pip desk notes]
+pip: I tucked the note under their keyboard. It says, "We're glad you're here."
+[endif]
+> Go to the project board -> desk
+> Finish the shift -> finish
+@label desk
+[stage clear]
+[goto TutorialHub:start]
+@label finish
+[if !tutorial_still]
+[move pip desk stride-a-left exprdur=0]
+[move pip doorway ease_in_out_cubic 650]
+[wait 160]
+[move pip doorway stride-b-left exprdur=0]
+[wait 160]
+[move pip doorway stride-c-left exprdur=0]
+[wait 160]
+[move pip doorway stride-b-left exprdur=0]
+[wait 170]
+[move pip doorway wave exprdur=90]
+[endif]
+[end]

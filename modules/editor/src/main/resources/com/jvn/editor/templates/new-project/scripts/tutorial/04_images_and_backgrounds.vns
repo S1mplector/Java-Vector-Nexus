@@ -1,175 +1,33 @@
-# Tutorial 04 — Images and Backgrounds
-# @background declarations, [bg] switching, and scene composition.
-
-@scenario {{SCENARIO_PREFIX}}_tutorial_04_images
-@include {{CHARACTERS_INCLUDE}}
-{{BG_DECL}}@label start
+# Set the stage
+@scenario office_lesson_04
+@include /definitions/characters.vns
+@label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[set ui.textBoxAsset none]
-[set ui.continueIndicator spinning_arrow]
-[if tutorial_still]
-[set ui.reduceMotion true]
-[else]
-[set ui.reduceMotion false]
-[endif]
-[if !tutorial_initialized]
-[set tutorial_count 0]
-[flag tutorial_initialized]
-[endif]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-[set character.lavender.imageEffect none]
-{{BG_START}}
-[textspeed 28]
-[autodelay 1650]
-[show lavender center happy]
-[wait 200]
-Lavender: The background you see behind me was set with a single command before this scene started.
-[show lavender center talking]
-Lavender: This tutorial covers declaring backgrounds, switching them, and composing full scenes.
-
-@label lesson_menu
-[show lavender far_left talking]
-> @background — declaring backgrounds -> section_declare
-> [bg] — switching mid-scene -> section_switching
-> Scene composition — background + characters -> section_composing
-> Asset folders and naming -> section_organization
-> Quick reference: background workflow -> quick_reference
-> Practice: build a scene from scratch -> practice_scene
-> Back to Tutorial Hub -> return_hub
-
-# ─── Quick Reference ─────────────────────────────────────────────
-
-@label quick_reference
-[show lavender center talking]
-Lavender: Backgrounds are declared once, then switched by ID:
-narrator: {color=#8888cc}@background field_day assets/backgrounds/field_day.png{/color}
-narrator: {color=#8888cc}[bg field_day]{/color}
-narrator: {color=#8888cc}[transition fade 500]{/color}
-narrator: {color=#8888cc}[bg cafe_night]{/color}
-narrator: {color=#8888cc}[transition crossfade 700 field_evening]{/color}
-[show lavender center happy]
-Lavender: Checklist: clear IDs, correct asset paths, target-resolution images, and a transition only when the cut should feel smooth.
-> Start the lesson sections -> section_declare
-> Back to menu -> lesson_menu
-
-# ─── @background ─────────────────────────────────────────────────
-
-@label section_declare
-[show lavender left talking]
-Lavender: {b}@background{/b} registers an image file with an ID you'll use in scripts:
-narrator: {color=#8888cc}@background field_day assets/backgrounds/field_day.png{/color}
-narrator: {color=#8888cc}@background cafe_night assets/backgrounds/cafe_night.png{/color}
-narrator: {color=#8888cc}@background classroom assets/backgrounds/school_classroom.png{/color}
-[show lavender center talking]
-Lavender: Structure: {b}@background{/b} {i}id{/i} {i}filepath{/i}
-narrator: The {b}id{/b} is what you type in [bg] commands. The {b}filepath{/b} points to the image.
-Lavender: Place declarations at the top of a script file, or in a shared definitions file.
-narrator: {b}Naming convention:{/b} use {b}location_time{/b} — cafe_night, park_sunset, school_morning.
-[show lavender center happy]
-Lavender: Supported formats: PNG, JPG, WebP. Use images at your target resolution for best quality.
-> Next: switching backgrounds -> section_switching
-> Back to menu -> lesson_menu
-
-# ─── [bg] ────────────────────────────────────────────────────────
-
-@label section_switching
-[show lavender right talking]
-Lavender: {b}[bg]{/b} swaps the current background immediately:
-narrator: {color=#8888cc}[bg field_day]{/color}
-narrator: The old background vanishes. The new one appears on the same frame.
-[show lavender center talking]
-Lavender: For a smoother transition, put a {b}[transition]{/b} before the [bg]:
-narrator: {color=#8888cc}[transition fade 500]{/color}
-narrator: {color=#8888cc}[bg cafe_night]{/color}
-narrator: The screen fades to black over 500ms, then the new background appears.
-Lavender: Or crossfade directly between two backgrounds:
-narrator: {color=#8888cc}[transition crossfade 700 cafe_night]{/color}
-narrator: The old image dissolves into the new one over 700ms. No black screen.
-[show lavender center happy]
-Lavender: Tutorial 05 covers transitions in detail. For now: [transition] before [bg] = smooth; [bg] alone = instant cut.
-> Next: scene composition -> section_composing
-> Back to menu -> lesson_menu
-
-# ─── Scene Composition ───────────────────────────────────────────
-
-@label section_composing
-[show lavender center talking]
-Lavender: A complete scene beat is three steps: set background, place characters, write dialogue.
-narrator: Here's the script for a minimal scene:
-narrator: {color=#8888cc}[bg field_day]{/color}
-narrator: {color=#8888cc}[show lavender center happy]{/color}
-narrator: {color=#8888cc}Lavender: What a beautiful morning!{/color}
-[show lavender left talking]
-Lavender: Add a second character for a conversation:
-narrator: {color=#8888cc}[bg cafe_night]{/color}
-narrator: {color=#8888cc}[show lavender left talking]{/color}
-narrator: {color=#8888cc}[show alex right happy]{/color}
-narrator: {color=#8888cc}Lavender: You made it! I was starting to worry.{/color}
-narrator: {color=#8888cc}Alex: Sorry — trains were a mess tonight.{/color}
-[show lavender center talking]
-Lavender: Background = stage. Characters = actors. Dialogue = performance. Change any one and the scene reads differently.
-[show lavender center happy]
-Lavender: The same dialogue in a cafe_night vs hospital_corridor creates an entirely different story.
-> Next: asset organization -> section_organization
-> Back to menu -> lesson_menu
-
-# ─── Asset Organization ──────────────────────────────────────────
-
-@label section_organization
-[show lavender left talking]
-Lavender: Folder structure that scales:
-narrator: {b}assets/backgrounds/{/b} — all scene backgrounds.
-narrator: {b}assets/characters/sprites/{/b} — character art. One subfolder per character if using layers.
-narrator: {b}assets/cg/{/b} — full-screen CG illustrations.
-narrator: {b}assets/ui/{/b} — text box frames, buttons, icons.
-narrator: {b}assets/effects/{/b} — overlays, particles, weather.
-[show lavender center talking]
-Lavender: File naming rules:
-narrator: {b}Do:{/b} cafe_night.png, school_hallway_rain.png, lavender_happy.png
-narrator: {b}Don't:{/b} IMG_3847.png, bg2_final_v3.png, untitled.jpg
-Lavender: When you have 50+ backgrounds, clear names are the difference between finding a file in 5 seconds and searching for 5 minutes.
-[show lavender center happy]
-Lavender: The engine resolves paths from your @background declarations. Folder depth doesn't matter — only the path does.
-> Practice: build a scene -> practice_scene
-> Back to menu -> lesson_menu
-
-# ─── Practice ────────────────────────────────────────────────────
-
-@label practice_scene
-[show lavender center talking]
-Lavender: I'll walk you through building a scene step by step — the exact sequence you'd write in a real script.
-[wait 300]
-narrator: {b}Step 1:{/b} Declare the background.
-narrator: {color=#8888cc}@background park_morning assets/backgrounds/park_morning.png{/color}
-narrator: This goes at the top of your file, before any labels.
-[wait 200]
-narrator: {b}Step 2:{/b} Set the background.
-narrator: {color=#8888cc}[bg park_morning]{/color}
-narrator: Now the player sees the park.
-[wait 200]
-narrator: {b}Step 3:{/b} Place the character.
-narrator: {color=#8888cc}[show lavender center happy]{/color}
-narrator: Lavender appears at center with a happy expression.
-[wait 200]
-narrator: {b}Step 4:{/b} Write dialogue.
-narrator: {color=#8888cc}Lavender: The cherry blossoms are incredible this year.{/color}
-narrator: {color=#8888cc}narrator: Petals drifted across the path like pink snow.{/color}
-[wait 200]
-narrator: {b}Step 5:{/b} Change location.
-narrator: {color=#8888cc}[transition fade 500]{/color}
-narrator: {color=#8888cc}[bg cafe_night]{/color}
-narrator: {color=#8888cc}[show lavender left talking]{/color}
-narrator: {color=#8888cc}Lavender: Let's grab coffee. My treat.{/color}
-[show lavender center happy]
-Lavender: That's the full pattern: declare, set, show, speak, transition, repeat.
-Lavender: Try it now — add a new @background declaration at the top of this file, then insert a [bg] command anywhere in the practice section.
-> Back to menu -> lesson_menu
-
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage clear]
+[show pip desk neutral]
+pip: Our office window tells us where the story happens. Find the image that puts it on screen.
+pip: Open the background declaration in scripts/definitions/characters.vns. Find the bg command at the top of this lesson.
+@label check
+pip: What belongs after bg?
+> The name of the current speaker. -> retry
+> The ID declared for the office. -> correct
+@label retry
+[show pip desk curious]
+pip: The declaration maps an ID to an image. The scene command selects it. Give it another try.
+[jump check]
+@label correct
+[show pip desk cheer]
+pip: The declaration maps an ID to an image. The scene command selects it.
+> Finish this lesson -> return_hub
+> Try the lesson again -> start
 @label return_hub
 [if !tutorial_done_04]
 [flag tutorial_done_04]
 [inc tutorial_count]
 [endif]
-[goto {{HUB_TARGET}}:topics_page_1]
+[stage clear]
+[goto TutorialHub:topics_page_1]

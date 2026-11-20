@@ -1,192 +1,63 @@
-# Tutorial 08 — Character Movement and Easing
-# [move], easing curves, @position, and timing movement with dialogue.
-
-@scenario {{SCENARIO_PREFIX}}_tutorial_08_movement
-@include {{CHARACTERS_INCLUDE}}
-{{BG_DECL}}@label start
+# Find a mark
+@scenario office_lesson_08
+@include /definitions/characters.vns
+@label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[set ui.textBoxAsset none]
-[set ui.continueIndicator spinning_arrow]
-[if tutorial_still]
-[set ui.reduceMotion true]
-[else]
-[set ui.reduceMotion false]
-[endif]
-[if !tutorial_initialized]
-[set tutorial_count 0]
-[flag tutorial_initialized]
-[endif]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-[set character.lavender.imageEffect none]
-{{BG_START}}
-[textspeed 28]
-[autodelay 1650]
-[show lavender far_left happy]
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage clear]
+[show pip desk point]
+pip: I need to stand beside the window. Watch which part of the frame stays still.
+[if !tutorial_still]
+[move pip desk stride-a-right exprdur=0]
+[move pip window ease_in_out_cubic 740]
+[wait 180]
+[move pip window stride-b-right exprdur=0]
+[wait 180]
+[move pip window stride-c-right exprdur=0]
+[wait 180]
+[move pip window stride-b-right exprdur=0]
 [wait 200]
-Lavender: I'm on the far left. Now watch—
-[move lavender center easeInOut 600]
-[wait 600]
-[show lavender center talking]
-Lavender: That was {b}[move lavender center easeInOut 600]{/b}. One command, smooth animation.
-
-@label lesson_menu
-[show lavender far_left talking]
-> [move] command syntax -> section_move
-> Easing curves explained -> section_easing
-> @position — custom named positions -> section_custom_pos
-> Timing movement with dialogue -> section_move_dialogue
-> Quick reference: movement patterns -> quick_reference
-> Practice: live movement demos -> practice_scene
-> Back to Tutorial Hub -> return_hub
-
-# ─── Quick Reference ─────────────────────────────────────────────
-
-@label quick_reference
-[show lavender center talking]
-Lavender: Movement is blocking plus timing:
-narrator: {color=#8888cc}[move lavender center easeInOut 450]{/color}
-narrator: {color=#8888cc}[move lavender at 0.25,0.90 easeOut 600]{/color}
-narrator: {color=#8888cc}@position doorway 0.18 0.92{/color}
-narrator: {color=#8888cc}[show lavender doorway talking]{/color}
-[show lavender center happy]
-Lavender: Checklist: move for story reasons, pick easing that matches emotion, and wait long enough for the player to see it.
-> Start the lesson sections -> section_move
-> Back to menu -> lesson_menu
-
-# ─── [move] ──────────────────────────────────────────────────────
-
-@label section_move
-[show lavender left talking]
-Lavender: {b}[move id position easing duration]{/b} — slides a character to a new position over time.
-narrator: {color=#8888cc}[move lavender center easeInOut 600]{/color}
-narrator: {b}id{/b} — character to move (lavender).
-narrator: {b}position{/b} — destination (far_left, left, center, right, far_right, or at X,Y).
-narrator: {b}easing{/b} — acceleration curve (linear, easeIn, easeOut, easeInOut).
-narrator: {b}duration{/b} — time in milliseconds. 300–800ms is typical.
-[show lavender center talking]
-Lavender: Unlike [show] which teleports instantly, [move] animates over time. The player watches the character glide.
-Lavender: You can also move to exact coordinates:
-narrator: {color=#8888cc}[move lavender at 0.30,0.80 easeInOut 500]{/color}
-narrator: Moves to 30% from left, 80% from top.
-[show lavender center happy]
-Lavender: Use [wait] after [move] to hold until the animation finishes before the next line:
-narrator: {color=#8888cc}[move lavender center easeInOut 600]{/color}
-narrator: {color=#8888cc}[wait 600]{/color}
-narrator: {color=#8888cc}Lavender: I'm here now.{/color}
-> Next: easing curves -> section_easing
-> Back to menu -> lesson_menu
-
-# ─── Easing Curves ───────────────────────────────────────────────
-
-@label section_easing
-[show lavender left talking]
-Lavender: The easing parameter controls {i}how{/i} the speed changes during the move. Four options:
-narrator: {b}linear{/b} — constant speed. Mechanical. Use for sliding doors, conveyor belts.
-narrator: {b}easeIn{/b} — starts slow, accelerates. Feels like pulling away, building momentum.
-narrator: {b}easeOut{/b} — starts fast, decelerates. Feels like arriving, braking to a stop.
-narrator: {b}easeInOut{/b} — slow start, fast middle, slow stop. The most natural. Use for most character movement.
-[show lavender center talking]
-Lavender: Let me show you each one. Same distance, same duration, different feel:
-[show lavender far_left talking]
-Lavender: {b}easeInOut{/b} — natural walk:
-[move lavender right easeInOut 700]
-[wait 700]
-[show lavender far_left talking]
-Lavender: {b}easeIn{/b} — reluctant departure:
-[move lavender right easeIn 700]
-[wait 700]
-[show lavender far_left talking]
-Lavender: {b}easeOut{/b} — decisive arrival:
-[move lavender right easeOut 700]
-[wait 700]
-[show lavender center happy]
-Lavender: Same move, three different emotions. The easing is the body language.
-> Next: custom positions -> section_custom_pos
-> Back to menu -> lesson_menu
-
-# ─── @position ───────────────────────────────────────────────────
-
-@label section_custom_pos
-[show lavender center talking]
-Lavender: {b}@position{/b} defines a reusable named position with exact coordinates:
-narrator: {color=#8888cc}@position doorway 0.85 0.82{/color}
-narrator: {color=#8888cc}@position window_seat 0.25 0.78{/color}
-narrator: {color=#8888cc}@position stage_front 0.50 0.92{/color}
-[show lavender left talking]
-Lavender: Then use it anywhere you'd use a named position:
-narrator: {color=#8888cc}[show lavender doorway talking]{/color}
-narrator: {color=#8888cc}[move lavender window_seat easeInOut 500]{/color}
-[show lavender center happy]
-Lavender: "doorway" is more readable than "at 0.85,0.82". Define positions for spots characters visit often.
-Lavender: Use inline {b}at X,Y{/b} for one-off placements. Use @position for recurring locations.
-> Next: timing with dialogue -> section_move_dialogue
-> Back to menu -> lesson_menu
-
-# ─── Timing with Dialogue ───────────────────────────────────────
-
-@label section_move_dialogue
-[show lavender left talking]
-Lavender: Two patterns for combining movement and speech:
-narrator: {b}Pattern 1: Move, then speak{/b} — character arrives before talking:
-narrator: {color=#8888cc}[move lavender center easeInOut 400]{/color}
-narrator: {color=#8888cc}[wait 400]{/color}
-narrator: {color=#8888cc}Lavender: Okay, I'm here.{/color}
-narrator: The [wait] matches the duration so dialogue appears after the move completes.
-[show lavender center talking]
-narrator: {b}Pattern 2: Speak while moving{/b} — skip the [wait]:
-narrator: {color=#8888cc}[move lavender right easeInOut 800]{/color}
-narrator: {color=#8888cc}Lavender: I'll be right over there if you need me.{/color}
-narrator: The text appears immediately while the character is still sliding. Feels dynamic.
-[show lavender center happy]
-Lavender: Pattern 1 for deliberate arrivals. Pattern 2 for casual movement and energy.
-> Practice: live demos -> practice_scene
-> Back to menu -> lesson_menu
-
-# ─── Practice ────────────────────────────────────────────────────
-
-@label practice_scene
-[show lavender center talking]
-Lavender: Three movement scenarios. Each one shows a different emotional use of [move].
-
-@label practice_demos
-Lavender: {b}Scene 1: Approach{/b}
-[show lavender far_left talking]
-Lavender: Hey... can I talk to you for a second?
-[move lavender center easeInOut 600]
-[wait 600]
-[show lavender center happy]
-Lavender: {color=#8888cc}[move lavender center easeInOut 600]{/color} — closing distance. Reads as intention.
-[wait 400]
-
-Lavender: {b}Scene 2: Retreat{/b}
-[show lavender center talking]
-Lavender: I... I need some space.
-[move lavender far_right easeIn 500]
-[wait 500]
-[show lavender far_right talking]
-Lavender: {color=#8888cc}[move lavender far_right easeIn 500]{/color} — easeIn starts slow, speeds up. Reluctant, then committed.
-[wait 400]
-
-Lavender: {b}Scene 3: Dramatic entrance{/b}
-[hide lavender]
-[wait 500]
-narrator: The room was quiet. Then — footsteps.
-[show lavender far_right talking]
-[move lavender center easeOut 500]
-[wait 500]
-[show lavender center happy]
-Lavender: {color=#8888cc}[hide] + [show far_right] + [move center easeOut 500]{/color} — easeOut bursts in and slows to a stop.
-
-[show lavender center talking]
-Lavender: Three emotions from the same command. Change only the easing or duration and the scene transforms.
-> Replay demos -> practice_demos
-> Back to menu -> lesson_menu
-
+[move pip window neutral exprdur=90]
+[endif]
+[if tutorial_still]
+[show pip desk point]
+pip: The window is my second mark. In reduced motion I point to it from here.
+[else]
+pip: Here is my window mark. Notice where the desk sits in the frame.
+[endif]
+[if !tutorial_still]
+[move pip window stride-a-left exprdur=0]
+[move pip desk ease_out_cubic 560]
+[wait 140]
+[move pip desk stride-b-left exprdur=0]
+[wait 140]
+[move pip desk stride-c-left exprdur=0]
+[wait 140]
+[move pip desk stride-b-left exprdur=0]
+[wait 140]
+[move pip desk point exprdur=90]
+[endif]
+pip: Back at the desk. Edit the window position or the duration of the first move, then replay.
+@label check
+pip: What lets an actor move without replacing the set?
+> A new stage preset. -> retry
+> A character position. -> correct
+@label retry
+[show pip desk curious]
+pip: Character positions belong to the actor. Give it another try.
+[jump check]
+@label correct
+[show pip desk cheer]
+pip: Character positions belong to the actor.
+> Finish this lesson -> return_hub
+> Try the lesson again -> start
 @label return_hub
 [if !tutorial_done_08]
 [flag tutorial_done_08]
 [inc tutorial_count]
 [endif]
-[goto {{HUB_TARGET}}:topics_page_2]
+[stage clear]
+[goto TutorialHub:topics_page_2]

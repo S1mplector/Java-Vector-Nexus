@@ -1,92 +1,37 @@
-# Tutorial 17 — VNS and JES Together
-# Launching an entity scene, passing parameters, and returning to narrative flow.
-
-@scenario {{SCENARIO_PREFIX}}_tutorial_17_vns_jes
-@include {{CHARACTERS_INCLUDE}}
-{{BG_DECL}}@label start
+# Visit the project board
+@scenario office_lesson_17
+@include /definitions/characters.vns
+@label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[set ui.textBoxAsset none]
-[set ui.continueIndicator spinning_arrow]
-[if tutorial_still]
-[set ui.reduceMotion true]
-[else]
-[set ui.reduceMotion false]
-[endif]
-[if !tutorial_initialized]
-[set tutorial_count 0]
-[flag tutorial_initialized]
-[endif]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-[set character.lavender.imageEffect none]
-{{BG_START}}
-[textspeed 28]
-[autodelay 1650]
-[show lavender center happy]
-[wait 200]
-
-Lavender: VNS and JES are two layers of one project, not competing ways to write the same scene.
-[show lavender center talking]
-Lavender: Use VNS for dialogue and branching. Use JES when you need entities, components, input, physics, or a scene timeline.
-
-@label lesson_menu
-[show lavender far_left talking]
-> When to use each language -> section_roles
-> Read the bundled JES scene -> section_scene
-> Launch JES from VNS -> section_launch
-> Live round-trip demo -> practice_scene
-> Quick reference -> quick_reference
-> Back to Tutorial Hub -> return_hub
-
-@label section_roles
-[show lavender left talking]
-narrator: {b}VNS{/b}: characters, dialogue, choices, variables, menus, and narrative flow.
-narrator: {b}JES{/b}: scenes, entities, components, input bindings, timelines, and gameplay systems.
-Lavender: Keep story state in VNS unless the entity scene owns it. Pass only the values the JES scene needs.
-> Next: inspect the scene -> section_scene
-> Back to lesson menu -> lesson_menu
-
-@label section_scene
-[show lavender center talking]
-Lavender: Open {b}{{JES_SCENE_PATH}}{/b}. It declares a scene, named entities, components, an Enter-key binding, and a timeline.
-Lavender: The file is deliberately small enough to understand in one screen. Change its label text or animation duration and launch it again.
-> Next: launch syntax -> section_launch
-> Run it now -> practice_scene
-> Back to lesson menu -> lesson_menu
-
-@label section_launch
-[show lavender right talking]
-narrator: The current bridge syntax is:
-narrator: {color=#666666}[jes push path/to/scene.jes label return_label with key=value]{/color}
-Lavender: {b}push{/b} pauses VNS and puts JES above it. The {b}label{/b} names where VNS resumes. The optional {b}with{/b} values become launch parameters.
-Lavender: In JES, invoking the registered {b}return{/b} call pops the scene and resumes VNS.
-> Run the live round trip -> practice_scene
-> Back to lesson menu -> lesson_menu
-
-@label quick_reference
-[show lavender center talking]
-narrator: VNS launch: {color=#666666}[jes push {{JES_SCENE_PATH}} label jes_returned with lesson=17]{/color}
-narrator: JES input: {color=#666666}on key "ENTER" do return{/color}
-narrator: JES structure: {color=#666666}scene → entity → component; timeline for ordered actions{/color}
-Lavender: Always provide a reachable return path, and parser-test both files before shipping.
-> Run the demo -> practice_scene
-> Back to lesson menu -> lesson_menu
-
-@label practice_scene
-[show lavender center happy]
-Lavender: Press Enter in the JES scene. VNS will resume at {b}@label jes_returned{/b}.
-[jes push {{JES_SCENE_PATH}} label jes_returned with lesson=17 guide=lavender]
-
-@label jes_returned
-[show lavender center happy]
-Lavender: Round trip complete. You crossed language boundaries without moving story logic out of VNS.
-> Review the lesson -> lesson_menu
-> Back to Tutorial Hub -> return_hub
-
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage clear]
+[show pip desk present]
+pip: Our story can hand off to a JES scene for a visual interlude.
+pip: Inspect scripts/scenes/office_board.jes and preview it in the JES editor. Change the board panel color.
+> Visit the board -> visit
+> Try the checkpoint -> check
+@label visit
+[jes push scripts/scenes/office_board.jes label check]
+@label check
+pip: Where would you edit a JES panel?
+> In the .jes scene that owns it. -> correct
+> In the speaker declaration. -> retry
+@label retry
+[show pip desk curious]
+pip: VNS controls story flow. JES owns the entities in its scene. Give it another try.
+[jump check]
+@label correct
+[show pip desk cheer]
+pip: VNS controls story flow. JES owns the entities in its scene.
+> Finish this lesson -> return_hub
+> Try the lesson again -> start
 @label return_hub
 [if !tutorial_done_17]
 [flag tutorial_done_17]
 [inc tutorial_count]
 [endif]
-[goto {{HUB_TARGET}}:topics_page_3]
+[stage clear]
+[goto TutorialHub:topics_page_4]

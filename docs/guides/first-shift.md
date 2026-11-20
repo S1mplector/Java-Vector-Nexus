@@ -1,34 +1,20 @@
-# Lavender’s JVN Workshop
+# First Shift
 
-> [!NOTE]
-> **Outcome:** understand the main JVN systems by playing, editing, and testing a small project. The course replaces the built-in tutorial template; it does not install a separate example game or modify existing projects.
+Pip is getting the office ready for a new teammate. Run the project and choose **Start your shift**. You can help Pip leave a welcome message or open the project board to learn JVN.
 
-```mermaid
-flowchart TD
-  accTitle: Lavender’s six-part workshop
-  accDescr: Thirty lessons are grouped into writing, systems, production, interfaces, scene systems, and authoring plus shipping. Every group returns to a shared hub.
-  H["Workshop hub · progress and still-art option"] --> A["1–4 · Writing and presentation"]
-  H --> B["5–12 · Effects, state and flow"]
-  H --> C["13–17 · Camera, UI and integration"]
-  H --> D["18–22 · Plugins, saves and interfaces"]
-  H --> E["23–26 · Particles, staging and JES worlds"]
-  H --> F["27–30 · Tools, accessibility and shipping"]
-  A --> H
-  B --> H
-  C --> H
-  D --> H
-  E --> H
-  F --> H
-```
+The board has six pages of five lessons. Each lesson includes an edit to try and a checkpoint. Finish a lesson to record it once. Progress and the camera-motion preference travel with your save.
 
-> [!IMPORTANT]
-> Completion is recorded when you finish through a lesson’s hub-return route. Replays count once. Progress and still-art preference belong to VN state, so saving or rollback can restore an earlier value.
+* Open lesson 09 in Puppeteer to edit the office camera move.
+* Visit the JES project board in lesson 17. Press Enter or Escape to return to Pip.
+* In lesson 24, compare daylight with the late shift and edit the dusk preset in Lighting Studio.
 
-Create a **Tutorial Workspace** in the New Project Wizard and run the project. Choose the workshop from the opening scene. This built-in course uses waist-up Lavender on a plain white stage, a translucent black textbox, a spinning 3D continue arrow, a handwritten title, and an animated button dock. The supplied Apalonbeats track is the default music. Pikupiku is available as an optional editor tool; it is not applied to the tutorial. No generated background artwork is included.
+The nine character poses, six directional walking frames, and the office backdrop are in `assets/tutorial`. The project icon is `assets/icon.png`. Edit the conversation layout in `config/ui/dialogue.layout` and the title screen in `config/menu`.
 
-The hub has six pages and 30 lessons. Finish a lesson using its return-to-hub route to record one completion; replays do not add duplicate completions. Progress and the still-drawing preference are ordinary save/rollback-aware variables. You can also launch each lesson at `start` from the editor.
+![The First Shift title screen and Pip welcoming the player at the office.](../assets/images/tutorial/first-shift.webp)
 
-The existing lessons contain runnable demonstrations and editable practice sections. The later workshops add live plugin comparisons, dialogue modes, a reactive facet, phone messages, particles, a visualizer, and a JES scene visit. Editor operations, custom Java handlers, physics, RPG systems, and shipping are authoring labs with explicit exercises and complete reference guides, not simulated features hidden behind dialogue.
+[Watch Pip walk from the desk to the window and back in the game.](../assets/images/tutorial/pip-walk.mp4)
+
+## Lesson references
 
 | Lesson | Source | Reference |
 |---|---|---|
@@ -62,28 +48,3 @@ The existing lessons contain runnable demonstrations and editable practice secti
 | 28. Assets and Performance | `28_assets_and_performance.vns` | [Guide](https://javavectornexus.com/doc.html?page=docs/runtime/systems/asset-management.md) |
 | 29. Accessibility, Settings and Controls | `29_accessibility_and_controls.vns` | [Guide](https://javavectornexus.com/doc.html?page=docs/scripting/vns/runtime/vns-settings-modes.md) |
 | 30. Extensions and Capstone | `30_java_extensions_and_capstone.vns` | [Guide](https://javavectornexus.com/doc.html?page=docs/scripting/vns/integration/java-jes-cross-development.md) |
-
-## Working files
-
-- `config/facets/tutorial_card.facet`: live text, a bar, conditional action, and safe return action.
-- `config/phone/phone.properties`: contacts, app, and workshop thread; lesson 22 adds a message once per state history.
-- `scripts/scenes/studio_tour.jes`: runnable entity/timeline/input scene with Enter and Escape return controls.
-- `scripts/definitions/characters.vns`: shared Lavender layers and expressions.
-- `config/story/story.storymap`: all 30 arcs and hub routes.
-
-Use **Tools → Plugins → Pikupiku Line Wiggler** to preview presets, open your own image, copy VNS settings, or export transparent PNG drawings plus timing. The preview uses a working size of at most 1080 pixels on the longest edge. The original source is untouched. Choose a still continue arrow in the hub or lesson 29 to reduce motion. Set `menuMotion=false` in `config/menu/theme/menu.theme` to stop the dock lift.
-
-## Further system guides
-
-- [Facets and motifs](https://javavectornexus.com/doc.html?page=docs/guides/facets-and-motifs.md)
-- [JES RPG systems](https://javavectornexus.com/doc.html?page=docs/guides/jes-by-example/08-rpg-systems.md)
-- [Physics bodies](https://javavectornexus.com/doc.html?page=docs/guides/jes-by-example/09-physics-bodies.md)
-- [JES AI](https://javavectornexus.com/doc.html?page=docs/scripting/jes/gameplay/jes-ai.md)
-- [Interactive JES UI](https://javavectornexus.com/doc.html?page=docs/guides/jes-by-example/12-interactive-ui.md)
-- [Display slots](https://javavectornexus.com/doc.html?page=docs/scripting/vns/presentation/vns-display-slots.md)
-- [Performance](https://javavectornexus.com/doc.html?page=docs/architecture/quality/performance.md)
-- [Plugin authoring](https://javavectornexus.com/doc.html?page=docs/plugins/authoring.md)
-- [Build system](https://javavectornexus.com/doc.html?page=docs/project-setup/release/build-system.md)
-- [License acceptance](https://javavectornexus.com/doc.html?page=docs/project-setup/release/license-acceptance.md)
-
-A complete capstone combines two routes, expressions, motion, a phone clue, reactive UI, one JES interaction, saves, accessibility options, and a tested export. Start small enough to play every route.

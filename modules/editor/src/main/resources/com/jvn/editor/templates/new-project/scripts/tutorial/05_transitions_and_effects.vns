@@ -1,195 +1,37 @@
-# Tutorial 05 — Transitions and Effects
-# [transition fade], [transition crossfade], [screen flash], [screen shake] — visual punctuation.
-
-@scenario {{SCENARIO_PREFIX}}_tutorial_05_transitions
-@include {{CHARACTERS_INCLUDE}}
-{{BG_DECL}}@label start
+# Change scenes
+@scenario office_lesson_05
+@include /definitions/characters.vns
+@label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[set ui.textBoxAsset none]
-[set ui.continueIndicator spinning_arrow]
-[if tutorial_still]
-[set ui.reduceMotion true]
-[else]
-[set ui.reduceMotion false]
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage clear]
+[show pip desk wave]
+pip: The office lights dip. The next sentence feels like the start of a different shift.
+[if !tutorial_still]
+[transition fade 380]
 [endif]
-[if !tutorial_initialized]
-[set tutorial_count 0]
-[flag tutorial_initialized]
-[endif]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-[set character.lavender.imageEffect none]
-{{BG_START}}
-[textspeed 28]
-[autodelay 1650]
-[show lavender center happy]
-[wait 200]
-Lavender: Transitions control what the player sees {i}between{/i} scenes. Fades, dissolves, flashes, shakes.
-[show lavender center talking]
-Lavender: Each one is a single command with a duration in milliseconds. Let's cover all four.
-
-@label lesson_menu
-[show lavender far_left talking]
-> [transition fade] — fade through black -> section_fade
-> [transition crossfade] — dissolve between images -> section_crossfade
-> [screen flash] — burst of light -> section_flash
-> [screen shake] — camera shake -> section_shake
-> Duration guide — choosing the right speed -> section_timing
-> Quick reference: visual punctuation -> quick_reference
-> Practice: live effect demos -> practice_scene
-> Back to Tutorial Hub -> return_hub
-
-# ─── Quick Reference ─────────────────────────────────────────────
-
-@label quick_reference
-[show lavender center talking]
-Lavender: Use visual effects like punctuation, not wallpaper:
-narrator: {color=#8888cc}[transition fade 500]{/color} — hard scene break.
-narrator: {color=#8888cc}[transition crossfade 700 field_evening]{/color} — continuous change.
-narrator: {color=#8888cc}[screen flash white 180]{/color} — impact or revelation.
-narrator: {color=#8888cc}[screen shake 8 250]{/color} — shock or instability.
-[show lavender center happy]
-Lavender: Checklist: one effect per beat, short durations for impact, longer durations for mood.
-> Start the lesson sections -> section_fade
-> Back to menu -> lesson_menu
-
-# ─── Fade ────────────────────────────────────────────────────────
-
-@label section_fade
-[show lavender left talking]
-Lavender: {b}[transition fade N]{/b} fades the screen to black over N milliseconds, then reveals the new content.
-narrator: {color=#8888cc}[transition fade 500]{/color}
-narrator: {color=#8888cc}[bg cafe_night]{/color}
-narrator: Screen goes dark over 500ms. New background appears when darkness completes.
-[show lavender center talking]
-Lavender: Fades signal a {b}hard scene break{/b} — a new location, a time skip, an act change.
-Lavender: Add a [wait] between the fade and the new background to hold in darkness:
-narrator: {color=#8888cc}[transition fade 800]{/color}
-narrator: {color=#8888cc}[wait 500]{/color}
-narrator: {color=#8888cc}[bg new_scene]{/color}
-narrator: That extra 500ms of black creates anticipation. The player wonders what's coming.
-[show lavender center happy]
-Lavender: Fade is the safest default transition. When in doubt, use fade.
-> Next: crossfade -> section_crossfade
-> Back to menu -> lesson_menu
-
-# ─── Crossfade ───────────────────────────────────────────────────
-
-@label section_crossfade
-[show lavender right talking]
-Lavender: {b}[transition crossfade N id]{/b} dissolves the current background directly into a new one. No black screen.
-narrator: {color=#8888cc}[transition crossfade 700 field_evening]{/color}
-narrator: The old image melts into field_evening over 700ms.
-[show lavender center talking]
-Lavender: Crossfades signal {b}continuous change{/b} — same place, different time. Day to night, clear to rain, calm to storm.
-narrator: {b}Short crossfade (300–500ms){/b} — brisk, modern. A quick lighting change.
-narrator: {b}Long crossfade (800–1500ms){/b} — dreamy, slow. Time is passing visibly.
-[show lavender center happy]
-Lavender: Use crossfade when the location stays the same but the atmosphere shifts. Use fade when the location changes entirely.
-> Next: screen flash -> section_flash
-> Back to menu -> lesson_menu
-
-# ─── Screen Flash ────────────────────────────────────────────────
-
-@label section_flash
-[show lavender center talking]
-Lavender: {b}[screen flash intensity duration R G B]{/b} — a momentary burst of color across the screen.
-narrator: {color=#8888cc}[screen flash 0.25 120 1 1 1]{/color}
-narrator: {b}intensity{/b} 0.25 — how bright (0.0–1.0). {b}duration{/b} 120ms. {b}RGB{/b} 1 1 1 = white.
-[show lavender left talking]
-Lavender: Common uses:
-narrator: {b}White flash{/b} (1 1 1) — lightning, explosions, magical bursts, camera flash.
-narrator: {b}Red flash{/b} (1 0 0) — damage, injury, alarm.
-narrator: {b}Warm flash{/b} (1 0.9 0.5) — sunlight breaking through, warm memory.
-[show lavender center happy]
-Lavender: Keep flashes under 200ms. Longer flashes feel like a bug. The player should barely register it consciously.
-> Next: screen shake -> section_shake
-> Back to menu -> lesson_menu
-
-# ─── Screen Shake ────────────────────────────────────────────────
-
-@label section_shake
-[show lavender right talking]
-Lavender: {b}[screen shake intensity duration]{/b} — rattles the entire view.
-narrator: {color=#8888cc}[screen shake 0.3 200]{/color}
-narrator: {b}intensity{/b} 0.3 — how far it moves (0.0–1.0). {b}duration{/b} 200ms.
-[show lavender center talking]
-Lavender: Uses:
-narrator: {b}Light shake (0.1–0.2, 100–150ms){/b} — a flinch, a door slamming, a stumble.
-narrator: {b}Medium shake (0.3–0.5, 150–250ms){/b} — an explosion, a hit, something breaking.
-narrator: {b}Heavy shake (0.6+, 200–400ms){/b} — earthquake, catastrophe. Use {i}very{/i} sparingly.
-Lavender: Combine with a flash for maximum impact:
-narrator: {color=#8888cc}[screen shake 0.4 180]{/color}
-narrator: {color=#8888cc}[screen flash 0.3 100 1 1 1]{/color}
-[show lavender center happy]
-Lavender: One flash-shake combo per scene at most. More than that and the player goes numb.
-> Next: duration guide -> section_timing
-> Back to menu -> lesson_menu
-
-# ─── Duration Guide ──────────────────────────────────────────────
-
-@label section_timing
-[show lavender center talking]
-Lavender: Every transition effect takes a duration in milliseconds. Picking the right number matters more than the effect itself.
-narrator: {b}100–250ms{/b} — instant. Flashes, quick shakes. The player feels it before thinking about it.
-narrator: {b}300–500ms{/b} — snappy. Fast scene changes, location hops, upbeat moments.
-narrator: {b}500–800ms{/b} — standard. Most transitions live here. Comfortable and cinematic.
-narrator: {b}800–1200ms{/b} — slow. Dramatic reveals, emotional weight, act breaks.
-narrator: {b}1200ms+{/b} — very slow. Opening/closing sequences, major story beats only.
-[show lavender center happy]
-Lavender: When in doubt, 500ms is a safe default for fades and crossfades. Adjust from there.
-> Practice: live demos -> practice_scene
-> Back to menu -> lesson_menu
-
-# ─── Practice ────────────────────────────────────────────────────
-
-@label practice_scene
-[show lavender center talking]
-Lavender: I'll run three effects live so you can see and feel each one. Watch the screen.
-
-@label practice_demo
-Lavender: {b}Demo 1: Fade{/b} — a scene change.
-[wait 300]
-[transition fade 600]
-[wait 400]
-{{BG_CROSSFADE}}
-[show lavender center happy]
-Lavender: That was a 600ms fade with 400ms held in darkness.
-[wait 400]
-
-Lavender: {b}Demo 2: Flash + Shake{/b} — an impact.
-[wait 300]
-[show lavender center emphasis]
-Lavender: Something's coming—
-[screen shake 0.35 200]
-[wait 50]
-[screen flash 0.25 100 1 1 1]
-[wait 200]
-[show lavender center talking]
-Lavender: Shake 0.35 for 200ms, then flash 0.25 for 100ms. Two lines of script.
-[wait 400]
-
-Lavender: {b}Demo 3: Slow fade{/b} — a dramatic pause.
-[show lavender center emphasis]
-Lavender: And then... everything went dark.
-[transition fade 1200]
-[wait 800]
-[show lavender center happy]
-Lavender: 1200ms fade, 800ms in the dark. The slowness made you wait. That's the point.
-
-[show lavender center talking]
-Lavender: Here's the script for all three demos:
-narrator: {color=#8888cc}[transition fade 600] + [wait 400]{/color} — standard scene change.
-narrator: {color=#8888cc}[screen shake 0.35 200] + [screen flash 0.25 100 1 1 1]{/color} — action impact.
-narrator: {color=#8888cc}[transition fade 1200] + [wait 800]{/color} — dramatic hold.
-Lavender: Edit the numbers in this file and replay to feel how timing changes the mood.
-> Replay demos -> practice_demo
-> Back to menu -> lesson_menu
-
+[stage dusk]
+pip: Compare the fade duration with a short cut. Keep the dialogue and pose the same.
+@label check
+pip: Which value changes how long the fade lasts?
+> The duration in milliseconds. -> correct
+> The number of dialogue lines. -> retry
+@label retry
+[show pip desk curious]
+pip: Timing belongs to the transition, so the script can keep its pacing. Give it another try.
+[jump check]
+@label correct
+[show pip desk cheer]
+pip: Timing belongs to the transition, so the script can keep its pacing.
+> Finish this lesson -> return_hub
+> Try the lesson again -> start
 @label return_hub
 [if !tutorial_done_05]
 [flag tutorial_done_05]
 [inc tutorial_count]
 [endif]
-[goto {{HUB_TARGET}}:topics_page_2]
+[stage clear]
+[goto TutorialHub:topics_page_1]

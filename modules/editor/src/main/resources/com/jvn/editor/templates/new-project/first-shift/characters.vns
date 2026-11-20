@@ -1,0 +1,22 @@
+@character pip "Pip"
+@character narrator "Narrator"
+@background office assets/tutorial/office.jpg
+@stagepreset dusk /definitions/dusk.stagepreset
+@charimg pip wave assets/tutorial/wave.png
+@charimg pip neutral assets/tutorial/neutral.png
+@charimg pip curious assets/tutorial/curious.png
+@charimg pip point assets/tutorial/point.png
+@charimg pip surprised assets/tutorial/surprised.png
+@charimg pip listen assets/tutorial/listen.png
+@charimg pip cheer assets/tutorial/cheer.png
+@charimg pip present assets/tutorial/present.png
+@charimg pip notes assets/tutorial/notes.png
+@position doorway 0.12 0.765
+@position desk 0.425 0.765
+@position window 0.60 0.765
+@charimg pip stride-a-right assets/tutorial/stride-a-right.png
+@charimg pip stride-a-left assets/tutorial/stride-a-left.png
+@charimg pip stride-b-right assets/tutorial/stride-b-right.png
+@charimg pip stride-b-left assets/tutorial/stride-b-left.png
+@charimg pip stride-c-right assets/tutorial/stride-c-right.png
+@charimg pip stride-c-left assets/tutorial/stride-c-left.png

@@ -1,267 +1,155 @@
-# {{PROJECT_NAME}} - Tutorial Hub
-# 30 interactive lessons covering JVN from first dialogue line to release checklist.
-# Each lesson is a separate .vns file in scripts/tutorial/.
-# Lessons are self-contained — the player can take them in any order.
-# The tutorial_count variable (set to 0 in the prologue) tracks how many the player completes.
-# When the player leaves this hub, the end_early label shows progress-aware feedback.
-
-@scenario {{SCENARIO_PREFIX}}_tutorial_hub
-@include {{CHARACTERS_INCLUDE}}
-
-{{BG_DECL}}@label start
+@scenario project_board
+@include /definitions/characters.vns
+@label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[set ui.textBoxAsset none]
-[set ui.continueIndicator spinning_arrow]
-[if tutorial_still]
-[set ui.reduceMotion true]
-[else]
-[set ui.reduceMotion false]
-[endif]
-[if !tutorial_initialized]
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage clear]
+[if !tutorial_count]
 [set tutorial_count 0]
-[flag tutorial_initialized]
 [endif]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-[set character.lavender.imageEffect none]
-[textspeed 28]
-[autodelay 1700]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-{{BG_START}}
-[show lavender center happy]
-[wait 200]
-
-Lavender: Welcome! I'm Lavender, your guide through these tutorials.
-[show lavender center talking]
-Lavender: There are {b}30 lessons{/b} ahead. Each one teaches a part of JVN — from writing your first dialogue line to shipping a finished game.
-
-Lavender: Every lesson is a real {b}.vns{/b} file inside {b}scripts/tutorial/{/b}. You can open any of them in the editor right now, side by side with this hub.
-Lavender: They're designed to be modified. Change the code, break something, see what happens — that's how the syntax sticks.
-
-[show lavender center happy]
-Lavender: The lessons are grouped into six pages. Pick any topic — they're self-contained, so order doesn't matter.
-Lavender: Finish a lesson with its return-to-hub option to mark it complete. Replaying it never adds a second completion.
-Lavender: The stage is plain white, my drawing stays still, and the translucent textbox keeps our conversation readable.
-> Keep the spinning continue arrow -> topics_page_1
-> Use a still continue arrow -> set_still
-
-@label set_still
+[show pip desk wave]
+@label board
+pip: What would you like to work on today?
+> Opening and timing -> topics_page_1
+> Sound and direction -> topics_page_2
+> Scene craft -> topics_page_3
+> Production desk -> topics_page_4
+> Tools and lighting -> topics_page_5
+> Rehearsal and release -> topics_page_6
+> Progress and motion -> options
+@label options
+pip: You have logged ${tutorial_count} of 30 lessons. You can revisit any of them.
+> Use reduced motion -> still
+> Play character and camera moves -> motion
+> Back to the board -> board
+@label still
 [flag tutorial_still]
 [set ui.reduceMotion true]
-[set character.lavender.imageEffect none]
-[jump topics_page_1]
-
-@label set_motion
-[unflag tutorial_still]
+[jump board]
+@label motion
+[set tutorial_still false]
 [set ui.reduceMotion false]
-[set character.lavender.imageEffect none]
-[jump topics_page_1]
-
+[jump board]
 @label topics_page_1
-[show lavender far_left talking]
-[wait 120]
-Lavender: Writing and presenting — how text, characters, and visuals reach the screen.
-> Toggle the continue arrow animation -> toggle_motion
-> 01. Dialogue Basics — lines, narrator, text tags -> open_dialogue
-> 02. Narration and Pacing — textspeed, wait, autodelay -> open_narration
-> 03. Expressions and Characters — @character, sprites, [show]/[hide] -> open_expressions
-> 04. Images and Backgrounds — @background, [bg], composition -> open_images
-> More topics → -> topics_page_2
-> I'm done for now -> end_early
-
-@label toggle_motion
-[if tutorial_still == true]
-[jump set_motion]
-[else]
-[jump set_still]
-[endif]
-
+[bg office]
+[show pip desk point]
+pip: Start with a line of dialogue or a change of scene.
+> First words -> open_dialogue
+> Leave a beat -> open_narration
+> Read the room -> open_expressions
+> Set the stage -> open_images
+> Change scenes -> open_transitions
+> Back to the board -> board
 @label topics_page_2
-[show lavender far_left talking]
-[wait 120]
-Lavender: Engine systems — transitions, audio, state, movement, branching, and animation.
-> 05. Transitions and Effects — fade, crossfade, flash, shake -> open_transitions
-> 06. Audio and Music — bgm, sfx, voice, fades -> open_audio
-> 07. Variables and Conditions — [set], [inc], [if]/[endif] -> open_variables
-> 08. Character Movement — [move], easing, @position -> open_movement
-> 09. Puppeteer Timelines — parallel tracks, keyframes, camera -> open_puppeteer
-> 10. Choices and Branching — >, [jump], [goto], gated choices -> open_menus
-> 11. Subroutines and Flow — [call]/[return], @include, structure -> open_subroutines
-> 12. Best Practices — naming, bugs, writing craft -> open_best_practices
-> More topics → -> topics_page_3
-> ← Back -> topics_page_1
-> I'm done for now -> end_early
-
+[bg office]
+[show pip desk point]
+pip: Pick something to put in motion.
+> Welcome chime -> open_audio
+> Remember a choice -> open_variables
+> Find a mark -> open_movement
+> Animate the office -> open_puppeteer
+> Offer a choice -> open_menus
+> Back to the board -> board
 @label topics_page_3
-[show lavender far_left talking]
-[wait 120]
-Lavender: Production — camera work, localization, UI customization, hybrid scenes, and shipping.
-> 13. Camera and Staging — [camera pan], [camera zoom], blocking -> open_camera
-> 14. Localization — text keys, locale files, translation workflow -> open_localization
-> 15. UI Layout and Theme — dialogue box, menu files, style properties -> open_ui_layout
-> 16. Testing and Release — validation, playtesting, release checklist -> open_testing_release
-> 17. VNS and JES Together — scene push, parameters, and return flow -> open_vns_jes
-> More: interfaces and plugins → -> topics_page_4
-> ← Back -> topics_page_1
-> ← Systems -> topics_page_2
-> I'm done for now -> end_early
-
+[bg office]
+[show pip desk point]
+pip: Choose a scene to direct.
+> Reuse a sound -> open_subroutines
+> Find the first bad beat -> open_best_practices
+> Frame the equipment -> open_camera
+> Translate a cue -> open_localization
+> Design for the reader -> open_ui_layout
+> Back to the board -> board
 @label topics_page_4
-[show lavender far_left talking]
-Lavender: Completed ${tutorial_count} of 30 lessons. Pick a workshop.
-> 18. Plugins and Pikupiku — preview, presets, authoring -> open_plugins_and_line_boil
-> 19. Saves and Rollback — history, slots, persistence -> open_saves_rollback_persistence
-> 20. Dialogue Surfaces — ADV, NVL, bubbles -> open_dialogue_presentation
-> 21. Reactive UI and Facets — live data and return values -> open_reactive_ui_and_facets
-> 22. Phone Storytelling — contacts, threads, calls -> open_phone_storytelling
-> More workshops → -> topics_page_5
-> ← Back -> topics_page_3
-> I’m done for now -> end_early
-
+[bg office]
+[show pip desk point]
+pip: Which part of the game shall we test?
+> Test a packaged game -> open_testing_release
+> Visit the project board -> open_vns_jes
+> Try an image effect -> open_plugins_and_line_boil
+> Resume a saved shift -> open_saves_rollback_persistence
+> Change the voice -> open_dialogue_presentation
+> Back to the board -> board
 @label topics_page_5
-[show lavender far_left talking]
-Lavender: Completed ${tutorial_count} of 30 lessons. Pick a workshop.
-> 23. Particles and Visualizers — motion and music -> open_particles_and_visualizers
-> 24. Layer Groups and Lighting — stage, focus, display slots -> open_layer_groups_and_lighting
-> 25. JES Workshop — entities, input, widgets -> open_jes_entities_input_widgets
-> 26. JES Worlds — tilemaps, physics, RPG and AI -> open_jes_worlds_physics_rpg
-> More workshops → -> topics_page_6
-> ← Back -> topics_page_4
-> I’m done for now -> end_early
-
+[bg office]
+[show pip desk point]
+pip: Choose a tool for the office.
+> Watch a live value -> open_reactive_ui_and_facets
+> Take a message -> open_phone_storytelling
+> Leave room for effects -> open_particles_and_visualizers
+> Light the night shift -> open_layer_groups_and_lighting
+> Build a desk widget -> open_jes_entities_input_widgets
+> Back to the board -> board
 @label topics_page_6
-[show lavender far_left talking]
-Lavender: Completed ${tutorial_count} of 30 lessons. Pick a workshop.
-> 27. Editor Workflows — maps, diagnostics, tooling -> open_editor_workflows
-> 28. Assets and Performance — catalogs, packs, profiling -> open_assets_and_performance
-> 29. Accessibility and Controls — readable, playable settings -> open_accessibility_and_controls
-> 30. Extensions and Capstone — Java, plugins, shipping -> open_java_extensions_and_capstone
-> ← Back -> topics_page_5
-> I’m done for now -> end_early
-
+[bg office]
+[show pip desk point]
+pip: What needs attention before we ship?
+> Separate space from physics -> open_jes_worlds_physics_rpg
+> Find the right source -> open_editor_workflows
+> Budget the frame -> open_assets_and_performance
+> Play with less motion -> open_accessibility_and_controls
+> Sign off -> open_java_extensions_and_capstone
+> Back to the board -> board
+@label open_dialogue
+[goto T01_Dialogue:start]
+@label open_narration
+[goto T02_Narration:start]
+@label open_expressions
+[goto T03_Expressions:start]
+@label open_images
+[goto T04_Images:start]
+@label open_transitions
+[goto T05_Transitions:start]
+@label open_audio
+[goto T06_Audio:start]
+@label open_variables
+[goto T07_Variables:start]
+@label open_movement
+[goto T08_Movement:start]
+@label open_puppeteer
+[goto T09_Puppeteer:start]
+@label open_menus
+[goto T10_Menus:start]
+@label open_subroutines
+[goto T11_Subroutines:start]
+@label open_best_practices
+[goto T12_BestPractices:start]
+@label open_camera
+[goto T13_Camera:start]
+@label open_localization
+[goto T14_Localization:start]
+@label open_ui_layout
+[goto T15_UILayout:start]
+@label open_testing_release
+[goto T16_TestingRelease:start]
+@label open_vns_jes
+[goto T17_VnsJes:start]
 @label open_plugins_and_line_boil
 [goto T18_Plugins:start]
-
 @label open_saves_rollback_persistence
 [goto T19_Saves:start]
-
 @label open_dialogue_presentation
 [goto T20_Presentation:start]
-
 @label open_reactive_ui_and_facets
 [goto T21_Facets:start]
-
 @label open_phone_storytelling
 [goto T22_Phone:start]
-
 @label open_particles_and_visualizers
 [goto T23_Particles:start]
-
 @label open_layer_groups_and_lighting
 [goto T24_Stage:start]
-
 @label open_jes_entities_input_widgets
 [goto T25_JesTools:start]
-
 @label open_jes_worlds_physics_rpg
 [goto T26_JesWorlds:start]
-
 @label open_editor_workflows
 [goto T27_Editor:start]
-
 @label open_assets_and_performance
 [goto T28_Assets:start]
-
 @label open_accessibility_and_controls
 [goto T29_Accessibility:start]
-
 @label open_java_extensions_and_capstone
 [goto T30_Extensions:start]
-
-@label open_dialogue
-[goto {{DIALOGUE_TARGET}}:start]
-
-@label open_narration
-[goto {{NARRATION_TARGET}}:start]
-
-@label open_expressions
-[goto {{EXPRESSIONS_TARGET}}:start]
-
-@label open_images
-[goto {{IMAGES_TARGET}}:start]
-
-@label open_transitions
-[goto {{TRANSITIONS_TARGET}}:start]
-
-@label open_audio
-[goto {{AUDIO_TARGET}}:start]
-
-@label open_variables
-[goto {{VARIABLES_TARGET}}:start]
-
-@label open_movement
-[goto {{MOVEMENT_TARGET}}:start]
-
-@label open_puppeteer
-[goto {{PUPPETEER_TARGET}}:start]
-
-@label open_menus
-[goto {{MENUS_TARGET}}:start]
-
-@label open_subroutines
-[goto {{SUBROUTINES_TARGET}}:start]
-
-@label open_best_practices
-[goto {{BEST_PRACTICES_TARGET}}:start]
-
-@label open_camera
-[goto {{CAMERA_TARGET}}:start]
-
-@label open_localization
-[goto {{LOCALIZATION_TARGET}}:start]
-
-@label open_ui_layout
-[goto {{UI_LAYOUT_TARGET}}:start]
-
-@label open_testing_release
-[goto {{TESTING_RELEASE_TARGET}}:start]
-
-@label open_vns_jes
-[goto {{VNS_JES_TARGET}}:start]
-
-@label end_early
-[show lavender center talking]
-[wait 160]
-
-# ─── Progress-Aware Farewell ────────────────────────────────────
-# Each lesson records completion only once, on return to this hub.
-# This [if] block reacts to how many the player actually completed.
-
-[if tutorial_count >= 30]
-Lavender: You covered {b}the full workshop{/b}. You have explored story scripting, presentation, interfaces, game systems, authoring tools, extensions, and production.
-Lavender: That's not a tutorial anymore — that's a toolkit. You're ready to build a full game.
-[elif tutorial_count >= 15]
-Lavender: Good depth — you've got the core scripting systems under your belt.
-Lavender: The later workshops cover reactive interfaces, plugins, JES worlds, accessibility, and release preparation. Come back when your project reaches that stage.
-[elif tutorial_count > 2]
-Lavender: Solid start. You've seen how dialogue, characters, and a few engine systems work.
-Lavender: The lessons you skipped aren't going anywhere. Open them when a feature comes up — they work as standalone reference, not just sequential tutorials.
-[elif tutorial_count > 0]
-Lavender: You dipped into one or two topics. That's fine — you know the format now.
-Lavender: When you run into a syntax question while writing, jump back to the specific lesson. Each one opens with the exact command syntax you need.
-[else]
-Lavender: No lessons completed yet — but you've seen how the hub works.
-Lavender: Each lesson is a self-contained .vns file. Open any of them directly from the editor's file browser at {b}scripts/tutorial/{/b}, or come back here and pick one from the menu.
-[endif]
-
-[show lavender center happy]
-Lavender: One more thing: every tutorial file is a real, runnable .vns script. They're not read-only documentation.
-Lavender: Copy code snippets into your own scenes. Add comments. Modify the practice sections. They're yours now.
-
-narrator: To return to these tutorials later, run this project and choose {b}Open Lavender’s complete JVN workshop{/b} from the prologue.
-narrator: Or open any file in {b}scripts/tutorial/{/b} directly in the editor — no need to play through the hub.
-
-Lavender: Go build something.
-[end]

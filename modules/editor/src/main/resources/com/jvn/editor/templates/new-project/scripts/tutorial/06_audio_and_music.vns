@@ -1,167 +1,34 @@
-# Tutorial 06 — Audio and Music
-# [bgm], [sfx], [voice], and audio fading commands.
-
-@scenario {{SCENARIO_PREFIX}}_tutorial_06_audio
-@include {{CHARACTERS_INCLUDE}}
-{{BG_DECL}}@label start
+# Welcome chime
+@scenario office_lesson_06
+@include /definitions/characters.vns
+@label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[set ui.textBoxAsset none]
-[set ui.continueIndicator spinning_arrow]
-[if tutorial_still]
-[set ui.reduceMotion true]
-[else]
-[set ui.reduceMotion false]
-[endif]
-[if !tutorial_initialized]
-[set tutorial_count 0]
-[flag tutorial_initialized]
-[endif]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-[set character.lavender.imageEffect none]
-{{BG_START}}
-[textspeed 28]
-[autodelay 1650]
-[show lavender center happy]
-[wait 200]
-Lavender: Audio in VNS has three main layers: background music, sound effects, and voice clips.
-[show lavender center talking]
-Lavender: Each layer has its own commands. Let's go through them.
-
-@label lesson_menu
-[show lavender far_left talking]
-> [bgm] — background music -> section_bgm
-> [sfx] — sound effects -> section_sfx
-> [voice] — voice acting -> section_voice
-> Fading and crossfading audio -> section_fading
-> Quick reference: audio commands -> quick_reference
-> Practice: scoring a scene -> practice_scene
-> Back to Tutorial Hub -> return_hub
-
-# ─── Quick Reference ─────────────────────────────────────────────
-
-@label quick_reference
-[show lavender center talking]
-Lavender: Audio works best when each channel has a job:
-narrator: {color=#8888cc}[bgm "assets/audio/theme.mp3" loop=true vol=0.7]{/color}
-narrator: {color=#8888cc}[sfx "assets/audio/sfx/click.ogg" vol=0.8]{/color}
-narrator: {color=#8888cc}[voice "assets/audio/voice/lavender_001.ogg"]{/color}
-narrator: {color=#8888cc}[bgm_crossfade "assets/audio/next_theme.mp3" 1200]{/color}
-narrator: {color=#8888cc}[bgm_fadeout 900]{/color}
-[show lavender center happy]
-Lavender: Checklist: music loops cleanly, SFX are short, voice lines match the following dialogue, and volume is balanced.
-> Start the lesson sections -> section_bgm
-> Back to menu -> lesson_menu
-
-# ─── BGM ─────────────────────────────────────────────────────────
-
-@label section_bgm
-[show lavender left talking]
-Lavender: {b}[bgm "path"]{/b} starts a music track that loops until you stop or replace it.
-narrator: {color=#8888cc}[bgm "assets/audio/bgm/peaceful_morning.mp3"]{/color}
-narrator: The track plays immediately and loops continuously.
-[show lavender center talking]
-Lavender: To switch tracks, call [bgm] again — the old track stops, the new one starts:
-narrator: {color=#8888cc}[bgm "assets/audio/bgm/tense_night.mp3"]{/color}
-Lavender: To stop music entirely:
-narrator: {color=#8888cc}[bgm_stop]{/color}
-[show lavender center happy]
-Lavender: Format: MP3 or OGG. Keep music files in {b}assets/audio/bgm/{/b} and name them descriptively — cafe_jazz_loop.mp3, not track_03.mp3.
-> Next: sfx -> section_sfx
-> Back to menu -> lesson_menu
-
-# ─── SFX ─────────────────────────────────────────────────────────
-
-@label section_sfx
-[show lavender right talking]
-Lavender: {b}[sfx "path"]{/b} plays a one-shot sound. It fires once and stops — no looping.
-narrator: {color=#8888cc}[sfx "assets/audio/sfx/door_close.wav"]{/color}
-[show lavender center talking]
-Lavender: Timing matters. Place the SFX command {i}before{/i} the dialogue line that reacts to it:
-narrator: {color=#8888cc}[sfx "assets/audio/sfx/glass_break.wav"]{/color}
-narrator: {color=#8888cc}Lavender: What was that?!{/color}
-narrator: The player hears the crash, then reads the reaction. Sound first, words second.
-[show lavender left talking]
-Lavender: SFX files should be short — 0.5 to 2 seconds. Use WAV for crisp, instant playback.
-Lavender: Folder: {b}assets/audio/sfx/{/b}. Names: door_close.wav, footstep_wood.wav, thunder_distant.wav.
-> Next: voice -> section_voice
-> Back to menu -> lesson_menu
-
-# ─── Voice ───────────────────────────────────────────────────────
-
-@label section_voice
-[show lavender center talking]
-Lavender: {b}[voice "path"]{/b} plays a voice clip alongside the next dialogue line.
-narrator: {color=#8888cc}[voice "assets/audio/voice/lavender_001.wav"]{/color}
-narrator: {color=#8888cc}Lavender: I can't believe it's already sunset.{/color}
-narrator: The clip starts when the line appears. If the player clicks ahead, the clip stops.
-[show lavender right talking]
-Lavender: Voice acting is optional. If you use it:
-narrator: {b}Naming:{/b} characterId_lineNumber.wav — lavender_001.wav, alex_042.wav.
-narrator: {b}Folder:{/b} assets/audio/voice/ with subfolders per character.
-narrator: {b}Settings:{/b} always give players a separate voice volume slider.
-[show lavender center happy]
-Lavender: Voice files add up fast. A 10-hour VN can have thousands of clips. Organize early.
-> Next: fading -> section_fading
-> Back to menu -> lesson_menu
-
-# ─── Fading ──────────────────────────────────────────────────────
-
-@label section_fading
-[show lavender right talking]
-Lavender: Abrupt music stops are jarring. Use fades instead:
-narrator: {b}Fade out:{/b} {color=#8888cc}[bgm_fadeout 1200]{/color} — current track fades to silence over 1200ms.
-narrator: {b}Fade in:{/b} {color=#8888cc}[bgm_fadein "path" 800]{/color} — new track starts silent, rises to full over 800ms.
-[show lavender center talking]
-Lavender: For a smooth crossfade between tracks, use both together:
-narrator: {color=#8888cc}[bgm_fadeout 1000]{/color}
-narrator: {color=#8888cc}[bgm_fadein "assets/audio/bgm/tense_night.mp3" 1000]{/color}
-narrator: Both run simultaneously — old track fades out as new track fades in.
-[show lavender center happy]
-Lavender: Fade durations: 600–1000ms for standard changes, 1200–2000ms for slow dramatic shifts, 300–500ms for urgent mood swaps.
-> Practice: scoring a scene -> practice_scene
-> Back to menu -> lesson_menu
-
-# ─── Practice ────────────────────────────────────────────────────
-
-@label practice_scene
-[show lavender center talking]
-Lavender: I'll show you how audio commands layer into a real scene. Follow the script annotations.
-[wait 300]
-
-@label practice_scored_scene
-{{BGM_START}}
-narrator: {b}↑ [bgm] started a track above this line.{/b}
-[wait 300]
-narrator: Morning light filtered through the curtains. The town was still quiet.
-[show lavender center happy]
-Lavender: Another beautiful day. I wonder what's out there.
-[wait 200]
-narrator: A knock at the door — sharp and sudden.
-narrator: {b}↑ You'd add [sfx "knock.wav"] right before that narrator line.{/b}
-[show lavender center emphasis]
-Lavender: Who's there...?
-[wait 400]
-narrator: Silence. Then the distant rumble of thunder.
-narrator: {b}↑ Here you'd layer a low thunder SFX or switch to a darker BGM cue for atmosphere.{/b}
-[wait 300]
-{{BGM_FADE}}
-narrator: {b}↑ [bgm_fadeout] faded the music to silence.{/b}
-[show lavender center talking]
-Lavender: That scene used four audio ideas:
-narrator: {b}1.{/b} [bgm] for the background music track.
-narrator: {b}2.{/b} [sfx] for the door knock (marked where it would go).
-narrator: {b}3.{/b} Careful cue selection to shift the mood as the storm rolls in.
-narrator: {b}4.{/b} [bgm_fadeout] to fade music as the mood shifts.
-Lavender: Add your own audio files and replace the annotations with real commands to hear it come alive.
-> Replay the scored scene -> practice_scored_scene
-> Back to menu -> lesson_menu
-
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage clear]
+[show pip desk present]
+pip: Two notes tell the player the game is ready. Listen once.
+[sfx assets/tutorial/welcome.wav]
+pip: Find the WAV in assets/tutorial. Trigger it again from the replay choice after the checkpoint.
+@label check
+pip: Which command fits a short welcome chime?
+> bgm -> retry
+> sfx -> correct
+@label retry
+[show pip desk curious]
+pip: A one-shot sound can finish while the scene continues. Give it another try.
+[jump check]
+@label correct
+[show pip desk cheer]
+pip: A one-shot sound can finish while the scene continues.
+> Finish this lesson -> return_hub
+> Try the lesson again -> start
 @label return_hub
-{{BGM_START}}
 [if !tutorial_done_06]
 [flag tutorial_done_06]
 [inc tutorial_count]
 [endif]
-[goto {{HUB_TARGET}}:topics_page_2]
+[stage clear]
+[goto TutorialHub:topics_page_2]

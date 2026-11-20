@@ -1,0 +1,16 @@
+jvn.stagePreset.useSceneBackground=true
+bgExposure=-0.75
+bgTintColor=#427886
+bgTintStrength=0.32
+bgTintBlend=Multiply
+lights=1
+light.0.name=Desk lamp
+light.0.layer=background
+light.0.shape=radial
+light.0.position=0.72,0.45
+light.0.source=0.75,0.26
+light.0.color=#ffbd79
+light.0.blend=screen
+light.0.radius=0.38
+light.0.intensity=0.7
+light.0.silhouette=0

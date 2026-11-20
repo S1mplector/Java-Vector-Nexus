@@ -61,7 +61,7 @@ Every tutorial should tell you its prerequisites, what to edit, what you should 
 
 | Goal | Next page |
 |---|---|
-| Learn by playing and editing | [Lavender workshop](lavender-workshop.md) |
+| Learn by playing and editing | [First Shift](first-shift.md) |
 | Create a first project | [Getting started](getting-started.md) |
 | Pick VNS, JES, UI, or plugins | [Choose your path](choose-your-path.md) |
 | Find an exact subsystem | [Documentation index](../INDEX.md) |

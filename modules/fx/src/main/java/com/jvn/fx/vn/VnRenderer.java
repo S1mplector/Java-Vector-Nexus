@@ -2861,7 +2861,7 @@ public class VnRenderer {
   }
 
   private final Map<String, List<TextSpan>> parsedTextCache = new LinkedHashMap<>(32, .75f, true);
-  private record StyledLayoutKey(List<TextSpan> spans, int revealed, double width, Font font, Color color) {}
+  private record StyledLayoutKey(List<TextSpan> spans, double width, Font font, Color color) {}
   private final Map<StyledLayoutKey, List<StyledLine>> styledLayoutCache = new LinkedHashMap<>(32, .75f, true);
 
   private List<TextSpan> parsedText(String text) {
@@ -2876,7 +2876,7 @@ public class VnRenderer {
     return parsed;
   }
 
-  private record StyledGlyph(
+  record StyledGlyph(
       char value,
       Font font,
       Color color,
@@ -2886,7 +2886,7 @@ public class VnRenderer {
       boolean syntheticItalic
   ) {}
 
-  private record StyledLine(List<StyledGlyph> glyphs, double width) {}
+  record StyledLine(List<StyledGlyph> glyphs, double width) {}
 
   private void drawStyledText(List<TextSpan> spans, int revealedChars, double startX, double startY, double maxWidth, double xAlign) {
     drawStyledText(spans, revealedChars, startX, startY, maxWidth, xAlign, dialogueFont, dialogueTextFillColor);
@@ -2906,88 +2906,93 @@ public class VnRenderer {
     drawStyledLines(lines, startX, startY, maxWidth, xAlign, baseFont, defaultTextColor);
   }
 
-  private List<StyledLine> layoutStyledLines(
+  List<StyledLine> layoutStyledLines(
       List<TextSpan> spans,
       int revealedChars,
       double maxWidth,
       Font baseFont,
       Color defaultTextColor
   ) {
-    StyledLayoutKey key = new StyledLayoutKey(spans, revealedChars, maxWidth, baseFont, defaultTextColor);
-    List<StyledLine> cached = styledLayoutCache.get(key);
-    if (cached != null) return cached;
-    gc.setFont(baseFont);
-    List<StyledLine> lines = new ArrayList<>();
-    List<StyledGlyph> currentLine = new ArrayList<>();
-    double currentLineWidth = 0.0;
-    int charCount = 0;
-    int glyphIndex = 0;
+    StyledLayoutKey key = new StyledLayoutKey(spans, maxWidth, baseFont, defaultTextColor);
+    List<StyledLine> lines = styledLayoutCache.get(key);
+    int length = spans.stream().mapToInt(TextSpan::length).sum();
+    if (lines == null) {
+      lines = wrapStyledText(spans, maxWidth, baseFont, defaultTextColor);
+      if (length <= 16_384) {
+        if (styledLayoutCache.size() >= 96) styledLayoutCache.remove(styledLayoutCache.keySet().iterator().next());
+        styledLayoutCache.put(key, lines);
+      }
+    }
+    if (revealedChars >= length) return lines;
 
+    // Use the final line breaks from the first typewriter tick, including across style changes.
+    List<StyledLine> visible = new ArrayList<>();
+    for (StyledLine line : lines) {
+      List<StyledGlyph> glyphs = line.glyphs();
+      if (glyphs.isEmpty() || glyphs.get(glyphs.size() - 1).glyphIndex() < revealedChars) {
+        visible.add(line);
+        continue;
+      }
+      int count = 0;
+      double width = 0;
+      while (count < glyphs.size() && glyphs.get(count).glyphIndex() < revealedChars) {
+        width += glyphs.get(count++).width();
+      }
+      if (count > 0) visible.add(new StyledLine(glyphs.subList(0, count), width));
+      break;
+    }
+    return visible;
+  }
+
+  private List<StyledLine> wrapStyledText(List<TextSpan> spans, double maxWidth, Font baseFont, Color defaultTextColor) {
+    List<StyledGlyph> glyphs = new ArrayList<>();
     for (TextSpan span : spans) {
-      String text = span.getText();
-      int spanLen = text.length();
-      int visibleChars = 0;
-      if (charCount < revealedChars) {
-        visibleChars = Math.min(spanLen, revealedChars - charCount);
+      Color color = span.hasColor() ? parseColorHex(span.getColorHex()) : defaultTextColor;
+      Font font = baseFont;
+      boolean syntheticItalic = false;
+      if (span.getEffect() == TextEffect.BOLD) {
+        font = Font.font(baseFont.getFamily(), FontWeight.BOLD, baseFont.getSize());
+      } else if (span.getEffect() == TextEffect.ITALIC) {
+        var italic = ItalicFontSupport.resolve(baseFont, fontWeightOf(baseFont, FontWeight.NORMAL));
+        font = italic.font();
+        syntheticItalic = italic.synthetic();
       }
-
-      if (visibleChars > 0) {
-        Color spanColor = span.hasColor() ? parseColorHex(span.getColorHex()) : defaultTextColor;
-        Font effectFont = baseFont;
-        boolean syntheticItalic = false;
-        if (span.getEffect() == TextEffect.BOLD) {
-          effectFont = Font.font(baseFont.getFamily(), FontWeight.BOLD, baseFont.getSize());
-        } else if (span.getEffect() == TextEffect.ITALIC) {
-          ItalicFontSupport.ResolvedItalic resolvedItalic = ItalicFontSupport.resolve(
-              baseFont,
-              fontWeightOf(baseFont, FontWeight.NORMAL)
-          );
-          effectFont = resolvedItalic.font();
-          syntheticItalic = resolvedItalic.synthetic();
-        }
-
-        for (int i = 0; i < visibleChars; i++) {
-          char c = text.charAt(i);
-          if (c == '\n') {
-            lines.add(new StyledLine(List.copyOf(currentLine), currentLineWidth));
-            currentLine.clear();
-            currentLineWidth = 0.0;
-            continue;
-          }
-
-          double charWidth = computeTextWidth(String.valueOf(c), effectFont);
-          if (!currentLine.isEmpty() && currentLineWidth + charWidth > maxWidth) {
-            lines.add(new StyledLine(List.copyOf(currentLine), currentLineWidth));
-            currentLine.clear();
-            currentLineWidth = 0.0;
-          }
-
-          currentLine.add(new StyledGlyph(
-              c,
-              effectFont,
-              spanColor,
-              span.getEffect(),
-              glyphIndex,
-              charWidth,
-              syntheticItalic
-          ));
-          currentLineWidth += charWidth;
-          glyphIndex++;
-        }
+      for (char c : span.getText().toCharArray()) {
+        double width = c == '\n' ? 0 : computeTextWidth(String.valueOf(c), font);
+        glyphs.add(new StyledGlyph(c, font, color, span.getEffect(), glyphs.size(), width, syntheticItalic));
       }
-
-      charCount += spanLen;
     }
 
-    if (!currentLine.isEmpty() || lines.isEmpty()) {
-      lines.add(new StyledLine(List.copyOf(currentLine), currentLineWidth));
+    List<StyledLine> lines = new ArrayList<>();
+    int start = 0;
+    while (start < glyphs.size()) {
+      int end = start;
+      int lastSpace = -1;
+      double width = 0;
+      double widthBeforeSpace = 0;
+      while (end < glyphs.size()) {
+        StyledGlyph glyph = glyphs.get(end);
+        if (glyph.value() == '\n') break;
+        if (Character.isWhitespace(glyph.value()) && end > start) {
+          lastSpace = end;
+          widthBeforeSpace = width;
+        }
+        if (end > start && width + glyph.width() > maxWidth) break;
+        width += glyph.width();
+        end++;
+      }
+      int next = end;
+      if (end < glyphs.size() && glyphs.get(end).value() == '\n') {
+        next++;
+      } else if (end < glyphs.size() && lastSpace > start) {
+        end = lastSpace;
+        width = widthBeforeSpace;
+        next = lastSpace + 1;
+      }
+      lines.add(new StyledLine(List.copyOf(glyphs.subList(start, end)), width));
+      start = next;
     }
-    List<StyledLine> result = List.copyOf(lines);
-    if (spans.stream().mapToInt(TextSpan::length).sum() <= 16_384) {
-      if (styledLayoutCache.size() >= 96) styledLayoutCache.remove(styledLayoutCache.keySet().iterator().next());
-      styledLayoutCache.put(key, result);
-    }
-    return result;
+    return List.copyOf(lines);
   }
 
   private void drawStyledLines(

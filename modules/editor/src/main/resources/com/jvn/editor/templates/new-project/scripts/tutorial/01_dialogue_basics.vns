@@ -1,214 +1,33 @@
-# Tutorial 01 — Dialogue Basics
-# Character lines, narrator lines, and inline text formatting.
-
-@scenario {{SCENARIO_PREFIX}}_tutorial_01_dialogue
-@include {{CHARACTERS_INCLUDE}}
-{{BG_DECL}}@label start
+# First words
+@scenario office_lesson_01
+@include /definitions/characters.vns
+@label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[set ui.textBoxAsset none]
-[set ui.continueIndicator spinning_arrow]
-[if tutorial_still]
-[set ui.reduceMotion true]
-[else]
-[set ui.reduceMotion false]
-[endif]
-[if !tutorial_initialized]
-[set tutorial_count 0]
-[flag tutorial_initialized]
-[endif]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-[set character.lavender.imageEffect none]
-{{BG_START}}
-[textspeed 28]
-[autodelay 1650]
-[show lavender center happy]
-[wait 200]
-Lavender: Hi! I'm Lavender. This line you're reading is a {b}character dialogue line{/b}.
-[show lavender center talking]
-narrator: And this line — with no name in the text box — is a {b}narrator line{/b}.
-Lavender: Those two line types, plus a handful of formatting tags, are everything you need for Tutorial 01.
-
-@label lesson_menu
-[show lavender far_left talking]
-> Character dialogue lines -> section_lines
-> Narrator lines -> section_narrator
-> Text tags: bold, italic, color -> section_tags
-> Text tags: wave and shake -> section_fx_tags
-> Nesting tags together -> section_nesting
-> Quick reference: dialogue syntax -> quick_reference
-> Practice: a mini-scene -> practice_scene
-> Back to Tutorial Hub -> return_hub
-
-# ─── Quick Reference ─────────────────────────────────────────────
-
-@label quick_reference
-[show lavender center talking]
-Lavender: Keep this pattern nearby while writing your first scenes:
-narrator: {color=#8888cc}@character lavender "Lavender"{/color}
-narrator: {color=#8888cc}Lavender: Character dialogue goes after the colon.{/color}
-narrator: {color=#8888cc}narrator: Narration uses the narrator speaker ID.{/color}
-narrator: {color=#8888cc}Lavender: Use \{b\}bold\{/b\}, \{i\}italic\{/i\}, and \{color=#4a9eff\}color\{/color\}.{/color}
-[show lavender center happy]
-Lavender: Checklist: declared speaker, readable line length, one emphasis tag only when it helps.
-> Start the lesson sections -> section_lines
-> Back to menu -> lesson_menu
-
-# ─── Character Lines ─────────────────────────────────────────────
-
-@label section_lines
-[show lavender left talking]
-Lavender: A character line is a name, a colon, and the spoken text:
-narrator: {color=#8888cc}Lavender: Hello, world!{/color}
-Lavender: The name before the colon appears in the {b}name box{/b}. The text after it fills the {b}dialogue area{/b}.
-[show lavender center talking]
-Lavender: The name must match a declared character ID. Characters are declared with {b}@character{/b}:
-narrator: {color=#8888cc}@character lavender "Lavender"{/color}
-narrator: The first word is the {b}script ID{/b}. The quoted part is the {b}display name{/b} the player sees.
-Lavender: Multiple characters simply means multiple declarations:
-narrator: {color=#8888cc}@character alex "Alex"{/color}
-narrator: {color=#8888cc}@character narrator "Narrator"{/color}
-[show lavender center happy]
-Lavender: One declaration per character, usually in a shared file. For this project, that's {b}scripts/definitions/characters.vns{/b}.
-> Next: narrator lines -> section_narrator
-> Back to menu -> lesson_menu
-
-# ─── Narrator Lines ──────────────────────────────────────────────
-
-@label section_narrator
-[show lavender right talking]
-Lavender: The special ID {b}narrator{/b} hides the name box entirely:
-narrator: {color=#8888cc}narrator: The hallway was empty.{/color}
-narrator: The player sees only the text — no name label.
-[show lavender center talking]
-Lavender: Use narrator lines for three things:
-narrator: {b}1.{/b} Scene descriptions — {i}The sun dipped below the hills.{/i}
-narrator: {b}2.{/b} Internal thoughts — {i}Something about this felt wrong.{/i}
-narrator: {b}3.{/b} Stage directions — {i}She turned and walked away without another word.{/i}
-[show lavender center happy]
-Lavender: Alternate between character lines and narrator lines to create rhythm. Characters speak, the narrator paints.
-> Next: text tags -> section_tags
-> Back to menu -> lesson_menu
-
-# ─── Text Tags: Bold, Italic, Color ──────────────────────────────
-
-@label section_tags
-[show lavender left talking]
-Lavender: Wrap words in tags to change how they render. Three essentials:
-narrator: {b}Bold{/b} — \{b\}text\{/b\} — for emphasis and strong statements.
-narrator: {i}Italic{/i} — \{i\}text\{/i\} — for thoughts, stress, and foreign words.
-narrator: {color=#4a9eff}Color{/color} — \{color=#4a9eff\}text\{/color\} — for highlighting key words.
-[show lavender center talking]
-Lavender: Here's each one in action.
-Lavender: Bold: {b}I told you not to open that door.{/b}
-Lavender: Italic: I {i}told{/i} you not to open that door.
-Lavender: Color: I told you not to open that {color=#ff6666}door{/color}.
-[show lavender center happy]
-Lavender: Same sentence, completely different weight each time. The tag chooses what the player notices first.
-> Next: wave and shake -> section_fx_tags
-> Back to menu -> lesson_menu
-
-# ─── Text Tags: Wave and Shake ───────────────────────────────────
-
-@label section_fx_tags
-[show lavender right talking]
-Lavender: Two animated tags add motion to text:
-narrator: {wave}Wave{/wave} — \{wave\}text\{/wave\} — letters ripple gently. Good for dreamy or ethereal dialogue.
-narrator: {shake}Shake{/shake} — \{shake\}text\{/shake\} — letters tremble. Good for fear, anger, or impact.
-[show lavender center talking]
-Lavender: {wave}The world dissolved around her like watercolors in rain.{/wave}
-Lavender: {shake}Get out. Now.{/shake}
-[show lavender center happy]
-Lavender: Animated tags are powerful, so use them rarely. If every line shakes, none of them feel urgent.
-> Next: nesting tags -> section_nesting
-> Back to menu -> lesson_menu
-
-# ─── Nesting Tags ────────────────────────────────────────────────
-
-@label section_nesting
-[show lavender center talking]
-Lavender: Tags nest by wrapping one inside another. Close the inner tag first:
-narrator: {color=#8888cc}\{b\}\{color=#ff4444\}text\{/color\}\{/b\}{/color} → {b}{color=#ff4444}bold red text{/color}{/b}
-narrator: {color=#8888cc}\{i\}\{wave\}text\{/wave\}\{/i\}{/color} → {i}{wave}italic wave{/wave}{/i}
-[show lavender left talking]
-Lavender: Two practical rules:
-narrator: {b}1.{/b} Keep nesting to two tags deep. Three is hard to read in script. Four is a mistake.
-narrator: {b}2.{/b} Color the word, not the paragraph. {color=#4a9eff}One highlighted word{/color} guides the eye. A colored wall of text guides nothing.
-[show lavender center happy]
-Lavender: That's the full formatting toolkit. You now know every tag the engine supports.
-> Practice: a mini-scene -> practice_scene
-> Back to menu -> lesson_menu
-
-# ─── Practice ────────────────────────────────────────────────────
-
-@label practice_scene
-[show lavender center talking]
-Lavender: Let's write a short scene together. You pick the scenario, and I'll show you how dialogue, narration, and tags combine.
-> A character greets an old friend -> practice_greeting
-> A character discovers something unsettling -> practice_discovery
-> A character gives a speech -> practice_speech
-
-@label practice_greeting
-[hide lavender]
-[wait 400]
-narrator: The cafe door chimed. A familiar face appeared between the coats and umbrellas.
-[show lavender left happy]
-Lavender: {color=#66bb88}No way — it's really you!{/color}
-[show lavender center happy]
-Lavender: I thought you moved away {i}years{/i} ago. Get over here!
-narrator: She crossed the room in three quick steps, nearly knocking over a cup.
-[show lavender center talking]
-Lavender: Here's what just happened in script:
-narrator: {color=#8888cc}[hide lavender]{/color} — cleared the screen.
-narrator: {color=#8888cc}narrator: The cafe door chimed...{/color} — set the scene with no name box.
-narrator: {color=#8888cc}[show lavender left happy]{/color} — she appears on the left, smiling.
-narrator: {color=#8888cc}Lavender: \{color=#66bb88\}No way...\{/color\}{/color} — colored text for warmth.
-narrator: {color=#8888cc}Lavender: ...{i}years{/i} ago.{/color} — italic for vocal emphasis.
-narrator: {color=#8888cc}narrator: She crossed the room...{/color} — narrator describes the action.
-[jump practice_done]
-
-@label practice_discovery
-[show lavender center talking]
-narrator: The drawer slid open with a groan. Inside: a photograph that shouldn't exist.
-[show lavender center emphasis]
-Lavender: That's... {b}that's not possible.{/b}
-[wait 400]
-narrator: {color=#8877bb}The date on the back read ten years from now.{/color}
-[show lavender center talking]
-Lavender: Here's the breakdown:
-narrator: {color=#8888cc}narrator: The drawer slid open...{/color} — narrator builds the moment.
-narrator: {color=#8888cc}[show lavender center emphasis]{/color} — expression changes to match the shock.
-narrator: {color=#8888cc}Lavender: ...\{b\}that's not possible.\{/b\}{/color} — bold for the gut reaction.
-narrator: {color=#8888cc}[wait 400]{/color} — a pause to let it land.
-narrator: {color=#8888cc}narrator: \{color=#8877bb\}The date...\{/color\}{/color} — muted color for an eerie reveal.
-[jump practice_done]
-
-@label practice_speech
-[show lavender center emphasis]
-Lavender: {b}Listen.{/b}
-[wait 300]
-[show lavender center talking]
-Lavender: I know this isn't what anyone wanted to hear. But pretending won't help.
-Lavender: We have {color=#ff8844}three days{/color}. That's it. So here's what we do.
-narrator: The room was silent. Nobody argued.
-[show lavender center talking]
-Lavender: What happened there:
-narrator: {color=#8888cc}Lavender: \{b\}Listen.\{/b\}{/color} — bold on its own line for authority.
-narrator: {color=#8888cc}[wait 300]{/color} — a beat of silence after the command.
-narrator: {color=#8888cc}Lavender: ...\{color=#ff8844\}three days\{/color\}...{/color} — color highlights the key fact.
-narrator: {color=#8888cc}narrator: The room was silent.{/color} — narrator sells the impact.
-[jump practice_done]
-
-@label practice_done
-[show lavender center happy]
-Lavender: Open this file in the editor and modify the scene you just played. Change a tag, swap a narrator line, try a different expression.
-Lavender: The best way to learn VNS formatting is to break something small and watch what happens.
-> Back to menu -> lesson_menu
-
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage clear]
+[show pip desk listen]
+pip: Someone just walked into the office. How would you greet them?
+pip: Change the greeting in this file, save it, and play the opening again.
+@label check
+pip: Which line makes Pip speak?
+> pip: Come on in! -> correct
+> @label start_here -> retry
+@label retry
+[show pip desk curious]
+pip: A speaker ID before a colon makes a dialogue line. A label names a place to jump. Give it another try.
+[jump check]
+@label correct
+[show pip desk cheer]
+pip: A speaker ID before a colon makes a dialogue line. A label names a place to jump.
+> Finish this lesson -> return_hub
+> Try the lesson again -> start
 @label return_hub
 [if !tutorial_done_01]
 [flag tutorial_done_01]
 [inc tutorial_count]
 [endif]
-[goto {{HUB_TARGET}}:topics_page_1]
+[stage clear]
+[goto TutorialHub:topics_page_1]

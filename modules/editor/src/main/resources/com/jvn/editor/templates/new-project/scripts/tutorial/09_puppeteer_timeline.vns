@@ -1,196 +1,41 @@
-# Tutorial 09 — Puppeteer Timeline
-# Timeline blocks: parallel move tracks, event cues, camera tracks, and the visual editor.
-
-@scenario {{SCENARIO_PREFIX}}_tutorial_09_puppeteer
-@include {{CHARACTERS_INCLUDE}}
-{{BG_DECL}}@label start
+# Animate the office
+@scenario office_lesson_09
+@include /definitions/characters.vns
+@label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[set ui.textBoxAsset none]
-[set ui.continueIndicator spinning_arrow]
-[if tutorial_still]
-[set ui.reduceMotion true]
-[else]
-[set ui.reduceMotion false]
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage clear]
+[show pip desk neutral]
+pip: Let’s move the camera gently toward the desk. Watch the window frame for movement.
+[if !tutorial_still]
+timeline {
+  parallel {
+    move "bg_current" { x:-64 y:-36 dur:640 easing:ease_out }
+    scale "bg_current" { sx:1.08 sy:1.08 dur:640 easing:ease_out }
+  }
+}
 [endif]
-[if !tutorial_initialized]
-[set tutorial_count 0]
-[flag tutorial_initialized]
-[endif]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-[set character.lavender.imageEffect none]
-{{BG_START}}
-[textspeed 28]
-[autodelay 1650]
-[show lavender center happy]
-[wait 200]
-Lavender: [move] handles one character at a time. When you need multiple actors, camera motion, and sound effects running simultaneously — you need a {b}timeline{/b}.
-[show lavender center talking]
-Lavender: Timelines are VNS's most powerful feature. Let's learn the syntax.
-
-@label lesson_menu
-[show lavender far_left talking]
-> Timeline block syntax -> section_what
-> Move tracks — character animation -> section_move_tracks
-> Event cues — timed triggers -> section_events
-> Camera tracks — pan and zoom -> section_camera
-> Keyframe paths — multi-point animation -> section_keyframes
-> The Puppeteer visual editor -> section_editor
-> Quick reference: timeline block -> quick_reference
-> Practice: reading a timeline -> practice_scene
-> Back to Tutorial Hub -> return_hub
-
-# ─── Quick Reference ─────────────────────────────────────────────
-
-@label quick_reference
-[show lavender center talking]
-Lavender: Inline timelines group animation instructions into one timed block:
-narrator: {color=#8888cc}timeline \{{/color}
-narrator: {color=#8888cc}  actor lavender x 640 at 0{/color}
-narrator: {color=#8888cc}  actor lavender x 760 at 600 easeInOut{/color}
-narrator: {color=#8888cc}  camera zoom 1.0 1.08 at 300 dur 500{/color}
-narrator: {color=#8888cc}\}{/color}
-[show lavender center happy]
-Lavender: Checklist: keep entity names stable, use keyframes for motion, and reserve timeline blocks for animation that needs precise timing.
-> Start the lesson sections -> section_what
-> Back to menu -> lesson_menu
-
-# ─── Timeline Block ──────────────────────────────────────────────
-
-@label section_what
-[show lavender left talking]
-Lavender: A {b}timeline{/b} block runs multiple tracks in parallel on one shared clock:
-narrator: {color=#8888cc}timeline {{}}{/color}
-narrator: {color=#8888cc}  move "lavender" {{}} from left to center easing easeInOut duration 600 {{}}{/color}
-narrator: {color=#8888cc}  move "alex" {{}} from right to center easing easeOut duration 500 {{}}{/color}
-narrator: {color=#8888cc}{{}}{/color}
-[show lavender center talking]
-Lavender: Both characters move at the same time. No [wait] chains needed — the timeline synchronizes everything.
-Lavender: The block contains {b}tracks{/b}. Each track is one animation channel: a move, an event, or a camera action.
-[show lavender center happy]
-Lavender: The timeline ends when its longest track finishes. Script execution resumes after.
-> Next: move tracks -> section_move_tracks
-> Back to menu -> lesson_menu
-
-# ─── Move Tracks ─────────────────────────────────────────────────
-
-@label section_move_tracks
-[show lavender right talking]
-Lavender: {b}Move tracks{/b} animate a character from one position to another:
-narrator: {color=#8888cc}move "lavender" {{}} from far_left to center easing easeInOut duration 600 {{}}{/color}
-narrator: Structure: move {i}"characterId"{/i} {{}} from {i}startPos{/i} to {i}endPos{/i} easing {i}curve{/i} duration {i}ms{/i} {{}}
-[show lavender center talking]
-Lavender: Parameters:
-narrator: {b}from{/b} — starting position (far_left, left, center, right, far_right, or at X,Y).
-narrator: {b}to{/b} — ending position.
-narrator: {b}easing{/b} — linear, easeIn, easeOut, easeInOut.
-narrator: {b}duration{/b} — milliseconds.
-[show lavender center happy]
-Lavender: Multiple move tracks for different characters run simultaneously inside the same timeline block.
-> Next: event cues -> section_events
-> Back to menu -> lesson_menu
-
-# ─── Event Cues ──────────────────────────────────────────────────
-
-@label section_events
-[show lavender center talking]
-Lavender: {b}Event tracks{/b} trigger instant actions at specific timestamps during the timeline:
-narrator: {color=#8888cc}event "sfx" {{}} at 200ms: "door_slam.wav" {{}}{/color}
-narrator: {color=#8888cc}event "expression" {{}} at 400ms: "lavender" "surprised" {{}}{/color}
-narrator: {color=#8888cc}event "screen_shake" {{}} at 100ms: 0.3 150 {{}}{/color}
-[show lavender left talking]
-Lavender: Events don't animate over time — they fire at one exact moment.
-Lavender: Use them to synchronize:
-narrator: {b}Sound effects{/b} — a crash at the exact moment of impact.
-narrator: {b}Expression changes{/b} — a character reacts at a precise time.
-narrator: {b}Screen effects{/b} — shake or flash timed to movement.
-[show lavender center happy]
-Lavender: The power: a character's expression changes at 400ms, exactly when they reach center position. Perfect sync.
-> Next: camera tracks -> section_camera
-> Back to menu -> lesson_menu
-
-# ─── Camera Tracks ───────────────────────────────────────────────
-
-@label section_camera
-[show lavender right talking]
-Lavender: {b}Camera tracks{/b} animate the viewport — panning and zooming during the timeline:
-narrator: {color=#8888cc}camera {{}} pan from 0,0 to 100,0 easing easeInOut duration 800 {{}}{/color}
-narrator: {color=#8888cc}camera {{}} zoom from 1.0 to 1.3 easing easeIn duration 600 {{}}{/color}
-[show lavender center talking]
-Lavender: Combine camera and character movement for cinematic shots:
-narrator: {b}Tracking shot{/b} — camera pans as a character walks across the room.
-narrator: {b}Dramatic zoom{/b} — camera pushes in during an emotional line.
-narrator: {b}Establishing shot{/b} — slow pan across a new location.
-[show lavender center happy]
-Lavender: Subtle camera work adds polish. Even a 5% zoom (1.0 → 1.05) during dialogue creates focus.
-> Next: keyframe paths -> section_keyframes
-> Back to menu -> lesson_menu
-
-# ─── Keyframe Paths ──────────────────────────────────────────────
-
-@label section_keyframes
-[show lavender center talking]
-Lavender: For complex motion paths, use {b}keyframes{/b} instead of simple from/to:
-narrator: {color=#8888cc}move "lavender" {{}}{/color}
-narrator: {color=#8888cc}  0ms: at 0.1,0.8{/color}
-narrator: {color=#8888cc}  300ms: at 0.5,0.6{/color}
-narrator: {color=#8888cc}  600ms: at 0.9,0.8{/color}
-narrator: {color=#8888cc}{{}}{/color}
-[show lavender left talking]
-Lavender: Each line is a timestamp and a position. The engine interpolates between them.
-Lavender: The example above creates an arc — the character rises to center-top, then descends to the right.
-[show lavender center happy]
-Lavender: Use from/to for straight-line A→B moves. Use keyframes for arcs, zigzags, and multi-stop paths.
-> Next: the visual editor -> section_editor
-> Back to menu -> lesson_menu
-
-# ─── Puppeteer Editor ────────────────────────────────────────────
-
-@label section_editor
-[show lavender left talking]
-Lavender: You don't have to write timelines by hand. The {b}Puppeteer{/b} is a visual timeline editor in the JVN Editor.
-narrator: {b}1.{/b} Open the Puppeteer from the editor toolbar.
-narrator: {b}2.{/b} Add characters to the stage.
-narrator: {b}3.{/b} Drag keyframes on the timeline to set positions at specific moments.
-narrator: {b}4.{/b} Add event cues and camera tracks visually.
-narrator: {b}5.{/b} Preview the animation in real time.
-narrator: {b}6.{/b} Export — the editor generates the VNS timeline block.
-[show lavender center talking]
-Lavender: You can also {b}import{/b} existing VNS timeline blocks back into the Puppeteer, edit visually, and re-export.
-[show lavender center happy]
-Lavender: Visual for building, code for fine-tuning. The round-trip workflow means you're never locked into one approach.
-> Practice: reading a timeline -> practice_scene
-> Back to menu -> lesson_menu
-
-# ─── Practice ────────────────────────────────────────────────────
-
-@label practice_scene
-[show lavender center talking]
-Lavender: Let's read a complete timeline block together. I'll annotate each track.
-narrator: Here's a full "two characters meet" timeline:
-narrator: {color=#8888cc}timeline {{}}{/color}
-narrator: {color=#8888cc}  move "lavender" {{}} from far_left to center easing easeInOut duration 600 {{}}{/color}
-narrator: {color=#8888cc}  move "alex" {{}} from far_right to center easing easeOut duration 500 {{}}{/color}
-narrator: {color=#8888cc}  event "sfx" {{}} at 0ms: "footsteps.wav" {{}}{/color}
-narrator: {color=#8888cc}  event "expression" {{}} at 500ms: "lavender" "happy" {{}}{/color}
-narrator: {color=#8888cc}  camera {{}} zoom from 1.0 to 1.1 easing easeIn duration 600 {{}}{/color}
-narrator: {color=#8888cc}{{}}{/color}
-[show lavender left talking]
-Lavender: Breakdown:
-narrator: {b}Track 1:{/b} Lavender moves from far_left to center over 600ms with easeInOut.
-narrator: {b}Track 2:{/b} Alex moves from far_right to center over 500ms with easeOut (arrives slightly early).
-narrator: {b}Track 3:{/b} A footstep sound plays at 0ms (start of the timeline).
-narrator: {b}Track 4:{/b} Lavender's expression changes to "happy" at 500ms (just before she stops).
-narrator: {b}Track 5:{/b} Camera zooms in slightly over 600ms for intimacy.
-[show lavender center happy]
-Lavender: All five tracks run simultaneously. The result: two people walk toward each other, footsteps play, Lavender smiles as she arrives, and the camera pulls in gently.
-Lavender: Build this in the Puppeteer editor to see it animated, then read the exported code. That's the fastest way to learn.
-> Back to menu -> lesson_menu
-
+pip: Open this timeline in Puppeteer. Change its end X and duration, apply the edit, then run it in the game.
+@label check
+pip: Which target moves the current background?
+> bg_current -> correct
+> pip -> retry
+@label retry
+[show pip desk curious]
+pip: The background has its own timeline target. Its lighting follows the plate. Give it another try.
+[jump check]
+@label correct
+[show pip desk cheer]
+pip: The background has its own timeline target. Its lighting follows the plate.
+> Finish this lesson -> return_hub
+> Try the lesson again -> start
 @label return_hub
 [if !tutorial_done_09]
 [flag tutorial_done_09]
 [inc tutorial_count]
 [endif]
-[goto {{HUB_TARGET}}:topics_page_2]
+[stage clear]
+[goto TutorialHub:topics_page_2]

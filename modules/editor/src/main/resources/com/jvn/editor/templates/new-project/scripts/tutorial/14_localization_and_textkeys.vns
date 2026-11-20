@@ -1,191 +1,34 @@
-# Tutorial 14 — Localization and Text Keys
-# Text key placeholders, locale files, key naming, and translation workflow.
-
-@scenario {{SCENARIO_PREFIX}}_tutorial_14_localization
-@include {{CHARACTERS_INCLUDE}}
-{{BG_DECL}}@label start
+# Translate a cue
+@scenario office_lesson_14
+@include /definitions/characters.vns
+@label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[set ui.textBoxAsset none]
-[set ui.continueIndicator spinning_arrow]
-[if tutorial_still]
-[set ui.reduceMotion true]
-[else]
-[set ui.reduceMotion false]
-[endif]
-[if !tutorial_initialized]
-[set tutorial_count 0]
-[flag tutorial_initialized]
-[endif]
-[set ui.characterHeightFactor 1.5]
-[set ui.characterBaselineY 1.5]
-[set character.lavender.imageEffect none]
-{{BG_START}}
-[textspeed 28]
-[autodelay 1650]
-[show lavender center happy]
-[wait 200]
-Lavender: Instead of hardcoding "Good morning!" in your script, you write a {b}text key{/b}. The engine resolves it at runtime based on the player's language.
-[show lavender center talking]
-Lavender: One script, many languages. Here's how it works.
-
-@label lesson_menu
-[show lavender far_left talking]
-> Text keys — what they are and how to use them -> section_textkeys
-> Locale files — format and structure -> section_locale_files
-> Key naming conventions -> section_naming
-> Translation workflow -> section_workflow
-> Five localization pitfalls -> section_pitfalls
-> Quick reference: localization checklist -> quick_reference
-> Practice: solve a translation problem -> practice_scene
-> Back to Tutorial Hub -> return_hub
-
-# ─── Quick Reference ─────────────────────────────────────────────
-
-@label quick_reference
-[show lavender center talking]
-Lavender: Localization starts with context-rich keys:
-narrator: {color=#8888cc}Lavender: \{\{ch1.rooftop.lavender_greeting\}\}{/color}
-narrator: {color=#8888cc}ch1.rooftop.lavender_greeting = Good morning.{/color}
-narrator: {color=#8888cc}menu.settings.volume_label = Volume{/color}
-narrator: Keep translator notes near ambiguous lines and never reuse a key for two different meanings.
-[show lavender center happy]
-Lavender: Checklist: stable key names, complete default locale, translated menus, and a missing-key pass before release.
-> Start the lesson sections -> section_textkeys
-> Back to menu -> lesson_menu
-
-# ─── Text Keys ───────────────────────────────────────────────────
-
-@label section_textkeys
-[show lavender left talking]
-Lavender: A text key is a placeholder wrapped in double braces:
-narrator: {color=#8888cc}Lavender: {{ch1.greeting}}{/color}
-narrator: At runtime, the engine looks up "ch1.greeting" in the active locale file and substitutes the result.
-[show lavender center talking]
-Lavender: The locale files map each key to actual text:
-narrator: {b}en.locale:{/b} {color=#8888cc}ch1.greeting = Good morning!{/color}
-narrator: {b}ja.locale:{/b} {color=#8888cc}ch1.greeting = おはようございます！{/color}
-narrator: {b}de.locale:{/b} {color=#8888cc}ch1.greeting = Guten Morgen!{/color}
-[show lavender center happy]
-Lavender: The VNS script never changes. Only the locale files differ between languages.
-Lavender: Text keys also work in menu labels, UI strings, and choice button text — anywhere the player sees words.
-> Next: locale files -> section_locale_files
-> Back to menu -> lesson_menu
-
-# ─── Locale Files ────────────────────────────────────────────────
-
-@label section_locale_files
-[show lavender right talking]
-Lavender: One file per language, stored in the locale directory:
-narrator: {color=#8888cc}locale/en.locale{/color}
-narrator: {color=#8888cc}locale/ja.locale{/color}
-narrator: {color=#8888cc}locale/de.locale{/color}
-[show lavender center talking]
-Lavender: Format: simple {b}key = value{/b} pairs, one per line:
-narrator: {color=#8888cc}# Chapter 1 — Morning Scene{/color}
-narrator: {color=#8888cc}ch1.morning.greeting = Good morning!{/color}
-narrator: {color=#8888cc}ch1.morning.farewell = See you later.{/color}
-narrator: {color=#8888cc}# Menu{/color}
-narrator: {color=#8888cc}menu.new_game = New Game{/color}
-narrator: {color=#8888cc}menu.load = Load Game{/color}
-narrator: {color=#8888cc}menu.settings = Settings{/color}
-[show lavender center happy]
-Lavender: The engine loads the file matching the player's language setting. If a key is missing, it falls back to the default locale (usually en).
-> Next: key naming -> section_naming
-> Back to menu -> lesson_menu
-
-# ─── Key Naming ──────────────────────────────────────────────────
-
-@label section_naming
-[show lavender center talking]
-Lavender: Key naming pattern: {b}category.context.description{/b}
-narrator: {color=#66bb88}Good:{/color}
-narrator: {color=#8888cc}ch1.rooftop.lavender_greeting{/color}
-narrator: {color=#8888cc}ch2.library.alex_warning{/color}
-narrator: {color=#8888cc}menu.settings.volume_label{/color}
-narrator: {color=#8888cc}ui.confirm.yes{/color}
-narrator: {color=#ff6666}Bad:{/color}
-narrator: {color=#8888cc}text1{/color}, {color=#8888cc}line_42{/color}, {color=#8888cc}greeting{/color}
-[show lavender left talking]
-Lavender: Why it matters: a translator seeing "ch1.rooftop.lavender_greeting" knows who speaks, where, and when — without reading VNS code.
-Lavender: Generic names like "text1" give zero context. The translation will suffer.
-[show lavender center happy]
-Lavender: Mirror your script's file structure in your key hierarchy. ch1.* matches chapter_01/*.vns.
-> Next: workflow -> section_workflow
-> Back to menu -> lesson_menu
-
-# ─── Translation Workflow ────────────────────────────────────────
-
-@label section_workflow
-[show lavender right talking]
-Lavender: The five-step workflow:
-narrator: {b}1.{/b} Write scripts using text keys — no hardcoded player-visible text.
-narrator: {b}2.{/b} Fill out {b}en.locale{/b} with all text. This is the source of truth.
-narrator: {b}3.{/b} Send en.locale to translators. They only edit locale files — never VNS scripts.
-narrator: {b}4.{/b} Translators produce ja.locale, de.locale, etc.
-narrator: {b}5.{/b} Test each language in-game: check overflow, missing keys, and tone.
-[show lavender center talking]
-Lavender: The key insight: {b}scripts define structure, locale files define text{/b}. Translators never need to learn VNS syntax.
-Lavender: When you add new dialogue, add the key to {b}all{/b} locale files. Mark untranslated keys with "TODO:" for easy searching.
-[show lavender center happy]
-Lavender: Even single-language games benefit from text keys. They enforce clean separation of text and logic.
-> Next: pitfalls -> section_pitfalls
-> Back to menu -> lesson_menu
-
-# ─── Pitfalls ────────────────────────────────────────────────────
-
-@label section_pitfalls
-[show lavender center talking]
-Lavender: Five problems that catch every localized project:
-narrator: {b}1. Text length.{/b} German is often 30% longer than English. Japanese is shorter. Design UI with extra space and test early.
-narrator: {b}2. Sentence fragments.{/b} Don't concatenate keys to build sentences — word order changes between languages. Each key should be a complete sentence.
-narrator: {b}3. Hardcoded text.{/b} Any string written directly in VNS can't be translated. Always use a key.
-narrator: {b}4. Missing keys.{/b} A key in en.locale but not ja.locale shows the raw key name to the player. Automate checking for mismatched key sets.
-narrator: {b}5. Untranslatable humor.{/b} Puns and idioms don't work across languages. Give translators context notes: "This is sarcastic" or "Pun on X — substitute local equivalent."
-[show lavender center happy]
-Lavender: Localization isn't just translation. It's making the game feel native in every language.
-> Practice: solve a problem -> practice_scene
-> Back to menu -> lesson_menu
-
-# ─── Practice ────────────────────────────────────────────────────
-
-@label practice_scene
-[show lavender center talking]
-Lavender: A real localization problem. You be the decision-maker.
-
-Lavender: Your game has this line in en.locale:
-narrator: {color=#8888cc}ch3.joke = I'm reading a book about anti-gravity — it's impossible to put down!{/color}
-Lavender: The German translator reports: "This pun doesn't work in German. What should I do?"
-> Tell them to translate it literally -> practice_literal
-> Let them substitute a German pun with the same tone -> practice_adapt
-> Remove the joke entirely -> practice_remove
-
-@label practice_literal
-[show lavender center talking]
-Lavender: A literal translation loses the humor entirely. The player reads a sentence that doesn't make sense and wonders if the translation is broken.
-Lavender: Literal pun translation almost never works. Better to adapt.
-[jump practice_done]
-
-@label practice_adapt
-[show lavender center happy]
-Lavender: That's the right call. Give the translator a note: "Pun — lighthearted tone, feel free to substitute a local equivalent."
-Lavender: The translator knows German humor better than you do. Trust their creative judgment within the tone you set.
-[jump practice_done]
-
-@label practice_remove
-[show lavender center talking]
-Lavender: Removing it works, but you lose a character moment. Adaptation preserves both the tone and the beat.
-Lavender: Only remove content as a last resort — adapt first.
-[jump practice_done]
-
-@label practice_done
-[show lavender center talking]
-Lavender: Localization rule of thumb: {b}translate meaning and tone, not words{/b}. The player should feel like the game was written in their language.
-> Back to menu -> lesson_menu
-
+[bg office]
+[char pip global on]
+[set ui.dialogueFadeMs 160]
+[stage clear]
+[show pip desk neutral]
+pip: Our office says goodbye in two languages. Keep a stable key so the script can be reused.
+pip: i18n:office.signoff
+pip: That goodbye came from config/locales/en.properties. Edit office.signoff and replay this line.
+@label check
+pip: What should stay the same when you rewrite a translation?
+> Every character of the translated sentence. -> retry
+> Its lookup key. -> correct
+@label retry
+[show pip desk curious]
+pip: Stable keys let the same scene select a different localized line. Give it another try.
+[jump check]
+@label correct
+[show pip desk cheer]
+pip: Stable keys let the same scene select a different localized line.
+> Finish this lesson -> return_hub
+> Try the lesson again -> start
 @label return_hub
 [if !tutorial_done_14]
 [flag tutorial_done_14]
 [inc tutorial_count]
 [endif]
-[goto {{HUB_TARGET}}:topics_page_3]
+[stage clear]
+[goto TutorialHub:topics_page_3]
