@@ -15,8 +15,28 @@ public final class VnStageLightingSupport {
 
   /** Shades the same plate pass used by gameplay at the dimensions of an editor preview. */
   public static Image renderBackgroundPreview(Image source, VnStagePreset stage, double width, double height) {
-    Raster raster = shadeBackground(PixelData.capture(source), stage, width, height);
-    return raster == null ? null : raster.image();
+    return new BackgroundPreviewSource(source).render(stage, width, height);
+  }
+
+  /** Lazily snapshots one immutable editor plate on its render worker, across lighting edits. */
+  public static final class BackgroundPreviewSource {
+    private final Image source;
+    private PixelData pixels;
+
+    public BackgroundPreviewSource(Image source) { this.source = source; }
+
+    public boolean matches(Image candidate) { return source == candidate; }
+
+    private synchronized PixelData pixels() {
+      if (pixels == null) pixels = PixelData.capture(source);
+      return pixels;
+    }
+
+    public Image render(VnStagePreset stage, double width, double height) {
+      if (Thread.currentThread().isInterrupted()) return null;
+      Raster raster = shadeBackground(pixels(), stage, width, height);
+      return raster == null ? null : raster.image();
+    }
   }
 
   static Raster shadeBackground(PixelData source, VnStagePreset stage, double width, double height) {

@@ -62,7 +62,18 @@ Tag/setup controls, global grade sliders, background grade, light rig, and local
 
 ## Workspace Structure
 
-The viewport keeps a 16:9 stage. The inspector sits next to it in a wide window and below it in a narrow sidebar. Use **Original** to compare the same composition with the grade and lights bypassed. The Scene, Rig, Shadows, Grade and Output tabs keep related controls together.
+Open **Scene Lighting Studio** from Tools or Assets for a dedicated window. At widths of 1100 pixels and above, the left outliner lists lights and shadow casters. Its Scene tab contains the scene entities. Select a light or caster to open its inspector on the right. The same lists move into the inspector in a smaller window or docked sidebar. The viewport keeps a 16:9 frame.
+
+![Lighting Studio editing a three-light rig with the outliner and inspector open](../../../assets/images/image-tint/lighting-studio-workspace.webp)
+
+| Viewport mode | Use |
+| --- | --- |
+| Edit | Move light handles and draw shapes. With the viewport focused, arrow keys nudge the selected light one viewport pixel. Hold Shift for ten pixels or Alt/Option to move the source. Locked lights stay in place. |
+| Graded | Review the lighting with editing guides hidden. |
+| Original | Review the source composition at the same framing. |
+| Split | Drag across the viewport or use the comparison slider to reveal the original on the left and the graded result on the right. |
+
+The background preview uses a smaller render while dragging a light or background-grade slider and restores its settled resolution on release.
 
 ### Work directly from a VNS scene
 

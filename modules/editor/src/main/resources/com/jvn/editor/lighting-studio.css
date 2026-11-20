@@ -52,3 +52,20 @@
 .lighting-rig-list .list-cell:filled:selected {
   -fx-background-color: -jvn-aero-selected;
 }
+
+.lighting-outliner {
+  -fx-background-color: -jvn-aero-surface;
+  -fx-border-color: transparent -jvn-aero-edge transparent transparent;
+}
+.lighting-outliner .tab-header-background, .lighting-outliner-header {
+  -fx-background-color: -jvn-aero-chrome;
+}
+.lighting-outliner-header {
+  -fx-padding: 5 8;
+}
+.lighting-outliner-header .label {
+  -fx-font-weight: bold;
+}
+.lighting-outliner-header .button {
+  -fx-padding: 1 7;
+}

@@ -1960,7 +1960,7 @@ public class EditorApp extends Application {
 	    miAssetsAttributes.setOnAction(e -> selectImageAttributesToolTab());
 	    disableMaintenanceMenuItem(miAssetsAttributes, EditorSidebarPanel.IMAGE_ATTRIBUTES);
 	    MenuItem miAssetsTint = new MenuItem("Scene Lighting Studio");
-	    miAssetsTint.setOnAction(e -> selectImageTintToolTab());
+	    miAssetsTint.setOnAction(e -> openSceneLightingStudio());
 	    MenuItem miAssetsRevealRoot = new MenuItem("Reveal Project Root in JVN Path Explorer");
 	    miAssetsRevealRoot.setOnAction(e -> revealProjectRootInPathExplorer());
 	    MenuItem miAssetsProjectDocs = new MenuItem("Open Project Docs Folder");
@@ -2083,7 +2083,7 @@ public class EditorApp extends Application {
     miImageAttributes.setOnAction(e -> selectImageAttributesToolTab());
     disableMaintenanceMenuItem(miImageAttributes, EditorSidebarPanel.IMAGE_ATTRIBUTES);
     MenuItem miImageTint = new MenuItem("Scene Lighting Studio");
-    miImageTint.setOnAction(e -> selectImageTintToolTab());
+    miImageTint.setOnAction(e -> openSceneLightingStudio());
 
     Menu menuVnsTools = new Menu("Analysis");
     MenuItem miToolDiagnostics = new MenuItem("Diagnostics");
@@ -2213,11 +2213,7 @@ public class EditorApp extends Application {
     });
     disableMaintenanceMenuItem(miWindowImageAttributes, EditorSidebarPanel.IMAGE_ATTRIBUTES);
     MenuItem miWindowImageTint = new MenuItem("Scene Lighting Studio");
-    miWindowImageTint.setOnAction(e -> {
-      ImageTintToolView view = ensureImageTintToolView();
-      if (view != null) view.refreshCatalog();
-      launchPanelAsWindow("Scene Lighting Studio", view, 800, 650, EditorSidebarPanel.IMAGE_TINT);
-    });
+    miWindowImageTint.setOnAction(e -> openSceneLightingStudio());
     MenuItem miWindowPuppeteer = new MenuItem("Puppeteer Launcher");
     miWindowPuppeteer.setOnAction(e ->
         launchPanelAsWindow("Puppeteer Launcher", ensurePuppeteerLauncherPanel(), 600, 500, EditorSidebarPanel.PUPPETEER_LAUNCHER));
@@ -2949,13 +2945,15 @@ public class EditorApp extends Application {
   private void setImageToolFullscreenState(ImageToolPanel activeTool) {
     if (layeredImageVisualizerView != null) layeredImageVisualizerView.setFullscreenActive(activeTool == layeredImageVisualizerView);
     if (imageAttributesToolView != null) imageAttributesToolView.setFullscreenActive(activeTool == imageAttributesToolView);
-    if (imageTintToolView != null) imageTintToolView.setFullscreenActive(activeTool == imageTintToolView);
+    if (imageTintToolView != null && !panelWindows.containsKey(EditorSidebarPanel.IMAGE_TINT)) {
+      imageTintToolView.setFullscreenActive(activeTool == imageTintToolView);
+    }
   }
 
   private String imageToolName(ImageToolPanel tool) {
     if (tool == layeredImageVisualizerView) return "Layered visualizer";
     if (tool == imageAttributesToolView) return "Image attributes tool";
-    if (tool == imageTintToolView) return "Image tint tool";
+    if (tool == imageTintToolView) return "Scene Lighting Studio";
     return "Image tool";
   }
 
@@ -4654,6 +4652,16 @@ public class EditorApp extends Application {
     return imageAttributesToolView;
   }
 
+  private void openSceneLightingStudio() {
+    if (layeredVisualizerFullscreen && fullscreenImageToolView == imageTintToolView) {
+      restoreLayeredImageVisualizerLayout(false);
+    }
+    var screen = javafx.stage.Screen.getPrimary().getVisualBounds();
+    launchPanelAsWindow("Scene Lighting Studio", ensureImageTintToolView(),
+        Math.min(1440, screen.getWidth() * 0.92), Math.min(900, screen.getHeight() * 0.86),
+        EditorSidebarPanel.IMAGE_TINT);
+  }
+
   private ImageTintToolView ensureImageTintToolView() {
     if (imageTintToolView != null) return imageTintToolView;
     imageTintToolView = new ImageTintToolView();
@@ -6006,7 +6014,7 @@ public class EditorApp extends Application {
     ImageTintToolView tint = ensureImageTintToolView();
     if (targetPane == null || tint == null) return null;
     if (tabImageTintTool == null) {
-      tabImageTintTool = new Tab("Image Tint", tint);
+      tabImageTintTool = new Tab("Scene Lighting Studio", tint);
       tabImageTintTool.setClosable(true);
       tabImageTintTool.setOnClosed(e -> {
         if (layeredVisualizerFullscreen && fullscreenImageToolView == tint) {
@@ -6480,12 +6488,20 @@ public class EditorApp extends Application {
     Scene windowScene = new Scene(wrapper, width, height);
     EditorTheme.apply(windowScene);
     windowStage.setScene(windowScene);
+    if (content instanceof ImageTintToolView studio) {
+      studio.setOnToggleFullscreen(() -> windowStage.setFullScreen(!windowStage.isFullScreen()));
+      windowStage.fullScreenProperty().addListener((obs, old, active) -> studio.setFullscreenActive(active));
+    }
     if (panel != null) {
       panelWindows.put(panel, windowStage);
     } else if (content == editorSettingsView) {
       editorSettingsWindow = windowStage;
     }
     windowStage.setOnHidden(e -> {
+      if (content instanceof ImageTintToolView studio) {
+        studio.setFullscreenActive(false);
+        studio.setOnToggleFullscreen(() -> toggleImageToolFullscreen(studio));
+      }
       boolean suppressUnload = Boolean.TRUE.equals(
           windowStage.getProperties().remove(PANEL_WINDOW_SUPPRESS_UNLOAD_KEY));
       if (panel != null) {
@@ -6910,11 +6926,7 @@ public class EditorApp extends Application {
       Tab t = ensureImageTintToolTab(pane);
       if (t != null) pane.getSelectionModel().select(t);
       if (imageTintToolView != null) imageTintToolView.refreshCatalog();
-    }, () -> {
-      ImageTintToolView view = ensureImageTintToolView();
-      if (view != null) view.refreshCatalog();
-      launchPanelAsWindow("Scene Lighting Studio", view, 800, 650, EditorSidebarPanel.IMAGE_TINT);
-    }, () -> {
+    }, this::openSceneLightingStudio, () -> {
       rememberPanelPlacement(EditorSidebarPanel.IMAGE_TINT, EditorPanelPlacement.HIDDEN);
       applyDefaultSidebarPreferences();
     });

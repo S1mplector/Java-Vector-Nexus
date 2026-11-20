@@ -19,6 +19,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -185,6 +188,9 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
   private final SplitPane workspaceSplit = new SplitPane();
   private TitledPane controlsPane;
   private TitledPane sceneEntitiesPane;
+  private final BorderPane compactLightList = new BorderPane();
+  private final BorderPane compactCasterList = new BorderPane();
+  private LightingStudioOutliner outliner;
 
   private final Map<String, File> imageByTag = new LinkedHashMap<>();
   private final Map<String, PresetTagEntry> presetByTag = new LinkedHashMap<>();
@@ -218,6 +224,14 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
   private boolean applyingState;
   private boolean stateSavePending;
   private Task<TintCatalogScanResult> scanTask;
+  private final ThreadPoolExecutor backgroundWorker = new ThreadPoolExecutor(0, 1, 10, TimeUnit.SECONDS,
+      new ArrayBlockingQueue<>(1), task -> {
+        Thread thread = new Thread(task, "jvn-lighting-preview");
+        thread.setDaemon(true);
+        return thread;
+      });
+  private VnStageLightingSupport.BackgroundPreviewSource backgroundSource;
+  private String failedBackgroundKey;
   private Task<Image> backgroundTintTask;
   private String backgroundTintTaskTag;
   private String backgroundTintTaskKey;
@@ -334,7 +348,14 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
   private final Slider floorLightSlider = slider(0, 100, 0);
   private final Slider floorExposureSlider = slider(-400, 400, 0);
   private Image groundShadowPreview;
-  private final CheckBox compareOriginal = new CheckBox("Original");
+  private enum PreviewMode {
+    EDIT("Edit"), GRADED("Graded"), ORIGINAL("Original"), SPLIT("Split");
+    final String label;
+    PreviewMode(String label) { this.label = label; }
+    @Override public String toString() { return label; }
+  }
+  private final ComboBox<PreviewMode> previewMode = new ComboBox<>();
+  private final Slider comparePosition = new Slider(0, 1, 0.5);
   private VnStagePreset previewRig;
   private double previewOverlayWidth;
   private double previewOverlayHeight;
@@ -622,8 +643,22 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
     loadScene.setId("lighting-load-vns");
     saveScene.setId("lighting-apply-vns");
     saveScene.getStyleClass().add("lighting-apply");
-    compareOriginal.setTooltip(new Tooltip("Compare against the unlit scene at the same framing"));
-    compareOriginal.selectedProperty().addListener((obs, old, selected) -> redrawPreview());
+    previewMode.setId("lighting-preview-mode");
+    previewMode.setAccessibleText("Viewport mode");
+    previewMode.getItems().setAll(PreviewMode.values());
+    previewMode.setValue(PreviewMode.EDIT);
+    previewMode.setTooltip(new Tooltip("Edit light handles, review the grade, or compare with the original"));
+    previewMode.valueProperty().addListener((obs, old, mode) -> {
+      previewCanvas.setCursor(mode == PreviewMode.SPLIT ? javafx.scene.Cursor.H_RESIZE : javafx.scene.Cursor.DEFAULT);
+      redrawPreview();
+    });
+    comparePosition.setId("lighting-compare-position");
+    comparePosition.setAccessibleText("Original and graded comparison divider");
+    comparePosition.setTooltip(new Tooltip("Original on the left, graded on the right"));
+    comparePosition.setPrefWidth(96);
+    comparePosition.visibleProperty().bind(previewMode.valueProperty().isEqualTo(PreviewMode.SPLIT));
+    comparePosition.managedProperty().bind(comparePosition.visibleProperty());
+    comparePosition.valueProperty().addListener((obs, old, value) -> redrawPreview());
     HBox titleRow = new HBox(6, title, SidebarToolHelp.button(this, TOOL_TITLE, """
             Put the cursor on a scene beat in a VNS script and choose Load from VNS.
             Select a subject, then arrange and blend lights in the Rig tab. The cross moves
@@ -633,7 +668,7 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
             keep that activation if the script already had unsaved edits.
             """));
     titleRow.setAlignment(Pos.CENTER_LEFT);
-    FlowPane toolbar = new FlowPane(6, 5, loadScene, saveScene, compareOriginal, resetViewButton,
+    FlowPane toolbar = new FlowPane(6, 5, loadScene, saveScene, previewMode, comparePosition, resetViewButton,
         fullscreenButton, sidebarHideButton);
     toolbar.setAlignment(Pos.CENTER_LEFT);
     toolbar.getStyleClass().add("lighting-toolbar");
@@ -685,8 +720,13 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
     SplitPane.setResizableWithParent(previewHost, true);
     SplitPane.setResizableWithParent(sidebarScroll, true);
 
+    outliner = new LightingStudioOutliner(compactLightList, lightListView,
+        () -> inspector.getSelectionModel().select(rigTab), this::addDefaultLight,
+        compactCasterList, occluderListView, () -> inspector.getSelectionModel().select(shadowsTab),
+        this::addDefaultOccluder, sceneEntitiesPane);
     setCenter(workspaceSplit);
     widthProperty().addListener((obs, old, width) -> {
+      updateOutliner();
       Orientation orientation = width.doubleValue() < 670 ? Orientation.VERTICAL : Orientation.HORIZONTAL;
       if (orientation != workspaceSplit.getOrientation()) {
         if (workspaceSplit.getOrientation() == Orientation.HORIZONTAL) captureSidebarDividerPosition();
@@ -1099,6 +1139,7 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
       persistGlobalState();
     });
 
+    lightListView.setId("lighting-light-list");
     lightListView.setPrefHeight(100);
     lightListView.setMinHeight(100);
     lightListView.setMaxHeight(132);
@@ -1246,28 +1287,38 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
     FlowPane lightFlagsRow = new FlowPane(7, 4, lightMutedCheck, lightLockedCheck, lightSoloCheck, lightShadowsCheck);
     lightFlagsRow.setAlignment(Pos.CENTER_LEFT);
 
+    HBox beam = sliderRow("Beam angle", beamAngleSlider);
+    beam.visibleProperty().bind(beamAngleSlider.disableProperty().not());
+    beam.managedProperty().bind(beam.visibleProperty());
+    HBox area = sliderRow("Area width %", areaAspectSlider);
+    area.visibleProperty().bind(areaAspectSlider.disableProperty().not());
+    area.managedProperty().bind(area.visibleProperty());
+    VBox floorSettings = new VBox(6, new Label("Floor X, Y, horizon Y, strength (%)"), groundProjectionField,
+        sliderRow("Floor light %", floorLightSlider), sliderRow("Exposure ×100 EV", floorExposureSlider));
+    floorSettings.visibleProperty().bind(groundProjectionCheck.selectedProperty());
+    floorSettings.managedProperty().bind(floorSettings.visibleProperty());
+    TitledPane groupSettings = new TitledPane("Light group", new VBox(6, lightGroupRow, lightGroupActions));
+    groupSettings.setExpanded(false);
+    groupSettings.setAnimated(false);
     lightControlsSection.getChildren().setAll(
         lightNameRow,
-        lightGroupRow,
-        lightGroupActions,
         lightShapeRow,
         lightLayerRow,
         lightBlendRow,
         lightFalloffRow,
         lightColorRow,
         sliderRow("Intensity", lightIntensitySlider),
-        sliderRow("Radius / Feather", lightRadiusSlider),
+        sliderRow("Radius", lightRadiusSlider),
         sliderRow("Softness", lightSoftnessSlider),
-        sliderRow("Beam Angle", beamAngleSlider),
-        sliderRow("Area Width %", areaAspectSlider),
+        beam, area,
         sliderRow("Silhouette", lightSilhouetteSlider),
         lightFlagsRow,
         new HBox(8, new Label("Shadows"), shadowQualityBox), groundProjectionCheck,
-        new VBox(3, new Label("Floor X, Y, Horizon Y, Strength (%)"), groundProjectionField),
-        sliderRow("Floor Light %", floorLightSlider), sliderRow("Floor Exposure ×100 EV", floorExposureSlider));
+        floorSettings, groupSettings);
     lightControlsSection.setDisable(true);
 
-    VBox lightsContent = new VBox(6, presetRow, lightActions, lightOptionsRow, lightRigSummaryLabel, lightListView, lightControlsSection);
+    compactLightList.setCenter(lightListView);
+    VBox lightsContent = new VBox(6, presetRow, lightActions, lightOptionsRow, lightRigSummaryLabel, compactLightList, lightControlsSection);
     lightsPane = new TitledPane("Light Rig", lightsContent);
     lightsPane.setExpanded(false);
     lightsPane.setAnimated(false);
@@ -1326,7 +1377,9 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
       if (applyingState) return;
       if (backgroundFxSliderDragging || slider.isValueChanging()) {
         backgroundFxSliderCommitPending = true;
-        onBackgroundFxChanged(false);
+        updateBackgroundSwatches();
+        invalidateBackgroundTintCache();
+        redrawPreview();
         return;
       }
       onBackgroundFxChanged(true);
@@ -1385,6 +1438,7 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
       sceneSubjectLayers.clear();
       sceneInfo.setVisible(false);
     }
+    flushPendingStateSave();
     this.projectRoot = projectRoot;
     refreshCatalog();
   }
@@ -1404,7 +1458,7 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
   public void dispose() {
     if (disposed) return;
     disposed = true;
-    stateSaveDebounce.stop();
+    flushPendingStateSave();
     assetTagSearchPopups.values().forEach(AssetTagSearchPopup::hide);
     assetTagSearchPopups.clear();
     Task<TintCatalogScanResult> task = scanTask;
@@ -1412,8 +1466,8 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
     if (task != null && task.isRunning()) {
       task.cancel();
     }
-    backgroundTintTaskSerial++;
     cancelBackgroundTintTask();
+    backgroundWorker.shutdownNow();
     setupNameToKey.clear();
     tintZones.clear();
     sceneLights.clear();
@@ -1447,6 +1501,7 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
     imageByTag.clear();
     presetByTag.clear();
     imageCache.clear();
+    clearBackgroundSource();
     invalidateTintCache();
     invalidateBackgroundTintCache();
     summaryLabel.setText(message);
@@ -1524,6 +1579,7 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
       presetByTag.clear();
       presetByTag.putAll(result.presets());
       imageCache.clear();
+      clearBackgroundSource();
       invalidateTintCache();
       invalidateBackgroundTintCache();
 
@@ -1678,10 +1734,18 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
           : clampSidebarDivider(sidebarDividerPosition, DEFAULT_SIDEBAR_DIVIDER);
       Platform.runLater(() -> workspaceSplit.setDividerPositions(divider));
     }
+    updateOutliner();
     updateSidebarToggleButtons();
     if (persist && !applyingState) {
       persistGlobalState();
     }
+  }
+
+  private void updateOutliner() {
+    if (outliner == null) return;
+    boolean wide = !sidebarCollapsed && getWidth() >= 1100;
+    outliner.setDocked(wide);
+    setLeft(wide ? outliner : null);
   }
 
   private void updateSidebarToggleButtons() {
@@ -2201,6 +2265,44 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
   }
 
   private void installPreviewInteractions() {
+    previewCanvas.setId("lighting-viewport");
+    previewCanvas.setFocusTraversable(true);
+    previewCanvas.setOnKeyPressed(event -> {
+      if (previewMode.getValue() != PreviewMode.EDIT || event.isShortcutDown() || event.isControlDown()
+          || selectedLightIndex < 0 || selectedLightIndex >= sceneLights.size()) return;
+      SceneLight light = sceneLights.get(selectedLightIndex);
+      if (light.locked) return;
+      double step = event.isShiftDown() ? 10 : 1;
+      double dx = 0, dy = 0;
+      switch (event.getCode()) {
+        case LEFT -> dx = -step;
+        case RIGHT -> dx = step;
+        case UP -> dy = -step;
+        case DOWN -> dy = step;
+        default -> { return; }
+      }
+      if (event.isAltDown()) {
+        moveSelectedLightSourceToCanvas(light.sourceX * previewCanvas.getWidth() + dx,
+            light.sourceY * previewCanvas.getHeight() + dy);
+      } else {
+        moveSelectedLightToCanvas(light.sceneX * previewCanvas.getWidth() + dx,
+            light.sceneY * previewCanvas.getHeight() + dy);
+      }
+      persistGlobalState();
+      redrawPreview();
+      event.consume();
+    });
+    previewCanvas.addEventFilter(MouseEvent.ANY, event -> {
+      var type = event.getEventType();
+      if (type != MouseEvent.MOUSE_PRESSED && type != MouseEvent.MOUSE_DRAGGED
+          && type != MouseEvent.MOUSE_RELEASED && type != MouseEvent.MOUSE_CLICKED) return;
+      if (type == MouseEvent.MOUSE_PRESSED) previewCanvas.requestFocus();
+      if (previewMode.getValue() == PreviewMode.EDIT) return;
+      if (previewMode.getValue() == PreviewMode.SPLIT && event.isPrimaryButtonDown()) {
+        comparePosition.setValue(Math.clamp(event.getX() / Math.max(1, previewCanvas.getWidth()), 0, 1));
+      }
+      event.consume();
+    });
     previewCanvas.setOnMouseClicked(e -> {
       if (e.getButton() == MouseButton.SECONDARY && (polyDrawMode || lightPolyDrawMode || occluderPolyDrawMode)) {
         // Right-click removes last nail point.
@@ -2352,6 +2454,7 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
       redrawPreview();
     });
     previewCanvas.setOnScroll(e -> {
+      if (previewMode.getValue() != PreviewMode.EDIT) return;
       Image img = loadImage(selectedCharacterTag());
       if (img == null) return;
       double oldZoom = zoom;
@@ -2388,7 +2491,8 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
     g.setFill(Color.web("#161616"));
     g.fillRect(0, 0, w, h);
 
-    boolean original = compareOriginal.isSelected();
+    PreviewMode mode = previewMode.getValue();
+    boolean original = mode == PreviewMode.ORIGINAL;
     Image bg = loadImage(selectedBackgroundTag());
     if (bg != null) {
       Image previewBg = original ? bg : resolvePreviewBackgroundImage(selectedBackgroundTag(), bg, w, h);
@@ -2407,9 +2511,12 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
     if (rawCharacter == null) {
       if (!original) {
         drawSceneLightEffects(g, w, h, SceneLightLayer.FOREGROUND);
-        drawSceneLightOverlays(g, w, h);
-        drawOccluderGuides(g, w, h);
+        if (mode == PreviewMode.EDIT) {
+          drawSceneLightOverlays(g, w, h);
+          drawOccluderGuides(g, w, h);
+        }
       }
+      if (mode == PreviewMode.SPLIT) drawComparison(g, w, h, bg, null, null);
       if (bg == null) drawHint(g, w, h, "Load a VNS scene or select scene assets.");
       previewInfoLabel.setText(bg == null ? "" : "Background only");
       return;
@@ -2428,6 +2535,11 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
       return;
     }
     drawSceneLightEffects(g, w, h, SceneLightLayer.FOREGROUND);
+    if (mode != PreviewMode.EDIT) {
+      if (mode == PreviewMode.SPLIT) drawComparison(g, w, h, bg, rawCharacter, renderContext);
+      previewInfoLabel.setText(mode == PreviewMode.SPLIT ? "Original  |  Graded" : "Graded scene");
+      return;
+    }
 
     drawSceneLightOverlays(g, w, h);
     // Draw zone overlays on the character image region.
@@ -2536,6 +2648,29 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
         + "  |  Local grades: " + tintZones.size());
   }
 
+  private void drawComparison(GraphicsContext g, double width, double height, Image background,
+      Image character, CharacterRenderContext framing) {
+    double divider = comparePosition.getValue() * width;
+    g.save();
+    g.beginPath();
+    g.rect(0, 0, divider, height);
+    g.clip();
+    g.setFill(Color.web("#161616"));
+    g.fillRect(0, 0, width, height);
+    if (background == null) drawChecker(g, width, height);
+    else drawCover(g, background, width, height);
+    if (character != null && framing != null) {
+      g.drawImage(character, framing.drawX(), framing.drawY(), framing.drawWidth(), framing.drawHeight());
+    }
+    g.restore();
+    if (divider > 0 && divider < width) {
+      g.setFill(Color.color(0, 0, 0, 0.7));
+      g.fillRect(divider - 1, 0, 3, height);
+      g.setFill(Color.WHITE);
+      g.fillRect(divider, 0, 1, height);
+    }
+  }
+
   private LightHandleHit findLightHandleAt(double canvasX, double canvasY) {
     if (sceneLights.isEmpty()) return null;
     double hitRadiusSq = LIGHT_HANDLE_RADIUS_PX * LIGHT_HANDLE_RADIUS_PX;
@@ -2631,30 +2766,36 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
       cancelBackgroundTintTask();
       return source;
     }
-    int workWidth = Math.max(1, (int) Math.round(Math.min(1100, width)));
+    if (backgroundSource == null || !backgroundSource.matches(source)) {
+      cancelBackgroundTintTask();
+      clearBackgroundSource();
+      backgroundSource = new VnStageLightingSupport.BackgroundPreviewSource(source);
+    }
+    int previewLimit = draggingLight || backgroundFxSliderDragging ? 512 : 1100;
+    int workWidth = Math.max(1, (int) Math.round(Math.min(previewLimit, width)));
     int workHeight = Math.max(1, (int) Math.round(height * workWidth / width));
     String key = tag + "|" + stage.getCacheToken() + "|" + workWidth + "x" + workHeight;
     if (Objects.equals(tintedBackgroundTag, tag) && Objects.equals(tintedBackgroundKey, key) && tintedBackground != null) {
       return tintedBackground;
     }
-    ensureBackgroundTintTask(tag, source, key, stage, workWidth, workHeight);
+    if (!disposed && !key.equals(failedBackgroundKey)) ensureBackgroundTintTask(tag, key, stage, workWidth, workHeight, backgroundSource);
     return Objects.equals(tintedBackgroundTag, tag) ? tintedBackground : null;
   }
 
-  private void ensureBackgroundTintTask(String tag, Image source, String key, VnStagePreset stage, int width, int height) {
+  private void ensureBackgroundTintTask(String tag, String key, VnStagePreset stage, int width, int height,
+      VnStageLightingSupport.BackgroundPreviewSource plate) {
     if (backgroundTintTask != null
-        && !backgroundTintTask.isDone()
         && Objects.equals(backgroundTintTaskTag, tag)
         && Objects.equals(backgroundTintTaskKey, key)) {
       return;
     }
 
     cancelBackgroundTintTask();
-    final long serial = ++backgroundTintTaskSerial;
+    final long serial = backgroundTintTaskSerial;
     Task<Image> task = new Task<>() {
       @Override
       protected Image call() {
-        return VnStageLightingSupport.renderBackgroundPreview(source, stage, width, height);
+        return plate.render(stage, width, height);
       }
     };
     backgroundTintTask = task;
@@ -2667,6 +2808,9 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
         tintedBackgroundTag = tag;
         tintedBackgroundKey = key;
         tintedBackground = rendered;
+        failedBackgroundKey = null;
+      } else {
+        failedBackgroundKey = key;
       }
       backgroundTintTask = null;
       backgroundTintTaskTag = null;
@@ -2689,16 +2833,17 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
       backgroundTintTaskKey = null;
       previewLoadingOverlay.hideOverlay();
       Throwable ex = task.getException();
+      failedBackgroundKey = key;
       status("Background tint render failed: " + (ex == null ? "unknown error" : ex.getMessage()));
       redrawPreview();
     });
-    Thread renderThread = new Thread(task, "jvn-bg-tint-render");
-    renderThread.setDaemon(true);
-    renderThread.start();
+    backgroundWorker.execute(task);
   }
 
   private void cancelBackgroundTintTask() {
-    if (backgroundTintTask != null && backgroundTintTask.isRunning()) {
+    backgroundTintTaskSerial++;
+    if (backgroundTintTask != null) {
+      backgroundWorker.remove(backgroundTintTask);
       backgroundTintTask.cancel();
     }
     backgroundTintTask = null;
@@ -5094,9 +5239,10 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
     occluderFramingField.setTooltip(new Tooltip("Optional floor shadow adjustment. Offsets and scale are percentages. Leave blank for the original projection."));
     occluderFramingField.setOnAction(event -> commitShadowFraming());
 
+    occluderListView.setId("lighting-caster-list");
     occluderListView.setPrefHeight(84);
     occluderListView.setMaxHeight(124);
-    occluderListView.setStyle("-fx-background-color: #1f1f1f; -fx-border-color: #333333;");
+    occluderListView.getStyleClass().add("lighting-rig-list");
     occluderListView.setCellFactory(lv -> new ListCell<SceneOccluder>() {
       @Override protected void updateItem(SceneOccluder item, boolean empty) {
         super.updateItem(item, empty);
@@ -5176,8 +5322,9 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
     shadowDebugBox.getItems().setAll("Casters", "Sample Rays", "Shadow Coverage", "Rays + Coverage", "Off");
     shadowDebugBox.setValue("Casters");
     shadowDebugBox.valueProperty().addListener((obs, old, selected) -> redrawPreview());
+    compactCasterList.setCenter(occluderListView);
     VBox content = new VBox(6, actions, new HBox(8, new Label("Debug view"), shadowDebugBox),
-        occluderListView, occluderControlsSection);
+        compactCasterList, occluderControlsSection);
     occlusionPane = new TitledPane("Occlusion & Shadows", content);
     occlusionPane.setExpanded(false);
     occlusionPane.setAnimated(false);
@@ -7001,11 +7148,18 @@ public class ImageTintToolView extends BorderPane implements ImageToolPanel {
   }
 
   private void invalidateBackgroundTintCache() {
+    failedBackgroundKey = null;
     previewRig = null;
     previewOverlays.clear();
     cancelBackgroundTintTask();
-    tintedBackgroundTag = null;
     tintedBackgroundKey = null;
+  }
+
+  private void clearBackgroundSource() {
+    backgroundSource = null;
+    failedBackgroundKey = null;
+    tintedBackgroundKey = null;
+    tintedBackgroundTag = null;
     tintedBackground = null;
   }
 
