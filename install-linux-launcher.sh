@@ -54,6 +54,14 @@ desktop_quote() {
   printf '"%s"' "$value"
 }
 
+desktop_value() {
+  local value="${1//\\/\\\\}"
+  value="${value//$'\n'/\\n}"
+  value="${value//$'\r'/\\r}"
+  value="${value//$'\t'/\\t}"
+  printf '%s' "$value"
+}
+
 die() {
   local message="$1"
   echo "[installer] error: $message" >&2
@@ -177,13 +185,14 @@ Name=$APP_NAME
 GenericName=Game Engine Launcher
 Comment=Launch the Java Vector Nexus editor, runtime, build tasks, and updates
 Exec=$(desktop_quote "$WRAPPER_FILE")
-TryExec=$(desktop_quote "$WRAPPER_FILE")
-Path=$(desktop_quote "$SCRIPT_DIR")
-Icon=$(desktop_quote "$ICON_FILE")
+TryExec=$(desktop_value "$WRAPPER_FILE")
+Path=$(desktop_value "$SCRIPT_DIR")
+Icon=$(desktop_value "$ICON_FILE")
 Terminal=false
 Categories=Development;IDE;
 Keywords=JVN;Editor;Engine;Gradle;
 StartupNotify=true
+StartupWMClass=com-jvn-hub-JvnHub
 DESKTOP
   chmod 0644 "$TARGET_FILE"
 }

@@ -329,13 +329,15 @@ You can also run the installers directly from the repository root.
 # Windows PowerShell
 .\install-windows-launcher.ps1
 
-# Skip the desktop shortcut and only add Start Menu entry
+# Install only the Start Menu shortcuts
 .\install-windows-launcher.ps1 -NoDesktop
 ```
 
 The installers are user-local. They should not be run with `sudo` or Administrator elevation.
 
-Installed shortcuts use the centered app-icon SVG at `docs/assets/images/jvn_app_icon.svg` as the canonical icon artwork. Linux installs the SVG directly, macOS converts that SVG into the app bundle `.icns`, and Windows stores the SVG alongside the hidden launcher and assigns it to the generated shortcuts when supported by the shell.
+On Windows the installer creates separate **JVN Editor** and **JVN Engine Hub** shortcuts, each with its own multi-resolution icon. The Editor shortcut opens the editor directly.
+
+The Hub artwork comes from `docs/assets/images/jvn_app_icon.svg`. Linux installs the SVG directly, macOS generates an `.icns` for the app bundle, and Windows assigns a multi-resolution `.ico` to the generated shortcuts.
 
 ## Shortcut Logs
 

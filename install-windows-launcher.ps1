@@ -1,10 +1,10 @@
 # -----------------------------------------------------------------------------
 #  install-windows-launcher.ps1
 #
-#  Installs a "JVN Engine Hub" shortcut for the current Windows user:
+#  Installs JVN Engine Hub and JVN Editor shortcuts for the current Windows user:
 #
-#    Start Menu\Programs\JVN Engine Hub.lnk
-#    Desktop\JVN Engine Hub.lnk
+#    Start Menu\Programs\JVN Engine Hub.lnk and JVN Editor.lnk
+#    Desktop\JVN Engine Hub.lnk and JVN Editor.lnk
 #
 #  It also writes hidden launcher wrappers under %LOCALAPPDATA%\JVN Engine Hub.
 #  The shortcuts do not open a command prompt; failures are logged and shown in
@@ -30,14 +30,6 @@ function PsQuote([string]$Value) {
   return "'" + $Value.Replace("'", "''") + "'"
 }
 
-function Copy-SvgIcon([string]$Root, [string]$Path) {
-  $source = Join-Path $Root "docs\assets\images\jvn_app_icon.svg"
-  if (-not (Test-Path -LiteralPath $source)) {
-    Fail "JVN SVG app icon was not found at $source"
-  }
-  Copy-Item -LiteralPath $source -Destination $Path -Force
-}
-
 function New-Shortcut([string]$ShortcutPath, [string]$TargetPath, [string]$Arguments, [string]$WorkingDirectory, [string]$Description, [string]$IconPath) {
   $shell = New-Object -ComObject WScript.Shell
   $shortcut = $shell.CreateShortcut($ShortcutPath)
@@ -46,7 +38,7 @@ function New-Shortcut([string]$ShortcutPath, [string]$TargetPath, [string]$Argum
   $shortcut.WorkingDirectory = $WorkingDirectory
   $shortcut.Description = $Description
   if ($IconPath) {
-    $shortcut.IconLocation = $IconPath
+    $shortcut.IconLocation = "$IconPath,0"
   }
   $shortcut.Save()
 }
@@ -62,21 +54,31 @@ $InstallDir = Join-Path $env:LOCALAPPDATA "JVN Engine Hub"
 $LogDir = Join-Path $env:LOCALAPPDATA "JVN Engine Hub\Logs"
 $LauncherPs1 = Join-Path $InstallDir "jvn-engine-hub-launcher.ps1"
 $LauncherVbs = Join-Path $InstallDir "jvn-engine-hub-launcher.vbs"
-$IconSvg = Join-Path $InstallDir "jvn-engine-hub.svg"
+$IconSource = Join-Path $ProjectRoot "modules\hub\src\main\resources\com\jvn\hub\images\jvn_hub_icon.ico"
+$IconFile = Join-Path $InstallDir "jvn-engine-hub.ico"
+$EditorIconSource = Join-Path $ProjectRoot "modules\editor\src\main\resources\com\jvn\editor\images\jvn_editor_icon.ico"
+$EditorIconFile = Join-Path $InstallDir "jvn-editor.ico"
 $LogFile = Join-Path $LogDir "launcher.log"
 
 New-Item -ItemType Directory -Force -Path $InstallDir, $LogDir | Out-Null
 
-Copy-SvgIcon $ProjectRoot $IconSvg
+if (-not (Test-Path -LiteralPath $IconSource)) { Fail "JVN app icon was not found at $IconSource" }
+if (-not (Test-Path -LiteralPath $EditorIconSource)) { Fail "JVN Editor icon was not found at $EditorIconSource" }
+Copy-Item -LiteralPath $IconSource -Destination $IconFile -Force
+Copy-Item -LiteralPath $EditorIconSource -Destination $EditorIconFile -Force
 
 $projectRootLiteral = PsQuote $ProjectRoot
 $logFileLiteral = PsQuote $LogFile
 
 $launcherPs1Content = @"
+param([switch]`$Editor)
 `$ErrorActionPreference = "Stop"
 `$ProjectRoot = $projectRootLiteral
 `$LogFile = $logFileLiteral
 `$GradleBat = Join-Path `$ProjectRoot "gradlew.bat"
+`$AppName = if (`$Editor) { "JVN Editor" } else { "JVN Engine Hub" }
+`$Task = if (`$Editor) { ":editor:run" } else { ":hub:run" }
+if (`$Editor) { `$LogFile = Join-Path (Split-Path -Parent `$LogFile) "editor.log" }
 
 function Write-LaunchLog([string]`$Message) {
   Add-Content -LiteralPath `$LogFile -Value `$Message
@@ -85,7 +87,7 @@ function Write-LaunchLog([string]`$Message) {
 function Show-Failure([string]`$Message) {
   try {
     Add-Type -AssemblyName System.Windows.Forms
-    [System.Windows.Forms.MessageBox]::Show("`$Message`r`n`r`nLog: `$LogFile", "JVN Engine Hub failed", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+    [System.Windows.Forms.MessageBox]::Show("`$Message`r`n`r`nLog: `$LogFile", "`$AppName failed", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
   } catch {
   }
 }
@@ -93,7 +95,7 @@ function Show-Failure([string]`$Message) {
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent `$LogFile) | Out-Null
 Write-LaunchLog "---- `$((Get-Date).ToString('yyyy-MM-ddTHH:mm:sszzz')) ----"
 Write-LaunchLog "[JVN] Project: `$ProjectRoot"
-Write-LaunchLog "[JVN] Starting Engine Hub..."
+Write-LaunchLog "[JVN] Starting `$AppName..."
 
 if (-not (Test-Path -LiteralPath `$GradleBat)) {
   Write-LaunchLog "[JVN] Missing gradlew.bat in `$ProjectRoot"
@@ -105,12 +107,12 @@ try {
   `$pushedLocation = `$false
   Push-Location -LiteralPath `$ProjectRoot
   `$pushedLocation = `$true
-  & `$GradleBat -q --console=plain -p `$ProjectRoot ":hub:run" >> `$LogFile 2>&1
+  & `$GradleBat -q --console=plain -p `$ProjectRoot `$Task >> `$LogFile 2>&1
   `$status = `$LASTEXITCODE
   if (`$null -eq `$status) { `$status = 0 }
 } catch {
   Write-LaunchLog "[JVN] Startup exception: `$(`$_.Exception.Message)"
-  Show-Failure "Startup failed before the hub could run."
+  Show-Failure "Startup failed before `$AppName could run."
   exit 1
 } finally {
   if (`$pushedLocation) { Pop-Location }
@@ -125,31 +127,25 @@ exit `$status
 
 $launcherVbsContent = @"
 Set shell = CreateObject("WScript.Shell")
-shell.Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""$LauncherPs1""", 0, False
+editorArg = ""
+If WScript.Arguments.Named.Exists("editor") Then editorArg = " -Editor"
+shell.Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""$LauncherPs1""" & editorArg, 0, False
 "@
 
 Set-Content -LiteralPath $LauncherPs1 -Value $launcherPs1Content -Encoding UTF8
-Set-Content -LiteralPath $LauncherVbs -Value $launcherVbsContent -Encoding ASCII
+Set-Content -LiteralPath $LauncherVbs -Value $launcherVbsContent -Encoding Unicode
 
 $StartMenuDir = Join-Path ([Environment]::GetFolderPath("StartMenu")) "Programs"
-$StartShortcut = Join-Path $StartMenuDir "JVN Engine Hub.lnk"
 New-Item -ItemType Directory -Force -Path $StartMenuDir | Out-Null
 $Wscript = Join-Path $env:WINDIR "System32\wscript.exe"
-New-Shortcut $StartShortcut $Wscript "`"$LauncherVbs`"" $ProjectRoot "Launch Java Vector Nexus Engine Hub" $IconSvg
-
+$destinations = @($StartMenuDir)
 if (-not $NoDesktop) {
   $DesktopDir = [Environment]::GetFolderPath("Desktop")
-  if ($DesktopDir) {
-    $DesktopShortcut = Join-Path $DesktopDir "JVN Engine Hub.lnk"
-    New-Shortcut $DesktopShortcut $Wscript "`"$LauncherVbs`"" $ProjectRoot "Launch Java Vector Nexus Engine Hub" $IconSvg
-  }
+  if ($DesktopDir) { $destinations += $DesktopDir }
 }
-
-Write-Host "[installer] installed Start Menu shortcut: $StartShortcut"
-if (-not $NoDesktop -and $DesktopShortcut) {
-  Write-Host "[installer] installed Desktop shortcut: $DesktopShortcut"
+foreach ($dir in $destinations) {
+  New-Shortcut (Join-Path $dir "JVN Engine Hub.lnk") $Wscript "`"$LauncherVbs`"" $ProjectRoot "Launch JVN Engine Hub" $IconFile
+  New-Shortcut (Join-Path $dir "JVN Editor.lnk") $Wscript "`"$LauncherVbs`" /editor" $ProjectRoot "Launch JVN Editor" $EditorIconFile
+  Write-Host "[installer] installed JVN Engine Hub and JVN Editor shortcuts in $dir"
 }
-Write-Host "[installer] installed hidden PowerShell launcher: $LauncherPs1"
-Write-Host "[installer] installed hidden WSH launcher: $LauncherVbs"
-Write-Host "[installer] installed SVG icon: $IconSvg"
-Write-Host "[installer] launch log: $LogFile"
+Write-Host "[installer] launch logs: $LogDir"

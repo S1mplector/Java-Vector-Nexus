@@ -23,6 +23,11 @@ public final class ShutdownSplashOverlay {
   private final ProgressBar progress = new ProgressBar(ProgressBar.INDETERMINATE_PROGRESS);
 
   public ShutdownSplashOverlay() {
+    this(null);
+  }
+
+  public ShutdownSplashOverlay(Stage primaryStage) {
+    if (primaryStage != null) stage.getIcons().setAll(primaryStage.getIcons());
     Label title = new Label("Closing JVN");
     title.setTextFill(Color.web("#f4f4f4"));
     title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 20));

@@ -40,6 +40,7 @@ public final class LicenseAcceptanceView {
   static Stage create(Window owner, String appVersion, AcceptanceStore store, LicenseTerms terms, boolean required) {
       Stage stage = new Stage();
       if (owner != null) stage.initOwner(owner);
+      if (owner instanceof Stage parent) stage.getIcons().setAll(parent.getIcons());
       stage.initModality(Modality.WINDOW_MODAL);
       stage.setTitle("JVN License & Terms");
       Label status = new Label();

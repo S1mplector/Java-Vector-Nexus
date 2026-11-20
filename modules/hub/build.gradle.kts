@@ -62,6 +62,10 @@ tasks.named("processResources") {
 }
 
 tasks.named<JavaExec>("run") {
+  if (System.getProperty("os.name").startsWith("Mac")) {
+    val icon = layout.projectDirectory.file("src/main/resources/com/jvn/hub/images/jvn_hub_icon.png").asFile
+    jvmArgs("-Xdock:name=JVN Engine Hub", "-Xdock:icon=${icon.absolutePath}")
+  }
   // Run from the project root so relative paths (gradlew, .git) resolve naturally.
   workingDir = rootProject.projectDir
   // Propagate the root into the forked JVM; JvnHub reads this to anchor every

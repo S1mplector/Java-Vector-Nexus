@@ -50,7 +50,7 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 application {
-  mainClass.set("com.jvn.editor.EditorApp")
+  mainClass.set("com.jvn.editor.EditorLauncher")
 }
 
 tasks.register("printRuntimeCp") {

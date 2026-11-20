@@ -54,6 +54,11 @@ public final class StartupSplashOverlay {
   private String progressAccent = "#f38ba8";
 
   public StartupSplashOverlay() {
+    this(null);
+  }
+
+  public StartupSplashOverlay(Stage primaryStage) {
+    if (primaryStage != null) stage.getIcons().setAll(primaryStage.getIcons());
     AppBuildInfo.BuildInfo buildInfo = AppBuildInfo.resolve(StartupSplashOverlay.class);
     configureSplashPane(buildInfo);
     configureFailurePane();

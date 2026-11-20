@@ -169,6 +169,11 @@ public final class JvnHub {
   private static final String PERFORMANCE_GRAPH_VISIBLE_KEY = "performance.graph.visible";
   private static final String PERFORMANCE_CHIPS_VISIBLE_KEY = "performance.chips.visible";
   private static final String TOOLTIPS_ENABLED_KEY = "tooltips.enabled";
+  static {
+    // Display detection initializes AWT. Register the process identity first.
+    HubApplicationIcon.configureMacApplication();
+  }
+
   private static final HubDisplayProfile DISPLAY_PROFILE = HubDisplayProfile.detect();
   private static double activeUiScale = initialUiScale();
 
@@ -204,7 +209,7 @@ public final class JvnHub {
   private final Path jvmLaunchSettingsFile;
   private final Path jvmLaunchArgumentsFile;
   private final Path heapDumpDirectory;
-  private final JFrame frame = new JFrame("JVN Engine Hub");
+  private final JFrame frame = new JFrame(HubApplicationIcon.NAME);
   private final JLabel statusLabel = new JLabel("Idle");
   private final JLabel footerBranchLabel = new JLabel("No branch");
   private final JLabel footerRootLabel = new JLabel();
@@ -299,6 +304,7 @@ public final class JvnHub {
     // setBackground/setForeground verbatim, which is what the custom theme needs.
     applyHubDefaults();
     SwingUtilities.invokeLater(() -> {
+      HubApplicationIcon.installTaskbarIcon();
       if (!LicenseAcceptanceDialog.requireAcceptance()) return;
       HubLifecycleSplash splash = HubLifecycleSplash.startup();
       splash.showCentered();
@@ -643,6 +649,7 @@ public final class JvnHub {
     frame.getRootPane().setOpaque(true);
     frame.getContentPane().setBackground(BG);
     installResizeOverlay();
+    HubApplicationIcon.applyTo(frame);
 
     Dimension hubSize = hubSizeForScale(activeUiScale);
     frame.setResizable(true);
@@ -651,8 +658,6 @@ public final class JvnHub {
     frame.pack();
     frame.setSize(hubSize);
     frame.setLocationRelativeTo(null);
-
-    installApplicationIcon(frame);
   }
 
   private void installResizeOverlay() {
@@ -2360,27 +2365,6 @@ public final class JvnHub {
       super.paintComponent(graphics);
       int y = Math.max(0, (getHeight() - helpIcon.getIconHeight()) / 2);
       helpIcon.paintIcon(this, graphics, ui(7), y);
-    }
-  }
-
-  private static void installApplicationIcon(JFrame frame) {
-    if (frame == null) return;
-    BufferedImage icon512 = HubIcon.image(HubIcon.Kind.APP, 512);
-    frame.setIconImages(List.of(
-        HubIcon.image(HubIcon.Kind.APP, 16),
-        HubIcon.image(HubIcon.Kind.APP, 32),
-        HubIcon.image(HubIcon.Kind.APP, 64),
-        HubIcon.image(HubIcon.Kind.APP, 128),
-        icon512));
-    try {
-      if (java.awt.Taskbar.isTaskbarSupported()) {
-        java.awt.Taskbar taskbar = java.awt.Taskbar.getTaskbar();
-        if (taskbar.isSupported(java.awt.Taskbar.Feature.ICON_IMAGE)) {
-          taskbar.setIconImage(icon512);
-        }
-      }
-    } catch (UnsupportedOperationException | SecurityException ignored) {
-      // Some desktop environments expose the Taskbar API but reject icon changes.
     }
   }
 
@@ -8109,6 +8093,7 @@ public final class JvnHub {
       this.status = status;
       this.thanks = thanks;
       this.progress = progress;
+      HubApplicationIcon.applyTo(this);
       setBackground(new Color(0, 0, 0, 0));
       setContentPane(content);
       setAlwaysOnTop(true);

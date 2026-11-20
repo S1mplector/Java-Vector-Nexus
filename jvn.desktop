@@ -19,7 +19,9 @@ Comment=Launch the Java Vector Nexus editor, runtime, build tasks, and updates
 # %k expands to the absolute path of this .desktop file; dirname gives the
 # project root, which is where ./jvn lives.
 Exec=bash -c "project_dir=\"$(dirname \"$1\")\"; log_dir=\"${XDG_STATE_HOME:-$HOME/.local/state}/jvn-engine-hub\"; mkdir -p \"$log_dir\"; cd \"$project_dir\" && exec ./jvn >> \"$log_dir/launcher.log\" 2>&1" jvn-desktop %k
+Icon=jvn-engine-hub
 Terminal=false
 Categories=Development;IDE;
 Keywords=JVN;Editor;Engine;Gradle;
 StartupNotify=true
+StartupWMClass=com-jvn-hub-JvnHub

@@ -21,7 +21,7 @@ import javax.swing.Icon;
 /** Resolution-independent Aero artwork for Engine Hub commands, controls, and status. */
 final class HubIcon implements Icon {
   enum Kind {
-    APP, EDITOR, LAUNCHER, BUILD, SHORTCUT, UPDATE, TESTS, OPTIONS, MORE, CANCEL, QUIT,
+    EDITOR, LAUNCHER, BUILD, SHORTCUT, UPDATE, TESTS, OPTIONS, MORE, CANCEL, QUIT,
     DEVELOPER, DEVELOPER_ACTIVE, SAFE, SAFE_ACTIVE, DIAGNOSTICS, ABOUT, DOCUMENTATION,
     PLAY, EDIT, CHECK, REFRESH, STOP, CLOSE, HELP, WARNING, ERROR, PENDING, RUNNING, IDLE,
     BOX, BOX_CHECKED, RADIO, RADIO_CHECKED, ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT,
@@ -130,7 +130,6 @@ final class HubIcon implements Icon {
 
   private static void paint(Graphics2D g, Kind kind) {
     switch (kind) {
-      case APP -> app(g);
       case EDITOR -> editor(g);
       case LAUNCHER -> rocket(g);
       case BUILD -> build(g);
@@ -169,15 +168,6 @@ final class HubIcon implements Icon {
       case EXPORT -> export(g);
       case RECEIPT -> receipt(g);
     }
-  }
-
-  private static void app(Graphics2D g) {
-    surface(g, rounded(2, 2, 20, 20, 5.5), SCREEN);
-    filled(g, polygon(3.3, 14.5, 20.7, 8.1, 20.7, 15, 3.3, 19.7), color(0x417dab));
-    surface(g, polygon(3.1, 14.9, 21, 8.2, 21, 11.5, 3.1, 18.3), ORANGE);
-    Path2D letter = path(15.4, 5.8, 15.4, 14);
-    letter.curveTo(15.4, 19.4, 8.2, 19.9, 7.2, 15.4);
-    mark(g, letter, 3.5f);
   }
 
   private static void editor(Graphics2D g) {

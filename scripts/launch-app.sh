@@ -36,7 +36,7 @@ EOF
 case "$APP" in
   editor)
     CACHE_NAME="editor"; PREPARE_TASK=":editor:prepareFastLaunch"
-    GRADLE_TASK=":editor:run"; MAIN_CLASS="com.jvn.editor.EditorApp" ;;
+    GRADLE_TASK=":editor:run"; MAIN_CLASS="com.jvn.editor.EditorLauncher" ;;
   launcher)
     CACHE_NAME="editor"; PREPARE_TASK=":editor:prepareFastLaunch"
     GRADLE_TASK=":editor:runLauncher"; MAIN_CLASS="com.jvn.editor.JvnLauncherApp" ;;

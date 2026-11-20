@@ -987,7 +987,7 @@ public class JvnLauncherApp extends Application {
       if (startupFile != null && startupFile.isFile()) {
         command.add("-D" + EDITOR_OPEN_FILE_PROPERTY + "=" + startupFile.getAbsolutePath());
       }
-      command.add(EditorApp.class.getName());
+      command.add(EditorLauncher.class.getName());
 
       ProcessBuilder pb = new ProcessBuilder(command);
       if (workspaceRoot != null && workspaceRoot.isDirectory()) {

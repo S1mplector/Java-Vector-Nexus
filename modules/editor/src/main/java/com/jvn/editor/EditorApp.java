@@ -912,11 +912,13 @@ public class EditorApp extends Application {
 
   @Override
   public void start(Stage primaryStage) {
+    primaryStage.setTitle(EditorLauncher.NAME);
+    installApplicationIcon(primaryStage);
     if (!com.jvn.editor.ui.LicenseAcceptanceView.requireAcceptance(primaryStage)) {
       javafx.application.Platform.exit(); return;
     }
     EditorCrashSupport.installProcessHandler();
-    StartupSplashOverlay splash = new StartupSplashOverlay();
+    StartupSplashOverlay splash = new StartupSplashOverlay(primaryStage);
     splash.show();
     launchStartupSequence(primaryStage, splash, false);
   }
@@ -1467,10 +1469,25 @@ public class EditorApp extends Application {
     }
   }
 
+  private static void installApplicationIcon(Stage stage) {
+    URL resource = EditorApp.class.getResource(EditorLauncher.ICON_RESOURCE);
+    if (resource == null) return;
+    Image icon = new Image(resource.toExternalForm());
+    stage.getIcons().setAll(icon);
+    if (!EditorLauncher.isMacOs() || icon.isError()) return;
+    try {
+      if (java.awt.Taskbar.isTaskbarSupported()) {
+        java.awt.Taskbar taskbar = java.awt.Taskbar.getTaskbar();
+        if (taskbar.isSupported(java.awt.Taskbar.Feature.ICON_IMAGE)) {
+          taskbar.setIconImage(javafx.embed.swing.SwingFXUtils.fromFXImage(icon, null));
+        }
+      }
+    } catch (UnsupportedOperationException | SecurityException ignored) {
+      // The launcher supplies the Dock icon before JavaFX starts.
+    }
+  }
+
   private void initializeEditorStage(Stage primaryStage) {
-    primaryStage.setTitle("JVN Editor");
-    URL editorIcon = getClass().getResource("/com/jvn/editor/images/jvn_editor_icon.png");
-    if (editorIcon != null) primaryStage.getIcons().add(new Image(editorIcon.toExternalForm()));
     layoutStudioWindowManager = new LayoutStudioWindowManager(primaryStage, this::doRunProject);
     BorderPane root = new BorderPane();
     AppBuildInfo.BuildInfo buildInfo = AppBuildInfo.resolve(EditorApp.class);
@@ -2266,7 +2283,7 @@ public class EditorApp extends Application {
     menuJvn.getStyleClass().add("jvn-application-menu");
     MenuItem miJvnSplash = new MenuItem("Show JVN Splash");
     miJvnSplash.setOnAction(e -> {
-      StartupSplashOverlay splash = new StartupSplashOverlay();
+      StartupSplashOverlay splash = new StartupSplashOverlay(primaryStage);
       splash.prepareForChecks(true);
       splash.setProgress(1.0);
       splash.setStatus("JVN Editor " + buildInfo.versionLabel());
@@ -2652,7 +2669,7 @@ public class EditorApp extends Application {
       }
       e.consume();
       shutdownInProgress = true;
-      new ShutdownSplashOverlay().show(
+      new ShutdownSplashOverlay(primaryStage).show(
           "Verifying editor workspace and background services...",
           () -> {
             saveWorkspaceStateToPreferences();

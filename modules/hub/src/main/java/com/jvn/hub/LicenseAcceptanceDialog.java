@@ -40,6 +40,7 @@ public final class LicenseAcceptanceDialog {
   static JDialog create(Frame owner, String appVersion, AcceptanceStore store, LicenseTerms terms, boolean required) {
       double scale = JvnHub.currentUiScale();
       JDialog dialog = new JDialog(owner, "JVN License & Terms", true);
+      HubApplicationIcon.applyTo(dialog);
       dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
       JPanel content = new JPanel(new BorderLayout(12, 12));
       content.setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));

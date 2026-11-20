@@ -98,34 +98,22 @@ create_icns_icon() {
   local svg_file="$1"
   local icns_file="$APP_BUNDLE/Contents/Resources/jvn-engine-hub.icns"
   local iconset="$SUPPORT_DIR/jvn-engine-hub.iconset"
-  local source_png="$SUPPORT_DIR/jvn-engine-hub-1024.png"
-  local rendered=""
+  local rendered="$SUPPORT_DIR/jvn-engine-hub-1024.png"
 
-  rm -rf "$iconset"
-  mkdir -p "$iconset"
-
-  # Prefer rendering the canonical repo SVG so shortcut artwork stays in sync.
-  if command -v qlmanage >/dev/null 2>&1; then
-    rm -f "$SUPPORT_DIR/jvn-engine-hub.svg.png" "$source_png"
-    qlmanage -t -s 1024 -o "$SUPPORT_DIR" "$svg_file" >/dev/null 2>&1 || true
-    if [[ -f "$SUPPORT_DIR/jvn-engine-hub.svg.png" ]]; then
-      rendered="$SUPPORT_DIR/jvn-engine-hub.svg.png"
-    fi
-  fi
-
-  if [[ -z "$rendered" ]] && command -v sips >/dev/null 2>&1; then
-    sips -s format png "$svg_file" --out "$source_png" >/dev/null 2>&1 || true
-    if [[ -f "$source_png" ]]; then
-      rendered="$source_png"
-    fi
-  fi
-
-  if [[ -z "$rendered" || ! -f "$rendered" ]]; then
+  if ! command -v sips >/dev/null 2>&1 || ! command -v iconutil >/dev/null 2>&1; then
     echo ""
     return 0
   fi
 
-  if ! command -v sips >/dev/null 2>&1 || ! command -v iconutil >/dev/null 2>&1; then
+  rm -rf "$iconset"
+  mkdir -p "$iconset"
+  rm -f "$rendered"
+  # Quick Look flattens SVG thumbnail transparency, so use sips or the bundled PNG.
+  if ! sips -s format png -z 1024 1024 "$svg_file" --out "$rendered" >/dev/null 2>&1 ||
+      [[ ! -s "$rendered" ]]; then
+    rendered="$SCRIPT_DIR/modules/hub/src/main/resources/com/jvn/hub/images/jvn_hub_icon.png"
+  fi
+  if [[ ! -s "$rendered" ]]; then
     echo ""
     return 0
   fi
