@@ -787,7 +787,7 @@ public class GameBuildPublisherView extends BorderPane {
   private void refreshWorkflowNotices(ValidationResult result) {
     if (result == null || !result.errors().isEmpty()) {
       String issue = result == null || result.errors().isEmpty()
-          ? "Complete the release configuration above."
+          ? "Complete the settings on the Package tab."
           : result.errors().get(0);
       setWorkflowNotice(configurationNoticeLabel, "blocked", "Configuration needs attention — " + issue);
       setWorkflowNotice(validationNoticeLabel, "pending", "Validation unlocks after the configuration is ready.");
@@ -795,21 +795,21 @@ public class GameBuildPublisherView extends BorderPane {
     }
 
     setWorkflowNotice(configurationNoticeLabel, "ready",
-        "Configuration ready, continue to Validate below.");
+        "Package settings are ready. Open Checks to test the build.");
     if (dependencyScanTask != null && dependencyScanTask.isRunning()) {
       setWorkflowNotice(validationNoticeLabel, "running", "Scanning game content… Results will appear here when ready.");
     } else if (dependencyReport == null) {
       setWorkflowNotice(validationNoticeLabel, "pending",
-          "Next: scan the game content, or run package preflight before shipping.");
+          "Scan game content or run package preflight before shipping.");
     } else if (dependencyReport.errorCount() > 0) {
       setWorkflowNotice(validationNoticeLabel, "blocked",
           "Validation found " + dependencyReport.errorCount() + " blocking issue(s). Fix them before shipping.");
     } else if (dependencyReport.warningCount() > 0) {
       setWorkflowNotice(validationNoticeLabel, "ready",
-          "Validation complete with " + dependencyReport.warningCount() + " warning(s), review them, then continue to Build & ship.");
+          "Validation complete with " + dependencyReport.warningCount() + " warning(s). Review them before opening Release.");
     } else {
       setWorkflowNotice(validationNoticeLabel, "ready",
-          "Validation clear, continue to Build & ship below.");
+          "Checks passed. Open Release to build the package.");
     }
   }
 
