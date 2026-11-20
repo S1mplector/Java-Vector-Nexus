@@ -25,6 +25,7 @@ class GameBuildPublisherViewFxTest {
     runFx(() -> {
       GameBuildPublisherView view = createView();
       Scene scene = style(new Scene(view, 760, 900));
+      ((javafx.scene.control.ListView<?>) view.lookup(".build-navigation")).getSelectionModel().select(1);
       scene.getRoot().applyCss();
       scene.getRoot().layout();
 
@@ -85,6 +86,10 @@ class GameBuildPublisherViewFxTest {
       var scene = style(new Scene(view, 980, 720));
       scene.getRoot().applyCss();
       scene.getRoot().layout();
+      view.lookupAll(".titled-pane").stream().map(n -> (javafx.scene.control.TitledPane)n)
+          .filter(pane -> pane.getText().equals("Runtime and archive options")).findFirst().orElseThrow().setExpanded(true);
+      view.applyCss();
+      view.layout();
       ((javafx.scene.control.CheckBox) view.lookupAll(".check-box").stream()
           .filter(n -> n instanceof javafx.scene.control.CheckBox c && c.getText().startsWith("Store ZIP"))
           .findFirst().orElseThrow()).fire();
@@ -105,10 +110,10 @@ class GameBuildPublisherViewFxTest {
     runFx(() -> {
       var view = createView(requests::add);
       var scene = style(new Scene(view, 980, 720));
-      var tabs = (javafx.scene.control.TabPane) view.getCenter();
+      var sections = (javafx.scene.control.ListView<?>) view.lookup(".build-navigation");
       assertEquals(java.util.List.of("Package", "Checks", "Release", "Artifacts"),
-          tabs.getTabs().stream().map(javafx.scene.control.Tab::getText).toList());
-      tabs.getSelectionModel().select(1);
+          sections.getItems().stream().map(Object::toString).toList());
+      sections.getSelectionModel().select(1);
       scene.getRoot().applyCss();
       scene.getRoot().layout();
       var checks = view.lookupAll(".check-box").stream().map(n -> (javafx.scene.control.CheckBox)n).toList();

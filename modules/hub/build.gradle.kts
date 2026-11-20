@@ -100,7 +100,7 @@ val packagedEngineWorkspaceZip = tasks.register<Zip>("packagedEngineWorkspaceZip
         ".vscode/**",
         "**/.DS_Store",
         "build/**",
-        "**/build/**",
+        "modules/*/build/**",
         "**/bin/**",
         "**/out/**",
         "**/target/**",

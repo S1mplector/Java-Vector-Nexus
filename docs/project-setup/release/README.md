@@ -74,5 +74,6 @@ Use this hub when the question is "how do we ship this game?"
 
 - [What's New in JVN 0.7.0](whats-new-0.7.0.md) — licensing, Settings credit, and release verification
 
+- [What's New in JVN 0.9.1](whats-new-0.9.1.md) — Build workspace, launch cache and Tutorial Workspace fixes
 - [What's New in JVN 0.9.0](whats-new-0.9.0.md) — desktop installers, Run workspace, and scene lighting
 - [What's New in JVN 0.8.0](whats-new-0.8.0.md) — authoring, asset loading, persistence, and live-reload reliability

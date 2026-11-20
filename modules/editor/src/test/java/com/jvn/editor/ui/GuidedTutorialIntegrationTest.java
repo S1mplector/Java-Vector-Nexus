@@ -10,7 +10,6 @@ import com.jvn.fx.testkit.FxToolkitExtension;
 import com.jvn.fx.vn.VnRenderer;
 import com.jvn.scripting.jes.JesLoader;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.nio.file.*;
 import java.util.*;
 import javafx.embed.swing.SwingFXUtils;
@@ -26,18 +25,32 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(FxToolkitExtension.class)
 class GuidedTutorialIntegrationTest {
-  @TempDir Path project;
+  @TempDir Path parent;
+  private Path project;
 
   @Test void generatedCoursePlaysEachLessonAndCountsReplaysOnce() throws Exception {
     FxToolkit.runFx(() -> {
-      NewProjectWizard wizard = new NewProjectWizard(new Stage());
+      Stage owner = new Stage();
+      owner.setScene(new javafx.scene.Scene(new javafx.scene.layout.Pane()));
+      owner.show();
+      NewProjectWizard wizard = new NewProjectWizard(owner);
       try {
-        ((ComboBox<?>) field(wizard, "cmbProjectTemplate")).getSelectionModel().select(1);
-        invoke(wizard, "applySelectedProjectTemplate", new Class<?>[]{});
+        wizard.show();
+        var templates = (ComboBox<?>) field(wizard, "cmbProjectTemplate");
+        int tutorial = templates.getItems().stream().map(Object::toString).toList().indexOf("Tutorial Workspace");
+        assertTrue(tutorial >= 0);
+        templates.getSelectionModel().select(tutorial);
         assertTrue(((CheckBox) field(wizard, "chkTutorialPack")).isSelected());
         ((CheckBox) field(wizard, "chkGitInit")).setSelected(false);
-        invoke(wizard, "createProjectStructure", new Class<?>[]{java.io.File.class, String.class}, project.toFile(), "JVN Tutorial");
-      } finally { wizard.close(); }
+        ((javafx.scene.control.TextField) field(wizard, "txtLocation")).setText(parent.toString());
+        ((javafx.scene.control.TextField) field(wizard, "txtProjectName")).setText("PipStudio");
+        var create = (javafx.scene.control.Button) field(wizard, "btnCreate");
+        assertFalse(create.isDisabled());
+        create.fire();
+        assertNotNull(wizard.getCreatedProjectDir());
+        project = wizard.getCreatedProjectDir().toPath();
+        assertEquals(parent.resolve("PipStudio"), project);
+      } finally { wizard.close(); owner.close(); }
       return null;
     });
     assertFalse(Files.exists(project.resolve("assets/demo/backgrounds/game.png")));
@@ -266,8 +279,5 @@ class GuidedTutorialIntegrationTest {
   }
   private static Object field(Object target, String name) throws Exception {
     Field field = target.getClass().getDeclaredField(name); field.setAccessible(true); return field.get(target);
-  }
-  private static Object invoke(Object target, String name, Class<?>[] types, Object... args) throws Exception {
-    Method method = target.getClass().getDeclaredMethod(name, types); method.setAccessible(true); return method.invoke(target, args);
   }
 }

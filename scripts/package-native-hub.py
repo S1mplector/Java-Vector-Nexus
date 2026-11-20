@@ -37,6 +37,17 @@ def smoke_launcher(binary, extract):
     engines = list(extract.glob("*/*/engine"))
     if len(engines) != 1 or not (engines[0] / "modules/editor/build.gradle.kts").is_file():
         raise RuntimeError("Native launcher did not extract the engine and editor")
+    # The Java package named "build" and the course must survive workspace exclusions.
+    editor = Path("modules/editor/src/main")
+    sources = editor / "java/com/jvn/editor/ui"
+    templates = editor / "resources/com/jvn/editor/templates/new-project/guided-tutorial/scripts"
+    checkout = Path(__file__).resolve().parents[1]
+    required = [sources / "RunConsoleView.java", sources / "GameBuildPublisherView.java",
+                sources / "build/BuildArtifactService.java", templates / "story/tutorial_hub.vns"]
+    required.extend(path.relative_to(checkout) for path in (checkout / templates / "tutorial").glob("*.vns"))
+    for relative in required:
+        if not (engines[0] / relative).is_file() or (engines[0] / relative).read_bytes() != (checkout / relative).read_bytes():
+            raise RuntimeError(f"Installed workspace has missing or outdated content: {relative}")
     if sys.platform != "win32" and not os.access(engines[0] / "scripts/launch-app.sh", os.X_OK):
         raise RuntimeError("The extracted editor launcher is not executable")
 

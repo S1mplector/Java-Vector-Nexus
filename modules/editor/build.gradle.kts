@@ -257,6 +257,8 @@ tasks.register("prepareFastLaunch") {
   description = "Compiles the editor and writes reusable direct-launch classpath metadata."
   dependsOn(tasks.named("classes"))
   val runtimeClasspath = sourceSets["main"].runtimeClasspath
+  inputs.property("engineVersion", rootProject.version.toString())
+  inputs.property("workspacePath", rootProject.projectDir.absolutePath)
   inputs.files(runtimeClasspath)
   outputs.dir(fastLaunchDirectory)
   doLast {

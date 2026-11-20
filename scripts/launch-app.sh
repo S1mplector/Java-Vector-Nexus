@@ -277,10 +277,22 @@ configure_linux_glx_fallback() {
   echo "[jvn] default GLX is unavailable; using the working Mesa GPU provider for this launch." >&2
 }
 
+# Gradle writes absolute classpaths. A copied checkout or a different revision must
+# prepare them again even when an archive or a backup preserved file timestamps.
+launch_cache_identity() {
+  local revision=packaged version
+  if [[ -e "$ROOT_DIR/.git" ]]; then
+    revision="$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || echo source)"
+  fi
+  version="$(sed -n 's/^jvnVersion=//p' "$ROOT_DIR/gradle.properties")"
+  printf '%s\n%s\n%s\n' "$ROOT_DIR" "$revision" "$version"
+}
+
 cache_is_stale() {
   [[ "$FORCE_REBUILD" -eq 1 || ! -s "$CLASSPATH_FILE" || ! -f "$MODULE_PATH_FILE" || ! -s "$VERSION_FILE" || ! -f "$STAMP_FILE" ]] && return 0
+  [[ "$(cat "$STAMP_FILE")" = "$(launch_cache_identity)" ]] || return 0
   find "$ROOT_DIR/modules" "$ROOT_DIR/misc/demo-assets" \
-    -path '*/build' -prune -o \( -type f -o -type d \) \
+    -type d -name build ! -path "*/src/*" -prune -o \( -type f -o -type d \) \
     -newer "$STAMP_FILE" -print -quit 2>/dev/null | grep -q . && return 0
   find "$ROOT_DIR" -maxdepth 2 -type f \
     \( -name '*.gradle' -o -name '*.gradle.kts' -o -name 'gradle.properties' \) \
@@ -311,7 +323,7 @@ if cache_is_stale; then
   # serialize those script objects reliably, and this path only runs when stale.
   "$ROOT_DIR/gradlew" --console=plain --no-configuration-cache --max-workers=2 -p "$ROOT_DIR" "$PREPARE_TASK"
   mkdir -p "$CACHE_DIR"
-  touch "$STAMP_FILE"
+  launch_cache_identity > "$STAMP_FILE"
 fi
 
 command -v java >/dev/null 2>&1 || { echo "[jvn] error: Java 21 or newer is required." >&2; exit 1; }

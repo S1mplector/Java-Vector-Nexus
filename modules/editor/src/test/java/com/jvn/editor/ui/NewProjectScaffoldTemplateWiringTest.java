@@ -255,7 +255,8 @@ class NewProjectScaffoldTemplateWiringTest {
   }
 
   private static String loadTemplate(String relativePath) throws Exception {
-    String resourcePath = "com/jvn/editor/templates/new-project/" + relativePath;
+    boolean course = relativePath.startsWith("scripts/tutorial/") || relativePath.equals("scripts/story/tutorial_hub.vns");
+    String resourcePath = "com/jvn/editor/templates/new-project/" + (course ? "guided-tutorial/" : "") + relativePath;
     try (InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath)) {
       assertNotNull(in, "Missing scaffold template resource: " + resourcePath);
       return new String(in.readAllBytes(), StandardCharsets.UTF_8);

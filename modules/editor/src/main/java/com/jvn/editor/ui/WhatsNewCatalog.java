@@ -49,6 +49,21 @@ public final class WhatsNewCatalog {
   private static Map<String, Release> createReleases() {
     Map<String, Release> releases = new LinkedHashMap<>();
     add(releases, new Release(
+        "v0.9.1", "A new Build & Publish workspace and fixes for launching the current Editor and tutorial.",
+        List.of(
+            new Section("Build & Publish", "Choose a package format, set your target and ship from the same window.", List.of(
+                "Package, Checks, Release and Artifacts each have a page in the sidebar. Your selected build and Ship action stay in view.",
+                "Open Runtime and archive options for advanced settings. Native installer options appear when you choose that format."),
+                AeroIcon.Kind.BUILD, "build-workspace.jpg"),
+            new Section("Run workspace", "Use Run to open JVN Run Workspace and follow the current playtest.", List.of(
+                "Search the output, stop or reload the game, and inspect frame timing and image caches.",
+                "The source launcher refreshes its compiled classpath when the engine version, checkout or revision changes."),
+                AeroIcon.Kind.RUN, "run-workspace.jpg"),
+            new Section("Tutorial Workspace", "Create a new Tutorial Workspace to open Pip’s monochrome topic menu.", List.of(
+                "The New Game window installs the guided course and points the game manifest to its topic menu.",
+                "The 30 topics can be opened independently. Progress records a topic once, including when it is replayed."),
+                AeroIcon.Kind.DOCUMENTATION, null)), true));
+    add(releases, new Release(
         "v0.9.0",
         "A new Run workspace, scene lighting tools, and desktop installers.",
         List.of(

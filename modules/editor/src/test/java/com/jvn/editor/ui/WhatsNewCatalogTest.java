@@ -29,10 +29,12 @@ class WhatsNewCatalogTest {
   }
 
   @Test
-  void runWorkspaceNotesIncludePackagedPreviews() {
+  void publishedWorkspaceNotesIncludePackagedPreviews() {
     var release = WhatsNewCatalog.forVersion("v0.9.0");
     assertEquals("Run workspace", release.sections().getFirst().title());
-    for (var section : release.sections()) {
+    var patch = WhatsNewCatalog.forVersion("v0.9.1");
+    assertEquals("Build & Publish", patch.sections().getFirst().title());
+    for (var section : java.util.stream.Stream.concat(release.sections().stream(), patch.sections().stream()).toList()) {
       if (section.preview() != null) {
         org.junit.jupiter.api.Assertions.assertNotNull(
             WhatsNewDialog.class.getResource("release/" + section.preview()), section.title());

@@ -3174,7 +3174,7 @@
   -fx-border-color: #b77284;
 }
 
-.release-window, .run-console-root {
+.release-window, .run-console-root, .build-publisher-root {
   -session-bg: #fafafa;
   -session-panel: #edeff1;
   -session-line: #c9ced3;

@@ -20,28 +20,25 @@ import com.jvn.editor.ui.build.ProjectManifestService;
 import com.jvn.editor.ui.build.BuildArtifactService;
 import com.jvn.editor.ui.build.BuildCliFormatter;
 
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
-import javafx.animation.Timeline;
 import javafx.concurrent.Task;
-import javafx.scene.effect.DropShadow;
-import javafx.scene.effect.GaussianBlur;
 import javafx.geometry.Pos;
-import javafx.scene.paint.Color;
 import javafx.scene.Node;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.css.PseudoClass;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Separator;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.Tooltip;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.BorderPane;
@@ -50,11 +47,8 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.transform.Rotate;
 import javafx.stage.FileChooser;
-import javafx.util.Duration;
 
 /**
  * Popup panel for packaging the currently opened JVN game project.
@@ -97,11 +91,10 @@ public class GameBuildPublisherView extends BorderPane {
   private final TextField nameField = new TextField();
   private final TextField versionField = new TextField();
   private final ComboBox<TargetChoice> targetBox = new ComboBox<>();
-  private final ComboBox<PackageMode> formatBox = new ComboBox<>();
+  private final ObjectProperty<PackageMode> packageMode = new SimpleObjectProperty<>(PackageMode.PORTABLE_ZIP);
   private final ComboBox<NativeTypeChoice> nativeTypeBox = new ComboBox<>();
   private final ComboBox<String> releaseProfileBox = new ComboBox<>();
   private final ComboBox<String> packageVariantBox = new ComboBox<>();
-  private final Label nativeTypeFieldLabel = new Label("Native Type");
   private final Label manifestLabel = new Label();
   private final Label outputLabel = new Label();
   private final Label validationLabel = new Label();
@@ -109,8 +102,6 @@ public class GameBuildPublisherView extends BorderPane {
   private final Label buildPlanTitleLabel = new Label();
   private final Label buildPlanBodyLabel = new Label();
   private final Label buildPlanHintLabel = new Label();
-  private final Label formatBadgeLabel = new Label();
-  private final Label targetBadgeLabel = new Label();
   private final Label runtimeBadgeLabel = new Label();
   private final Label releaseBadgeLabel = new Label();
   private final Label statusLabel = new Label();
@@ -156,9 +147,6 @@ public class GameBuildPublisherView extends BorderPane {
   private Button presetPortableButton;
   private Button presetDesktopButton;
   private Button presetNativeButton;
-  private final AnimatedPresetArrowIndicator presetPortableIndicator = new AnimatedPresetArrowIndicator();
-  private final AnimatedPresetArrowIndicator presetDesktopIndicator = new AnimatedPresetArrowIndicator();
-  private final AnimatedPresetArrowIndicator presetNativeIndicator = new AnimatedPresetArrowIndicator();
   private Button btnBrowseOutputDir;
   private Button btnResetOutputDir;
   private Button zipOutputButton;
@@ -195,17 +183,13 @@ public class GameBuildPublisherView extends BorderPane {
   }
 
   private void buildUi() {
-    Label title = new Label("Build & Publish");
-    title.getStyleClass().add("build-publisher-title");
-    presetPortableButton = button("Portable · needs Java", ButtonTone.SECONDARY, true);
-    presetPortableButton.setOnAction(e -> applyPreset(PackageMode.PORTABLE_ZIP, currentTargetToken()));
-    presetDesktopButton = button("Desktop · all OSes", ButtonTone.SECONDARY, true);
-    presetDesktopButton.setOnAction(e -> applyPreset(PackageMode.BUNDLED_RUNTIME_ZIP, "all"));
-    presetNativeButton = button("Installer · this OS", ButtonTone.SECONDARY, true);
-    presetNativeButton.setOnAction(e -> applyPreset(PackageMode.NATIVE_PACKAGE, currentTargetToken()));
-
-    FlowPane presetRow = new FlowPane(8, 8, presetPortableButton, presetDesktopButton, presetNativeButton);
-    presetRow.setAlignment(Pos.CENTER_LEFT);
+    presetPortableButton = formatChoice("Portable ZIP", "Requires Java 21", AeroIcon.Kind.PROJECT,
+        () -> applyPreset(PackageMode.PORTABLE_ZIP, currentTargetToken()));
+    presetDesktopButton = formatChoice("Desktop bundle", "Includes Java", AeroIcon.Kind.LAYOUT,
+        () -> applyPreset(PackageMode.BUNDLED_RUNTIME_ZIP, "all"));
+    presetNativeButton = formatChoice("Native installer", "Current platform", AeroIcon.Kind.BUILD,
+        () -> applyPreset(PackageMode.NATIVE_PACKAGE, currentTargetToken()));
+    HBox presetRow = new HBox(8, presetPortableButton, presetDesktopButton, presetNativeButton);
 
     projectField.setEditable(false);
     styleField(projectField);
@@ -219,11 +203,6 @@ public class GameBuildPublisherView extends BorderPane {
     targetBox.setTooltip(new Tooltip(targetBox.getValue().description()));
     styleField(targetBox);
     targetBox.setMaxWidth(Double.MAX_VALUE);
-
-    formatBox.getItems().setAll(PackageMode.supportedValues());
-    formatBox.getSelectionModel().select(PackageMode.PORTABLE_ZIP);
-    styleField(formatBox);
-    formatBox.setMaxWidth(Double.MAX_VALUE);
 
     nativeTypeBox.getItems().setAll(currentNativeTypeChoices());
     nativeTypeBox.getSelectionModel().selectFirst();
@@ -242,30 +221,20 @@ public class GameBuildPublisherView extends BorderPane {
     packageVariantBox.setTooltip(new Tooltip("Optional content edition such as standard, demo, or deluxe."));
 
     GridPane form = new GridPane();
-    form.setHgap(10);
-    form.setVgap(10);
-    form.getStyleClass().add("build-publisher-form");
-    form.add(label("Project"), 0, 0);
-    form.add(projectField, 1, 0);
-    form.add(label("Game Name"), 0, 1);
-    form.add(nameField, 1, 1);
-    form.add(label("Version"), 0, 2);
-    form.add(versionField, 1, 2);
-    form.add(label("Target"), 0, 3);
-    form.add(describedField(targetBox, "Which operating system receives this build."), 1, 3);
-    form.add(label("Package"), 0, 4);
-    form.add(describedField(formatBox, "Portable, self-contained desktop, or native installer."), 1, 4);
-    nativeTypeFieldLabel.getStyleClass().add("layout-launcher-field-label");
-    form.add(nativeTypeFieldLabel, 0, 5);
-    form.add(describedField(nativeTypeBox, "Installer type supported by this machine."), 1, 5);
-    form.add(label("Release Profile"), 0, 6);
-    form.add(describedField(releaseProfileBox, "Signing and publishing recipe. Use default for ordinary builds."), 1, 6);
-    form.add(label("Package Variant"), 0, 7);
-    form.add(describedField(packageVariantBox, "Content edition, for example standard or demo."), 1, 7);
-    form.getColumnConstraints().add(new javafx.scene.layout.ColumnConstraints(120));
-    javafx.scene.layout.ColumnConstraints fill = new javafx.scene.layout.ColumnConstraints();
-    fill.setHgrow(Priority.ALWAYS);
-    form.getColumnConstraints().add(fill);
+    form.setHgap(16);
+    form.setVgap(12);
+    ColumnConstraints half = new ColumnConstraints();
+    half.setPercentWidth(50);
+    form.getColumnConstraints().addAll(half, half);
+    form.add(field("Game name", nameField), 0, 0);
+    form.add(field("Version", versionField), 1, 0);
+    form.add(field("Target platform", targetBox), 0, 1);
+    VBox nativeType = field("Installer type", nativeTypeBox);
+    nativeType.visibleProperty().bind(nativeTypeBox.visibleProperty());
+    nativeType.managedProperty().bind(nativeType.visibleProperty());
+    form.add(nativeType, 1, 1);
+    form.add(field("Release profile", releaseProfileBox), 0, 2);
+    form.add(field("Content edition", packageVariantBox), 1, 2);
 
     manifestLabel.setWrapText(true);
     manifestLabel.getStyleClass().addAll("build-publisher-meta-line", "build-publisher-copy");
@@ -281,8 +250,6 @@ public class GameBuildPublisherView extends BorderPane {
     buildPlanBodyLabel.getStyleClass().add("build-publisher-copy");
     buildPlanHintLabel.setWrapText(true);
     buildPlanHintLabel.getStyleClass().addAll("build-publisher-note", "build-publisher-note-status");
-    styleBadge(formatBadgeLabel);
-    styleBadge(targetBadgeLabel);
     styleBadge(runtimeBadgeLabel);
     styleBadge(releaseBadgeLabel);
     statusLabel.setWrapText(true);
@@ -338,10 +305,9 @@ public class GameBuildPublisherView extends BorderPane {
     gameIconHelp.setWrapText(true);
     gameIconHelp.getStyleClass().add("build-publisher-field-help");
 
-    VBox projectCard = card("Game details", form, manifestLabel);
+    VBox projectCard = card("Game settings", form);
 
-    FlowPane badgeRow = new FlowPane(6, 6, formatBadgeLabel, targetBadgeLabel, runtimeBadgeLabel, releaseBadgeLabel);
-    badgeRow.setAlignment(Pos.CENTER_LEFT);
+
 
     openProjectButton = button("Open Project", ButtonTone.SECONDARY, false);
     openProjectButton.setGraphic(AeroIcon.of(AeroIcon.Kind.OPEN_PROJECT, 18));
@@ -356,9 +322,9 @@ public class GameBuildPublisherView extends BorderPane {
     FlowPane utilitiesRow = new FlowPane(8, 8, openProjectButton, openReleaseConfigButton, revealRuntimeCacheButton, clearRuntimeCacheButton);
     utilitiesRow.setAlignment(Pos.CENTER_LEFT);
 
-    VBox planCard = card("Release preview", badgeRow, buildPlanTitleLabel, buildPlanBodyLabel,
-        buildPlanHintLabel, outputLabel, outputDirRow, gameIconRow, gameIconHelp,
-        validationLabel, releaseConfigLabel, utilitiesRow);
+    VBox planCard = card("Release configuration", buildPlanBodyLabel, buildPlanHintLabel,
+        outputDirRow, gameIconRow, gameIconHelp, releaseConfigLabel, utilitiesRow);
+    TitledPane projectFiles = disclosure("Project files", new VBox(8, projectField, manifestLabel));
 
     shipBuildButton = button("Ship Build", ButtonTone.PRIMARY, false);
     shipBuildButton.setGraphic(AeroIcon.buildProject(22));
@@ -446,9 +412,7 @@ public class GameBuildPublisherView extends BorderPane {
     buildDangerRow.setAlignment(Pos.CENTER_LEFT);
     VBox advancedReleaseContent = new VBox(10, releaseWorkflowRow);
     TitledPane advancedReleasePane = disclosure("Advanced release workflows", advancedReleaseContent);
-    VBox artifactToolsContent = new VBox(10, commandPreviewLabel, buildUtilityRow,
-        artifactInventoryLabel, buildDangerRow);
-    TitledPane artifactToolsPane = disclosure("Commands, manifests & artifact tools", artifactToolsContent);
+
 
     nativeReleaseSummaryLabel.setWrapText(true);
     nativeReleaseSummaryLabel.getStyleClass().add("build-publisher-copy");
@@ -461,7 +425,7 @@ public class GameBuildPublisherView extends BorderPane {
     nativeReleaseBox.getStyleClass().add("build-publisher-native-release");
 
     VBox releaseCard = card("Release actions", nativeReleaseBox, buildOnlyPane, advancedReleasePane);
-    artifactToolsPane.setExpanded(true);
+
 
     FlowPane dependencyBadgeRow = new FlowPane(6, 6, dependencyErrorsBadgeLabel, dependencyWarningsBadgeLabel, dependencyInfoBadgeLabel);
     dependencyBadgeRow.setAlignment(Pos.CENTER_LEFT);
@@ -483,33 +447,61 @@ public class GameBuildPublisherView extends BorderPane {
     runtimeImage.setAccessibleText("Bundled Java runtime");
     HBox imageRow = new HBox(10, label("Bundled Java image"), runtimeImage);
     imageRow.setAlignment(Pos.CENTER_LEFT);
-    VBox packaging = card("Packaging options", optionsRow, imageRow, normalizedArchive, storeArchive, stacktrace);
-    HBox header = new HBox(10, AeroIcon.buildProject(34), title, new Region(), shipBuildButton);
-    HBox.setHgrow(header.getChildren().get(2), Priority.ALWAYS);
+    TitledPane packaging = disclosure("Runtime and archive options",
+        new VBox(10, optionsRow, imageRow, normalizedArchive, storeArchive, stacktrace));
+    Label title = new Label("Build & Publish");
+    title.getStyleClass().add("session-window-title");
+    Label projectName = new Label();
+    projectName.textProperty().bind(nameField.textProperty().concat("  ·  ").concat(versionField.textProperty()));
+    projectName.getStyleClass().add("build-project-caption");
+    HBox header = new HBox(12, AeroIcon.buildProject(36), new VBox(2, title, projectName));
     header.setAlignment(Pos.CENTER_LEFT);
-    header.getStyleClass().add("sidebar-tool-header");
+    header.getStyleClass().add("session-header");
     setTop(header);
-    GridPane packageDetails = new GridPane();
-    packageDetails.setHgap(14);
-    packageDetails.setVgap(10);
-    packageDetails.add(projectCard, 0, 0);
-    packageDetails.add(packaging, 0, 1);
-    GridPane.setHgrow(projectCard, Priority.ALWAYS);
-    GridPane.setHgrow(packaging, Priority.ALWAYS);
-    packageDetails.widthProperty().addListener((obs, oldWidth, width) -> {
-      boolean wide = width.doubleValue() >= 840;
-      GridPane.setColumnIndex(packaging, wide ? 1 : 0);
-      GridPane.setRowIndex(packaging, wide ? 0 : 1);
+
+    List<BuildPage> pages = List.of(
+        page("Package", AeroIcon.Kind.BUILD, card("Package format", presetRow), projectCard,
+            packaging, projectFiles, configurationNoticeLabel),
+        page("Checks", AeroIcon.Kind.DIAGNOSTICS, dependencyCard, testPlan(), validationNoticeLabel),
+        page("Release", AeroIcon.Kind.MANIFEST, planCard, releaseCard, validationLabel),
+        page("Artifacts", AeroIcon.Kind.ASSETS, card("Build output", outputLabel, artifactInventoryLabel),
+            card("Commands and manifests", commandPreviewLabel, buildUtilityRow), buildDangerRow));
+    ListView<BuildPage> navigation = new ListView<>();
+    navigation.getItems().setAll(pages);
+    navigation.getStyleClass().add("build-navigation");
+    navigation.setAccessibleText("Build sections");
+    navigation.setFixedCellSize(38);
+    navigation.setPrefHeight(4 * 38 + 4);
+    navigation.setMinHeight(4 * 38 + 4);
+    navigation.setMaxHeight(4 * 38 + 4);
+    navigation.setCellFactory(view -> new ListCell<>() {
+      @Override protected void updateItem(BuildPage page, boolean empty) {
+        super.updateItem(page, empty);
+        setText(empty || page == null ? null : page.title());
+        setGraphic(empty || page == null ? null : AeroIcon.of(page.icon(), 20));
+      }
     });
-    TabPane pages = new TabPane(
-        page("Package", AeroIcon.Kind.BUILD, presetRow, packageDetails, configurationNoticeLabel),
-        page("Checks", AeroIcon.Kind.DIAGNOSTICS, testPlan(), dependencyCard, validationNoticeLabel),
-        page("Release", AeroIcon.Kind.MANIFEST, planCard, releaseCard),
-        page("Artifacts", AeroIcon.Kind.ASSETS, artifactToolsPane));
-    pages.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-    setCenter(pages);
-    statusLabel.getStyleClass().add("sidebar-tool-header");
-    setBottom(statusLabel);
+    navigation.getSelectionModel().selectedItemProperty().addListener((obs, old, page) -> {
+      if (page != null) setCenter(page.content());
+    });
+    navigation.getSelectionModel().selectFirst();
+    buildPlanTitleLabel.getStyleClass().add("build-plan-heading");
+    Label planLabel = new Label("Selected build");
+    planLabel.getStyleClass().add("build-project-caption");
+    VBox plan = new VBox(6, planLabel, buildPlanTitleLabel, runtimeBadgeLabel, releaseBadgeLabel);
+    plan.getStyleClass().add("build-plan-rail");
+    VBox rail = new VBox(12, navigation, new Separator(), plan);
+    rail.setPrefWidth(188);
+    rail.setMinWidth(160);
+    rail.getStyleClass().add("build-sections");
+    setLeft(rail);
+
+    statusLabel.setMaxWidth(Double.MAX_VALUE);
+    HBox.setHgrow(statusLabel, Priority.ALWAYS);
+    HBox footer = new HBox(12, statusLabel, shipBuildButton);
+    footer.setAlignment(Pos.CENTER_LEFT);
+    footer.getStyleClass().add("build-actions");
+    setBottom(footer);
     for (CheckBox option : List.of(normalizedArchive, storeArchive, stacktrace, strictDependencies)) {
       option.selectedProperty().addListener((obs, oldValue, newValue) -> refreshFormState());
     }
@@ -521,7 +513,7 @@ public class GameBuildPublisherView extends BorderPane {
       targetBox.setTooltip(newValue == null ? null : new Tooltip(newValue.description()));
       refreshFormState();
     });
-    formatBox.valueProperty().addListener((obs, oldValue, newValue) -> {
+    packageMode.addListener((obs, oldValue, newValue) -> {
       refreshTargetChoicesForMode(newValue);
       refreshFormState();
     });
@@ -540,13 +532,27 @@ public class GameBuildPublisherView extends BorderPane {
     return label;
   }
 
-  private VBox describedField(Node field, String help) {
-    Label helpLabel = new Label(help);
-    helpLabel.setWrapText(true);
-    helpLabel.getStyleClass().add("build-publisher-field-help");
-    VBox box = new VBox(3, field, helpLabel);
-    box.setFillWidth(true);
-    return box;
+  private VBox field(String name, Node input) {
+    Label caption = label(name);
+    caption.setLabelFor(input);
+    return new VBox(4, caption, input);
+  }
+
+  private Button formatChoice(String title, String detail, AeroIcon.Kind icon, Runnable action) {
+    Label name = new Label(title, AeroIcon.of(icon, 20));
+    name.getStyleClass().add("build-format-name");
+    Label description = new Label(detail);
+    description.getStyleClass().add("build-project-caption");
+    Button button = new Button();
+    button.setGraphic(new VBox(5, name, description));
+    button.getStyleClass().add("build-format-choice");
+    button.setAccessibleText(title + ", " + detail);
+    button.setOnAction(e -> action.run());
+    button.setPrefWidth(200);
+    button.setMinWidth(110);
+    button.setMaxWidth(Double.MAX_VALUE);
+    HBox.setHgrow(button, Priority.ALWAYS);
+    return button;
   }
 
   private void styleWorkflowNotice(Label notice) {
@@ -569,20 +575,24 @@ public class GameBuildPublisherView extends BorderPane {
     Label label = new Label(title);
     label.getStyleClass().add("build-publisher-card-title");
     VBox box = new VBox(12);
-    box.getStyleClass().addAll("build-publisher-card", "layout-launcher-card");
+    box.getStyleClass().add("build-workspace-section");
     box.getChildren().add(label);
     box.getChildren().addAll(nodes);
     return box;
   }
 
-  private Tab page(String title, AeroIcon.Kind icon, Node... controls) {
-    VBox content = new VBox(10, controls);
-    content.getStyleClass().add("build-publisher-content");
+  private record BuildPage(String title, AeroIcon.Kind icon, ScrollPane content) {
+    @Override public String toString() { return title; }
+  }
+
+  private BuildPage page(String title, AeroIcon.Kind icon, Node... controls) {
+    VBox content = new VBox(17, controls);
+    content.getStyleClass().add("build-page-content");
     ScrollPane scroll = new ScrollPane(content);
     scroll.setFitToWidth(true);
-    Tab tab = new Tab(title, scroll);
-    tab.setGraphic(AeroIcon.of(icon, 19));
-    return tab;
+    scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    scroll.getStyleClass().add("build-page");
+    return new BuildPage(title, icon, scroll);
   }
 
   private VBox testPlan() {
@@ -787,7 +797,7 @@ public class GameBuildPublisherView extends BorderPane {
   private void refreshWorkflowNotices(ValidationResult result) {
     if (result == null || !result.errors().isEmpty()) {
       String issue = result == null || result.errors().isEmpty()
-          ? "Complete the settings on the Package tab."
+          ? "Complete the settings in Package."
           : result.errors().get(0);
       setWorkflowNotice(configurationNoticeLabel, "blocked", "Configuration needs attention — " + issue);
       setWorkflowNotice(validationNoticeLabel, "pending", "Validation unlocks after the configuration is ready.");
@@ -821,8 +831,6 @@ public class GameBuildPublisherView extends BorderPane {
     nativeTypeBox.setDisable(mode != PackageMode.NATIVE_PACKAGE);
     nativeTypeBox.setManaged(mode == PackageMode.NATIVE_PACKAGE);
     nativeTypeBox.setVisible(mode == PackageMode.NATIVE_PACKAGE);
-    nativeTypeFieldLabel.setManaged(mode == PackageMode.NATIVE_PACKAGE);
-    nativeTypeFieldLabel.setVisible(mode == PackageMode.NATIVE_PACKAGE);
     refreshRuntimeCheck.setDisable(mode != PackageMode.BUNDLED_RUNTIME_ZIP);
     runtimeImage.setDisable(mode != PackageMode.BUNDLED_RUNTIME_ZIP);
     normalizedArchive.setDisable(mode == PackageMode.NATIVE_PACKAGE);
@@ -870,42 +878,19 @@ public class GameBuildPublisherView extends BorderPane {
 
   private void refreshPresetButtons() {
     PackageMode mode = selectedPackageMode();
-    String targetToken = targetBox.getValue() == null ? "" : targetBox.getValue().outputToken();
-    updatePresetButton(
-        presetPortableButton,
-        presetPortableIndicator,
-        mode == PackageMode.PORTABLE_ZIP && currentTargetToken().equals(targetToken));
-    updatePresetButton(
-        presetDesktopButton,
-        presetDesktopIndicator,
-        mode == PackageMode.BUNDLED_RUNTIME_ZIP && "all".equals(targetToken));
-    updatePresetButton(
-        presetNativeButton,
-        presetNativeIndicator,
-        mode == PackageMode.NATIVE_PACKAGE && currentTargetToken().equals(targetToken));
-  }
-
-  private void updatePresetButton(Button button, AnimatedPresetArrowIndicator indicator, boolean selected) {
-    if (button == null || indicator == null) return;
-    button.getStyleClass().removeAll("build-publisher-button-primary", "build-publisher-button-secondary");
-    button.getStyleClass().add(selected ? "build-publisher-button-primary" : "build-publisher-button-secondary");
-    button.setGraphic(selected ? indicator : null);
-    button.setContentDisplay(selected ? ContentDisplay.LEFT : ContentDisplay.TEXT_ONLY);
-    button.setGraphicTextGap(selected ? 6 : 0);
-    button.setAccessibleText((selected ? "Selected preset: " : "Preset: ") + button.getText());
-    indicator.setActive(selected);
+    PseudoClass selected = PseudoClass.getPseudoClass("selected");
+    presetPortableButton.pseudoClassStateChanged(selected, mode == PackageMode.PORTABLE_ZIP);
+    presetDesktopButton.pseudoClassStateChanged(selected, mode == PackageMode.BUNDLED_RUNTIME_ZIP);
+    presetNativeButton.pseudoClassStateChanged(selected, mode == PackageMode.NATIVE_PACKAGE);
   }
 
   private void refreshBuildPlan(ValidationResult result) {
     PackageMode mode = selectedPackageMode();
     TargetChoice target = targetBox.getValue();
-    String targetText = target == null ? "No target selected" : target.label();
     buildPlanTitleLabel.setText(selectionTitle(mode, target));
     buildPlanBodyLabel.setText(selectionBody(mode, target));
     buildPlanHintLabel.setText(selectionHint(mode, target, result));
 
-    formatBadgeLabel.setText(mode.toString());
-    targetBadgeLabel.setText(targetText);
     runtimeBadgeLabel.setText(mode == PackageMode.PORTABLE_ZIP ? "Java 21 Required" : "Java Bundled");
 
     File releaseConfig = findReleaseConfig(projectRoot);
@@ -921,8 +906,6 @@ public class GameBuildPublisherView extends BorderPane {
       setBadgeTone(releaseBadgeLabel, "accent");
     }
 
-    setBadgeTone(formatBadgeLabel, mode == PackageMode.BUNDLED_RUNTIME_ZIP ? "accent" : "default");
-    setBadgeTone(targetBadgeLabel, "all".equals(target == null ? "" : target.outputToken()) ? "accent" : "default");
     if (result != null && !result.errors().isEmpty()) setBadgeTone(runtimeBadgeLabel, "error");
     else if (result != null && !result.warnings().isEmpty()) setBadgeTone(runtimeBadgeLabel, "warn");
     else setBadgeTone(runtimeBadgeLabel, mode == PackageMode.PORTABLE_ZIP ? "default" : "accent");
@@ -1144,8 +1127,8 @@ public class GameBuildPublisherView extends BorderPane {
       case BUNDLED_RUNTIME_ZIP -> "Desktop bundle for " + target.label();
       case NATIVE_PACKAGE -> {
         NativeTypeChoice nativeType = nativeTypeBox.getValue();
-        String nativeLabel = nativeType == null ? "native package" : nativeType.label().toLowerCase(Locale.ROOT);
-        yield nativeLabel.substring(0, 1).toUpperCase(Locale.ROOT) + nativeLabel.substring(1) + " for " + target.label();
+        String nativeLabel = nativeType == null ? "Native package" : nativeType.label();
+        yield nativeLabel + " for " + target.label();
       }
     };
   }
@@ -1960,11 +1943,11 @@ public class GameBuildPublisherView extends BorderPane {
   }
 
   void selectNativeModeForTest() {
-    formatBox.setValue(PackageMode.NATIVE_PACKAGE);
+    packageMode.set(PackageMode.NATIVE_PACKAGE);
   }
 
   void selectPortableModeForTest() {
-    formatBox.setValue(PackageMode.PORTABLE_ZIP);
+    packageMode.set(PackageMode.PORTABLE_ZIP);
   }
 
   private void clearGameIcon() {
@@ -2166,12 +2149,12 @@ public class GameBuildPublisherView extends BorderPane {
   }
 
   private void applyPreset(PackageMode mode, String targetToken) {
-    formatBox.getSelectionModel().select(mode);
+    packageMode.set(mode);
     selectTargetByToken(targetToken);
     if (mode == PackageMode.NATIVE_PACKAGE) {
       nativeTypeBox.getSelectionModel().selectFirst();
     }
-    statusLabel.setText("Preset applied: " + mode + ".");
+    statusLabel.setText("Selected " + mode + ".");
     setNoteTone(statusLabel, "status");
     refreshFormState();
   }
@@ -2322,7 +2305,7 @@ public class GameBuildPublisherView extends BorderPane {
   }
 
   private PackageMode selectedPackageMode() {
-    PackageMode mode = formatBox.getValue();
+    PackageMode mode = packageMode.get();
     return mode == null ? PackageMode.PORTABLE_ZIP : mode;
   }
 
@@ -2545,10 +2528,6 @@ public class GameBuildPublisherView extends BorderPane {
       return gradleToken;
     }
 
-    private static List<PackageMode> supportedValues() {
-      return List.of(PORTABLE_ZIP, BUNDLED_RUNTIME_ZIP, NATIVE_PACKAGE);
-    }
-
     @Override
     public String toString() {
       return label;
@@ -2594,77 +2573,5 @@ public class GameBuildPublisherView extends BorderPane {
     PRIMARY,
     SECONDARY,
     DANGER
-  }
-
-  private static final class AnimatedPresetArrowIndicator extends StackPane {
-    private final StackPane arrow = new StackPane();
-    private final Timeline timeline;
-    private boolean active;
-
-    private AnimatedPresetArrowIndicator() {
-      getStyleClass().add("build-publisher-selected-prompt-arrow");
-      setMinSize(18, 16);
-      setPrefSize(18, 16);
-      setMaxSize(18, 16);
-      setPickOnBounds(false);
-
-      Region body = CssIcon.arrowDown("#f28a18");
-      body.setScaleX(1.18);
-      body.setScaleY(1.18);
-
-      arrow.setMinSize(18, 16);
-      arrow.setPrefSize(18, 16);
-      arrow.setMaxSize(18, 16);
-      arrow.setAlignment(Pos.CENTER);
-      arrow.setRotationAxis(Rotate.Y_AXIS);
-      arrow.setPickOnBounds(false);
-      arrow.getChildren().add(body);
-      getChildren().add(arrow);
-
-      resetAnimationState();
-      timeline = new Timeline(
-          new KeyFrame(Duration.ZERO,
-              new KeyValue(arrow.rotateProperty(), 0),
-              new KeyValue(arrow.translateYProperty(), -1.4),
-              new KeyValue(arrow.scaleXProperty(), 1.0),
-              new KeyValue(arrow.opacityProperty(), 1.0)),
-          new KeyFrame(Duration.millis(360),
-              new KeyValue(arrow.rotateProperty(), 180),
-              new KeyValue(arrow.translateYProperty(), 2.0),
-              new KeyValue(arrow.scaleXProperty(), 0.58),
-              new KeyValue(arrow.opacityProperty(), 0.74)),
-          new KeyFrame(Duration.millis(720),
-              new KeyValue(arrow.rotateProperty(), 360),
-              new KeyValue(arrow.translateYProperty(), -1.4),
-              new KeyValue(arrow.scaleXProperty(), 1.0),
-              new KeyValue(arrow.opacityProperty(), 1.0)));
-      timeline.setCycleCount(Animation.INDEFINITE);
-      sceneProperty().addListener((obs, oldScene, newScene) -> {
-        if (newScene == null) {
-          timeline.stop();
-          resetAnimationState();
-        } else if (active) {
-          timeline.playFromStart();
-        }
-      });
-    }
-
-    private void setActive(boolean active) {
-      if (this.active == active) return;
-      this.active = active;
-      if (!active) {
-        timeline.stop();
-        resetAnimationState();
-      } else if (getScene() != null) {
-        timeline.playFromStart();
-      }
-    }
-
-    private void resetAnimationState() {
-      arrow.setRotate(0);
-      arrow.setTranslateY(-1.4);
-      arrow.setScaleX(1.0);
-      arrow.setOpacity(1.0);
-    }
   }
 }

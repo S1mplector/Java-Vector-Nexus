@@ -51,7 +51,7 @@ import javafx.stage.*;
 public class NewProjectWizard extends Stage {
   private enum ProjectTemplate {
     STARTER_STORY("Starter Story", "A lean starter project with a playable story flow, menu pack, and demo assets."),
-    TUTORIAL_WORKSPACE("Tutorial Workspace", "Thirty topics with playable examples of scripting, animation, lighting, and game UI."),
+    TUTORIAL_WORKSPACE("Tutorial Workspace", "Pip’s monochrome tutorial with 30 independently playable topics."),
     BLANK_SANDBOX("Blank Sandbox", "A stripped-down project for custom pipelines, no demo assets, and blank menu wiring."),
     CUSTOM("Custom", "A manual combination of modules and starter content.");
 
@@ -302,7 +302,7 @@ public class NewProjectWizard extends Stage {
     cmbProjectTemplate.setPrefWidth(260);
     styleField(cmbProjectTemplate);
     tip(cmbProjectTemplate, "Template presets change starter scripts, menu setup, and demo content. You can still override any option below.");
-    cmbProjectTemplate.setOnAction(e -> applySelectedProjectTemplate());
+    cmbProjectTemplate.valueProperty().addListener((obs, old, selected) -> applySelectedProjectTemplate());
 
     lblProjectTemplateSummary = new Label();
     lblProjectTemplateSummary.setWrapText(true);
@@ -623,7 +623,13 @@ public class NewProjectWizard extends Stage {
     chkStarterStory.selectedProperty().addListener((o, ov, nv) -> updateDerivedFields());
     chkStarterStory.disableProperty().bind(chkTutorialPack.selectedProperty());
     chkBundledDemoAssets.disableProperty().bind(chkTutorialPack.selectedProperty());
-    chkTutorialPack.selectedProperty().addListener((o, ov, nv) -> updateDerivedFields());
+    chkTutorialPack.selectedProperty().addListener((o, ov, enabled) -> {
+      if (enabled) {
+        chkStarterStory.setSelected(false);
+        chkBundledDemoAssets.setSelected(false);
+      }
+      updateDerivedFields();
+    });
     chkBundledDemoAssets.selectedProperty().addListener((o, ov, nv) -> updateDerivedFields());
     chkTitleScreen.selectedProperty().addListener((o, ov, nv) -> updateDerivedFields());
     chkHistoryBacklog.selectedProperty().addListener((o, ov, nv) -> updateDerivedFields());
@@ -938,7 +944,7 @@ public class NewProjectWizard extends Stage {
         : cmbProjectTemplate.getValue();
     String summary = switch (template) {
       case STARTER_STORY -> "Recommended default. Creates a playable story skeleton, demo assets, and ready-to-run menu profiles without the larger tutorial pack.";
-      case TUTORIAL_WORKSPACE -> "Opens a topic menu with 30 independent, editable examples.";
+      case TUTORIAL_WORKSPACE -> "Starts at Pip’s topic menu. Choose a lesson on writing, animation, lighting, or game UI.";
       case BLANK_SANDBOX -> "Creates the runtime/config skeleton with blank story scripts, no bundled assets, and blank menu wiring.";
       case CUSTOM -> "Custom combination detected. The wizard will scaffold exactly what your current checkboxes describe.";
     };
@@ -1496,6 +1502,7 @@ public class NewProjectWizard extends Stage {
         includeMenuPack,
         includeSave,
         includeSettings,
+        includeTutorialPack,
         gitEnabled,
         gitInitialCommit
     );
@@ -1787,6 +1794,7 @@ public class NewProjectWizard extends Stage {
                               boolean includeMenuPack,
                               boolean includeSave,
                               boolean includeSettings,
+                              boolean tutorialPack,
                               boolean gitEnabled,
                               boolean gitInitialCommit) throws Exception {
     Properties manifest = new Properties();
@@ -1794,7 +1802,6 @@ public class NewProjectWizard extends Stage {
     manifest.setProperty("author", txtAuthor.getText().trim());
     manifest.setProperty("id", VnStoragePaths.resolveGameId(manifest, dir.toPath()));
     manifest.setProperty("type", "vn");
-    boolean tutorialPack = chkTutorialPack != null && chkTutorialPack.isSelected();
     manifest.setProperty("entryVns", tutorialPack ? STORY_TUTORIAL_SCRIPT_PATH : ENTRY_SCRIPT_PATH);
     manifest.setProperty("entryLabel", "start");
     manifest.setProperty(StoryMapPaths.MANIFEST_KEY, STORY_MAP_PATH);

@@ -54,21 +54,27 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Verify Editor and release notes
-        if: runner.os == 'Linux'
-        shell: bash
-        run: >-
-          xvfb-run -a ./gradlew :branding:test :editor:test
-          --tests com.jvn.editor.AppBuildInfoTest
-          --tests com.jvn.editor.ui.RunConsoleViewLogFormatTest
-          --tests com.jvn.editor.ui.RunConsoleViewMigrationContractTest
-          --tests com.jvn.editor.ui.RunWorkspaceTest
-          --tests com.jvn.editor.ui.RuntimeAttributionTest
-          --tests com.jvn.editor.ui.WhatsNewCatalogTest
-          --no-daemon
       - name: Test Hub and assemble engine workspace
         shell: bash
         run: ./gradlew :hub:test :hub:packageEngineHubLiteJar "-PjvnVersion=$VERSION" --no-daemon
+      - name: Build and test the Editor extracted by the release Hub
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          export JVN_PACKAGED_ENGINE_ROOT="$RUNNER_TEMP/jvn-release-workspace"
+          engine="$(java -jar "build/distributions/jvn-engine-hub-lite-$VERSION.jar" --extract-only | tail -n 1)"
+          cd "$engine"
+          xvfb-run -a ./gradlew :branding:test :editor:test \
+            --tests com.jvn.editor.AppBuildInfoTest \
+            --tests com.jvn.editor.ui.RunWorkspaceTest \
+            --tests com.jvn.editor.ui.RunConsoleViewLogFormatTest \
+            --tests com.jvn.editor.ui.RunConsoleViewMigrationContractTest \
+            --tests com.jvn.editor.ui.RuntimeAttributionTest \
+            --tests com.jvn.editor.ui.WhatsNewCatalogTest \
+            --tests com.jvn.editor.ui.GuidedTutorialIntegrationTest \
+            --tests com.jvn.editor.ui.NewProjectScaffoldTemplateWiringTest \
+            --tests com.jvn.editor.ui.GameBuildPublisherViewTest \
+            --tests com.jvn.editor.ui.GameBuildPublisherViewFxTest --no-daemon
       - name: Build packages and test the installed Hub
         shell: bash
         run: python scripts/package-native-hub.py "$VERSION" "build/distributions/jvn-engine-hub-lite-$VERSION.jar" build/native-hub --test-install

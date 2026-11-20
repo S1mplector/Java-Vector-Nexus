@@ -106,3 +106,67 @@
 .session-rail .session-profile .arrow { -fx-background-color: -session-muted; }
 .session-log-tools .toggle-button:selected { -fx-background-color: -session-hover; -fx-border-color: -session-accent; }
 .session-log-tools .toggle-button:hover, .session-rail .session-profile:hover { -fx-background-color: -session-hover; }
+
+.build-publisher-root .session-header, .build-publisher-root .build-actions {
+  -fx-background-color: -session-panel;
+  -fx-padding: 13 18;
+  -fx-border-color: transparent transparent -session-line transparent;
+  -fx-border-width: 0 0 1 0;
+}
+.build-publisher-root .build-actions {
+  -fx-padding: 8 14;
+  -fx-border-color: -session-line transparent transparent transparent;
+  -fx-border-width: 1 0 0 0;
+}
+.build-publisher-root .build-sections {
+  -fx-background-color: -session-panel;
+  -fx-border-color: transparent -session-line transparent transparent;
+  -fx-border-width: 0 1 0 0;
+  -fx-padding: 12 0;
+}
+.build-publisher-root .build-navigation, .build-navigation .list-cell {
+  -fx-background-color: transparent;
+  -fx-padding: 0;
+}
+.build-publisher-root .build-navigation .list-cell {
+  -fx-background-color: transparent;
+  -fx-border-color: transparent;
+  -fx-border-width: 0 0 0 3;
+  -fx-padding: 6 12;
+  -fx-graphic-text-gap: 9;
+  -fx-text-fill: -session-muted;
+}
+.build-publisher-root .build-navigation .list-cell:filled:hover { -fx-background-color: -session-hover; }
+.build-publisher-root .build-navigation .list-cell:filled:selected {
+  -fx-background-color: -session-hover;
+  -fx-border-color: transparent transparent transparent -session-accent;
+  -fx-text-fill: -session-ink;
+  -fx-font-weight: bold;
+}
+.build-sections .build-plan-rail { -fx-padding: 2 14; }
+.build-plan-rail .build-plan-heading { -fx-font-size: 14px; -fx-text-fill: -session-ink; }
+.build-publisher-root .build-project-caption { -fx-font-size: 12px; -fx-text-fill: -session-muted; }
+.build-publisher-root .build-page, .build-page > .viewport, .build-publisher-root .build-page-content {
+  -fx-background: -session-bg; -fx-background-color: -session-bg; -fx-padding: 0;
+}
+.build-publisher-root .build-page-content { -fx-padding: 18 22; }
+.build-workspace-section { -fx-padding: 0 0 16 0; -fx-border-width: 0 0 1 0; -fx-border-color: -session-line; }
+.build-workspace-section .build-publisher-card-title { -fx-text-fill: -session-ink; -fx-font-size: 16px; -fx-font-weight: bold; }
+.build-publisher-root .build-format-choice {
+  -fx-alignment: center-left; -fx-background-color: -session-panel;
+  -fx-border-color: -session-line; -fx-border-radius: 5; -fx-background-radius: 5;
+  -fx-padding: 9 11;
+}
+.build-format-choice .build-format-name { -fx-text-fill: -session-ink; -fx-font-size: 13px; -fx-font-weight: bold; }
+.build-publisher-root .build-format-choice:hover { -fx-background-color: -session-hover; }
+.build-publisher-root .build-format-choice:selected { -fx-border-color: -session-accent; -fx-background-color: -session-hover; }
+.build-publisher-root .build-format-choice:focused { -fx-border-color: -fx-focus-color; }
+
+.build-publisher-root .build-actions .build-publisher-cta {
+  -fx-background-color: -session-hover;
+  -fx-border-color: -session-accent;
+  -fx-text-fill: -session-ink;
+  -fx-padding: 7 15;
+  -fx-border-radius: 5;
+  -fx-background-radius: 5;
+}

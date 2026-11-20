@@ -617,17 +617,21 @@ public class EditorApp extends Application {
   }
 
   private void runGradle(File root, String task, String[] args, String title) {
+    runGradle(root, task, args, title, root == null ? "" : root.getName());
+  }
+
+  private void runGradle(File root, String task, String[] args, String title, String targetName) {
     boolean windows = System.getProperty("os.name", "").toLowerCase().contains("win");
     File gradlew = new File(root, windows ? "gradlew.bat" : "gradlew");
     try {
       RunConsoleView console = new RunConsoleView(title);
-      console.setLaunchContext(gradlew.exists() ? "Gradle wrapper" : "Gradle CLI", task, root.getName());
+      console.setLaunchContext(gradlew.exists() ? "Gradle wrapper" : "Gradle CLI", task, targetName);
       RunConsoleView.ProcessStarter starter =
           options -> GradleRuntimeLauncher.start(root, gradlew, task, args, options, console.prepareInspector(task));
       console.setProcessStarter(starter);
 
       javafx.stage.Stage logStage = new javafx.stage.Stage();
-      logStage.setTitle(title);
+      logStage.setTitle(":runtime:run".equals(task) ? "JVN Run Workspace" : title);
       javafx.scene.Scene logScene = new javafx.scene.Scene(console, 980, 620);
       EditorTheme.apply(logScene);
       logStage.setScene(logScene);
@@ -670,9 +674,7 @@ public class EditorApp extends Application {
     gameBuildPublisherView = new GameBuildPublisherView(workspace, root, request ->
         runGradle(workspace, request.taskName(), request.args(), request.title()));
 
-    BorderPane popupRoot = new BorderPane(gameBuildPublisherView);
-    popupRoot.setStyle("-fx-background-color: #111;");
-    javafx.scene.Scene scene = new javafx.scene.Scene(popupRoot, 1040, 720);
+    javafx.scene.Scene scene = new javafx.scene.Scene(gameBuildPublisherView, 1040, 720);
     EditorTheme.apply(scene);
 
     Stage window = new Stage();
@@ -727,7 +729,7 @@ public class EditorApp extends Application {
       runtimeArgs.append(" --perf-hud");
     }
 
-    runGradle(workspaceRoot, ":runtime:run", new String[] { "--args=" + runtimeArgs }, "JVN Runtime");
+    runGradle(workspaceRoot, ":runtime:run", new String[] { "--args=" + runtimeArgs }, "JVN Runtime", title.isBlank() ? root.getName() : title);
     status.setText("Launching runtime: " + root.getName());
   }
 

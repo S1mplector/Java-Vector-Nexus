@@ -3264,7 +3264,7 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-border-color: #b77284;
 }
 
-.release-window, .run-console-root {
+.release-window, .run-console-root, .build-publisher-root {
   -session-bg: #151719;
   -session-panel: #232629;
   -session-line: #42474c;

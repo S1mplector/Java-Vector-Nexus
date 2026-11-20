@@ -28,13 +28,19 @@ final class GuidedTutorial {
       String path = "assets/tutorial/" + file;
       copy(root, path, path);
     }
-    for (String path : List.of("scripts/story/tutorial_hub.vns", "config/facets/tutorial_card.facet",
-        "config/phone/phone.properties", "scripts/tutorial/README.md")) copy(root, path, path);
-    for (var lesson : TutorialCatalog.LESSONS) copy(root, lesson.path(), lesson.path());
+    for (String path : List.of("config/facets/tutorial_card.facet", "config/phone/phone.properties"))
+      copy(root, path, path);
+    copyCourse(root, "scripts/story/tutorial_hub.vns");
+    copyCourse(root, "scripts/tutorial/README.md");
+    for (var lesson : TutorialCatalog.LESSONS) copyCourse(root, lesson.path());
+  }
+
+  private static void copyCourse(Path root, String target) throws IOException {
+    copy(root, "guided-tutorial/" + target, target);
   }
 
   static void copyGuide(Path root) throws IOException {
-    copy(root, "scripts/tutorial/README.md", "README.md");
+    copy(root, "guided-tutorial/scripts/tutorial/README.md", "README.md");
   }
 
   static void installPresentation(Path root, int height, boolean menus) throws IOException {
