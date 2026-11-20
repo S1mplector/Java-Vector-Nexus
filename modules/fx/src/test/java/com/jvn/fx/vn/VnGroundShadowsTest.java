@@ -1,7 +1,9 @@
 package com.jvn.fx.vn;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.jvn.core.vn.stage.VnStagePreset;
@@ -36,6 +38,60 @@ class VnGroundShadowsTest {
     var baseline = VnGroundShadows.project(flat.getLights().getFirst(), flat.getOccluders().getFirst());
     assertNotEquals(baseline, VnGroundShadows.project(depth.getLights().getFirst(), depth.getOccluders().getFirst()));
     assertEquals(40, VnGroundShadows.project(round.getLights().getFirst(), round.getOccluders().getFirst()).size());
+  }
+
+  @Test
+  void overlappingSoftFootprintsMatchFullFrameBlurAtTheRightEdge() throws Exception {
+    int width = 160;
+    int height = 120;
+    String first = offsetCaster(0, "0.30", "0.85");
+    String second = offsetCaster(0, "0.34", "0.5");
+    String combined = "occluders=2\nlight.0.shadowQuality=soft\n" + first + offsetCaster(1, "0.34", "0.5");
+    byte[] hardA = VnGroundShadows.mask(preset(first), width, height);
+    byte[] hardB = VnGroundShadows.mask(preset(second), width, height);
+    byte[] expected = new byte[width * height];
+    boolean reachesEdge = false;
+    boolean overlaps = false;
+    // At 120px and full softness the renderer uses a two-pixel blur radius.
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        int a = boxBlurAt(hardA, width, height, x, y, 2);
+        int b = boxBlurAt(hardB, width, height, x, y, 2);
+        overlaps |= a > 0 && b > 0;
+        reachesEdge |= x == width - 1 && b > 0;
+        expected[y * width + x] = (byte) Math.max(a, b);
+      }
+    }
+    assertTrue(overlaps, "Fixture should exercise overlapping blur kernels");
+    assertTrue(reachesEdge, "Fixture should exercise clipping at the canvas edge");
+    assertArrayEquals(expected, VnGroundShadows.mask(preset(combined), width, height));
+  }
+
+  private static String offsetCaster(int index, String offset, String opacity) {
+    return """
+        occluder.%1$d.polygon=0.62,0.35;0.68,0.35;0.68,0.58;0.62,0.58
+        occluder.%1$d.softness=1
+        occluder.%1$d.heightScale=0.01
+        occluder.%1$d.footprintDepth=0.08
+        occluder.%1$d.shadowFraming=%2$s,0,1,1,0
+        occluder.%1$d.opacity=%3$s
+        """.formatted(index, offset, opacity);
+  }
+
+  @Test
+  void floorLightingNeedsNoMaterialMapWhenThereAreNoOccluders() throws Exception {
+    assertNull(VnGroundShadows.materialMap(preset("occluders=0\n"), 320, 180, true));
+  }
+
+  private static int boxBlurAt(byte[] mask, int width, int height, int x, int y, int radius) {
+    int sum = 0;
+    for (int row = Math.max(0, y - radius); row <= Math.min(height - 1, y + radius); row++) {
+      for (int col = Math.max(0, x - radius); col <= Math.min(width - 1, x + radius); col++) {
+        sum += mask[row * width + col] & 255;
+      }
+    }
+    int window = 2 * radius + 1;
+    return sum / (window * window);
   }
 
   private static VnStagePreset preset(String casterSettings) throws Exception {

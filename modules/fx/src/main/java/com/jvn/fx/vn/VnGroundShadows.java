@@ -140,9 +140,7 @@ public final class VnGroundShadows {
         && light.castsShadows() && light.groundProjection() != null).toList();
     if (lights.isEmpty() || stage.getOccluders().isEmpty()) return null;
     byte[] coverage = new byte[width * height];
-    byte[] silhouette = new byte[width * height];
-    for (Occluder caster : stage.getOccluders()) fill(caster.polygon(), silhouette, width, height, 255);
-    byte[] layer = new byte[width * height];
+    byte[] layer = null;
     for (Light light : lights) {
       for (Occluder caster : stage.getOccluders()) {
         if (Thread.currentThread().isInterrupted()) return null;
@@ -150,39 +148,49 @@ public final class VnGroundShadows {
         List<Point> projection = project(light, caster);
         if (projection.size() < 3) continue;
         int opacity = (int) Math.round(caster.opacity() * light.groundProjection().strength() * 255);
+        if (opacity <= 0) continue;
         int blur = Math.min(12, (int) Math.round(caster.softness() * Math.min(width, height) * 0.018));
         boolean soften = light.shadowQuality().samples() > 1 && blur > 0;
-        boolean filter = soften || caster.shadowFade() > 0;
-        if (filter) Arrays.fill(layer, (byte) 0);
-        byte[] destination = filter ? layer : coverage;
-        fill(projection, destination, width, height, opacity);
+        byte[] destination = coverage;
+        ShadowBounds bounds = null;
+        if (soften || caster.shadowFade() > 0) {
+          if (layer == null) layer = new byte[coverage.length];
+          destination = layer;
+          bounds = new ShadowBounds(width, height);
+        }
+        Span paint = shadowPainter(destination, width, opacity, bounds);
+        spans(projection, width, height, paint);
         if (caster.footprintDepth() > 0 && !caster.roundFootprint() && caster.floorContacts().isEmpty()) {
           double depth = caster.footprintDepth() * 0.5;
           List<Point> near = project(light, caster, depth);
           List<Point> far = project(light, caster, -depth);
-          fill(near, destination, width, height, opacity);
-          fill(far, destination, width, height, opacity);
+          spans(near, width, height, paint);
+          spans(far, width, height, paint);
           for (int i = 0, j = near.size() - 1; i < near.size(); j = i++) {
-            fill(List.of(near.get(j), near.get(i), far.get(i), far.get(j)), destination, width, height, opacity);
+            spans(List.of(near.get(j), near.get(i), far.get(i), far.get(j)), width, height, paint);
           }
         }
-        if (filter) {
+        if (bounds != null && bounds.left < bounds.right) {
           double anchorX = caster.polygon().stream().mapToDouble(Point::x).average().orElse(0.5) * width;
           double anchorY = (caster.contactY() >= 0 ? caster.contactY()
               : caster.polygon().stream().mapToDouble(Point::y).max().orElse(1)) * height;
           double reach = projection.stream().mapToDouble(point -> Math.hypot(point.x() * width - anchorX,
               point.y() * height - anchorY)).max().orElse(1);
-          blendSoft(coverage, layer, width, height, soften ? blur : 0, anchorX, anchorY, reach, caster.shadowFade());
+          blendSoft(coverage, destination, width, height, bounds, soften ? blur : 0,
+              anchorX, anchorY, reach, caster.shadowFade());
+          for (int y = bounds.top; y < bounds.bottom; y++) {
+            Arrays.fill(destination, y * width + bounds.left, y * width + bounds.right, (byte) 0);
+          }
         }
       }
     }
-    for (int i = 0; i < silhouette.length; i++) {
-      if (silhouette[i] != 0) coverage[i] = 0;
-    }
+    Span erase = (offset, left, right) -> Arrays.fill(coverage, offset + left, offset + right, (byte) 0);
+    for (Occluder caster : stage.getOccluders()) spans(caster.polygon(), width, height, erase);
     return coverage;
   }
 
   static int[] materialMap(VnStagePreset stage, int width, int height, boolean includeUngraded) {
+    if (stage.getOccluders().isEmpty()) return null;
     if (!includeUngraded && stage.getOccluders().stream().noneMatch(caster -> caster.surfaceTone() != null)) return null;
     int[] map = new int[width * height];
     for (int i = 0; i < stage.getOccluders().size(); i++) {
@@ -211,14 +219,33 @@ public final class VnGroundShadows {
     }
   }
 
-  private static void fill(List<Point> polygon, byte[] image, int width, int height, int opacity) {
-    if (opacity <= 0) return;
-    spans(polygon, width, height, (offset, left, right) -> {
+  /** Bounds of the spans actually written, with exclusive right and bottom edges. */
+  private static final class ShadowBounds {
+    int left, right, top, bottom;
+
+    ShadowBounds(int width, int height) {
+      left = width;
+      top = height;
+    }
+  }
+
+  private static Span shadowPainter(byte[] image, int width, int opacity, ShadowBounds bounds) {
+    if (bounds != null) {
+      return (offset, left, right) -> {
+        int y = offset / width;
+        bounds.left = Math.min(bounds.left, left);
+        bounds.right = Math.max(bounds.right, right);
+        bounds.top = Math.min(bounds.top, y);
+        bounds.bottom = Math.max(bounds.bottom, y + 1);
+        Arrays.fill(image, offset + left, offset + right, (byte) opacity);
+      };
+    }
+    return (offset, left, right) -> {
       for (int x = left; x < right; x++) {
         int index = offset + x;
         if ((image[index] & 255) < opacity) image[index] = (byte) opacity;
       }
-    });
+    };
   }
 
   @FunctionalInterface
@@ -251,17 +278,21 @@ public final class VnGroundShadows {
     }
   }
 
-  private static void blendSoft(byte[] output, byte[] layer, int width, int height, int radius,
+  private static void blendSoft(byte[] output, byte[] layer, int width, int height, ShadowBounds bounds, int radius,
       double anchorX, double anchorY, double reach, double fade) {
-    int[] vertical = new int[width];
+    int left = Math.max(0, bounds.left - radius);
+    int right = Math.min(width, bounds.right + radius);
+    int top = Math.max(0, bounds.top - radius);
+    int bottom = Math.min(height, bounds.bottom + radius);
+    int[] vertical = new int[right - left];
     int window = radius * 2 + 1;
-    for (int y = 0; y <= radius && y < height; y++) {
-      for (int x = 0; x < width; x++) vertical[x] += layer[y * width + x] & 255;
+    for (int y = top; y <= top + radius && y < bottom; y++) {
+      for (int x = left; x < right; x++) vertical[x - left] += layer[y * width + x] & 255;
     }
-    for (int y = 0; y < height; y++) {
+    for (int y = top; y < bottom; y++) {
       int sum = 0;
-      for (int x = 0; x <= radius && x < width; x++) sum += vertical[x];
-      for (int x = 0; x < width; x++) {
+      for (int x = left; x <= left + radius && x < right; x++) sum += vertical[x - left];
+      for (int x = left; x < right; x++) {
         int index = y * width + x;
         int value = sum / (window * window);
         if (fade > 0 && value > 0) {
@@ -269,13 +300,13 @@ public final class VnGroundShadows {
           value = (int) Math.round(value * (1 - fade * progress * progress * (3 - 2 * progress)));
         }
         if ((output[index] & 255) < value) output[index] = (byte) value;
-        if (x - radius >= 0) sum -= vertical[x - radius];
-        if (x + radius + 1 < width) sum += vertical[x + radius + 1];
+        if (x - radius >= left) sum -= vertical[x - radius - left];
+        if (x + radius + 1 < right) sum += vertical[x + radius + 1 - left];
       }
       int drop = y - radius;
       int add = y + radius + 1;
-      if (drop >= 0) for (int x = 0; x < width; x++) vertical[x] -= layer[drop * width + x] & 255;
-      if (add < height) for (int x = 0; x < width; x++) vertical[x] += layer[add * width + x] & 255;
+      if (drop >= top) for (int x = left; x < right; x++) vertical[x - left] -= layer[drop * width + x] & 255;
+      if (add < bottom) for (int x = left; x < right; x++) vertical[x - left] += layer[add * width + x] & 255;
     }
   }
 }
