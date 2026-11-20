@@ -15,7 +15,7 @@ import java.util.*;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
+import javafx.scene.control.RadioButton;
 import javafx.stage.Stage;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.Test;
@@ -36,15 +36,17 @@ class GuidedTutorialIntegrationTest {
       NewProjectWizard wizard = new NewProjectWizard(owner);
       try {
         wizard.show();
-        var templates = (ComboBox<?>) field(wizard, "cmbProjectTemplate");
-        int tutorial = templates.getItems().stream().map(Object::toString).toList().indexOf("Tutorial Workspace");
-        assertTrue(tutorial >= 0);
-        templates.getSelectionModel().select(tutorial);
+        RadioButton tutorial = wizard.getScene().getRoot().lookupAll(".radio-button").stream()
+            .filter(RadioButton.class::isInstance).map(RadioButton.class::cast)
+            .filter(choice -> choice.getText().equals("Tutorial Workspace with Pip")).findFirst().orElseThrow();
+        tutorial.fire();
         assertTrue(((CheckBox) field(wizard, "chkTutorialPack")).isSelected());
         ((CheckBox) field(wizard, "chkGitInit")).setSelected(false);
         ((javafx.scene.control.TextField) field(wizard, "txtLocation")).setText(parent.toString());
         ((javafx.scene.control.TextField) field(wizard, "txtProjectName")).setText("PipStudio");
         var create = (javafx.scene.control.Button) field(wizard, "btnCreate");
+        assertTrue(tutorial.isSelected());
+        assertEquals("Create Pip Tutorial", create.getText());
         assertFalse(create.isDisabled());
         create.fire();
         assertNotNull(wizard.getCreatedProjectDir());
@@ -79,6 +81,8 @@ class GuidedTutorialIntegrationTest {
       String map = Files.readString(project.resolve("config/story/story.storymap"));
       var manifest = new Properties();
       try (var reader = Files.newBufferedReader(project.resolve("jvn.project"))) { manifest.load(reader); }
+      assertEquals("tutorial_workspace", manifest.getProperty("scaffold.template"));
+      assertEquals("true", manifest.getProperty("feature.tutorialPack"));
       assertEquals("scripts/story/tutorial_hub.vns", manifest.getProperty("entryVns"));
       for (String sample : List.of("prologue", "branch_demo", "epilogue")) {
         assertFalse(map.contains("scripts/story/" + sample + ".vns"));
@@ -176,6 +180,7 @@ class GuidedTutorialIntegrationTest {
       FxToolkit.runFx(() -> {
         var menu = new MainMenuScene(null, new VnSettings(), null, "story/tutorial_hub.vns", null);
         assertEquals("JVN Tutorial", menu.getDisplayTitle());
+        assertEquals("30 lessons with Pip", menu.getDisplaySubtitle());
         assertEquals("Start tutorial", menu.getDisplayItems()[0]);
         menu.setSelected(0);
         Canvas canvas = new Canvas(1280, 720);

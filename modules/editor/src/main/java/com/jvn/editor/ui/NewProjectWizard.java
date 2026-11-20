@@ -25,7 +25,10 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
@@ -51,7 +54,7 @@ import javafx.stage.*;
 public class NewProjectWizard extends Stage {
   private enum ProjectTemplate {
     STARTER_STORY("Starter Story", "A lean starter project with a playable story flow, menu pack, and demo assets."),
-    TUTORIAL_WORKSPACE("Tutorial Workspace", "Pip’s monochrome tutorial with 30 independently playable topics."),
+    TUTORIAL_WORKSPACE("Tutorial Workspace with Pip", "Pip’s monochrome tutorial with 30 independently playable topics."),
     BLANK_SANDBOX("Blank Sandbox", "A stripped-down project for custom pipelines, no demo assets, and blank menu wiring."),
     CUSTOM("Custom", "A manual combination of modules and starter content.");
 
@@ -99,7 +102,7 @@ public class NewProjectWizard extends Stage {
 
   // Form fields
   private Label lblHeaderSubtitle;
-  private ComboBox<ProjectTemplate> cmbProjectTemplate;
+  private final ToggleGroup projectTemplates = new ToggleGroup();
   private Label lblProjectTemplateSummary;
   private TextField txtProjectName;
   private TextField txtFolderName;
@@ -294,32 +297,22 @@ public class NewProjectWizard extends Stage {
   }
 
   private Region createProjectTemplatePane() {
-    VBox box = new VBox(10);
-
-    cmbProjectTemplate = new ComboBox<>();
-    cmbProjectTemplate.getItems().addAll(ProjectTemplate.values());
-    cmbProjectTemplate.setValue(ProjectTemplate.STARTER_STORY);
-    cmbProjectTemplate.setPrefWidth(260);
-    styleField(cmbProjectTemplate);
-    tip(cmbProjectTemplate, "Template presets change starter scripts, menu setup, and demo content. You can still override any option below.");
-    cmbProjectTemplate.valueProperty().addListener((obs, old, selected) -> applySelectedProjectTemplate());
+    FlowPane choices = new FlowPane(18, 8);
+    for (ProjectTemplate template : ProjectTemplate.values()) {
+      if (template == ProjectTemplate.CUSTOM) continue;
+      RadioButton choice = new RadioButton(template.label());
+      choice.setToggleGroup(projectTemplates);
+      choice.setUserData(template);
+      tip(choice, template.description());
+      choice.setSelected(template == ProjectTemplate.STARTER_STORY);
+      choice.setOnAction(event -> applySelectedProjectTemplate());
+      choices.getChildren().add(choice);
+    }
 
     lblProjectTemplateSummary = new Label();
     lblProjectTemplateSummary.setWrapText(true);
     addStyleClasses(lblProjectTemplateSummary, "new-project-wizard-summary");
-
-    FlowPane tags = new FlowPane();
-    tags.setHgap(10);
-    tags.setVgap(6);
-    tags.getChildren().addAll(
-        detailTag("Starter Story", "Sample prologue, branch, and epilogue scripts."),
-        detailTag("Tutorial Pack", "Optional 30-topic learning set wired from tutorial_hub.vns."),
-        detailTag("Blank Sandbox", "Minimal story content with blank menu registry wiring."),
-        detailTag("Manual Override", "Selecting Custom preserves your checkbox choices.")
-    );
-
-    box.getChildren().addAll(cmbProjectTemplate, lblProjectTemplateSummary, tags);
-    return box;
+    return new VBox(10, choices, lblProjectTemplateSummary);
   }
 
   private Region createProjectBasicsGrid() {
@@ -668,37 +661,16 @@ public class NewProjectWizard extends Stage {
     options.add(chkHistoryBacklog, 0, 3);
     options.add(chkBlankMenus, 1, 3);
 
-    FlowPane details = new FlowPane();
-    details.setVgap(4);
-    details.setHgap(16);
-    details.getChildren().addAll(
-        detailTag("Starter Story", "Sample prologue, route split, and epilogue scripts."),
-        detailTag("Tutorial Pack", "Thirty lessons across JVN linked from the tutorial hub."),
-        detailTag("Demo Assets", "Copies bundled lavender/audio and plain white stage starter assets."),
-        detailTag("Menu Profiles", "Creates config/menu registry, screens, layout and style."),
-        detailTag("Save/Load", "Adds load.menu and save.menu defaults."),
-        detailTag("Settings", "Adds settings.menu profile entries."),
-        detailTag("History Defaults", "Marks backlog defaults in vn.settings."),
-        detailTag("Blank Menus", "No default menus. Build everything from scratch.")
-    );
-
-    box.getChildren().addAll(intro, options, lblBlankMenuWarning, details);
+    tip(chkStarterStory, "Include Lavender’s sample prologue, route split and epilogue.");
+    tip(chkTutorialPack, "Start at Pip’s topic menu and play any of the 30 lessons.");
+    tip(chkBundledDemoAssets, "Include starter artwork and music for Lavender’s story.");
+    tip(chkTitleScreen, "Create menu screens, layouts, styles and their registry.");
+    tip(chkSaveSystem, "Create the default load and save menus.");
+    tip(chkSettingsMenu, "Create the default settings menu.");
+    tip(chkHistoryBacklog, "Enable backlog defaults in vn.settings.");
+    tip(chkBlankMenus, "Create an empty menu registry for a custom interface.");
+    box.getChildren().addAll(intro, options, lblBlankMenuWarning);
     return box;
-  }
-
-  private Region detailTag(String title, String subtitle) {
-    VBox tag = new VBox(2);
-    tag.setPadding(new Insets(8, 10, 8, 10));
-    addStyleClasses(tag, "new-project-wizard-detail-tag");
-
-    Label t = new Label(title);
-    addStyleClasses(t, "new-project-wizard-detail-tag-title");
-
-    Label s = new Label(subtitle);
-    addStyleClasses(s, "new-project-wizard-detail-tag-copy");
-
-    tag.getChildren().addAll(t, s);
-    return tag;
   }
 
   private Region createVersionControlPane() {
@@ -821,7 +793,9 @@ public class NewProjectWizard extends Stage {
     btnCancel.setOnAction(e -> close());
 
     btnCreate = new Button("Create Project");
-    btnCreate.setPrefWidth(150);
+    btnCreate.textProperty().bind(javafx.beans.binding.Bindings.when(chkTutorialPack.selectedProperty())
+        .then("Create Pip Tutorial").otherwise("Create Project"));
+    btnCreate.setMinWidth(150);
     btnCreate.setGraphic(CssIcon.plusBold("#8bcf98"));
     btnCreate.setContentDisplay(ContentDisplay.LEFT);
     stylePrimaryButton(btnCreate);
@@ -876,14 +850,14 @@ public class NewProjectWizard extends Stage {
     validateForm();
   }
 
+  private ProjectTemplate selectedProjectTemplate() {
+    Toggle choice = projectTemplates.getSelectedToggle();
+    return choice == null ? ProjectTemplate.CUSTOM : (ProjectTemplate) choice.getUserData();
+  }
+
   private void applySelectedProjectTemplate() {
-    if (syncingProjectTemplate || cmbProjectTemplate == null) return;
-    ProjectTemplate template = cmbProjectTemplate.getValue();
-    if (template == null || template == ProjectTemplate.CUSTOM) {
-      updateProjectTemplateSummary();
-      updateDerivedFields();
-      return;
-    }
+    ProjectTemplate template = selectedProjectTemplate();
+    if (template == ProjectTemplate.CUSTOM) return;
     syncingProjectTemplate = true;
     try {
       boolean blank = template == ProjectTemplate.BLANK_SANDBOX;
@@ -903,14 +877,11 @@ public class NewProjectWizard extends Stage {
   }
 
   private void syncProjectTemplateSelection() {
+    if (syncingProjectTemplate) return;
     ProjectTemplate resolved = resolveProjectTemplateFromSelections();
-    if (cmbProjectTemplate != null && !syncingProjectTemplate && cmbProjectTemplate.getValue() != resolved) {
-      syncingProjectTemplate = true;
-      try {
-        cmbProjectTemplate.setValue(resolved);
-      } finally {
-        syncingProjectTemplate = false;
-      }
+    if (selectedProjectTemplate() != resolved) {
+      projectTemplates.selectToggle(projectTemplates.getToggles().stream()
+          .filter(choice -> choice.getUserData() == resolved).findFirst().orElse(null));
     }
     updateProjectTemplateSummary();
   }
@@ -939,14 +910,12 @@ public class NewProjectWizard extends Stage {
 
   private void updateProjectTemplateSummary() {
     if (lblProjectTemplateSummary == null) return;
-    ProjectTemplate template = cmbProjectTemplate == null || cmbProjectTemplate.getValue() == null
-        ? ProjectTemplate.STARTER_STORY
-        : cmbProjectTemplate.getValue();
+    ProjectTemplate template = selectedProjectTemplate();
     String summary = switch (template) {
       case STARTER_STORY -> "Recommended default. Creates a playable story skeleton, demo assets, and ready-to-run menu profiles without the larger tutorial pack.";
       case TUTORIAL_WORKSPACE -> "Starts at Pip’s topic menu. Choose a lesson on writing, animation, lighting, or game UI.";
       case BLANK_SANDBOX -> "Creates the runtime/config skeleton with blank story scripts, no bundled assets, and blank menu wiring.";
-      case CUSTOM -> "Custom combination detected. The wizard will scaffold exactly what your current checkboxes describe.";
+      case CUSTOM -> "Custom workspace. The selected feature modules determine which files are created.";
     };
     lblProjectTemplateSummary.setText(summary);
   }
@@ -1080,9 +1049,7 @@ public class NewProjectWizard extends Stage {
     String audioBackend = cmbAudioBackend == null || cmbAudioBackend.getValue() == null ? "auto" : cmbAudioBackend.getValue();
     String locale = cmbLocale == null || cmbLocale.getValue() == null ? "en" : cmbLocale.getValue();
     String source = chkCustomResolution != null && chkCustomResolution.isSelected() ? "custom" : "preset";
-    ProjectTemplate template = cmbProjectTemplate == null || cmbProjectTemplate.getValue() == null
-        ? ProjectTemplate.STARTER_STORY
-        : cmbProjectTemplate.getValue();
+    ProjectTemplate template = selectedProjectTemplate();
     if (lblAspectRatio != null) {
       lblAspectRatio.setText(ratio + " (" + source + ")");
     }

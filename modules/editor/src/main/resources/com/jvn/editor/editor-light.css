@@ -1281,8 +1281,9 @@
 
 
 /* Root and common containers */
-.root, .border-pane, .pane, .vbox, .hbox { -fx-background-color: #e9eef4; }
+.root, .border-pane, .pane, .vbox, .hbox { -fx-background-color: -jvn-aero-background; }
 .root, .text-editor-root, .code-area {
+  -jvn-aero-background: #e9eef4;
   /* Explorer Aero paints for the shared chrome. */
   -jvn-aero-surface: #ecf2f7;
   -jvn-aero-field: #fbfdff;
@@ -3172,16 +3173,6 @@
 .editor-dialog-button-danger:hover {
   -fx-background-color: linear-gradient(to bottom, #7a3849, #592633);
   -fx-border-color: #b77284;
-}
-
-.release-window, .run-console-root, .build-publisher-root {
-  -session-bg: #fafafa;
-  -session-panel: #edeff1;
-  -session-line: #c9ced3;
-  -session-ink: #22282c;
-  -session-muted: #53616a;
-  -session-hover: #dce2e6;
-  -session-accent: #98651c;
 }
 
 /* Expression keyframe editor */

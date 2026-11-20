@@ -32,7 +32,7 @@ Lavender: I'm Lavender. This studio—and the story inside it—belongs to you n
 Lavender: We only need one honest first line. The second line is always easier.
 
 > Write the first line with Lavender -> write_first_line
-> Open Lavender’s complete JVN workshop -> route_tutorial
+> How do I start Pip’s tutorial? -> route_tutorial
 > Preview a JES scene -> open_jes
 > Explore a branching story example -> route_branch
 
@@ -63,7 +63,7 @@ narrator: {i}A project I can actually finish.{/i}
 [show lavender left happy]
 Lavender: That's a real beginning. The variable {b}project_promise{/b} now remembers your choice.
 Lavender: Open this file beside the running game. Change a line, add a choice, and run it again.
-> Explore JVN one feature at a time -> route_tutorial
+> Where can I find Pip’s lessons? -> route_tutorial
 > See the multi-file story route -> route_branch
 > Visit the JES studio overlay -> open_jes
 
@@ -76,7 +76,7 @@ Lavender: The next screen is authored in {b}scripts/scenes/studio_tour.jes{/b}. 
 @label jes_returned
 [show lavender left happy]
 Lavender: Welcome back. That was a real VNS to JES scene transition, not a mock-up.
-> Continue to the tutorials -> route_tutorial
+> Find Pip’s tutorial -> route_tutorial
 > Continue to the branch demo -> route_branch
 > Return to the opening choices -> start
 

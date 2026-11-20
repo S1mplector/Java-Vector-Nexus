@@ -1,55 +1,55 @@
-/* Shared chrome for release notes and run sessions. The active Editor theme supplies the colors. */
-.release-window, .run-console-root { -fx-background-color: -session-bg; }
+/* Standalone Editor windows use the same paints as the main workspace. */
+.root.release-window, .root.run-console-root, .root.build-publisher-root { -fx-background-color: -jvn-aero-background; }
 .release-window .session-header, .run-console-root .session-header {
   -fx-padding: 14 18 14 18;
-  -fx-background-color: -session-panel;
-  -fx-border-color: transparent transparent -session-line transparent;
+  -fx-background-color: -jvn-aero-chrome;
+  -fx-border-color: transparent transparent -jvn-aero-edge transparent;
   -fx-border-width: 0 0 1 0;
 }
 .session-header .session-window-title, .release-detail .release-topic-title {
-  -fx-text-fill: -session-ink;
+  -fx-text-fill: -jvn-aero-text;
   -fx-font-size: 20px;
   -fx-font-weight: bold;
 }
 .release-window .release-summary, .release-window .release-topic-summary {
-  -fx-text-fill: -session-muted;
+  -fx-text-fill: -jvn-aero-muted;
   -fx-font-size: 13px;
 }
 .release-window .release-topics {
-  -fx-background-color: -session-panel;
-  -fx-border-color: transparent -session-line transparent transparent;
+  -fx-background-color: -jvn-aero-surface;
+  -fx-border-color: transparent -jvn-aero-edge transparent transparent;
   -fx-border-width: 0 1 0 0;
   -fx-padding: 10 0;
 }
 .release-topics .list-cell {
   -fx-background-color: transparent;
-  -fx-text-fill: -session-muted;
+  -fx-text-fill: -jvn-aero-muted;
   -fx-padding: 10 10 10 12;
   -fx-graphic-text-gap: 8;
   -fx-font-size: 12px;
   -fx-border-color: transparent;
   -fx-border-width: 0 0 0 3;
 }
-.release-topics .list-cell:filled:hover { -fx-background-color: -session-hover; }
+.release-topics .list-cell:filled:hover { -fx-background-color: -jvn-aero-hover; }
 .release-topics .list-cell:filled:selected {
-  -fx-text-fill: -session-ink;
-  -fx-background-color: -session-hover;
-  -fx-border-color: transparent transparent transparent -session-accent;
+  -fx-text-fill: -jvn-aero-text;
+  -fx-background-color: -jvn-aero-selected;
+  -fx-border-color: transparent transparent transparent -jvn-aero-focus;
   -fx-font-weight: bold;
 }
 .release-window .release-reader, .release-reader > .viewport, .release-detail {
-  -fx-background: -session-bg;
-  -fx-background-color: -session-bg;
+  -fx-background: -jvn-aero-background;
+  -fx-background-color: -jvn-aero-background;
   -fx-padding: 0;
 }
 .release-window .release-detail { -fx-padding: 18 20; }
 .release-detail .release-topic-title { -fx-font-size: 19px; }
-.release-detail .release-change { -fx-text-fill: -session-ink; -fx-font-size: 13px; }
-.release-detail .release-bullet { -fx-text-fill: -session-accent; -fx-font-size: 13px; }
+.release-detail .release-change { -fx-text-fill: -jvn-aero-text; -fx-font-size: 13px; }
+.release-detail .release-bullet { -fx-text-fill: -jvn-aero-focus; -fx-font-size: 13px; }
 .release-window .release-footer, .run-console-root .session-status-bar {
   -fx-padding: 7 14;
-  -fx-background-color: -session-panel;
-  -fx-border-color: -session-line transparent transparent transparent;
+  -fx-background-color: -jvn-aero-chrome;
+  -fx-border-color: -jvn-aero-edge transparent transparent transparent;
   -fx-border-width: 1 0 0 0;
 }
 .release-footer .button { -fx-min-width: 78px; }
@@ -59,29 +59,29 @@
   -fx-padding: 5 10;
 }
 .run-console-root .session-rail-scroll, .session-rail-scroll > .viewport {
-  -fx-background: -session-panel;
-  -fx-background-color: -session-panel;
+  -fx-background: -jvn-aero-surface;
+  -fx-background-color: -jvn-aero-surface;
   -fx-padding: 0;
-  -fx-border-color: transparent -session-line transparent transparent;
+  -fx-border-color: transparent -jvn-aero-edge transparent transparent;
   -fx-border-width: 0 1 0 0;
 }
 .run-console-root .session-rail { -fx-padding: 15 13; }
 .run-console-root .session-group-heading {
-  -fx-text-fill: -session-ink;
+  -fx-text-fill: -jvn-aero-text;
   -fx-font-size: 14px;
   -fx-font-weight: bold;
 }
 .session-rail .session-task, .session-rail .run-console-launch-detail {
   -fx-font-size: 11px;
-  -fx-text-fill: -session-muted;
+  -fx-text-fill: -jvn-aero-muted;
 }
 .session-rail .session-metric { -fx-font-size: 12px; }
-.session-rail .session-progress { -fx-pref-height: 4; -fx-accent: -session-accent; }
+.session-rail .session-progress { -fx-pref-height: 4; -fx-accent: -jvn-aero-focus; }
 .session-rail .session-profile { -fx-graphic-text-gap: 5; }
 .run-console-root .session-log-tools {
-  -fx-background-color: -session-panel;
+  -fx-background-color: -jvn-aero-surface;
   -fx-padding: 6 8;
-  -fx-border-color: transparent transparent -session-line transparent;
+  -fx-border-color: transparent transparent -jvn-aero-edge transparent;
   -fx-border-width: 0 0 1 0;
 }
 .session-log-tools .run-console-icon-btn, .session-log-tools .run-console-toggle {
@@ -90,7 +90,7 @@
   -fx-padding: 2px;
 }
 .run-console-root .run-console-output {
-  -fx-background-color: -session-bg;
+  -fx-background-color: -jvn-aero-background;
   -fx-border-color: transparent;
   -fx-background-radius: 0;
 }
@@ -99,28 +99,28 @@
 .session-log-tools .toggle-button, .session-rail .session-profile {
   -fx-background-color: transparent;
   -fx-background-radius: 4;
-  -fx-border-color: -session-line;
+  -fx-border-color: -jvn-aero-edge;
   -fx-border-radius: 4;
 }
-.session-rail .session-profile > .label { -fx-text-fill: -session-ink; }
-.session-rail .session-profile .arrow { -fx-background-color: -session-muted; }
-.session-log-tools .toggle-button:selected { -fx-background-color: -session-hover; -fx-border-color: -session-accent; }
-.session-log-tools .toggle-button:hover, .session-rail .session-profile:hover { -fx-background-color: -session-hover; }
+.session-rail .session-profile > .label { -fx-text-fill: -jvn-aero-text; }
+.session-rail .session-profile .arrow { -fx-background-color: -jvn-aero-muted; }
+.session-log-tools .toggle-button:selected { -fx-background-color: -jvn-aero-selected; -fx-border-color: -jvn-aero-focus; }
+.session-log-tools .toggle-button:hover, .session-rail .session-profile:hover { -fx-background-color: -jvn-aero-hover; }
 
 .build-publisher-root .session-header, .build-publisher-root .build-actions {
-  -fx-background-color: -session-panel;
+  -fx-background-color: -jvn-aero-chrome;
   -fx-padding: 13 18;
-  -fx-border-color: transparent transparent -session-line transparent;
+  -fx-border-color: transparent transparent -jvn-aero-edge transparent;
   -fx-border-width: 0 0 1 0;
 }
 .build-publisher-root .build-actions {
   -fx-padding: 8 14;
-  -fx-border-color: -session-line transparent transparent transparent;
+  -fx-border-color: -jvn-aero-edge transparent transparent transparent;
   -fx-border-width: 1 0 0 0;
 }
 .build-publisher-root .build-sections {
-  -fx-background-color: -session-panel;
-  -fx-border-color: transparent -session-line transparent transparent;
+  -fx-background-color: -jvn-aero-surface;
+  -fx-border-color: transparent -jvn-aero-edge transparent transparent;
   -fx-border-width: 0 1 0 0;
   -fx-padding: 12 0;
 }
@@ -134,39 +134,54 @@
   -fx-border-width: 0 0 0 3;
   -fx-padding: 6 12;
   -fx-graphic-text-gap: 9;
-  -fx-text-fill: -session-muted;
+  -fx-text-fill: -jvn-aero-muted;
 }
-.build-publisher-root .build-navigation .list-cell:filled:hover { -fx-background-color: -session-hover; }
+.build-publisher-root .build-navigation .list-cell:filled:hover { -fx-background-color: -jvn-aero-hover; }
 .build-publisher-root .build-navigation .list-cell:filled:selected {
-  -fx-background-color: -session-hover;
-  -fx-border-color: transparent transparent transparent -session-accent;
-  -fx-text-fill: -session-ink;
+  -fx-background-color: -jvn-aero-selected;
+  -fx-border-color: transparent transparent transparent -jvn-aero-focus;
+  -fx-text-fill: -jvn-aero-text;
   -fx-font-weight: bold;
 }
 .build-sections .build-plan-rail { -fx-padding: 2 14; }
-.build-plan-rail .build-plan-heading { -fx-font-size: 14px; -fx-text-fill: -session-ink; }
-.build-publisher-root .build-project-caption { -fx-font-size: 12px; -fx-text-fill: -session-muted; }
+.build-plan-rail .build-plan-heading { -fx-font-size: 14px; -fx-text-fill: -jvn-aero-text; }
+.build-publisher-root .build-project-caption { -fx-font-size: 12px; -fx-text-fill: -jvn-aero-muted; }
 .build-publisher-root .build-page, .build-page > .viewport, .build-publisher-root .build-page-content {
-  -fx-background: -session-bg; -fx-background-color: -session-bg; -fx-padding: 0;
+  -fx-background: -jvn-aero-background; -fx-background-color: -jvn-aero-background; -fx-padding: 0;
 }
 .build-publisher-root .build-page-content { -fx-padding: 18 22; }
-.build-workspace-section { -fx-padding: 0 0 16 0; -fx-border-width: 0 0 1 0; -fx-border-color: -session-line; }
-.build-workspace-section .build-publisher-card-title { -fx-text-fill: -session-ink; -fx-font-size: 16px; -fx-font-weight: bold; }
+.build-workspace-section { -fx-padding: 0 0 16 0; -fx-border-width: 0 0 1 0; -fx-border-color: -jvn-aero-edge; }
+.build-workspace-section .build-publisher-card-title { -fx-text-fill: -jvn-aero-text; -fx-font-size: 16px; -fx-font-weight: bold; }
 .build-publisher-root .build-format-choice {
-  -fx-alignment: center-left; -fx-background-color: -session-panel;
-  -fx-border-color: -session-line; -fx-border-radius: 5; -fx-background-radius: 5;
+  -fx-alignment: center-left; -fx-background-color: -jvn-aero-surface;
+  -fx-border-color: -jvn-aero-edge; -fx-border-radius: 5; -fx-background-radius: 5;
   -fx-padding: 9 11;
 }
-.build-format-choice .build-format-name { -fx-text-fill: -session-ink; -fx-font-size: 13px; -fx-font-weight: bold; }
-.build-publisher-root .build-format-choice:hover { -fx-background-color: -session-hover; }
-.build-publisher-root .build-format-choice:selected { -fx-border-color: -session-accent; -fx-background-color: -session-hover; }
+.build-format-choice .build-format-name { -fx-text-fill: -jvn-aero-text; -fx-font-size: 13px; -fx-font-weight: bold; }
+.build-publisher-root .build-format-choice:hover { -fx-background-color: -jvn-aero-hover; }
+.build-publisher-root .build-format-choice:selected { -fx-border-color: -jvn-aero-focus; -fx-background-color: -jvn-aero-selected; }
 .build-publisher-root .build-format-choice:focused { -fx-border-color: -fx-focus-color; }
 
 .build-publisher-root .build-actions .build-publisher-cta {
-  -fx-background-color: -session-hover;
-  -fx-border-color: -session-accent;
-  -fx-text-fill: -session-ink;
+  -fx-background-color: -jvn-aero-button;
+  -fx-border-color: -jvn-aero-control-edge;
+  -fx-text-fill: -jvn-aero-text;
   -fx-padding: 7 15;
   -fx-border-radius: 5;
   -fx-background-radius: 5;
 }
+
+.run-console-root .session-rail { -fx-background-color: -jvn-aero-surface; }
+.run-console-root .run-console-state,
+.build-publisher-root .build-publisher-workflow-notice {
+  -fx-background-color: -jvn-aero-field;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-text-fill: -jvn-aero-text;
+}
+.run-console-root .run-console-state-failed,
+.build-publisher-root .build-publisher-workflow-notice-blocked { -fx-text-fill: -jvn-status-icon-red; }
+.build-publisher-root .build-publisher-workflow-notice-pending { -fx-text-fill: -jvn-aero-warning; }
+.run-console-root .run-console-output .list-cell { -fx-text-fill: -jvn-aero-text; }
+.run-console-root .run-console-output .run-console-line-noise { -fx-text-fill: -jvn-aero-muted; }
+.run-console-root .run-console-output .run-console-line-error { -fx-text-fill: -jvn-status-icon-red; }
+.run-console-root .run-console-output .run-console-line-warn { -fx-text-fill: -jvn-aero-warning; }

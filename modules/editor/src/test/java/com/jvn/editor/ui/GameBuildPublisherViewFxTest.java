@@ -12,6 +12,9 @@ import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import javax.imageio.ImageIO;
 import javafx.scene.Scene;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
+import javafx.scene.paint.Paint;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -19,6 +22,37 @@ import org.junit.jupiter.api.io.TempDir;
 @ExtendWith(FxToolkitExtension.class)
 class GameBuildPublisherViewFxTest {
   @TempDir Path tempDir;
+
+  @Test
+  void buildAndRunUseTheEditorsWorkspacePaintsInBothThemes() throws Exception {
+    runFx(() -> {
+      for (String theme : java.util.List.of("editor.css", "editor-light.css")) {
+        String stylesheet = EditorTheme.class.getResource("/com/jvn/editor/" + theme).toExternalForm();
+        var chrome = new Pane();
+        chrome.getStyleClass().add("editor-workspace-panel");
+        var editor = new Pane(chrome);
+        new Scene(editor).getStylesheets().add(stylesheet);
+        editor.applyCss();
+
+        var run = new RunConsoleView("JVN Runtime");
+        try {
+          for (Region workspace : java.util.List.of(createView(), run)) {
+            new Scene(workspace).getStylesheets().add(stylesheet);
+            workspace.applyCss();
+            assertEquals(background(editor), background(workspace), theme);
+            assertEquals(background(chrome), background((Region) workspace.lookup(".session-header")), theme);
+          }
+        } finally {
+          run.dispose();
+        }
+      }
+      return null;
+    });
+  }
+
+  private static Paint background(Region region) {
+    return region.getBackground().getFills().getFirst().getFill();
+  }
 
   @Test
   void validationActionsStayCompactAndWrapInNarrowLayouts() throws Exception {

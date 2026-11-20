@@ -71,7 +71,7 @@ final class GuidedTutorial {
     items.remove("extras");
     properties.setProperty("items", String.join(",", items));
     properties.setProperty("titleText", "JVN Tutorial");
-    properties.remove("subtitleText");
+    properties.setProperty("subtitleText", "30 lessons with Pip");
     properties.setProperty("item.new_game.label", "Start tutorial");
     properties.setProperty("item.continue.label", "Load game");
     properties.setProperty("backgroundAsset", "assets/tutorial/white.png");

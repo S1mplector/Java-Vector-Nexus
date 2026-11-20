@@ -1414,8 +1414,9 @@ The editor.css file defines the visual styling for the editor module, including 
 
 
 /* Root and common containers */
-.root, .border-pane, .pane, .vbox, .hbox { -fx-background-color: #161616; }
+.root, .border-pane, .pane, .vbox, .hbox { -fx-background-color: -jvn-aero-background; }
 .root, .text-editor-root, .code-area {
+  -jvn-aero-background: #161616;
   /* Graphite Aero paints for the shared chrome. */
   -jvn-aero-surface: #2a2a2a;
   -jvn-aero-field: #212121;
@@ -3262,16 +3263,6 @@ The editor.css file defines the visual styling for the editor module, including 
 .editor-dialog-button-danger:hover {
   -fx-background-color: linear-gradient(to bottom, #7a3849, #592633);
   -fx-border-color: #b77284;
-}
-
-.release-window, .run-console-root, .build-publisher-root {
-  -session-bg: #151719;
-  -session-panel: #232629;
-  -session-line: #42474c;
-  -session-ink: #eff1f2;
-  -session-muted: #b6bdc3;
-  -session-hover: #353b40;
-  -session-accent: #e5b16d;
 }
 
 /* Expression keyframe editor */

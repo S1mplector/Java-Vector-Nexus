@@ -49,6 +49,16 @@ public final class WhatsNewCatalog {
   private static Map<String, Release> createReleases() {
     Map<String, Release> releases = new LinkedHashMap<>();
     add(releases, new Release(
+        "v0.9.2", "Create a playable project with Pip from New Project.",
+        List.of(
+            new Section("Tutorial Workspace with Pip", "Choose Tutorial Workspace with Pip, then Create Pip Tutorial.", List.of(
+                "Run the project and choose Start tutorial. Pip opens the topic menu for all 30 lessons.",
+                "Older projects keep their own scripts. Create a fresh tutorial workspace to get the current course."),
+                AeroIcon.Kind.DOCUMENTATION, null),
+            new Section("Editor colors", "Run and Build & Publish now use the active Editor palette.", List.of(
+                "Both windows share the Editor’s background, toolbar gradients, borders and selection colors."),
+                AeroIcon.Kind.BUILD, null)), true));
+    add(releases, new Release(
         "v0.9.1", "A new Build & Publish workspace and fixes for launching the current Editor and tutorial.",
         List.of(
             new Section("Build & Publish", "Choose a package format, set your target and ship from the same window.", List.of(

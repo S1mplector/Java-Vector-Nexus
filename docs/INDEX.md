@@ -374,6 +374,7 @@ source of truth for docs changes.
 
 - [What's New in JVN 0.7.0](project-setup/release/whats-new-0.7.0.md) — licensing, Settings credit, and release verification
 
+- [What's New in JVN 0.9.2](project-setup/release/whats-new-0.9.2.md) — Pip tutorial selection and graphite workspace colors
 - [What's New in JVN 0.9.1](project-setup/release/whats-new-0.9.1.md) — Build workspace, launch cache and Tutorial Workspace fixes
 - [What's New in JVN 0.9.0](project-setup/release/whats-new-0.9.0.md) — desktop installers, Run workspace, and scene lighting
 - [What's New in JVN 0.8.0](project-setup/release/whats-new-0.8.0.md) — authoring, asset loading, persistence, and live-reload reliability
