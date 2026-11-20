@@ -132,12 +132,17 @@ public class Sprite2D extends Entity2D {
       for (String layer : imagePath.split("\\|")) {
         String path = layer == null ? "" : layer.trim();
         if (!path.isEmpty()) {
-          b.drawImage(path, dx, dy, width, height);
+          drawLayer(b, path, dx, dy);
         }
       }
     } else {
-      b.drawImage(imagePath, dx, dy, width, height);
+      drawLayer(b, imagePath, dx, dy);
     }
     b.pop();
+  }
+
+  /** Draws a full-image layer inside the sprite's transform and opacity state. */
+  protected void drawLayer(Blitter2D blitter, String path, double dx, double dy) {
+    blitter.drawImage(path, dx, dy, width, height);
   }
 }

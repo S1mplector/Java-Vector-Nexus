@@ -1,0 +1,21 @@
+@scenario window_light
+@character lavender "Lavender"
+@background studio misc/demo-assets/demo_bg/game.png
+@charimg lavender neutral misc/demo-assets/Lavender_test_sprite/base/lavender_test_sprite_base.png | misc/demo-assets/Lavender_test_sprite/eyes/lavender_test_sprite_eyes_neutral.png | misc/demo-assets/Lavender_test_sprite/mouth/lavender_test_sprite_mouth_smile.png
+@stagepreset dusk window.stagepreset
+@label start
+[bg studio]
+[show lavender center neutral]
+Lavender: The room in daylight.
+[stage dusk]
+Lavender: Watch the warm light on the wall.
+timeline {
+  parallel {
+    move "bg_current" { x:-96 y:-54 dur:640 easing:ease_out }
+    scale "bg_current" { sx:1.1 sy:1.1 dur:640 easing:ease_out }
+  }
+}
+Lavender: The light moves with the room.
+[stage clear]
+Lavender: Same framing, back to daylight.
+[end]

@@ -24,6 +24,31 @@ class PuppeteerSnapshotSceneConstructionTest {
   @TempDir Path tempDir;
 
   @Test
+  void backgroundMotionDoesNotHideTheActivePlateAfterReplay() throws Exception {
+    String source = """
+        @background room assets/room.png
+        [bg room]
+        timeline {
+          move "bg_current" { x:-96 y:-54 dur:640 }
+        }
+        Narrator: The room has moved.
+        """;
+    var snapshot = PuppeteerLauncherPanel.resolveSnapshot(source, source.lines().toList().size() - 1);
+    EditorApp app = new EditorApp();
+    var scene = buildScene(app, snapshot);
+    Method capture = EditorApp.class.getDeclaredMethod("captureRuntimeExportBaselines", JesScene2D.class);
+    capture.setAccessible(true);
+    Method replay = EditorApp.class.getDeclaredMethod("applySnapshotTimelineEndStateToScene", JesScene2D.class,
+        PuppeteerLauncherPanel.SceneSnapshot.class, String.class, Map.class);
+    replay.setAccessible(true);
+    replay.invoke(app, scene, snapshot, null, capture.invoke(app, scene));
+    var plate = scene.find("bg_current");
+    assertTrue(plate.isVisible());
+    assertEquals(-96, plate.getX(), 1e-9);
+    assertEquals(-54, plate.getY(), 1e-9);
+  }
+
+  @Test
   void customPositionAndZOrderReachTheLaunchScene() throws Exception {
     String source = """
         @charimg heart_effect pulse assets/effects/heart_attack.png

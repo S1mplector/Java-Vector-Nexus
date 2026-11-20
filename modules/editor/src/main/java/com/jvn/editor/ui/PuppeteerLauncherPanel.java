@@ -3200,6 +3200,16 @@ button then opens it in the editor."""));
       return activeStagePresetId != null && stagePresetPaths.containsKey(activeStagePresetId);
     }
 
+    public com.jvn.core.vn.stage.VnStagePreset loadStagePreset(File projectRoot) {
+      String path = resolveStagePresetPath(projectRoot);
+      if (path.isBlank()) return null;
+      try (var input = java.nio.file.Files.newInputStream(java.nio.file.Path.of(path))) {
+        return com.jvn.core.vn.stage.VnStagePresetLoader.load(activeStagePresetId, path, input);
+      } catch (java.io.IOException | java.nio.file.InvalidPathException ex) {
+        return null;
+      }
+    }
+
     public String resolveStagePresetPath(File projectRoot) {
       if (activeStagePresetId == null || activeStagePresetId.isBlank()) return "";
       String raw = stagePresetPaths.getOrDefault(activeStagePresetId, "");

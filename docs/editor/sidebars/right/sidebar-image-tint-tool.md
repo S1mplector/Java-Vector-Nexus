@@ -75,6 +75,28 @@ Open **Scene Lighting Studio** from Tools or Assets for a dedicated window. At w
 
 The background preview uses a smaller render while dragging a light or background-grade slider and restores its settled resolution on release.
 
+### Try the lighting in a running scene
+
+From the repository root, run the sample with the game renderer.
+
+```sh
+./gradlew :runtime:run --args="--assets '$PWD' --script scripts/examples/window-light/scene.vns"
+```
+
+Open `scripts/examples/window-light/scene.vns` in the editor and launch Puppeteer at each dialogue line. The example uses the bundled Lavender layers and studio background. Advance through daylight, the window-light preset, a 640 ms pan and zoom on the lit background, and the same framing after `[stage clear]`.
+
+![Game and Puppeteer frames at four checkpoints](../../../assets/images/image-tint/window-light-playback.webp)
+
+To regenerate the side-by-side frames and pixel differences, run the visual audit from the repository root on a machine with JavaFX display support.
+
+```sh
+JVN_PUPPETEER_AUDIT_ROOT="$PWD" \
+JVN_PUPPETEER_AUDIT_SCRIPT=examples/window-light/scene.vns \
+JVN_PUPPETEER_AUDIT_OUTPUT="$PWD/build/reports/window-light" \
+JVN_PUPPETEER_AUDIT_STRICT=true \
+./gradlew :editor:test --tests '*PuppeteerVisualParityAuditTest' --rerun-tasks
+```
+
 ### Work directly from a VNS scene
 
 1. Put the VNS cursor on a scene beat and click **Load from VNS**. The studio loads the background, available subjects, and active stage preset.

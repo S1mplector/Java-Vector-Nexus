@@ -256,7 +256,7 @@ class PuppeteerVisualParityAuditTest {
   private static String sceneSignature(PuppeteerLauncherPanel.SceneSnapshot snapshot) {
     StringBuilder signature = new StringBuilder();
     signature.append(snapshot.previousBackgroundId).append('>')
-        .append(snapshot.backgroundId).append('|');
+        .append(snapshot.backgroundId).append("|stage=").append(snapshot.activeStagePresetId).append('|');
     for (PuppeteerLauncherPanel.CharacterEntry character : snapshot.characters) {
       signature.append(character.characterId).append('@')
           .append(character.displaySlot).append(':')
@@ -343,7 +343,7 @@ class PuppeteerVisualParityAuditTest {
       try {
         scene.getState().setCurrentNodeIndex(scenario.getNodes().size());
         scene.getState().setUiHidden(false);
-        renderer.renderer().render(scene.getState(), scenario, WIDTH, HEIGHT);
+        renderer.renderer().renderFrozen(scene.getState(), scenario, WIDTH, HEIGHT);
         WritableImage image = renderer.canvas().snapshot(null, renderer.snapshot());
         return SwingFXUtils.fromFXImage(image, null);
       } finally {

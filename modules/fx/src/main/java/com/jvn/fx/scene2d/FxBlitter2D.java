@@ -257,6 +257,26 @@ public class FxBlitter2D implements Blitter2D {
     }
   }
 
+  /** Draws a cached derivative while retaining the sprite's current blend and color effects. */
+  public void drawImageVariant(String path, String variant, java.util.function.Function<Image, Image> prepare,
+                               double x, double y, double width, double height) {
+    String key = path + "|variant:" + variant;
+    Image result = processedCache.get(key);
+    if (result == null) {
+      Image source = cache.computeIfAbsent(path, this::loadImage);
+      if (source != null) {
+        result = prepare.apply(source);
+        if (result != null) processedCache.put(key, result);
+      }
+    }
+    if (result == null) {
+      drawImage(path, x, y, width, height);
+      return;
+    }
+    markOwnerDirty();
+    gc.drawImage(resolveProcessedImage(key, result), x, y, width, height);
+  }
+
   @Override
   public void drawImageRegion(String classpath, double sx, double sy, double sw, double sh,
                               double dx, double dy, double dw, double dh) {

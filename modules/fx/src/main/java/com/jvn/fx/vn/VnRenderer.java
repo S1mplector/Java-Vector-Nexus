@@ -694,15 +694,10 @@ public class VnRenderer {
         ? timelineAccessor.getProxy(timelineEntityId != null ? timelineEntityId : background.getId())
         : null;
     if (img != null) {
-      if (stage != null && stage.hasBackgroundLighting() && proxy == null) {
-        drawStageBackgroundImage(backgroundPath, img, stage, width, height);
-      } else {
-        drawBackgroundImage(img, proxy, width, height);
-        if (stage != null && stage.hasBackgroundLighting()) {
-          applyStageBackgroundFallbackOverlay(stage, width, height);
-          renderStageLightOverlays(stage, width, height, VnStagePreset.LightLayer.BACKGROUND);
-        }
-      }
+      if (proxy != null && !proxy.isVisible()) return;
+      Image plate = stage != null && stage.hasBackgroundLighting()
+          ? stageBackgroundImage(backgroundPath, img, stage, width, height) : img;
+      drawBackgroundImage(plate, proxy, width, height);
     } else {
       // Placeholder background
       gc.setFill(Color.DARKSLATEGRAY);
@@ -720,7 +715,7 @@ public class VnRenderer {
     return background == null ? null : background.getImagePath();
   }
 
-  private void drawStageBackgroundImage(String backgroundPath, Image img, VnStagePreset stage, double width, double height) {
+  private Image stageBackgroundImage(String backgroundPath, Image img, VnStagePreset stage, double width, double height) {
     String slot = "background|" + backgroundPath;
     String key = slot + "|stage:" + stage.getCacheToken() + "|size:" + Math.round(width) + "x" + Math.round(height);
     Image lit = stageBackgroundCache.get(key);
@@ -737,26 +732,7 @@ public class VnRenderer {
             () -> VnStageLightingSupport.shadeBackground(source, stage, width, height));
       }
     }
-    if (lit != null) gc.drawImage(lit, 0, 0, width, height);
-    else drawBackgroundImage(img, null, width, height);
-  }
-
-  private void applyStageBackgroundFallbackOverlay(VnStagePreset stage, double width, double height) {
-    if (stage == null) return;
-    VnStagePreset.BackgroundGrade grade = stage.getBackgroundGrade();
-    if (grade == null) return;
-    Color tint = VnStageLightingSupport.parseColor(grade.tintColor(), Color.WHITE);
-    double tintStrength = VnStageLightingSupport.clamp(grade.tintStrength(), 0.0, 1.0);
-    if (tintStrength > 1e-6) {
-      gc.setFill(Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), tintStrength * 0.14));
-      gc.fillRect(0, 0, width, height);
-    }
-    Color overlay = VnStageLightingSupport.parseColor(grade.overlayColor(), Color.BLACK);
-    double overlayOpacity = VnStageLightingSupport.clamp(grade.overlayOpacity(), 0.0, 1.0);
-    if (overlayOpacity > 1e-6) {
-      gc.setFill(Color.color(overlay.getRed(), overlay.getGreen(), overlay.getBlue(), overlayOpacity * 0.20));
-      gc.fillRect(0, 0, width, height);
-    }
+    return lit != null ? lit : img;
   }
 
   private void drawBackgroundImage(Image img, com.jvn.core.scene2d.Entity2D proxy, double width, double height) {

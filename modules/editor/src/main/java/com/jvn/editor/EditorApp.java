@@ -7747,6 +7747,11 @@ public class EditorApp extends Application {
 	  ) {
 	    if (scene == null || snapshot == null || stateTimeline == null) return;
 	    Set<String> snapshotEntities = currentSnapshotEntityNames(snapshot);
+        if (scene.find("bg_current") != null) {
+          snapshotEntities.add("bg_current");
+          if (snapshot.backgroundId != null) snapshotEntities.add("bg_" + snapshot.backgroundId);
+        }
+        if (scene.find("bg_prev") != null) snapshotEntities.add("bg_prev");
 	    ensureSceneEntitiesForProject(scene, stateTimeline, snapshot);
 	    rebaseImportedPuppeteerProject(
 	        scene,
@@ -8378,14 +8383,18 @@ public class EditorApp extends Application {
       scene.registerEntity("bg_prev", prevBg);
     }
 
-    if (snapshot.backgroundId != null) {
-      String bgPath = resolveProjectPathSpec(snapshot.resolveBackgroundPath());
-      com.jvn.core.scene2d.Sprite2D bg = new com.jvn.core.scene2d.Sprite2D(bgPath, sceneW, sceneH);
+    var stage = snapshot.loadStagePreset(projectRoot);
+    String override = stage == null ? "" : stage.getBackgroundTag();
+    if (snapshot.backgroundId != null || !override.isBlank()) {
+      String bgPath = resolveProjectPathSpec(override.isBlank() ? snapshot.resolveBackgroundPath() : override);
+      var bg = stage != null && stage.hasBackgroundLighting()
+          ? new com.jvn.editor.ui.PuppeteerStagePlate(bgPath, sceneW, sceneH, stage)
+          : new com.jvn.core.scene2d.Sprite2D(bgPath, sceneW, sceneH);
       bg.setOrigin(0.0, 0.0);
       bg.setPosition(0.0, 0.0);
       bg.setZ(PUPPETEER_CURRENT_BACKGROUND_Z);
       scene.add(bg);
-      scene.registerEntity("bg_" + snapshot.backgroundId, bg);
+      if (snapshot.backgroundId != null) scene.registerEntity("bg_" + snapshot.backgroundId, bg);
       scene.registerEntity("bg_current", bg);
     }
 
