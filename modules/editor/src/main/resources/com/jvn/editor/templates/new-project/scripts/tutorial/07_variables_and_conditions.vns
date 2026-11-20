@@ -1,37 +1,40 @@
-# Remember a choice
-@scenario office_lesson_07
+# Variables and conditions
+@scenario tutorial_lesson_07
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk notes]
-pip: I marked this desk as ready. Watch what the game does with that flag.
-[flag desk_ready]
-[if desk_ready]
-pip: The status light is on. We can begin.
+[show pip guide notes]
+pip: A flag stores a true or false value. This example sets a flag, then reads it.
+[flag example_ready]
+[if example_ready]
+pip: This line appears because the flag is true.
 [endif]
-pip: Change the flag test to its opposite. Run the cue again and compare the response.
+pip: Change the condition to its opposite and replay the example.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
-pip: What keeps a switch position between dialogue lines?
+pip: What keeps a flag value between dialogue lines?
 > A story variable. -> correct
 > A label name. -> retry
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: The flag writes state and the condition reads it. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: The flag writes state and the condition reads it.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_07]
 [flag tutorial_done_07]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_2]
+[goto TutorialHub:topics_page_1]

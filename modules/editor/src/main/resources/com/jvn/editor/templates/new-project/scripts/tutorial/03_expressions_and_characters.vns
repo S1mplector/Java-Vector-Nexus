@@ -1,36 +1,39 @@
-# Read the room
-@scenario office_lesson_03
+# Expressions
+@scenario tutorial_lesson_03
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk point]
-pip: I just heard a knock behind the glass. Watch my face before I tell you what it means.
-[show pip desk surprised]
-pip: Did you hear that?
-[show pip desk curious]
-pip: Swap surprised for curious in the second show command. Compare the meaning of the same line.
+[show pip guide point]
+pip: Watch how changing the expression affects the same line.
+[show pip guide surprised]
+pip: Oh!
+[show pip guide curious]
+pip: Replace surprised with curious in the second show command. Run the same line again.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: How do you change my reaction in place?
 > Show pip in the same slot with another expression. -> correct
 > Declare a new background named curious. -> retry
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: The slot stays occupied while its expression changes. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: The slot stays occupied while its expression changes.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_03]
 [flag tutorial_done_03]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_1]
+[goto TutorialHub:topics_page_2]

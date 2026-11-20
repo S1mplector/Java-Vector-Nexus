@@ -1,29 +1,32 @@
-# Build a desk widget
-@scenario office_lesson_25
+# Editing JES entities
+@scenario tutorial_lesson_25
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk wave]
-pip: See the little light in the corner of the project board? The lamp and the board are separate entities.
-pip: Open the JES scene and select the lamp. Change its fill and leave the board untouched.
+[show pip guide wave]
+pip: The JES example has a panel and a small colored indicator. Each is a separate entity.
+pip: Open scripts/scenes/panel.jes in the JES editor. Select the indicator and change its fill color.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
-pip: Which change should affect just the lamp?
-> Edit the named lamp entity. -> correct
+pip: Which change should affect only the indicator?
+> Edit the named indicator entity. -> correct
 > Tint the entire stage. -> retry
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: Separate entities give the editor independent targets. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: Separate entities give the editor independent targets.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_25]
 [flag tutorial_done_25]

@@ -1,37 +1,40 @@
-# Change scenes
-@scenario office_lesson_05
+# Transitions
+@scenario tutorial_lesson_05
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk wave]
-pip: The office lights dip. The next sentence feels like the start of a different shift.
+[show pip guide wave]
+pip: Watch the window as the scene fades and its lighting changes.
 [if !tutorial_still]
 [transition fade 380]
 [endif]
 [stage dusk]
-pip: Compare the fade duration with a short cut. Keep the dialogue and pose the same.
+pip: Change the fade duration and replay the transition.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: Which value changes how long the fade lasts?
 > The duration in milliseconds. -> correct
 > The number of dialogue lines. -> retry
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: Timing belongs to the transition, so the script can keep its pacing. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: Timing belongs to the transition, so the script can keep its pacing.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_05]
 [flag tutorial_done_05]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_1]
+[goto TutorialHub:topics_page_2]

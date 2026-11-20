@@ -1,33 +1,36 @@
-# Offer a choice
-@scenario office_lesson_10
+# Choices and labels
+@scenario tutorial_lesson_10
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk present]
-pip: A teammate has two requests and there is only time for one. Route the response by label.
-pip: Read the two destinations below the question. Change one response, then pick both branches.
+[show pip guide present]
+pip: Each choice points to a label. The game continues at the label the player selects.
+pip: Look at the two choices below. Follow each destination in the script.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: What does the arrow after a choice point to?
 > A sprite expression. -> retry
 > A destination label. -> correct
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: Each branch can perform different work before both paths meet. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: Each branch can perform different work before both paths meet.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_10]
 [flag tutorial_done_10]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_2]
+[goto TutorialHub:topics_page_1]

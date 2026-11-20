@@ -1,39 +1,41 @@
-# Watch a live value
-@scenario office_lesson_21
+# Reactive UI
+@scenario tutorial_lesson_21
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk notes]
-pip: The engineer wants the office dashboard to follow a variable. Open the supplied facet and find the binding.
-pip: Open config/facets/tutorial_card.facet. Change the visible caption and preview it with its bound state.
-> Open the office checklist -> checklist
-> Try the checkpoint -> check
+[show pip guide notes]
+pip: A facet displays values from the running game. This example binds a progress bar to a variable.
+pip: Open the example below. Then change example_progress in the script and open it again.
+> Open the sample panel -> checklist
+> Review question -> check
+> Back to topics -> return_hub
 @label checklist
-[set desk_name Pip]
-[set desk_readiness 0.75]
+[set example_name Progress]
+[set example_progress 0.75]
 [screen call tutorial_card]
 @label check
-pip: What should drive a reactive dashboard?
+pip: What should drive a progress bar?
 > The state value that changes. -> correct
 > A copied screenshot of the readout. -> retry
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: A binding reads the current value whenever the UI updates. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: A binding reads the current value whenever the UI updates.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_21]
 [flag tutorial_done_21]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_5]
+[goto TutorialHub:topics_page_4]

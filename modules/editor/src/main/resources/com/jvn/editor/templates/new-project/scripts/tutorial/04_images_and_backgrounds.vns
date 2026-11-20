@@ -1,33 +1,36 @@
-# Set the stage
-@scenario office_lesson_04
+# Backgrounds
+@scenario tutorial_lesson_04
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk neutral]
-pip: Our office window tells us where the story happens. Find the image that puts it on screen.
-pip: Open the background declaration in scripts/definitions/characters.vns. Find the bg command at the top of this lesson.
+[show pip guide neutral]
+pip: A background has an ID and an image path. This room uses the ID room.
+pip: Open scripts/definitions/characters.vns to see the image path. The bg command in this lesson selects it.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: What belongs after bg?
 > The name of the current speaker. -> retry
-> The ID declared for the office. -> correct
+> The ID declared for the room. -> correct
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: The declaration maps an ID to an image. The scene command selects it. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: The declaration maps an ID to an image. The scene command selects it.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_04]
 [flag tutorial_done_04]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_1]
+[goto TutorialHub:topics_page_2]

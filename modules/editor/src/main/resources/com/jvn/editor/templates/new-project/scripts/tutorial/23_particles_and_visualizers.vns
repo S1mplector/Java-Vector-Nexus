@@ -1,38 +1,41 @@
-# Leave room for effects
-@scenario office_lesson_23
+# Particles
+@scenario tutorial_lesson_23
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk point]
-pip: Imagine dust in the beam above the desk. A restrained effect should let the player read the line.
+[show pip guide point]
+pip: A particle effect draws many small moving sprites. This example uses dust.
 [if !tutorial_still]
 [particles dust intensity=0.24 opacity=0.52 speed=0.30 duration=3000]
 [endif]
-pip: Look between the desks. How much dust can you add before it draws attention away from Pip?
+pip: Watch the particles in front of the window. Reduced motion keeps the example still.
 [particles stop]
-pip: Change intensity in the particle command and compare the same frame.
+pip: Change the intensity in the particles command, then replay.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: Which comparison tells you whether the effect helps?
 > Read the same line with the effect on and off. -> correct
 > Check the particle count alone. -> retry
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: The reader experiences the composed frame, not a counter. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: The reader experiences the composed frame, not a counter.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_23]
 [flag tutorial_done_23]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_5]
+[goto TutorialHub:topics_page_3]

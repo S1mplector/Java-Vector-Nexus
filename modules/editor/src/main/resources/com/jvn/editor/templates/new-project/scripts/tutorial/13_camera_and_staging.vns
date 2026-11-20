@@ -1,15 +1,15 @@
-# Frame the equipment
-@scenario office_lesson_13
+# Camera movement
+@scenario tutorial_lesson_13
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk point]
-pip: A slow push shifts attention toward the desk without moving Pip.
+[show pip guide point]
+pip: This example pans and zooms the background while Pip stays in place.
 [if !tutorial_still]
 timeline {
   parallel {
@@ -18,24 +18,27 @@ timeline {
   }
 }
 [endif]
-pip: Compare the two background keyframes in Puppeteer. Watch the far edge as the scale increases.
+pip: Compare the two keyframes in Puppeteer. Watch the far edge as the scale increases.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: Why pair a small pan with a zoom?
 > To keep the frame filled while the subject shifts. -> correct
 > To change the speaker name. -> retry
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: A zoom can cover the edge exposed by a pan. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: A zoom can cover the edge exposed by a pan.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_13]
 [flag tutorial_done_13]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_3]
+[goto TutorialHub:topics_page_2]

@@ -1,37 +1,39 @@
-# Visit the project board
-@scenario office_lesson_17
+# Opening a JES scene
+@scenario tutorial_lesson_17
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk present]
-pip: Our story can hand off to a JES scene for a visual interlude.
-pip: Inspect scripts/scenes/office_board.jes and preview it in the JES editor. Change the board panel color.
-> Visit the board -> visit
-> Try the checkpoint -> check
+[show pip guide present]
+pip: A VNS script can open a JES scene, then resume the lesson when you close it.
+pip: Open the example below. Press Enter or Esc to return. Its source is scripts/scenes/panel.jes.
+> Open the example scene -> visit
+> Review question -> check
+> Back to topics -> return_hub
 @label visit
-[jes push scripts/scenes/office_board.jes label check]
+[jes push scripts/scenes/panel.jes label check]
 @label check
 pip: Where would you edit a JES panel?
 > In the .jes scene that owns it. -> correct
 > In the speaker declaration. -> retry
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: VNS controls story flow. JES owns the entities in its scene. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: VNS controls story flow. JES owns the entities in its scene.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_17]
 [flag tutorial_done_17]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_4]
+[goto TutorialHub:topics_page_5]

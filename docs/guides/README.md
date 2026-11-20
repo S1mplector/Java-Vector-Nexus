@@ -29,6 +29,6 @@ rules and subsystem contracts live in the scripting and runtime references.
 - [Editor Documentation](../editor/README.md)
 - [Build And Release](../project-setup/release/README.md)
 
-- [First Shift with Pip](first-shift.md) — the built-in course across JVN systems
+- [JVN Tutorial](jvn-tutorial.md) — the built-in course across JVN systems
 
 - [Reading annotated examples and diagrams](reading-the-docs.md)

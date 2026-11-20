@@ -267,7 +267,7 @@ Default main-menu style points to the bundled background asset so new projects d
 
 The Tutorial Workspace adds 30 VNS lessons and authoring workshops under `scripts/tutorial/`. Each generated lesson
 is rendered from the same templates tested in the editor build, then parsed by the runtime VNS parser.
-Lesson 17 opens the interactive JES project board in `scripts/scenes/office_board.jes`. The final lesson asks you to build and package a three-beat scene.
+Lesson 17 opens the interactive JES panel in `scripts/scenes/panel.jes`. The final lesson asks you to build and package a three-beat scene.
 
 Tutorials are working scripts, but they are also source examples: keep the editor and running game
 side by side, change one command, and rerun. Start at `scripts/story/tutorial_hub.vns`, or run an
@@ -321,6 +321,6 @@ When enabled, creates:
 - If Git is enabled, the wizard writes managed blocks into `.gitignore` and `.gitattributes`.
 - Re-running Git setup from editor is safe; managed blocks are replaced in place.
 
-## First Shift
+## JVN Tutorial
 
-Choose **Tutorial Workspace** and start the project to meet Pip at the office. The project board opens 30 lessons. Each has an edit to try, a checkpoint, and a route back to its page. The opening also offers a short branching welcome story. Use **Progress and motion** on the board for a still version of the movement cues. For the full lesson list, see [First Shift](../../guides/first-shift.md).
+Choose **Tutorial Workspace** and **Start tutorial** to open the topic menu. Select any of the 30 examples, try an edit, and return to the topic list. Review questions are optional. See the [tutorial guide](../../guides/jvn-tutorial.md).

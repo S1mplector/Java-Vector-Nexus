@@ -1,33 +1,36 @@
-# Test a packaged game
-@scenario office_lesson_16
+# Testing a build
+@scenario tutorial_lesson_16
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk listen]
-pip: A project that opens in your editor can still be missing an asset on another machine.
-pip: Use the game build tools for a test export. Launch it from outside the project and play the welcome chime.
+[show pip guide listen]
+pip: An exported game must be able to find its own assets.
+pip: Export the project. Launch the build outside the project folder and play the sound effects example.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: Which check exercises the files your audience receives?
 > Play only from the editor. -> retry
 > Run the exported package. -> correct
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: A packaged run resolves assets through the shipped project. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: A packaged run resolves assets through the shipped project.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_16]
 [flag tutorial_done_16]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_4]
+[goto TutorialHub:topics_page_6]

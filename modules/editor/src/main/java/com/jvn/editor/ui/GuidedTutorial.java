@@ -10,21 +10,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
-/** Installs the First Shift course into a newly created project. */
-final class OfficeTutorial {
+/** Installs the JVN Tutorial course into a newly created project. */
+final class GuidedTutorial {
   private static final String ROOT = "/com/jvn/editor/templates/new-project/";
-  private OfficeTutorial() {}
+  private GuidedTutorial() {}
 
   static void installContent(Path root) throws IOException {
-    for (String file : List.of("prologue", "branch_demo", "epilogue")) {
-      copy(root, "first-shift/" + file + ".vns", "scripts/story/" + file + ".vns");
-    }
-    copy(root, "first-shift/characters.vns", "scripts/definitions/characters.vns");
+    copy(root, "guided-tutorial/characters.vns", "scripts/definitions/characters.vns");
     copy(root, "assets/tutorial/dusk.stagepreset", "scripts/definitions/dusk.stagepreset");
-    copy(root, "first-shift/office.jes", "scripts/scenes/office_board.jes");
+    copy(root, "guided-tutorial/panel.jes", "scripts/scenes/panel.jes");
     copy(root, "assets/tutorial/advance.png", "assets/ui/dialogue/ctc_marker.png");
     copy(root, "assets/tutorial/icon.png", "assets/icon.png");
-    for (String file : List.of("office.jpg", "title.jpg", "welcome.wav",
+    for (String file : List.of("window-room.jpg", "welcome.wav",
         "neutral.png", "wave.png", "curious.png", "point.png", "surprised.png", "listen.png", "cheer.png",
         "present.png", "notes.png",
         "stride-a-right.png", "stride-a-left.png", "stride-b-right.png", "stride-b-left.png",
@@ -43,26 +40,29 @@ final class OfficeTutorial {
 
   static void installPresentation(Path root, int height, boolean menus) throws IOException {
     Path dialogue = root.resolve("config/ui/dialogue.layout");
-    copy(root, "first-shift/dialogue.layout", "config/ui/dialogue.layout");
+    copy(root, "guided-tutorial/dialogue.layout", "config/ui/dialogue.layout");
     float scale = height / 720f;
     Files.writeString(dialogue, String.format(Locale.ROOT,
         "dialogueTextFontSize=%d%nnameTextFontSize=%d%nchoiceFontSize=%d%nchoiceHeight=%d%n",
         Math.max(16, Math.round(25 * scale)), Math.max(14, Math.round(19 * scale)),
         Math.max(14, Math.round(20 * scale)), Math.max(26, Math.round(39 * scale))),
         java.nio.file.StandardOpenOption.APPEND);
-    Files.writeString(root.resolve("config/locales/en.properties"), "\noffice.signoff=See you tomorrow, Pip.\n",
+    Files.writeString(root.resolve("config/locales/en.properties"), "\ntutorial.greeting=Hello from the English translation.\n",
         java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
     if (!menus) return;
-    copy(root, "first-shift/menu.theme", "config/menu/theme/menu.theme");
-    copy(root, "first-shift/main.layout", "config/menu/layouts/default.layout");
+    copy(root, "guided-tutorial/menu.theme", "config/menu/theme/menu.theme");
+    copy(root, "guided-tutorial/main.layout", "config/menu/layouts/default.layout");
     for (String style : List.of("default", "submenu", "settings", "slot")) {
-      copy(root, "first-shift/office.style", "config/menu/styles/" + style + ".style");
+      copy(root, "guided-tutorial/tutorial.style", "config/menu/styles/" + style + ".style");
     }
     Path screen = root.resolve("config/menu/menus/main.menu");
     Properties properties = new Properties();
     try (var reader = Files.newBufferedReader(screen)) { properties.load(reader); }
-    double rowY = 0.38;
-    for (String id : properties.getProperty("items").split(",")) {
+    var items = new java.util.ArrayList<>(List.of(properties.getProperty("items").split(",")));
+    items.remove("extras");
+    properties.setProperty("items", String.join(",", items));
+    double rowY = 0.36;
+    for (String id : items) {
       String prefix = "item." + id.trim() + ".bounds";
       properties.setProperty(prefix + "X", "0.10");
       properties.setProperty(prefix + "Y", String.format(Locale.ROOT, "%.3f", rowY));
@@ -70,22 +70,22 @@ final class OfficeTutorial {
       properties.setProperty(prefix + "Height", "0.061");
       rowY += 0.079;
     }
-    properties.setProperty("titleText", "First Shift");
-    properties.setProperty("subtitleText", "A JVN tutorial with Pip");
-    properties.setProperty("item.new_game.label", "Start your shift");
-    properties.setProperty("item.continue.label", "Resume a shift");
-    properties.setProperty("backgroundAsset", "assets/tutorial/title.jpg");
+    properties.setProperty("titleText", "JVN Tutorial");
+    properties.remove("subtitleText");
+    properties.setProperty("item.new_game.label", "Start tutorial");
+    properties.setProperty("item.continue.label", "Load game");
+    properties.setProperty("backgroundAsset", "assets/tutorial/window-room.jpg");
     properties.setProperty("hintsText", "Arrow keys to move   /   Enter to open");
     try (var writer = Files.newBufferedWriter(screen, StandardCharsets.UTF_8)) {
-      properties.store(writer, "First Shift");
+      properties.store(writer, "JVN Tutorial");
     }
   }
 
   private static void copy(Path root, String resource, String target) throws IOException {
     Path destination = root.resolve(target);
     Files.createDirectories(destination.getParent());
-    try (InputStream stream = OfficeTutorial.class.getResourceAsStream(ROOT + resource)) {
-      if (stream == null) throw new IOException("Missing First Shift resource " + resource);
+    try (InputStream stream = GuidedTutorial.class.getResourceAsStream(ROOT + resource)) {
+      if (stream == null) throw new IOException("Missing JVN Tutorial resource " + resource);
       Files.copy(stream, destination, StandardCopyOption.REPLACE_EXISTING);
     }
   }

@@ -1,37 +1,40 @@
-# Reuse a sound
-@scenario office_lesson_11
+# Subroutines
+@scenario tutorial_lesson_11
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk listen]
-pip: Two scenes use the same chime. Write it once and return to whoever called it.
+[show pip guide listen]
+pip: A subroutine lets several parts of a script use the same commands. This one plays a sound.
 [call chime]
-pip: Find the chime subroutine. Change its sound once and play the cue again.
+pip: Find the chime label. Change the sound there, then replay the call.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: Which command comes at the end of a local subroutine?
 > return -> correct
 > end -> retry
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: Return resumes the caller. End finishes the scenario. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: Return resumes the caller. End finishes the scenario.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_11]
 [flag tutorial_done_11]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_3]
+[goto TutorialHub:topics_page_1]
 @label chime
 [sfx assets/tutorial/welcome.wav]
 [return]

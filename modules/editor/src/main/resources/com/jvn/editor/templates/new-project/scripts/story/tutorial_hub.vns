@@ -1,98 +1,91 @@
-@scenario project_board
+@scenario tutorial_topics
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [if !tutorial_count]
 [set tutorial_count 0]
 [endif]
-[show pip desk wave]
-@label board
-pip: What would you like to work on today?
-> Opening and timing -> topics_page_1
-> Sound and direction -> topics_page_2
-> Scene craft -> topics_page_3
-> Production desk -> topics_page_4
-> Tools and lighting -> topics_page_5
-> Rehearsal and release -> topics_page_6
+[show pip guide wave]
+@label topics
+> Writing and branching -> topics_page_1
+> Characters and backgrounds -> topics_page_2
+> Animation, audio and lighting -> topics_page_3
+> Text and interfaces -> topics_page_4
+> Game systems -> topics_page_5
+> Testing and editor tools -> topics_page_6
 > Progress and motion -> options
 @label options
-pip: You have logged ${tutorial_count} of 30 lessons. You can revisit any of them.
+pip: You have completed ${tutorial_count} of 30 topics. You can replay any example.
 > Use reduced motion -> still
-> Play character and camera moves -> motion
-> Back to the board -> board
+> Enable movement -> motion
+> All topics -> topics
 @label still
 [flag tutorial_still]
 [set ui.reduceMotion true]
-[jump board]
+[jump topics]
 @label motion
 [set tutorial_still false]
 [set ui.reduceMotion false]
-[jump board]
+[jump topics]
 @label topics_page_1
-[bg office]
-[show pip desk point]
-pip: Start with a line of dialogue or a change of scene.
-> First words -> open_dialogue
-> Leave a beat -> open_narration
-> Read the room -> open_expressions
-> Set the stage -> open_images
-> Change scenes -> open_transitions
-> Back to the board -> board
+[bg room]
+[show pip guide point]
+> Dialogue -> open_dialogue
+> Pauses and timing -> open_narration
+> Variables and conditions -> open_variables
+> Choices and labels -> open_menus
+> Subroutines -> open_subroutines
+> All topics -> topics
 @label topics_page_2
-[bg office]
-[show pip desk point]
-pip: Pick something to put in motion.
-> Welcome chime -> open_audio
-> Remember a choice -> open_variables
-> Find a mark -> open_movement
-> Animate the office -> open_puppeteer
-> Offer a choice -> open_menus
-> Back to the board -> board
+[bg room]
+[show pip guide point]
+> Expressions -> open_expressions
+> Backgrounds -> open_images
+> Transitions -> open_transitions
+> Character movement -> open_movement
+> Camera movement -> open_camera
+> All topics -> topics
 @label topics_page_3
-[bg office]
-[show pip desk point]
-pip: Choose a scene to direct.
-> Reuse a sound -> open_subroutines
-> Find the first bad beat -> open_best_practices
-> Frame the equipment -> open_camera
-> Translate a cue -> open_localization
-> Design for the reader -> open_ui_layout
-> Back to the board -> board
+[bg room]
+[show pip guide point]
+> Sound effects -> open_audio
+> Puppeteer timelines -> open_puppeteer
+> Sprite effects -> open_plugins_and_line_boil
+> Particles -> open_particles_and_visualizers
+> Stage lighting -> open_layer_groups_and_lighting
+> All topics -> topics
 @label topics_page_4
-[bg office]
-[show pip desk point]
-pip: Which part of the game shall we test?
-> Test a packaged game -> open_testing_release
-> Visit the project board -> open_vns_jes
-> Try an image effect -> open_plugins_and_line_boil
-> Resume a saved shift -> open_saves_rollback_persistence
-> Change the voice -> open_dialogue_presentation
-> Back to the board -> board
+[bg room]
+[show pip guide point]
+> Localization -> open_localization
+> Dialogue layout -> open_ui_layout
+> Dialogue and narration -> open_dialogue_presentation
+> Reactive UI -> open_reactive_ui_and_facets
+> Phone messages -> open_phone_storytelling
+> All topics -> topics
 @label topics_page_5
-[bg office]
-[show pip desk point]
-pip: Choose a tool for the office.
-> Watch a live value -> open_reactive_ui_and_facets
-> Take a message -> open_phone_storytelling
-> Leave room for effects -> open_particles_and_visualizers
-> Light the night shift -> open_layer_groups_and_lighting
-> Build a desk widget -> open_jes_entities_input_widgets
-> Back to the board -> board
+[bg room]
+[show pip guide point]
+> Opening a JES scene -> open_vns_jes
+> Saving and rollback -> open_saves_rollback_persistence
+> Editing JES entities -> open_jes_entities_input_widgets
+> Collision shapes -> open_jes_worlds_physics_rpg
+> Combining systems -> open_java_extensions_and_capstone
+> All topics -> topics
 @label topics_page_6
-[bg office]
-[show pip desk point]
-pip: What needs attention before we ship?
-> Separate space from physics -> open_jes_worlds_physics_rpg
-> Find the right source -> open_editor_workflows
-> Budget the frame -> open_assets_and_performance
-> Play with less motion -> open_accessibility_and_controls
-> Sign off -> open_java_extensions_and_capstone
-> Back to the board -> board
+[bg room]
+[show pip guide point]
+> Debugging a scene -> open_best_practices
+> Testing a build -> open_testing_release
+> Previewing an edit -> open_editor_workflows
+> Rendering performance -> open_assets_and_performance
+> Reduced motion -> open_accessibility_and_controls
+> All topics -> topics
 @label open_dialogue
 [goto T01_Dialogue:start]
 @label open_narration

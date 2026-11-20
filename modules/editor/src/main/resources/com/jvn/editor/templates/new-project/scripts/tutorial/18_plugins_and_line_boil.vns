@@ -1,38 +1,41 @@
-# Try an image effect
-@scenario office_lesson_18
+# Sprite effects
+@scenario tutorial_lesson_18
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk point]
-pip: An image effect can make a drawing quiver. Compare the still and treated versions.
+[show pip guide point]
+pip: An image effect changes how the sprite is drawn. Compare this pose with the effect on and off.
 [if !tutorial_still]
 [set character.pip.imageEffect pikupiku.lineboil]
 [endif]
-pip: Hold this frame for a moment.
+pip: Look at the sprite outline.
 [set character.pip.imageEffect none]
-pip: Edit the optional image-effect ID below. Set it back to none when you finish comparing.
+pip: Find the image-effect ID in this script. Set it to none to restore the original sprite.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: What is the clean baseline for judging a sprite effect?
 > A different pose and new lighting. -> retry
 > The same pose with its effect off. -> correct
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: Keeping the input fixed isolates the change the effect makes. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: Keeping the input fixed isolates the change the effect makes.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_18]
 [flag tutorial_done_18]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_4]
+[goto TutorialHub:topics_page_3]

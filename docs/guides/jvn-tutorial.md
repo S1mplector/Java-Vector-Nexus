@@ -1,18 +1,14 @@
-# First Shift
+# JVN Tutorial
 
-Pip is getting the office ready for a new teammate. Run the project and choose **Start your shift**. You can help Pip leave a welcome message or open the project board to learn JVN.
+Choose **Start tutorial** and select a topic. Each example explains one feature, shows the relevant commands, and suggests an edit to try. Choose **Back to topics** to finish, or take the optional review question. Replaying a topic counts once.
 
-The board has six pages of five lessons. Each lesson includes an edit to try and a checkpoint. Finish a lesson to record it once. Progress and the camera-motion preference travel with your save.
+Use **Progress and motion** to check completion or toggle movement. Try **Character movement** to see Pip walk, **Puppeteer timelines** to edit a camera move, or **Stage lighting** to compare the room before and after applying a preset.
 
-* Open lesson 09 in Puppeteer to edit the office camera move.
-* Visit the JES project board in lesson 17. Press Enter or Escape to return to Pip.
-* In lesson 24, compare daylight with the late shift and edit the dusk preset in Lighting Studio.
+The topic menu is in `scripts/story/tutorial_hub.vns`. The examples are in `scripts/tutorial/` and the background and character poses are in `assets/tutorial/`.
 
-The nine character poses, six directional walking frames, and the office backdrop are in `assets/tutorial`. The project icon is `assets/icon.png`. Edit the conversation layout in `config/ui/dialogue.layout` and the title screen in `config/menu`.
+![Tutorial title and topic menu](../assets/images/tutorial/jvn-tutorial.webp)
 
-![The First Shift title screen and Pip welcoming the player at the office.](../assets/images/tutorial/first-shift.webp)
-
-[Watch Pip walk from the desk to the window and back in the game.](../assets/images/tutorial/pip-walk.mp4)
+[Watch the character movement example.](../assets/images/tutorial/pip-walk.mp4)
 
 ## Lesson references
 

@@ -1,15 +1,15 @@
-# Animate the office
-@scenario office_lesson_09
+# Puppeteer timelines
+@scenario tutorial_lesson_09
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk neutral]
-pip: Let’s move the camera gently toward the desk. Watch the window frame for movement.
+[show pip guide neutral]
+pip: A Puppeteer timeline can pan and scale the background. Watch the window frame.
 [if !tutorial_still]
 timeline {
   parallel {
@@ -18,24 +18,27 @@ timeline {
   }
 }
 [endif]
-pip: Open this timeline in Puppeteer. Change its end X and duration, apply the edit, then run it in the game.
+pip: Open this timeline in Puppeteer. Change the final X position or duration, apply it, and replay.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: Which target moves the current background?
 > bg_current -> correct
 > pip -> retry
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
-pip: The background has its own timeline target. Its lighting follows the plate. Give it another try.
+[show pip guide curious]
+pip: The background has its own timeline target. Its lighting follows the background. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
-pip: The background has its own timeline target. Its lighting follows the plate.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+[show pip guide cheer]
+pip: The background has its own timeline target. Its lighting follows the background.
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_09]
 [flag tutorial_done_09]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_2]
+[goto TutorialHub:topics_page_3]

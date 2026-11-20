@@ -1,18 +1,18 @@
-# Light the night shift
-@scenario office_lesson_24
+# Stage lighting
+@scenario tutorial_lesson_24
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk neutral]
-pip: The late shift uses a cooler room and a warm pool of light near the desk. Watch the wall and the desk.
+[show pip guide neutral]
+pip: A stage preset changes the lighting. Compare the window and wall before and after the preset is applied.
 [stage dusk]
 [if !tutorial_still]
-[move pip desk stride-a-right exprdur=0]
+[move pip guide stride-a-right exprdur=0]
 [move pip window ease_in_out_cubic 640]
 [wait 160]
 [move pip window stride-b-right exprdur=0]
@@ -23,38 +23,41 @@ pip: The late shift uses a cooler room and a warm pool of light near the desk. W
 [wait 160]
 [move pip window point exprdur=90]
 [endif]
-pip: Look at the edge of the desk.
+pip: The dusk preset is active. Notice the cooler wall and the warm light near the window.
 [stage clear]
 [if !tutorial_still]
 [move pip window stride-a-left exprdur=0]
-[move pip desk ease_out_cubic 510]
+[move pip guide ease_out_cubic 510]
 [wait 120]
-[move pip desk stride-b-left exprdur=0]
+[move pip guide stride-b-left exprdur=0]
 [wait 120]
-[move pip desk stride-c-left exprdur=0]
+[move pip guide stride-c-left exprdur=0]
 [wait 120]
-[move pip desk stride-b-left exprdur=0]
+[move pip guide stride-b-left exprdur=0]
 [wait 150]
-[move pip desk neutral exprdur=90]
+[move pip guide neutral exprdur=90]
 [endif]
-pip: Open the dusk preset in Lighting Studio. Change exposure, apply it, and compare the same beat in Puppeteer.
+pip: Open dusk.stagepreset in Lighting Studio, adjust exposure, and compare the result in Puppeteer.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: How do you restore the original room in VNS?
 > Hide Pip. -> retry
 > Use the stage clear command. -> correct
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: Clearing the active stage restores the ungraded background. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: Clearing the active stage restores the ungraded background.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_24]
 [flag tutorial_done_24]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_5]
+[goto TutorialHub:topics_page_3]

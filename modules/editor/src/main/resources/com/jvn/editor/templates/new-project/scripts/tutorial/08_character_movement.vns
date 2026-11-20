@@ -1,17 +1,17 @@
-# Find a mark
-@scenario office_lesson_08
+# Character movement
+@scenario tutorial_lesson_08
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk point]
-pip: I need to stand beside the window. Watch which part of the frame stays still.
+[show pip guide point]
+pip: A move command changes a character's position over time. Watch Pip move toward the window.
 [if !tutorial_still]
-[move pip desk stride-a-right exprdur=0]
+[move pip guide stride-a-right exprdur=0]
 [move pip window ease_in_out_cubic 740]
 [wait 180]
 [move pip window stride-b-right exprdur=0]
@@ -23,37 +23,40 @@ pip: I need to stand beside the window. Watch which part of the frame stays stil
 [move pip window neutral exprdur=90]
 [endif]
 [if tutorial_still]
-[show pip desk point]
-pip: The window is my second mark. In reduced motion I point to it from here.
+[show pip guide point]
+pip: In reduced motion, Pip points toward the window from the starting position.
 [else]
-pip: Here is my window mark. Notice where the desk sits in the frame.
+pip: Pip is at the second position. The background stayed still.
 [endif]
 [if !tutorial_still]
 [move pip window stride-a-left exprdur=0]
-[move pip desk ease_out_cubic 560]
+[move pip guide ease_out_cubic 560]
 [wait 140]
-[move pip desk stride-b-left exprdur=0]
+[move pip guide stride-b-left exprdur=0]
 [wait 140]
-[move pip desk stride-c-left exprdur=0]
+[move pip guide stride-c-left exprdur=0]
 [wait 140]
-[move pip desk stride-b-left exprdur=0]
+[move pip guide stride-b-left exprdur=0]
 [wait 140]
-[move pip desk point exprdur=90]
+[move pip guide point exprdur=90]
 [endif]
-pip: Back at the desk. Edit the window position or the duration of the first move, then replay.
+pip: Change the duration of the first move, then replay it.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: What lets an actor move without replacing the set?
 > A new stage preset. -> retry
 > A character position. -> correct
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: Character positions belong to the actor. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: Character positions belong to the actor.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_08]
 [flag tutorial_done_08]

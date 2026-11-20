@@ -1,29 +1,32 @@
-# Find the right source
-@scenario office_lesson_27
+# Previewing an edit
+@scenario tutorial_lesson_27
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk notes]
-pip: A producer points at a frame. You need to get from that moment to the line you can edit.
-pip: Open this VNS beat, launch Puppeteer at the cursor, then return to the source before changing the line.
+[show pip guide notes]
+pip: Puppeteer can preview the scene at the current script line.
+pip: Place the cursor on this line, open Puppeteer, then return to the source and change the pose.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: What should you keep aligned while checking an edit?
 > The cursor beat in the editor and the runtime scene state. -> correct
 > Only the file modification time. -> retry
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: A different scene state can make an unchanged edit look wrong. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: A different scene state can make an unchanged edit look wrong.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_27]
 [flag tutorial_done_27]

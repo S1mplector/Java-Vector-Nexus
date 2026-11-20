@@ -25,7 +25,7 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(FxToolkitExtension.class)
-class OfficeTutorialIntegrationTest {
+class GuidedTutorialIntegrationTest {
   @TempDir Path project;
 
   @Test void generatedCoursePlaysEachLessonAndCountsReplaysOnce() throws Exception {
@@ -36,7 +36,7 @@ class OfficeTutorialIntegrationTest {
         invoke(wizard, "applySelectedProjectTemplate", new Class<?>[]{});
         assertTrue(((CheckBox) field(wizard, "chkTutorialPack")).isSelected());
         ((CheckBox) field(wizard, "chkGitInit")).setSelected(false);
-        invoke(wizard, "createProjectStructure", new Class<?>[]{java.io.File.class, String.class}, project.toFile(), "First Shift");
+        invoke(wizard, "createProjectStructure", new Class<?>[]{java.io.File.class, String.class}, project.toFile(), "JVN Tutorial");
       } finally { wizard.close(); }
       return null;
     });
@@ -51,11 +51,18 @@ class OfficeTutorialIntegrationTest {
       assertEquals(0, bitmap.getRGB(0, 0) >>> 24, image);
       assertTrue((bitmap.getRGB(450, 450) >>> 24) >= 248, image);
     }
-    assertDoesNotThrow(() -> JesLoader.load(Files.readString(project.resolve("scripts/scenes/office_board.jes"))));
+    assertDoesNotThrow(() -> JesLoader.load(Files.readString(project.resolve("scripts/scenes/panel.jes"))));
     AssetCatalog.setDefaultManager(new FilesystemAssetManager(project));
     try {
       VnScenarioLoader loader = new VnScenarioLoader();
       String map = Files.readString(project.resolve("config/story/story.storymap"));
+      var manifest = new Properties();
+      try (var reader = Files.newBufferedReader(project.resolve("jvn.project"))) { manifest.load(reader); }
+      assertEquals("scripts/story/tutorial_hub.vns", manifest.getProperty("entryVns"));
+      for (String sample : List.of("prologue", "branch_demo", "epilogue")) {
+        assertFalse(map.contains("scripts/story/" + sample + ".vns"));
+        assertFalse(Files.exists(project.resolve("scripts/story/" + sample + ".vns")));
+      }
       for (boolean still : List.of(false, true)) {
         Map<String, Object> progress = new HashMap<>();
         progress.put("tutorial_still", still);
@@ -64,11 +71,15 @@ class OfficeTutorialIntegrationTest {
           assertTrue(map.contains("arc " + lesson.arc() + " script \"" + lesson.path() + "\""), lesson.arc());
           VnScene scene = open(loader, lesson.path().substring("scripts/".length()), progress);
           assertNotNull(scene.getScenario().getStagePreset("dusk"), lesson.path());
-          assertEquals("office", scene.getState().getCurrentBackgroundId(), lesson.path());
+          assertEquals("room", scene.getState().getCurrentBackgroundId(), lesson.path());
           if (!still && System.getenv("JVN_TUTORIAL_QA_DIR") != null) {
             scene.update(1000);
             capture(scene, "lesson-" + lesson.path().substring(lesson.path().lastIndexOf('/') + 1, lesson.path().lastIndexOf('/') + 3));
           }
+          goToChoice(scene, "check", lesson.path());
+          assertTrue(scene.getState().getCurrentNode().getChoices().stream()
+              .anyMatch(c -> "return_hub".equals(c.getTargetLabel())), "Review must be optional: " + lesson.path());
+          pick(scene, "check");
           goToChoice(scene, "retry", lesson.path());
           pick(scene, "retry");
           goToChoice(scene, "correct", lesson.path());
@@ -88,9 +99,6 @@ class OfficeTutorialIntegrationTest {
       pick(savedBoard, "still");
       assertEquals(true, savedBoard.getState().getVariables().get("tutorial_still"));
       assertEquals(7, savedBoard.getState().getVariables().get("tutorial_count"));
-      var intro = open(loader, "story/prologue.vns", Map.of());
-      for (int frame = 0; frame < 20; frame++) intro.update(40);
-      capture(intro, "opening");
       for (boolean still : List.of(false, true)) {
         var movement = open(loader, "tutorial/08_character_movement.vns", Map.of("tutorial_still", still));
         movement.update(800);
@@ -121,31 +129,33 @@ class OfficeTutorialIntegrationTest {
           capture(movement, "walk-end");
         }
       }
-      goToChoice(intro, "route_branch", "opening");
-      capture(intro, "choices");
-      for (String target : List.of("chime", "quiet")) {
-        var branch = open(loader, "story/branch_demo.vns", Map.of());
-        goToChoice(branch, target, "welcome");
-        pick(branch, target);
-        var end = open(loader, "story/epilogue.vns", branch.getState().getVariables());
-        assertEquals("dusk", end.getState().getActiveStagePresetId());
-        assertTrue(end.getState().getCurrentNode().getDialogue().getText().contains(target.equals("chime") ? "Two notes" : "keyboard"));
-      }
       var hub = open(loader, "story/tutorial_hub.vns", Map.of());
-      goToChoice(hub, "options", "board");
+      assertEquals(VnNodeType.CHOICE, hub.getState().getCurrentNode().getType(), "Start opens the topic list immediately");
+      assertEquals(7, hub.getState().getCurrentNode().getChoices().size());
       hub.update(700);
       capture(hub, "board");
+      Set<String> visitedTopics = new HashSet<>();
       for (int page = 1; page <= 6; page++) {
         var pageScene = open(loader, "story/tutorial_hub.vns", Map.of());
         goToChoice(pageScene, "topics_page_" + page, "board");
         pick(pageScene, "topics_page_" + page);
-        goToChoice(pageScene, "board", "page " + page);
-        assertEquals(6, pageScene.getState().getCurrentNode().getChoices().size());
+        goToChoice(pageScene, "topics", "page " + page);
+        var choices = pageScene.getState().getCurrentNode().getChoices();
+        assertEquals(6, choices.size());
+        for (var choice : choices) {
+          if ("topics".equals(choice.getTargetLabel())) continue;
+          assertTrue(visitedTopics.add(choice.getTargetLabel()));
+          var lesson = TutorialCatalog.LESSONS.stream().filter(l -> l.hubLabel().equals(choice.getTargetLabel()))
+              .findFirst().orElseThrow();
+          assertTrue(Files.readString(project.resolve(lesson.path())).contains("[goto TutorialHub:topics_page_" + page + "]"),
+              "Example should return to its own category: " + lesson.path());
+        }
       }
+      assertEquals(TutorialCatalog.LESSONS.size(), visitedTopics.size());
       FxToolkit.runFx(() -> {
-        var menu = new MainMenuScene(null, new VnSettings(), null, "story/prologue.vns", null);
-        assertEquals("First Shift", menu.getDisplayTitle());
-        assertEquals("Start your shift", menu.getDisplayItems()[0]);
+        var menu = new MainMenuScene(null, new VnSettings(), null, "story/tutorial_hub.vns", null);
+        assertEquals("JVN Tutorial", menu.getDisplayTitle());
+        assertEquals("Start tutorial", menu.getDisplayItems()[0]);
         menu.setSelected(0);
         Canvas canvas = new Canvas(1280, 720);
         var renderer = new MenuRenderer(canvas.getGraphicsContext2D(), MenuTheme.fromAssets());
@@ -235,7 +245,7 @@ class OfficeTutorialIntegrationTest {
           return (pixel & 0xFFFFFF) > 0x101010;
         });
       } while ((!ready || System.nanoTime() < readyAfter) && System.nanoTime() < limit);
-      assertTrue(ready, "Office failed to render at " + name);
+      assertTrue(ready, "Room failed to render at " + name);
       FxToolkit.runFx(() -> { save(canvas, name); return null; });
     } finally { FxToolkit.runFx(renderer::dispose); }
   }

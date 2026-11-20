@@ -1,29 +1,32 @@
-# Budget the frame
-@scenario office_lesson_28
+# Rendering performance
+@scenario tutorial_lesson_28
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk point]
-pip: A full-size background should not be recomputed just because a character blinks.
-pip: Play the lighting example in the engine repository. Compare cold rendering with repeated frames of the same pose.
+[show pip guide point]
+pip: When the lighting and source image stay the same, the renderer can reuse a shaded background.
+pip: Run scripts/examples/window-light/scene.vns from the engine repository. Compare its first frame with repeated renders.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: What makes a lighting cache safe to reuse?
 > The previous image has the same filename alone. -> retry
 > The source, rig and relevant dimensions still match. -> correct
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: The key has to represent the inputs that can change pixels. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: The key has to represent the inputs that can change pixels.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_28]
 [flag tutorial_done_28]

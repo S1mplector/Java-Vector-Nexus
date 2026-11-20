@@ -1,33 +1,36 @@
-# Resume a saved shift
-@scenario office_lesson_19
+# Saving and rollback
+@scenario tutorial_lesson_19
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk neutral]
-pip: Imagine a player saves just before the reveal. Their choice should have the same consequence after loading.
-pip: Save at the question, answer, reload, and take the other branch. Check the completion counter.
+[show pip guide neutral]
+pip: A save records the current scene and its variables. Rollback restores an earlier state.
+pip: Save at the next question. Answer it, reload, and try the other choice.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: Where should a story choice be stored?
 > In VN state so save and rollback can restore it. -> correct
 > Only in the displayed dialogue text. -> retry
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: A replay can reconstruct the story from its saved state. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: A replay can reconstruct the story from its saved state.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_19]
 [flag tutorial_done_19]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_4]
+[goto TutorialHub:topics_page_5]

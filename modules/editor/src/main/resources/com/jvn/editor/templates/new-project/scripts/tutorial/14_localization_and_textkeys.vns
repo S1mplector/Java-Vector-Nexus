@@ -1,34 +1,37 @@
-# Translate a cue
-@scenario office_lesson_14
+# Localization
+@scenario tutorial_lesson_14
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk neutral]
-pip: Our office says goodbye in two languages. Keep a stable key so the script can be reused.
-pip: i18n:office.signoff
-pip: That goodbye came from config/locales/en.properties. Edit office.signoff and replay this line.
+[show pip guide neutral]
+pip: Use a localization key to display a line in the selected language.
+pip: i18n:tutorial.greeting
+pip: That line uses tutorial.greeting in config/locales/en.properties. Edit its value and replay.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: What should stay the same when you rewrite a translation?
 > Every character of the translated sentence. -> retry
 > Its lookup key. -> correct
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: Stable keys let the same scene select a different localized line. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: Stable keys let the same scene select a different localized line.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_14]
 [flag tutorial_done_14]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_3]
+[goto TutorialHub:topics_page_4]

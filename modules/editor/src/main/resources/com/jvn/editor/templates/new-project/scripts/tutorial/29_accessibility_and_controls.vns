@@ -1,23 +1,24 @@
-# Play with less motion
-@scenario office_lesson_29
+# Reduced motion
+@scenario tutorial_lesson_29
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk neutral]
-pip: Some readers prefer an uninterrupted, still frame. A visual cue should remain understandable without motion.
-pip: Use reduced motion on the project board, then replay the camera and transition lessons.
+[show pip guide neutral]
+pip: Reduced motion keeps the same instructions and choices while omitting movement.
+pip: Change the motion setting in the topic menu, then replay Character movement or Camera movement.
 > Compare reduced motion -> preview_still
-> Try the checkpoint -> check
+> Review question -> check
+> Back to topics -> return_hub
 @label preview_still
 [if tutorial_still]
-pip: I stay at my desk and use a pointing pose. You can change this in Progress and motion on the board.
+pip: With reduced motion on, Pip uses a stationary pose.
 [else]
-[move pip desk stride-a-right exprdur=0]
+[move pip guide stride-a-right exprdur=0]
 [move pip window ease_in_out_cubic 620]
 [wait 150]
 [move pip window stride-b-right exprdur=0]
@@ -27,32 +28,33 @@ pip: I stay at my desk and use a pointing pose. You can change this in Progress 
 [move pip window stride-b-right exprdur=0]
 [wait 170]
 [move pip window point exprdur=90]
-pip: Watch the window mark. In reduced motion, I give this cue from my desk.
+pip: With motion on, Pip walks to the window and back.
 [move pip window stride-a-left exprdur=0]
-[move pip desk ease_out_cubic 500]
+[move pip guide ease_out_cubic 500]
 [wait 120]
-[move pip desk stride-b-left exprdur=0]
+[move pip guide stride-b-left exprdur=0]
 [wait 120]
-[move pip desk stride-c-left exprdur=0]
+[move pip guide stride-c-left exprdur=0]
 [wait 120]
-[move pip desk stride-b-left exprdur=0]
+[move pip guide stride-b-left exprdur=0]
 [wait 140]
-[move pip desk neutral exprdur=90]
+[move pip guide neutral exprdur=90]
 [endif]
 [jump check]
 @label check
 pip: What must remain available in still mode?
 > The same story and navigation. -> correct
 > Only the title screen. -> retry
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: Optional motion should never gate information or progress. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: Optional motion should never gate information or progress.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_29]
 [flag tutorial_done_29]

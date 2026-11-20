@@ -51,7 +51,7 @@ import javafx.stage.*;
 public class NewProjectWizard extends Stage {
   private enum ProjectTemplate {
     STARTER_STORY("Starter Story", "A lean starter project with a playable story flow, menu pack, and demo assets."),
-    TUTORIAL_WORKSPACE("Tutorial Workspace", "Pip’s First Shift. Thirty playable exercises, an illustrated office and a branching story."),
+    TUTORIAL_WORKSPACE("Tutorial Workspace", "Thirty topics with playable examples of scripting, animation, lighting, and game UI."),
     BLANK_SANDBOX("Blank Sandbox", "A stripped-down project for custom pipelines, no demo assets, and blank menu wiring."),
     CUSTOM("Custom", "A manual combination of modules and starter content.");
 
@@ -496,8 +496,8 @@ public class NewProjectWizard extends Stage {
     addStyleClasses(lblPreview, "new-project-wizard-summary");
 
     Label entryInfo = new Label(
-        "Entry script: " + ENTRY_SCRIPT_PATH + "\n" +
-        "Arc scripts: " + STORY_TUTORIAL_SCRIPT_PATH + ", " + STORY_BRANCH_SCRIPT_PATH + ", " + STORY_EPILOGUE_SCRIPT_PATH + "\n" +
+        "Starter entry: " + ENTRY_SCRIPT_PATH + "\n" +
+        "Tutorial entry: " + STORY_TUTORIAL_SCRIPT_PATH + "\n" +
         "Story map: " + STORY_MAP_PATH + "\n" +
         "Dialogue layout: " + DIALOGUE_LAYOUT_PATH + "\n" +
         "Menu registry: " + MENU_REGISTRY_PATH
@@ -595,7 +595,7 @@ public class NewProjectWizard extends Stage {
     addStyleClasses(intro, "new-project-wizard-summary");
 
     chkStarterStory = createCheckBox("Starter Story Flow", true);
-    chkTutorialPack = createCheckBox("First Shift tutorial with Pip (30 exercises)", false);
+    chkTutorialPack = createCheckBox("JVN tutorial with Pip (30 topics)", false);
     chkBundledDemoAssets = createCheckBox("Starter story artwork and music", true);
     chkTitleScreen = createCheckBox("Main Menu Profile Pack", true);
     chkSaveSystem = createCheckBox("Load/Save Menu Profiles", true);
@@ -621,6 +621,7 @@ public class NewProjectWizard extends Stage {
     lblBlankMenuWarning.setManaged(false);
 
     chkStarterStory.selectedProperty().addListener((o, ov, nv) -> updateDerivedFields());
+    chkStarterStory.disableProperty().bind(chkTutorialPack.selectedProperty());
     chkBundledDemoAssets.disableProperty().bind(chkTutorialPack.selectedProperty());
     chkTutorialPack.selectedProperty().addListener((o, ov, nv) -> updateDerivedFields());
     chkBundledDemoAssets.selectedProperty().addListener((o, ov, nv) -> updateDerivedFields());
@@ -880,7 +881,7 @@ public class NewProjectWizard extends Stage {
     syncingProjectTemplate = true;
     try {
       boolean blank = template == ProjectTemplate.BLANK_SANDBOX;
-      if (chkStarterStory != null) chkStarterStory.setSelected(template != ProjectTemplate.BLANK_SANDBOX);
+      if (chkStarterStory != null) chkStarterStory.setSelected(template == ProjectTemplate.STARTER_STORY);
       if (chkTutorialPack != null) chkTutorialPack.setSelected(template == ProjectTemplate.TUTORIAL_WORKSPACE);
       if (chkBundledDemoAssets != null) chkBundledDemoAssets.setSelected(template == ProjectTemplate.STARTER_STORY);
       if (chkTitleScreen != null) chkTitleScreen.setSelected(!blank);
@@ -921,7 +922,7 @@ public class NewProjectWizard extends Stage {
     if (starterStory && !tutorialPack && demoAssets && titleScreen && saveSystem && settingsMenu && historyBacklog && !blankMenus) {
       return ProjectTemplate.STARTER_STORY;
     }
-    if (starterStory && tutorialPack && titleScreen && saveSystem && settingsMenu && historyBacklog && !blankMenus) {
+    if (tutorialPack && titleScreen && saveSystem && settingsMenu && historyBacklog && !blankMenus) {
       return ProjectTemplate.TUTORIAL_WORKSPACE;
     }
     if (!starterStory && !tutorialPack && !demoAssets && !titleScreen && !saveSystem && !settingsMenu && !historyBacklog && blankMenus) {
@@ -937,7 +938,7 @@ public class NewProjectWizard extends Stage {
         : cmbProjectTemplate.getValue();
     String summary = switch (template) {
       case STARTER_STORY -> "Recommended default. Creates a playable story skeleton, demo assets, and ready-to-run menu profiles without the larger tutorial pack.";
-      case TUTORIAL_WORKSPACE -> "Creates the starter story plus the full 30-script guided tutorial pack and tutorial hub routes.";
+      case TUTORIAL_WORKSPACE -> "Opens a topic menu with 30 independent, editable examples.";
       case BLANK_SANDBOX -> "Creates the runtime/config skeleton with blank story scripts, no bundled assets, and blank menu wiring.";
       case CUSTOM -> "Custom combination detected. The wizard will scaffold exactly what your current checkboxes describe.";
     };
@@ -1190,10 +1191,14 @@ public class NewProjectWizard extends Stage {
     }
     sb.append("\u251c\u2500\u2500 scripts/\n");
     sb.append("\u2502   \u251c\u2500\u2500 story/\n");
-    sb.append("\u2502   \u2502   \u251c\u2500\u2500 prologue.vns\n");
-    sb.append("\u2502   \u2502   \u251c\u2500\u2500 tutorial_hub.vns\n");
-    sb.append("\u2502   \u2502   \u251c\u2500\u2500 branch_demo.vns\n");
-    sb.append("\u2502   \u2502   \u2514\u2500\u2500 epilogue.vns\n");
+    if (includeTutorialPack) {
+      sb.append("│   │   └── tutorial_hub.vns\n");
+    } else {
+      sb.append("\u2502   \u2502   \u251c\u2500\u2500 prologue.vns\n");
+      sb.append("\u2502   \u2502   \u251c\u2500\u2500 tutorial_hub.vns\n");
+      sb.append("\u2502   \u2502   \u251c\u2500\u2500 branch_demo.vns\n");
+      sb.append("\u2502   \u2502   \u2514\u2500\u2500 epilogue.vns\n");
+    }
     sb.append("\u2502   \u251c\u2500\u2500 tutorial/\n");
     if (includeTutorialPack) {
       for (int i = 0; i < TutorialCatalog.LESSONS.size(); i++) {
@@ -1207,7 +1212,7 @@ public class NewProjectWizard extends Stage {
     sb.append("\u2502   \u251c\u2500\u2500 routes/\n");
     sb.append("\u2502   \u251c\u2500\u2500 scenes/\n");
     if (includeStarterStory || includeTutorialPack) {
-      sb.append("\u2502   \u2502   \u2514\u2500\u2500 ").append(includeTutorialPack ? "office_board.jes\n" : "studio_tour.jes\n");
+      sb.append("\u2502   \u2502   \u2514\u2500\u2500 ").append(includeTutorialPack ? "panel.jes\n" : "studio_tour.jes\n");
     }
     sb.append("\u2502   \u251c\u2500\u2500 definitions/\n");
     sb.append("\u2502   \u2502   \u2514\u2500\u2500 characters.vns\n");
@@ -1216,7 +1221,7 @@ public class NewProjectWizard extends Stage {
     sb.append("\u251c\u2500\u2500 assets/\n");
     if (includeTutorialPack) {
       sb.append("│   ├── icon.png\n");
-      sb.append("│   └── tutorial/ (office, Pip, interface, welcome chime)\n");
+      sb.append("│   └── tutorial/ (window room, Pip, interface, sound)\n");
     } else if (includeDemoAssets) {
       sb.append("\u2502   \u2514\u2500\u2500 demo/\n");
       sb.append("\u2502       \u251c\u2500\u2500 backgrounds/\n");
@@ -1434,7 +1439,7 @@ public class NewProjectWizard extends Stage {
     }
     createDirectories(dir, includeMenuPack);
     if (includeTutorialPack) {
-      OfficeTutorial.installContent(dir.toPath());
+      GuidedTutorial.installContent(dir.toPath());
     } else {
       boolean layered = includeDemoAssets && copyBundledDemoAssets(dir);
       createCharactersScript(dir, includeDemoAssets, layered);
@@ -1459,7 +1464,7 @@ public class NewProjectWizard extends Stage {
       createBlankMenuScaffold(dir);
     }
 
-    if (includeTutorialPack) OfficeTutorial.installPresentation(dir.toPath(), getScaledResolution()[1], includeMenuPack);
+    if (includeTutorialPack) GuidedTutorial.installPresentation(dir.toPath(), getScaledResolution()[1], includeMenuPack);
 
     if (gitRequested) {
       GitVcsService vcs = new GitVcsService();
@@ -1496,7 +1501,7 @@ public class NewProjectWizard extends Stage {
     );
 
     if (includeTutorialPack) {
-      OfficeTutorial.copyGuide(dir.toPath());
+      GuidedTutorial.copyGuide(dir.toPath());
       return;
     }
     createReadme(
@@ -1789,7 +1794,8 @@ public class NewProjectWizard extends Stage {
     manifest.setProperty("author", txtAuthor.getText().trim());
     manifest.setProperty("id", VnStoragePaths.resolveGameId(manifest, dir.toPath()));
     manifest.setProperty("type", "vn");
-    manifest.setProperty("entryVns", ENTRY_SCRIPT_PATH);
+    boolean tutorialPack = chkTutorialPack != null && chkTutorialPack.isSelected();
+    manifest.setProperty("entryVns", tutorialPack ? STORY_TUTORIAL_SCRIPT_PATH : ENTRY_SCRIPT_PATH);
     manifest.setProperty("entryLabel", "start");
     manifest.setProperty(StoryMapPaths.MANIFEST_KEY, STORY_MAP_PATH);
     manifest.setProperty("settingsFile", SETTINGS_PATH);
@@ -1811,8 +1817,7 @@ public class NewProjectWizard extends Stage {
     manifest.setProperty("runtime.ui", cmbRuntimeUi == null || cmbRuntimeUi.getValue() == null ? "fx" : cmbRuntimeUi.getValue());
     manifest.setProperty("runtime.audio", cmbAudioBackend == null || cmbAudioBackend.getValue() == null ? "auto" : cmbAudioBackend.getValue());
     manifest.setProperty("runtime.locale", cmbLocale == null || cmbLocale.getValue() == null ? "en" : cmbLocale.getValue());
-    boolean starterStory = chkStarterStory != null && chkStarterStory.isSelected();
-    boolean tutorialPack = chkTutorialPack != null && chkTutorialPack.isSelected();
+    boolean starterStory = !tutorialPack && chkStarterStory != null && chkStarterStory.isSelected();
     manifest.setProperty("feature.sampleContent", Boolean.toString(starterStory || tutorialPack));
     manifest.setProperty("feature.starterStory", Boolean.toString(starterStory));
     manifest.setProperty("feature.tutorialPack", Boolean.toString(tutorialPack));
@@ -2021,14 +2026,8 @@ public class NewProjectWizard extends Stage {
     try (FileWriter fw = new FileWriter(new File(dir, STORY_MAP_PATH))) {
       fw.write("# Story Map for " + displayName + "\n");
       fw.write("# Author: " + txtAuthor.getText().trim() + "\n");
-      fw.write("# Starter arc workflow: prologue entry + route split + epilogue merge.\n\n");
-
-      fw.write("arc \"" + ARC_PROLOGUE + "\" script \"" + ENTRY_SCRIPT_PATH + "\" entry \"start\" cluster \"Main\" priority 10 color \"#84c7ff\" tags \"entry,main\" at 40,120\n");
-      fw.write("arc \"" + ARC_TUTORIAL_HUB + "\" script \"" + STORY_TUTORIAL_SCRIPT_PATH + "\" entry \"start\" cluster \"Main\" priority 8 color \"#93ddaa\" tags \"tutorial,main\" at 380,40\n");
-      fw.write("arc \"" + ARC_BRANCH_DEMO + "\" script \"" + STORY_BRANCH_SCRIPT_PATH + "\" entry \"start\" cluster \"Routes\" priority 7 color \"#f3b27a\" tags \"branch,route\" at 380,220\n");
-      fw.write("arc \"" + ARC_EPILOGUE + "\" script \"" + STORY_EPILOGUE_SCRIPT_PATH + "\" entry \"start\" cluster \"Main\" priority 9 color \"#d6a8ee\" tags \"ending,main\" at 760,120\n\n");
-
       if (includeTutorialPack) {
+        fw.write("arc \"" + ARC_TUTORIAL_HUB + "\" script \"" + STORY_TUTORIAL_SCRIPT_PATH + "\" entry \"start\" cluster \"Main\" priority 10 color \"#93ddaa\" tags \"entry,tutorial\" at 380,40\n");
         int index = 0;
         for (TutorialCatalog.Lesson lesson : TutorialCatalog.LESSONS) {
           int x = 760 + (index % 5) * 240, y = -180 + (index / 5) * 200;
@@ -2036,17 +2035,21 @@ public class NewProjectWizard extends Stage {
               + "\" entry \"start\" cluster \"Tutorial\" priority 6 color \"#b5a0d6\" tags \"tutorial\" at " + x + "," + y + "\n");
           index++;
         }
+        for (TutorialCatalog.Lesson lesson : TutorialCatalog.LESSONS) {
+          fw.write("link " + ARC_TUTORIAL_HUB + ":" + lesson.hubLabel() + " -> " + lesson.arc() + ":start\n");
+        }
+        return;
       }
+      fw.write("# Starter arc workflow: prologue entry + route split + epilogue merge.\n\n");
+
+      fw.write("arc \"" + ARC_PROLOGUE + "\" script \"" + ENTRY_SCRIPT_PATH + "\" entry \"start\" cluster \"Main\" priority 10 color \"#84c7ff\" tags \"entry,main\" at 40,120\n");
+      fw.write("arc \"" + ARC_TUTORIAL_HUB + "\" script \"" + STORY_TUTORIAL_SCRIPT_PATH + "\" entry \"start\" cluster \"Main\" priority 8 color \"#93ddaa\" tags \"tutorial,main\" at 380,40\n");
+      fw.write("arc \"" + ARC_BRANCH_DEMO + "\" script \"" + STORY_BRANCH_SCRIPT_PATH + "\" entry \"start\" cluster \"Routes\" priority 7 color \"#f3b27a\" tags \"branch,route\" at 380,220\n");
+      fw.write("arc \"" + ARC_EPILOGUE + "\" script \"" + STORY_EPILOGUE_SCRIPT_PATH + "\" entry \"start\" cluster \"Main\" priority 9 color \"#d6a8ee\" tags \"ending,main\" at 760,120\n\n");
 
       fw.write("link " + ARC_PROLOGUE + ":route_tutorial -> " + ARC_TUTORIAL_HUB + ":start\n");
       fw.write("link " + ARC_PROLOGUE + ":route_branch -> " + ARC_BRANCH_DEMO + ":start\n");
       fw.write("link " + ARC_BRANCH_DEMO + ":end -> " + ARC_EPILOGUE + ":start\n");
-
-      if (includeTutorialPack) {
-        for (TutorialCatalog.Lesson lesson : TutorialCatalog.LESSONS) {
-          fw.write("link " + ARC_TUTORIAL_HUB + ":" + lesson.hubLabel() + " -> " + lesson.arc() + ":start\n");
-        }
-      }
     }
   }
 

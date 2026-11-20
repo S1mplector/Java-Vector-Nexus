@@ -1,33 +1,36 @@
-# Separate space from physics
-@scenario office_lesson_26
+# Collision shapes
+@scenario tutorial_lesson_26
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk listen]
-pip: A drawing of a desk can look solid while a moving prop passes straight through it.
-pip: Open the JES scene in the editor. Plan a collider for the desk and compare it to its visual bounds.
+[show pip guide listen]
+pip: A visible shape can have different bounds from its collision shape.
+pip: In the JES editor, use the example panel as a reference. Compare its drawn bounds with the collision shape you would give it.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: What determines whether two physical objects can collide?
 > Their displayed colors. -> retry
 > Their physics bodies and collision shapes. -> correct
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: Visual bounds and collision shapes serve different purposes. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: Visual bounds and collision shapes serve different purposes.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_26]
 [flag tutorial_done_26]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_6]
+[goto TutorialHub:topics_page_5]

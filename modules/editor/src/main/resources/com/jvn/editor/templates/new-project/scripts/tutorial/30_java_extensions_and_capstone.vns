@@ -1,33 +1,36 @@
-# Sign off
-@scenario office_lesson_30
+# Combining systems
+@scenario tutorial_lesson_30
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk wave]
-pip: One final rehearsal. Make a choice change state, change a pose, and light the last beat before signing off.
-pip: Build your own three-beat VNS scene and play both routes in the runtime. Use the package tools to give a friend a build.
+[show pip guide wave]
+pip: Combine three features in a small example: a choice, a saved variable, and a change in lighting.
+pip: Write the scene, export it, and play both branches from a fresh start.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
-pip: When is this rehearsal ready to share?
+pip: Which test checks both branches in the finished build?
 > The first frame looks right in the editor. -> retry
 > Both routes work from a fresh start in the exported build. -> correct
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
-pip: A finished rehearsal checks the route, the rendered result and the installed experience. Give it another try.
+[show pip guide curious]
+pip: Testing both branches checks the exported scene and its assets. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
-pip: A finished rehearsal checks the route, the rendered result and the installed experience.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+[show pip guide cheer]
+pip: Testing both branches checks the exported scene and its assets.
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_30]
 [flag tutorial_done_30]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_6]
+[goto TutorialHub:topics_page_5]

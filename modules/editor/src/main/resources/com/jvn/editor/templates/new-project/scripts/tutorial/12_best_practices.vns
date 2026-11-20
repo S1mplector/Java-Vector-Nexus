@@ -1,33 +1,36 @@
-# Find the first bad beat
-@scenario office_lesson_12
+# Debugging a scene
+@scenario tutorial_lesson_12
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk curious]
-pip: Someone reported a broken pose. Find the exact line so your teammate can reproduce it.
-pip: Change a single pose on one line. Run from that line, then run through it from the opening.
+[show pip guide curious]
+pip: To reproduce a scene bug, record the script, the line, and the choices that led there.
+pip: Change one pose. Compare starting at that line with playing through it from the beginning.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
-pip: Which report makes a timing bug reproducible?
+pip: Which report makes a scene bug reproducible?
 > A screenshot of the project folder. -> retry
 > The script, source line and exact preceding choice. -> correct
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: The same state and cursor give the reviewer a repeatable starting point. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: The same state and cursor give the reviewer a repeatable starting point.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_12]
 [flag tutorial_done_12]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_3]
+[goto TutorialHub:topics_page_6]

@@ -1,7 +1,7 @@
 # JVN Documentation
 
 > [!TIP]
-> New to JVN? Start with [First Shift with Pip](guides/first-shift.md). Looking up one behavior? Use the [task index](INDEX.md). The [reading guide](guides/reading-the-docs.md) explains diagrams, annotations, and runnable examples.
+> New to JVN? Start with [JVN Tutorial](guides/jvn-tutorial.md). Looking up one behavior? Use the [task index](INDEX.md). The [reading guide](guides/reading-the-docs.md) explains diagrams, annotations, and runnable examples.
 
 ```mermaid
 flowchart LR

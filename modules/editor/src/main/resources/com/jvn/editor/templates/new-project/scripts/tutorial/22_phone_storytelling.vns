@@ -1,45 +1,47 @@
-# Take a message
-@scenario office_lesson_22
+# Phone messages
+@scenario tutorial_lesson_22
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk present]
-pip: A teammate texts the office. The thread has an identity separate from its display title.
-pip: Open config/phone/phone.properties. Rename the chat and keep its ID, then inspect the phone preview.
-> Read the office chat -> messages
-> Try the checkpoint -> check
+[show pip guide present]
+pip: A phone message uses a chat ID and a sender ID. The title is what the player sees.
+pip: Open the sample conversation. Its contacts and display names are in config/phone/phone.properties.
+> Open the sample chat -> messages
+> Review question -> check
+> Back to topics -> return_hub
 @label messages
 [phone contact pip name="Pip"]
-[phone thread office title="Office chat" participants=player,pip]
-[if !office_welcome_sent]
-[phone message office pip "I left a spare key in your desk. See you tomorrow!" time=17:10]
-[flag office_welcome_sent]
+[phone thread example title="Example chat" participants=player,pip]
+[if !tutorial_message_sent]
+[phone message example pip "This is a sample message from Pip." time=17:10]
+[flag tutorial_message_sent]
 [endif]
-[phone open chat office]
-pip: Close the chat with its back control when you have read the note.
+[phone open chat example]
+pip: Use the back control to close the chat and return to this lesson.
 [phone close]
 @label check
 pip: Which identifier should incoming messages target?
 > Whatever title is currently displayed. -> retry
 > The stable chat ID. -> correct
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: The ID routes the message even after the title is translated. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: The ID routes the message even after the title is translated.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_22]
 [flag tutorial_done_22]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_5]
+[goto TutorialHub:topics_page_4]

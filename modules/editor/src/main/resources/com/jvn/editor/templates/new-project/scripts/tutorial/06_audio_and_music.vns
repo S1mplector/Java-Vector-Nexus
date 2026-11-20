@@ -1,34 +1,37 @@
-# Welcome chime
-@scenario office_lesson_06
+# Sound effects
+@scenario tutorial_lesson_06
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk present]
-pip: Two notes tell the player the game is ready. Listen once.
+[show pip guide present]
+pip: The sfx command plays a sound once. Listen to this example.
 [sfx assets/tutorial/welcome.wav]
-pip: Find the WAV in assets/tutorial. Trigger it again from the replay choice after the checkpoint.
+pip: Find welcome.wav in assets/tutorial. Replay the example to hear it again.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
-pip: Which command fits a short welcome chime?
+pip: Which command fits a short sound effect?
 > bgm -> retry
 > sfx -> correct
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: A one-shot sound can finish while the scene continues. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: A one-shot sound can finish while the scene continues.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_06]
 [flag tutorial_done_06]
 [inc tutorial_count]
 [endif]
 [stage clear]
-[goto TutorialHub:topics_page_2]
+[goto TutorialHub:topics_page_3]

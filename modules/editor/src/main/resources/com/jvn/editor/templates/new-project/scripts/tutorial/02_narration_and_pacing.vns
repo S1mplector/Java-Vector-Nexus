@@ -1,31 +1,34 @@
-# Leave a beat
-@scenario office_lesson_02
+# Pauses and timing
+@scenario tutorial_lesson_02
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk curious]
-pip: Silence can make a tiny sound feel enormous. Count the beat before the welcome chime.
+[show pip guide curious]
+pip: A wait pauses the script. Listen for the short gap before the sound plays.
 [wait 320]
 [sfx assets/tutorial/welcome.wav]
-pip: Change the wait from 320 to 800 milliseconds. Listen to the gap, then put it back.
+pip: Change the wait from 320 to 800 milliseconds, then listen again.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: Which change delays the chime without slowing the words?
 > Lower the text speed. -> retry
 > Increase the wait before the sound. -> correct
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: A wait holds the scene. Text speed controls how the current line appears. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: A wait holds the scene. Text speed controls how the current line appears.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_02]
 [flag tutorial_done_02]

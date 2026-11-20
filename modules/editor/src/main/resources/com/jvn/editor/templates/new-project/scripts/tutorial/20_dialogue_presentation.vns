@@ -1,32 +1,35 @@
-# Change the voice
-@scenario office_lesson_20
+# Dialogue and narration
+@scenario tutorial_lesson_20
 @include /definitions/characters.vns
 @label start
 [mode dialogue standard]
 [set ui.dialogueUi project]
-[bg office]
+[bg room]
 [char pip global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip desk wave]
-pip: A spoken line and a note from a teammate can use different presentation modes.
+[show pip guide wave]
+pip: Standard dialogue shows a speaker and a text box. The next line uses NVL, a page-style layout.
 [mode dialogue nvl]
-narrator: The last person in the office left a note by the keyboard.
+narrator: This line is narration. It appears in the NVL layout.
 [mode dialogue standard]
-pip: Compare a narrated beat and a spoken beat. Restore standard dialogue before leaving.
+pip: This line uses standard dialogue again. Find both mode commands in the script.
+> Review question -> check
+> Back to topics -> return_hub
 @label check
 pip: Why restore the dialogue mode at the boundary?
 > So the character art is deleted. -> retry
 > So the next scene opens with its intended layout. -> correct
+> Back to topics -> return_hub
 @label retry
-[show pip desk curious]
+[show pip guide curious]
 pip: Presentation can persist across scene boundaries. Give it another try.
 [jump check]
 @label correct
-[show pip desk cheer]
+[show pip guide cheer]
 pip: Presentation can persist across scene boundaries.
-> Finish this lesson -> return_hub
-> Try the lesson again -> start
+> Back to topics -> return_hub
+> Replay example -> start
 @label return_hub
 [if !tutorial_done_20]
 [flag tutorial_done_20]
