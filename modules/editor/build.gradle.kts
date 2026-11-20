@@ -226,6 +226,10 @@ fun JavaExec.forwardHubLaunchSystemProps() {
 // Ensure JavaFX modules are available at runtime when launching via :editor:run
 // This avoids the "JavaFX runtime components are missing" error.
 tasks.named<JavaExec>("run") {
+  if (System.getProperty("os.name").startsWith("Mac")) {
+    val icon = layout.projectDirectory.file("src/main/resources/com/jvn/editor/images/jvn_editor_icon.png").asFile
+    jvmArgs("-Xdock:name=JVN Editor", "-Xdock:icon=${icon.absolutePath}")
+  }
   configureJavaFxRuntime()
   configureFlightRecordingForLaunch()
   configureManagedJvmLaunchSettings()

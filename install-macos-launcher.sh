@@ -85,7 +85,7 @@ xml_escape() {
 
 copy_svg_icon() {
   local icon_file="$SUPPORT_DIR/jvn-engine-hub.svg"
-  local source_icon="$SCRIPT_DIR/docs/assets/images/jvn_app_icon.svg"
+  local source_icon="$SCRIPT_DIR/modules/hub/src/main/resources/com/jvn/hub/images/jvn_hub_icon.svg"
   if [[ ! -f "$source_icon" ]]; then
     die "JVN SVG app icon was not found at: $source_icon"
   fi

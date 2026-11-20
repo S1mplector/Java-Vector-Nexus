@@ -1,88 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-     width="512" height="512" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
   <title id="title">JVN Engine Hub</title>
-  <desc id="desc">A machined graphite block with a silver JVN monogram and an amber band wrapping around its three-dimensional body.</desc>
+  <desc id="desc">A silver desktop compass with a deep petrol-blue glass dial and an amber north needle.</desc>
   <defs>
-    <linearGradient id="top" x1=".17" y1="0" x2=".85" y2=".95">
-      <stop stop-color="#f2fbff"/>
-      <stop offset=".28" stop-color="#a7b9c6"/>
-      <stop offset=".64" stop-color="#708796"/>
-      <stop offset="1" stop-color="#455663"/>
+    <linearGradient id="case" x1="0" y1="0" x2=".78" y2="1">
+      <stop stop-color="#f9ffff"/><stop offset=".21" stop-color="#d6e7ef"/>
+      <stop offset=".46" stop-color="#7894a5"/><stop offset=".51" stop-color="#526c80"/>
+      <stop offset=".79" stop-color="#a7bfcc"/><stop offset=".90" stop-color="#ecf9fc"/><stop offset="1" stop-color="#8094a5"/>
     </linearGradient>
-    <linearGradient id="face" x1=".12" y1="0" x2=".69" y2="1">
-      <stop stop-color="#586673"/>
-      <stop offset=".42" stop-color="#37434e"/>
-      <stop offset=".64" stop-color="#26303c"/>
-      <stop offset="1" stop-color="#141e29"/>
+    <radialGradient id="dial" cx=".32" cy=".23" r=".86">
+      <stop stop-color="#338da0"/><stop offset=".42" stop-color="#146173"/>
+      <stop offset=".82" stop-color="#103a4e"/><stop offset="1" stop-color="#09293d"/>
+    </radialGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2=".4" y2="1">
+      <stop stop-color="#efffff" stop-opacity=".53"/><stop offset=".56" stop-color="#b4f3ff" stop-opacity=".19"/><stop offset="1" stop-color="#a3dfe9" stop-opacity=".07"/>
     </linearGradient>
-    <linearGradient id="side" x1=".85" y1="0" x2=".14" y2=".95">
-      <stop stop-color="#798792"/>
-      <stop offset=".29" stop-color="#495760"/>
-      <stop offset=".66" stop-color="#2a343d"/>
-      <stop offset="1" stop-color="#17202a"/>
+    <linearGradient id="gold" x1="0" y1="1" x2="1" y2="0">
+      <stop stop-color="#ee8b24"/><stop offset=".57" stop-color="#ffc150"/><stop offset="1" stop-color="#fff2b7"/>
     </linearGradient>
-    <linearGradient id="reflection" x1=".10" y1="0" x2=".63" y2="1">
-      <stop stop-color="#e7f7ff" stop-opacity=".52"/>
-      <stop offset=".62" stop-color="#cde3ef" stop-opacity=".13"/>
-      <stop offset="1" stop-color="#cde3ef" stop-opacity="0"/>
+    <linearGradient id="pin" x1=".12" y1=".03" x2=".8" y2=".95">
+      <stop stop-color="white"/><stop offset=".42" stop-color="#dae8ee"/><stop offset=".55" stop-color="#849baa"/><stop offset="1" stop-color="#d1e4ee"/>
     </linearGradient>
-    <linearGradient id="edge" x1=".06" y1="0" x2=".88" y2=".85">
-      <stop stop-color="#effaff"/>
-      <stop offset=".5" stop-color="#b5c8d7"/>
-      <stop offset="1" stop-color="#728694" stop-opacity=".35"/>
-    </linearGradient>
-    <linearGradient id="amber" x1="9" y1="91" x2="107" y2="65" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#993d1e"/>
-      <stop offset=".35" stop-color="#e67b27"/>
-      <stop offset=".76" stop-color="#ffbc50"/>
-      <stop offset="1" stop-color="#ffe0a1"/>
-    </linearGradient>
-    <linearGradient id="amberSide" x1=".84" y1=".15" x2=".21" y2="1">
-      <stop stop-color="#fff0bc"/>
-      <stop offset=".59" stop-color="#f8b24a"/>
-      <stop offset="1" stop-color="#be531c"/>
-    </linearGradient>
-    <linearGradient id="silver" x1="0" y1="0" x2="0" y2="31" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#fff"/>
-      <stop offset=".44" stop-color="#f0f8fd"/>
-      <stop offset=".53" stop-color="#c9d7e0"/>
-      <stop offset=".79" stop-color="#a4b4c1"/>
-      <stop offset="1" stop-color="#e4eef5"/>
-    </linearGradient>
-    <filter id="shadow" x="-.18" y="-1" width="1.36" height="3">
-      <feGaussianBlur stdDeviation="3.4"/>
-    </filter>
-    <path id="jvn" d="M18 0h9v19c0 8-4 12-12 12H9c-6 0-9-4-9-10v-3h9v3c0 2 1 3 3 3h2c3 0 4-1 4-5Zm12 0h9l8.6 20L56 0h9L52 31h-9Zm39 0h8l15 18V0h8v31h-8L77 13v18h-8Z"/>
+    <radialGradient id="shadow"><stop stop-color="#101b2b" stop-opacity=".42"/><stop offset="1" stop-color="#101b2b" stop-opacity="0"/></radialGradient>
   </defs>
-
-  <ellipse cx="65" cy="111" rx="44" ry="6" fill="#12171e" opacity=".48" filter="url(#shadow)"/>
-
-  <path d="m10 39 8-9 22-17 57-5 16 9 7 11-1 60-5 10-23 17-66 5-12-8L7 99Z"
-        fill="url(#side)" stroke="#1d2a36" stroke-width="1.5" stroke-linejoin="round"/>
-  <path d="m10 39 8-9 22-17 57-5 16 9 7 11-21 17-15-10-63 5Z"
-        fill="url(#top)" stroke="#4b5b68" stroke-width="1" stroke-linejoin="round"/>
-  <path d="m18 32 23-17 56-5 15 8m7 10-20 17"
-        fill="none" stroke="url(#edge)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- Machined recesses on the top plane add volume at larger sizes. -->
-  <path d="m43 18 50-4 7 4-50 5Zm-9 7 50-5 7 4-51 5Z" fill="#354550"/>
-  <path d="m48 22 51-5m-60 11 51-5" fill="none" stroke="#e0eef5" stroke-opacity=".7" stroke-width="1"/>
-  <path d="m97 44 21-16-1 59-4 9-23 17 5-15Z" fill="#19232b" opacity=".3"/>
-
-  <path d="m10 39 9-7 64-6 12 6 6 11-1 58-9 14-66 5-12-8L7 99Z"
-        fill="url(#face)" stroke="#1e2a36" stroke-width="1.5" stroke-linejoin="round"/>
-  <path d="m12 41 8-7 63-6 11 6 5 9v9C81 49 49 50 10 64Z" fill="url(#reflection)"/>
-  <path d="m12 42 8-7 63-6 10 5 6 9m-85 63 6 6 7 4 62-5 8-10"
-        fill="none" stroke="url(#edge)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-
-  <!-- A warm band wraps the side at the same depth as the front. -->
-  <path d="M7 84c24-9 61-11 93-22l20-16v10l-20 17C68 86 30 86 7 96Z" fill="#171d24" opacity=".84"/>
-  <path d="M7 84c24-9 61-11 93-22v8C68 82 30 84 7 92Z" fill="url(#amber)"/>
-  <path d="m100 62 20-16v8l-20 16z" fill="url(#amberSide)"/>
-  <path d="M10 85c25-9 59-10 88-21l20-16" fill="none" stroke="#ffe2ae" stroke-opacity=".78" stroke-width="1"/>
-
-  <g transform="translate(16 51) rotate(-5) scale(.78)">
-    <use xlink:href="#jvn" y="3.8" fill="#18212c" stroke="#18212c" stroke-width="1.8" opacity=".92"/>
-    <use xlink:href="#jvn" y="1.55" fill="#5f7180"/>
-    <use xlink:href="#jvn" fill="url(#silver)" stroke="#f1faff" stroke-width=".6" stroke-linejoin="round"/>
+  <ellipse cx="65" cy="116" rx="48" ry="8" fill="url(#shadow)"/>
+  <!-- Lower edge of the cast case and its polished concentric bezel. -->
+  <circle cx="64" cy="67" r="54" fill="#354c5c" stroke="#203847" stroke-width="1.5"/>
+  <circle cx="64" cy="62.5" r="54" fill="url(#case)" stroke="#425b6c" stroke-width="1.4"/>
+  <path d="M13 59A51.5 51.5 0 0 1 91 18" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="1.5" stroke-linecap="round"/>
+  <circle cx="64" cy="62.5" r="46" fill="#344b58" stroke="#ecfaff" stroke-width="1.35"/>
+  <circle cx="64" cy="62.5" r="43.5" fill="url(#dial)" stroke="#092c3c" stroke-width="1.4"/>
+  <circle cx="64" cy="62.5" r="35" fill="none" stroke="#c8f5ee" stroke-opacity=".20" stroke-width=".8"/>
+  <g transform="translate(64 62.5)" stroke="#e1f8f6" stroke-linecap="round" fill="none">
+    <path d="M0-39v6m39 33h-6M0 39v-6m-39-33h6" stroke-width="2.6"/>
+    <path d="M-19.5-33.8l1.5 2.6m37.5-2.6L18-31.2M33.8-19.5L31.2-18m2.6 37.5L31.2 18M19.5 33.8L18 31.2m-37.5 2.6 1.5-2.6m-15.8-11.7 2.6-1.5m-2.6-37.5 2.6 1.5" stroke-width="1.4" opacity=".82"/>
   </g>
+  <path d="M22.5 53a42.3 42.3 0 0 1 80-7.3C75 42.1 53.3 48 21.1 68.3a42 42 0 0 1 1.4-15.3Z" fill="url(#glass)"/>
+  <path transform="translate(71 76) scale(.19)" fill="#cde7eb"
+        d="M18 0h9v19c0 8-4 12-12 12H9c-6 0-9-4-9-10v-3h9v3c0 2 1 3 3 3h2c3 0 4-1 4-5Zm12 0h9l8.6 20L56 0h9L52 31h-9Zm39 0h8l15 18V0h8v31h-8L77 13v18h-8Z"/>
+  <!-- The two folded triangular faces keep the needle legible at shortcut size. -->
+  <g transform="rotate(36 64 62.5)" stroke-linejoin="round">
+    <path d="m65 22 12 43-12 40-12-40z" fill="#031f30" opacity=".48" transform="translate(1.5 2.5)"/>
+    <path d="m64 20 12 42.5-12 42-12-42z" fill="#b9d4df" stroke="#254757" stroke-width="1.5"/>
+    <path d="M64 20 52 62.5 64 59Z" fill="#ce7523"/>
+    <path d="m64 20 12 42.5L64 67l-2-5z" fill="url(#gold)"/>
+    <path d="M64 104.5 52 62.5 64 59Z" fill="#edf8fa"/>
+    <path d="m64 104.5 12-42L64 67Z" fill="#91adbc"/>
+    <path d="M53.3 60.4 64 21.8l10.7 38.1" fill="none" stroke="#fff1bd" stroke-width="1.05"/>
+  </g>
+  <circle cx="64" cy="63.8" r="7.3" fill="#152c3b" opacity=".6"/>
+  <circle cx="64" cy="62.5" r="6.5" fill="url(#pin)" stroke="#375364" stroke-width="1.3"/>
+  <circle cx="64" cy="62.5" r="2.7" fill="#274659" stroke="#e4f4f6" stroke-width=".8"/>
 </svg>

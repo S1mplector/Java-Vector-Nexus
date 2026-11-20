@@ -332,7 +332,11 @@ declare -a JAVA_ARGS=("-Djvn.version=$VERSION" "${MODE_PROPS[@]}")
 HARDWARE_PRISM_ORDER="es2,sw"
 case "$(uname -s 2>/dev/null)" in
   MINGW*|MSYS*|CYGWIN*) HARDWARE_PRISM_ORDER="d3d,sw" ;;
-  Darwin) HARDWARE_PRISM_ORDER="es2,sw" ;;
+  Darwin)
+    if [[ "$APP" == "editor" ]]; then
+      JAVA_ARGS+=("-Xdock:name=JVN Editor" "-Xdock:icon=$ROOT_DIR/modules/editor/src/main/resources/com/jvn/editor/images/jvn_editor_icon.png")
+    fi
+    ;;
 esac
 case "$GRAPHICS_MODE_NORMALIZED" in
   gpu|hardware|accelerated|prefer-gpu)

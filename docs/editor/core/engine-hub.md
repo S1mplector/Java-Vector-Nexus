@@ -337,7 +337,7 @@ The installers are user-local. They should not be run with `sudo` or Administrat
 
 On Windows the installer creates separate **JVN Editor** and **JVN Engine Hub** shortcuts, each with its own multi-resolution icon. The Editor shortcut opens the editor directly.
 
-The Hub artwork comes from `docs/assets/images/jvn_app_icon.svg`. Linux installs the SVG directly, macOS generates an `.icns` for the app bundle, and Windows assigns a multi-resolution `.ico` to the generated shortcuts.
+The [Hub compass](../../../modules/hub/src/main/resources/com/jvn/hub/images/jvn_hub_icon.svg) and the [Editor storyboard and pen](../../../modules/editor/src/main/resources/com/jvn/editor/images/jvn_editor_icon.svg) are the SVG masters. After editing either, run `python3 scripts/render-app-icons.py` with `rsvg-convert` installed. This updates the Java window and Dock artwork, the Windows shortcut icons, and the public Hub SVG. Linux installs the Hub SVG directly. The macOS bundle uses an ICNS rendition.
 
 ## Shortcut Logs
 
