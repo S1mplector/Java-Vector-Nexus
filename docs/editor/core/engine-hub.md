@@ -93,13 +93,11 @@ The **Render Diagnostics** submenu can enable verbose Prism startup output, dirt
 
 Advanced values are stored in `~/.jvn-editor/render-pipeline.properties` and applied before JavaFX initializes. Use **Inspect Render Stack** to review every selected option, the requested backend order, desktop session, display capabilities, preference paths, and—on Linux when `glxinfo` is installed—the active OpenGL vendor and renderer. **Copy Render Stack Summary** creates a compact report suitable for performance or driver bug reports.
 
-## Source-First Preview Builds
+## Preview installers
 
-JVN does not publish official prebuilt Engine Hub, editor, or runtime binaries yet. During the current preview phase, run the hub from a source checkout with `./jvn` on macOS/Linux or `jvn.bat` on Windows. The hub then uses the same checkout for editor launches, builds, tests, update operations, shortcut installation, and project packaging.
+The Engine Hub supports binary releases throughout the 0.x series. On [GitHub Releases](https://github.com/S1mplector/Java-Vector-Nexus/releases), choose the Windows x64 installer (`.exe`), Apple Silicon disk image (`.dmg`), or Linux x64 archive (`.tar.gz`). Each contains JDK 21 and the corresponding Editor workspace. The first Editor launch uses the network to download missing build dependencies.
 
-This source-first workflow is deliberate. The engine and editor are still changing quickly, and the wrapper-driven hub keeps the Gradle wrapper, module classpath, generated resources, Java toolchain, and repository update state aligned. It also avoids shipping stale platform launchers while packaging, signing/notarization, update channels, and cross-platform QA are still being finalized.
-
-Official prebuilt binaries are planned from the first major JVN release onward, currently expected by the end of 2026. Until then, the supported desktop path is to clone the repository, run `./jvnw` for commands, and use the Engine Hub for the no-terminal desktop workflow.
+From a checkout, launch the same Hub with `./jvn` on macOS/Linux or `jvn.bat` on Windows.
 
 ## High-Resolution Display Scaling
 

@@ -56,18 +56,17 @@ For local source builds, use [Eclipse Temurin 21 LTS](https://adoptium.net/temur
 
 On Bazzite, `./jvn` and `./jvnw` can automatically enter a Distrobox container with Java 21+ and `javac`, so the hub/editor can use the JDK installed there. Override the container with `JVN_DISTROBOX_CONTAINER=<name>`, force detection on another distro with `JVN_DISTROBOX=1`, or disable this handoff with `JVN_DISTROBOX=0`.
 
-## JVN's Current Distribution Status
+## Download the Engine Hub
 
-JVN does not currently publish official prebuilt binaries for the engine. Until the first major release, use a source checkout and launch JVN with `./jvnw` or through the Engine Hub (`./jvn` / `jvn.bat`).
+The Engine Hub release pipeline supports **0.x preview installers**. Tagged previews appear under [GitHub Releases](https://github.com/S1mplector/Java-Vector-Nexus/releases).
 
-This is intentional for the current development phase:
+| Platform | Download | Install |
+| --- | --- | --- |
+| Windows x64 | `.exe` | Run the installer, then open **JVN Engine Hub** from Start. |
+| macOS Apple Silicon | `.dmg` | Open the disk image and drag **JVN Engine Hub** into **Applications**. |
+| Linux x64 | `.tar.gz` | Extract the archive and run `bin/JVN Engine Hub`. |
 
-- JVN is still moving quickly, including editor workflows, project templates, scripting behavior, and build/release tasks.
-- Running from source keeps the Gradle wrapper, module classpath, generated resources, and Java toolchain in sync with the checkout you are actually testing.
-- The Engine Hub can update, build, run, and install shortcuts for that same checkout, which avoids stale launcher binaries pointing at a different engine revision.
-- Official binaries require stable packaging, signing/notarization, update channels, and platform QA. Those are planned for the first major release rather than the current preview builds.
-
-Prebuilt binaries are planned to be included starting with the first major JVN release, currently expected by the end of 2026. Until then, the supported path is source-first: clone the repository, use `./jvnw` for commands, and use the Engine Hub for the desktop workflow.
+The packages include JDK 21 and the matching engine source. The first Editor build downloads Gradle and project dependencies. Maintainers can [ship a preview from a release tag](docs/project-setup/release/deployment.md#publish-the-engine-hub-desktop-apps).
 
 ## Quick Start
 

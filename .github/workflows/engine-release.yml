@@ -7,6 +7,7 @@ on:
       - '.github/workflows/engine-release.yml'
       - 'scripts/package-native-hub.py'
       - 'scripts/ship-engine.py'
+      - 'scripts/windows-hub.iss'
   workflow_dispatch:
 
 permissions:
@@ -52,9 +53,9 @@ jobs:
       - name: Test Hub and assemble engine workspace
         shell: bash
         run: ./gradlew :hub:test :hub:packageEngineHubLiteJar "-PjvnVersion=$VERSION" --no-daemon
-      - name: Build and smoke-test native app
+      - name: Build packages and test the installed Hub
         shell: bash
-        run: python scripts/package-native-hub.py "$VERSION" "build/distributions/jvn-engine-hub-lite-$VERSION.jar" build/native-hub
+        run: python scripts/package-native-hub.py "$VERSION" "build/distributions/jvn-engine-hub-lite-$VERSION.jar" build/native-hub --test-install
       - uses: actions/upload-artifact@v4
         with:
           name: hub-${{ matrix.runner }}
@@ -85,13 +86,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for target in windows-x64.zip macos-arm64.tar.gz linux-x64.tar.gz; do
-            sha256sum --check "jvn-engine-hub-$VERSION-$target.sha256"
+          assets=()
+          for target in windows-x64.exe macos-arm64.dmg linux-x64.tar.gz windows-x64.zip macos-arm64.tar.gz; do
+            file="jvn-engine-hub-$VERSION-$target"
+            test -s "$file"
+            sha256sum --check --strict "$file.sha256"
+            assets+=("$file" "$file.sha256")
           done
           if state=$(gh release view "$TAG" --json isDraft --jq .isDraft 2>/dev/null); then
             [[ "$state" = true ]] || { echo "This release is already published."; exit 0; }
           else
             gh release create "$TAG" --verify-tag --draft --title "JVN Engine Hub $VERSION" --generate-notes
           fi
-          gh release upload "$TAG" ./* --clobber
-          gh release edit "$TAG" --draft=false
+          gh release upload "$TAG" "${assets[@]}" --clobber
+          preview=false
+          if [[ "$VERSION" == 0.* ]]; then preview=true; fi
+          gh release edit "$TAG" --prerelease="$preview" --draft=false

@@ -45,8 +45,7 @@ live reload. Existing project and save formats remain unchanged.
 
 ## Distribution and validation
 
-This is a source release requiring JDK 21. Official prebuilt engine binaries are
-still planned for the first major release. Use the repository's `./jvnw` wrapper.
+The original 0.8.0 source release requires JDK 21. The [Engine Hub release pipeline](deployment.md#publish-the-engine-hub-desktop-apps) also supports binary preview releases during the 0.x series.
 
 The pass adds regression coverage for archive traversal, cache accounting,
 concurrent and failed file replacement, workspace links and file operations,

@@ -293,6 +293,14 @@ The Simp3 audio module must be on the classpath. Verify the audio JAR is include
 
 Run `./jvnw ship 0.8.1` from the commit to release. On Windows use `jvnw.bat ship 0.8.1`. Substitute the intended version. Add `--dry-run` to print the commit and tag locally. The command uses Python 3 and your existing Git push credentials for `origin`.
 
-The command pushes the tag `engine-v0.8.1`. The **Engine Hub release** workflow builds Windows x64, macOS Apple Silicon and Linux x64 apps on native runners. Each build starts the Hub executable in extraction mode and checks that the editor workspace is present. GitHub publishes the release after all three archives pass verification. Each download has a SHA-256 file. Rerun a failed job from Actions to finish the same release.
+The command pushes `engine-v0.8.1`. Each native runner builds a Hub containing JDK 21 and the tagged Editor workspace. Windows installs the finished EXE into a temporary directory, runs the installed launcher, and uninstalls it. macOS verifies and mounts the finished DMG, copies its app, unmounts the image, and runs the copy. Linux runs the bundled launcher. These checks extract the Editor workspace and verify its launch script.
 
-Extract the archive and open **JVN Engine Hub.exe** on Windows, **JVN Engine Hub.app** on macOS, or **bin/JVN Engine Hub** on Linux. Each archive includes JDK 21 and the engine workspace. The first Editor build downloads Gradle and project dependencies. These packages use the existing Hub icon and ship without a publisher signing identity. A manual Actions run builds downloadable test artifacts without publishing a release.
+After all three runners pass, the workflow validates every SHA-256 file and uploads the downloads to a draft GitHub Release. Publishing a 0.x tag marks that release as a **prerelease**. A manual workflow run or a push changing the packaging scripts produces test artifacts for the same version without creating a release.
+
+| Platform | Primary download | Portable download |
+| --- | --- | --- |
+| Windows x64 | Per-user `.exe` installer with Start menu shortcut and uninstaller | `.zip` |
+| macOS Apple Silicon | `.dmg` containing the Hub and an Applications shortcut | `.tar.gz` |
+| Linux x64 | `.tar.gz` containing `bin/JVN Engine Hub` | |
+
+The preview installers have no publisher signing identity. The macOS app uses an ad-hoc signature. The first Editor build downloads Gradle and project dependencies. For local packaging, use Python 3.11+, JDK 21, and Inno Setup 6 on Windows. Rerun a failed packaging job in Actions to finish the same tagged release.

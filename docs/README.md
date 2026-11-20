@@ -31,7 +31,7 @@ when editing docs in this repository. It is organized by task first, then by sub
 | Goal | Start Here |
 |------|------------|
 | Build and run JVN | [Getting Started Guide](guides/getting-started.md) |
-| Understand why JVN is source-first for now | [No Prebuilt Download Yet](guides/getting-started.md#why-there-is-no-prebuilt-download-yet) |
+| Install the Engine Hub preview | [Preview downloads](guides/getting-started.md#install-a-preview-build) |
 | Use or install the Engine Hub | [JVN Engine Hub](editor/core/engine-hub.md) |
 | Decide which layer to use | [Choose Your Path in JVN](guides/choose-your-path.md) |
 | Identify project file types | [Common JVN File Types](guides/common-file-types.md) |
