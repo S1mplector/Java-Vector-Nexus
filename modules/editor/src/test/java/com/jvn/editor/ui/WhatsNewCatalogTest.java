@@ -29,6 +29,18 @@ class WhatsNewCatalogTest {
   }
 
   @Test
+  void runWorkspaceNotesIncludePackagedPreviews() {
+    var release = WhatsNewCatalog.forVersion("v0.9.0");
+    assertEquals("Run workspace", release.sections().getFirst().title());
+    for (var section : release.sections()) {
+      if (section.preview() != null) {
+        org.junit.jupiter.api.Assertions.assertNotNull(
+            WhatsNewDialog.class.getResource("release/" + section.preview()), section.title());
+      }
+    }
+  }
+
+  @Test
   void maturityBuildUsesNumericReleaseNotesButKeepsFullLabel() {
     WhatsNewCatalog.Release release = WhatsNewCatalog.forVersion("v0.5.0 Beta");
 

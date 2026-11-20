@@ -295,7 +295,7 @@ Run `./jvnw ship 0.8.1` from the commit to release. On Windows use `jvnw.bat shi
 
 The command pushes `engine-v0.8.1`. Each native runner builds a Hub containing JDK 21 and the tagged Editor workspace. Windows installs the finished EXE into a temporary directory, runs the installed launcher, and uninstalls it. macOS verifies and mounts the finished DMG, copies its app, unmounts the image, and runs the copy. Linux runs the bundled launcher. These checks extract the Editor workspace and verify its launch script.
 
-After all three runners pass, the workflow validates every SHA-256 file and uploads the downloads to a draft GitHub Release. Publishing a 0.x tag marks that release as a **prerelease**. A manual workflow run or a push changing the packaging scripts produces test artifacts for the same version without creating a release.
+After all three runners pass, the workflow validates every SHA-256 file and uploads the downloads to a draft GitHub Release. Publishing a 0.x tag marks that release as a **prerelease**. A push to a branch named `release/engine-vX.Y.Z` can also publish a release. Set `jvnVersion` to the same number and push the version change to that branch. Once the installers pass, the workflow tags the exact tested commit. It refuses to move an existing tag to a different commit. Ordinary feature branches and manual runs on those branches produce test artifacts.
 
 | Platform | Primary download | Portable download |
 | --- | --- | --- |

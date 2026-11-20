@@ -49,6 +49,34 @@ public final class WhatsNewCatalog {
   private static Map<String, Release> createReleases() {
     Map<String, Release> releases = new LinkedHashMap<>();
     add(releases, new Release(
+        "v0.9.0",
+        "A new Run workspace, scene lighting tools, and desktop installers.",
+        List.of(
+            new Section("Run workspace", "Follow a playtest from launch through the final frame.", List.of(
+                "The session sidebar keeps the launch target, elapsed time, CPU, heap and frame rate beside your output.",
+                "Use Hot reload to apply saved game changes. Open Render inspector to see frame timing, cache hits and misses, and resident assets."),
+                AeroIcon.Kind.RUN, "run-workspace.jpg"),
+            new Section("Scene lighting", "Edit the light rig against your scene and compare the result before applying it.", List.of(
+                "Select a light in the outliner, adjust it in the inspector, or nudge it from the keyboard.",
+                "Split comparison shows the grade beside the original. Graded backgrounds stay visible during Puppeteer playback."),
+                AeroIcon.Kind.LIGHTING, "lighting-studio.jpg"),
+            new Section("Story Map", "Play a route directly from its entry label.", List.of(
+                "Right-click an arc and choose Run from Entry. Open Script takes you to its source.",
+                "Use Connections to follow incoming and outgoing routes, or search and press Enter to focus a matching arc."),
+                AeroIcon.Kind.STORY_MAP, null),
+            new Section("Build and Git", "Prepare a game package and review project changes inside the Editor.", List.of(
+                "Choose packaging options and run the project checks from Build & Publish.",
+                "Version Control keeps project changes and repository actions together. New projects can initialize a repository with an initial commit."),
+                AeroIcon.Kind.BUILD, null),
+            new Section("Guided tutorial", "Start a Tutorial Workspace to learn with Pip.", List.of(
+                "Choose a topic from the monochrome lesson menu. Lessons can be opened independently.",
+                "Try character movement, camera staging and lighting in the example scenes."),
+                AeroIcon.Kind.DOCUMENTATION, null),
+            new Section("Desktop installers", "Install the Engine Hub and open its bundled Editor workspace.", List.of(
+                "Run the Windows x64 installer or drag the app from the Apple Silicon disk image into Applications. Linux x64 has a portable archive.",
+                "Each download includes JDK 21. The first Editor build fetches its Gradle dependencies."),
+                AeroIcon.Kind.PROJECT, null)), true));
+    add(releases, new Release(
         "v0.8.0",
         "More reliable project editing, asset loading, saves, and live reload.",
         List.of(
@@ -228,7 +256,11 @@ public final class WhatsNewCatalog {
     }
   }
 
-  public record Section(String title, String summary, List<String> changes) {
+  public record Section(String title, String summary, List<String> changes, AeroIcon.Kind icon, String preview) {
+    public Section(String title, String summary, List<String> changes) {
+      this(title, summary, changes, AeroIcon.Kind.DOCUMENTATION, null);
+    }
+
     public Section {
       title = clean(title);
       summary = clean(summary);

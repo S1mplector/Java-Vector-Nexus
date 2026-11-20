@@ -5,6 +5,7 @@ on:
     tags: ['engine-v*']
     paths:
       - '.github/workflows/engine-release.yml'
+      - 'gradle.properties'
       - 'scripts/package-native-hub.py'
       - 'scripts/ship-engine.py'
       - 'scripts/windows-hub.iss'
@@ -29,6 +30,9 @@ jobs:
             number="$(sed -n 's/^jvnVersion=//p' gradle.properties)"
           fi
           [[ "$number" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          if [[ "$GITHUB_REF_TYPE" = branch && "$GITHUB_REF_NAME" = release/engine-v* ]]; then
+            [[ "$number" = "${GITHUB_REF_NAME#release/engine-v}" ]] || { echo "Release branch and jvnVersion must match"; exit 1; }
+          fi
           echo "number=$number" >> "$GITHUB_OUTPUT"
 
   package:
@@ -50,6 +54,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Verify Editor and release notes
+        if: runner.os == 'Linux'
+        shell: bash
+        run: >-
+          xvfb-run -a ./gradlew :branding:test :editor:test
+          --tests com.jvn.editor.AppBuildInfoTest
+          --tests com.jvn.editor.ui.RunConsoleViewLogFormatTest
+          --tests com.jvn.editor.ui.RunConsoleViewMigrationContractTest
+          --tests com.jvn.editor.ui.RunWorkspaceTest
+          --tests com.jvn.editor.ui.RuntimeAttributionTest
+          --tests com.jvn.editor.ui.WhatsNewCatalogTest
+          --no-daemon
       - name: Test Hub and assemble engine workspace
         shell: bash
         run: ./gradlew :hub:test :hub:packageEngineHubLiteJar "-PjvnVersion=$VERSION" --no-daemon
@@ -64,18 +80,19 @@ jobs:
           compression-level: 0
 
   publish:
-    if: startsWith(github.ref, 'refs/tags/engine-v')
+    if: startsWith(github.ref, 'refs/tags/engine-v') || startsWith(github.ref, 'refs/heads/release/engine-v')
     needs: [version, package]
     runs-on: ubuntu-latest
-    concurrency: engine-release-${{ github.ref }}
+    concurrency: engine-release-${{ needs.version.outputs.number }}
     permissions:
       contents: write
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      TAG: ${{ github.ref_name }}
+      TAG: engine-v${{ needs.version.outputs.number }}
       VERSION: ${{ needs.version.outputs.number }}
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           pattern: hub-*
@@ -93,10 +110,18 @@ jobs:
             sha256sum --check --strict "$file.sha256"
             assets+=("$file" "$file.sha256")
           done
+          if [[ "$GITHUB_REF_TYPE" = branch ]]; then
+            if ! gh api --method POST "repos/$GH_REPO/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA" --silent; then
+              [[ "$(gh api "repos/$GH_REPO/commits/$TAG" --jq .sha)" = "$GITHUB_SHA" ]] || exit 1
+            fi
+          fi
           if state=$(gh release view "$TAG" --json isDraft --jq .isDraft 2>/dev/null); then
             [[ "$state" = true ]] || { echo "This release is already published."; exit 0; }
           else
-            gh release create "$TAG" --verify-tag --draft --title "JVN Engine Hub $VERSION" --generate-notes
+            notes=(--generate-notes)
+            notes_file="../docs/project-setup/release/whats-new-$VERSION.md"
+            if [[ -s "$notes_file" ]]; then notes=(--notes-file "$notes_file"); fi
+            gh release create "$TAG" --verify-tag --draft --title "JVN $VERSION" "${notes[@]}"
           fi
           gh release upload "$TAG" "${assets[@]}" --clobber
           preview=false

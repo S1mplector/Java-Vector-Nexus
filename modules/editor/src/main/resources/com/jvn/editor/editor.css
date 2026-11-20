@@ -1,3 +1,4 @@
+@import "editor-session.css";
 @import "editor-aero.css";
 @import "editor-aero-controls.css";
 @import "editor-aero-controls-dark.css";
@@ -3263,66 +3264,14 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-border-color: #b77284;
 }
 
-/* What's New */
-.whats-new-scroll {
-  -fx-background-color: transparent;
-  -fx-background: transparent;
-  -fx-border-color: transparent;
-  -fx-padding: 0;
-}
-
-.whats-new-scroll > .viewport {
-  -fx-background-color: transparent;
-}
-
-.whats-new-content {
-  -fx-padding: 2 8 4 0;
-}
-
-.whats-new-section {
-  -fx-background-color: linear-gradient(to bottom, #181a1d, #131416);
-  -fx-background-radius: 10;
-  -fx-border-color: #30343a;
-  -fx-border-radius: 10;
-}
-
-.whats-new-section-title {
-  -fx-text-fill: #f0f3f6;
-  -fx-font-size: 12px;
-  -fx-font-weight: 900;
-}
-
-.whats-new-section-summary {
-  -fx-text-fill: #929ba6;
-  -fx-font-size: 10px;
-  -fx-font-weight: 700;
-}
-
-.whats-new-change-row {
-  -fx-padding: 2 0 0 0;
-}
-
-.whats-new-change-marker {
-  -fx-background-color: #214c3a;
-  -fx-background-radius: 8;
-  -fx-text-fill: #a9edc9;
-  -fx-font-size: 9px;
-  -fx-font-weight: 900;
-  -fx-alignment: center;
-  -fx-padding: 2 4 2 4;
-}
-
-.whats-new-change-text {
-  -fx-text-fill: #c7cdd4;
-  -fx-font-size: 11px;
-  -fx-font-weight: 600;
-}
-
-.whats-new-footer {
-  -fx-text-fill: #737d88;
-  -fx-font-size: 10px;
-  -fx-font-weight: 700;
-  -fx-padding: 1 4 0 4;
+.release-window, .run-console-root {
+  -session-bg: #151719;
+  -session-panel: #232629;
+  -session-line: #42474c;
+  -session-ink: #eff1f2;
+  -session-muted: #b6bdc3;
+  -session-hover: #353b40;
+  -session-accent: #e5b16d;
 }
 
 /* Expression keyframe editor */

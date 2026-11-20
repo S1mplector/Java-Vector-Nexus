@@ -46,7 +46,8 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.Separator;
 import javafx.scene.control.SeparatorMenuItem;
@@ -83,9 +84,11 @@ public class RunConsoleView extends BorderPane {
     }
 
     private final ListView<String> outputList = new ListView<>();
-    private final ProgressIndicator launchProgressIndicator = new ProgressIndicator();
     private final DoubleProperty launchProgressValue = new SimpleDoubleProperty(0.0);
-    private final Region launchProgressFill = new Region();
+    private final Label workspaceValue = new Label();
+    private final Label taskValue = new Label();
+    private final Tab outputTab = new Tab("Output");
+    private final TabPane tabs = new TabPane();
     private final Label launchActivityLabel = new Label();
     private final Label launchDetailLabel = new Label();
     private final Label stateLabel = new Label();
@@ -145,6 +148,8 @@ public class RunConsoleView extends BorderPane {
     private volatile boolean launchMilestoneAnnounced = false;
     private volatile boolean runtimeMilestoneAnnounced = false;
     private volatile boolean processExited = false;
+    private boolean stopRequested;
+    private Integer lastExitCode;
     private String launchToolLabel = "Gradle wrapper";
     private String launchTaskLabel = "";
     private String launchWorkspaceLabel = "";
@@ -209,40 +214,38 @@ public class RunConsoleView extends BorderPane {
         stateLabel.getStyleClass().add("run-console-state");
         elapsedLabel.getStyleClass().add("run-console-elapsed");
 
-        // ─── Menu Bar ────────────────────────────────────────────────
-        MenuBar menuBar = createMenuBar(title);
+        Label heading = new Label("JVN Runtime".equals(title) ? "Run workspace" : title, AeroIcon.of(AeroIcon.Kind.RUN, 30));
+        heading.getStyleClass().add("session-window-title");
+        heading.setGraphicTextGap(10);
+        HBox header = new HBox(16, heading, createToolBar());
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.getStyleClass().add("session-header");
+        HBox.setHgrow(heading, Priority.ALWAYS);
+        heading.setMaxWidth(Double.MAX_VALUE);
+        setTop(new VBox(createMenuBar(title), header));
 
-        // ─── Tool Bar ────────────────────────────────────────────────
-        FlowPane toolBar = createToolBar();
-
-        VBox topContainer = new VBox(menuBar, toolBar);
-        topContainer.getStyleClass().add("run-console-top");
-        setTop(topContainer);
-
-        // ─── Output area ─────────────────────────────────────────────
         outputList.getStyleClass().add("run-console-output");
         outputList.setCellFactory(list -> new LogLineCell());
+        outputList.setPlaceholder(new Label("No matching output"));
         outputList.setFocusTraversable(true);
-        var launchBanner = createLaunchBanner();
-        launchBanner.visibleProperty().bind(stateLabel.textProperty().isNotEqualTo("Running"));
-        launchBanner.managedProperty().bind(launchBanner.visibleProperty());
-        HBox filters = new HBox(8, searchField, logLevelFilter);
+        HBox filters = new HBox(6, searchField, logLevelFilter, copyBtn, clearBtn,
+            showAllToggle, autoScrollBtn, wordWrapBtn);
+        filters.setAlignment(Pos.CENTER_LEFT);
+        filters.getStyleClass().add("session-log-tools");
+        searchField.setMinWidth(70);
         HBox.setHgrow(searchField, Priority.ALWAYS);
-        VBox centerBox = new VBox(6, launchBanner, filters, outputList);
-        centerBox.getStyleClass().add("run-console-content");
+        VBox output = new VBox(filters, outputList);
         VBox.setVgrow(outputList, Priority.ALWAYS);
-        Tab logTab = new Tab("Output", centerBox);
-        logTab.setGraphic(AeroIcon.of(AeroIcon.Kind.SCRIPT_EDITOR, 18));
-        inspectTab.setGraphic(AeroIcon.of(AeroIcon.Kind.DIAGNOSTICS, 18));
+        outputTab.setContent(output);
+        outputTab.setGraphic(AeroIcon.of(AeroIcon.Kind.SCRIPT_EDITOR, 18));
+        inspectTab.setGraphic(AeroIcon.of(AeroIcon.Kind.INSPECTOR, 18));
         inspectTab.setContent(createInspector());
         inspectTab.setDisable(true);
-        TabPane tabs = new TabPane(logTab, inspectTab);
+        tabs.getTabs().addAll(outputTab, inspectTab);
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         setCenter(tabs);
-
-        // ─── Status bar ──────────────────────────────────────────────
-        HBox statusBar = createStatusBar();
-        setBottom(statusBar);
+        setLeft(createSessionRail());
+        setBottom(createStatusBar());
 
         perfGraphTooltip.setShowDelay(javafx.util.Duration.millis(120));
         Tooltip.install(perfGraph.getCanvas(), perfGraphTooltip);
@@ -285,6 +288,9 @@ public class RunConsoleView extends BorderPane {
         launchToolLabel = toolLabel == null || toolLabel.isBlank() ? "Gradle wrapper" : toolLabel.trim();
         launchTaskLabel = taskLabel == null ? "" : taskLabel.trim();
         launchWorkspaceLabel = workspaceLabel == null ? "" : workspaceLabel.trim();
+        workspaceValue.setText(launchWorkspaceLabel);
+        workspaceValue.setTooltip(new Tooltip(launchWorkspaceLabel));
+        taskValue.setText(launchTaskLabel);
         refreshLaunchBanner();
     }
 
@@ -316,6 +322,8 @@ public class RunConsoleView extends BorderPane {
         launchMilestoneAnnounced = false;
         runtimeMilestoneAnnounced = false;
         processExited = false;
+        stopRequested = false;
+        lastExitCode = null;
         launchProgressValue.set(0.04);
         setState(EngineState.BUILDING);
         appendInfoMessage("Preparing " + launchToolLabel + "...");
@@ -348,26 +356,23 @@ public class RunConsoleView extends BorderPane {
 
     public void setState(EngineState state) {
 
+        if (!Platform.isFxApplicationThread()) {
+            Platform.runLater(() -> setState(state));
+            return;
+        }
         this.engineState = state;
-        Platform.runLater(() -> {
-            String label;
-            switch (state) {
-                case BUILDING -> label = "Building";
-                case STARTING -> label = "Starting";
-                case RUNNING -> label = "Running";
-                case STOPPED -> label = "Stopped";
-                case FAILED -> label = "Failed";
-                default -> label = "Unknown";
-            }
-            stateLabel.setText(label);
-            updateStateClass(state);
-            stopBtn.setDisable(state == EngineState.STOPPED || state == EngineState.FAILED);
-            runBtn.setDisable(processStarter == null || !(state == EngineState.STOPPED || state == EngineState.FAILED));
-            boolean spinnerActive = state == EngineState.BUILDING || state == EngineState.STARTING;
-            launchProgressIndicator.setVisible(spinnerActive);
-            launchProgressIndicator.setManaged(spinnerActive);
-            refreshLaunchBanner();
+        stateLabel.setText(switch (state) {
+            case BUILDING -> "Building";
+            case STARTING -> "Starting";
+            case RUNNING -> "Running";
+            case STOPPED -> stopRequested ? "Stopped" : "Finished";
+            case FAILED -> "Failed";
         });
+        updateStateClass(state);
+        boolean finished = state == EngineState.STOPPED || state == EngineState.FAILED;
+        stopBtn.setDisable(finished || stopRequested);
+        runBtn.setDisable(processStarter == null || !finished);
+        refreshLaunchBanner();
     }
 
     private void updateStateClass(EngineState state) {
@@ -427,8 +432,9 @@ public class RunConsoleView extends BorderPane {
         }
 
         // Track error/warning counts
-        boolean isErr = ERROR_LINE.matcher(rawLine).find();
-        boolean isWarn = !isErr && WARN_LINE.matcher(rawLine).find();
+        String severity = classifyLine(rawLine);
+        boolean isErr = severity.equals("run-console-line-error");
+        boolean isWarn = severity.equals("run-console-line-warn");
         if (isErr) errorCount++;
         if (isWarn) warnCount++;
 
@@ -437,9 +443,9 @@ public class RunConsoleView extends BorderPane {
             if (autoScrollBtn.isSelected()) scrollToBottom();
         }
         elapsedLabel.setText(formatElapsed((System.currentTimeMillis() - startTime) / 1000));
-        lineCountLabel.setText(lineCount + " lines");
-        errorCountLabel.setText(errorCount + " errors");
-        warnCountLabel.setText(warnCount + " warnings");
+        lineCountLabel.setText(lineCount + (lineCount == 1 ? " line" : " lines"));
+        errorCountLabel.setText(errorCount + (errorCount == 1 ? " error" : " errors"));
+        warnCountLabel.setText(warnCount + (warnCount == 1 ? " warning" : " warnings"));
         updateCounterBadgeStyles();
     }
 
@@ -451,15 +457,16 @@ public class RunConsoleView extends BorderPane {
     /** Check if a line passes the current filter settings. */
     private boolean passesFilter(String rawLine) {
         boolean isEngineMsg = isEngineOutputLine(rawLine);
-        boolean isError = ERROR_LINE.matcher(rawLine).find();
-        boolean isWarning = !isError && WARN_LINE.matcher(rawLine).find();
+        String severity = classifyLine(rawLine);
+        boolean isError = severity.equals("run-console-line-error");
+        boolean isWarning = severity.equals("run-console-line-warn");
         boolean isNoise = GRADLE_NOISE.matcher(rawLine).find();
 
         // Log level filter
         String level = logLevelFilter.getValue();
         if ("Engine".equals(level) && !isEngineMsg) return false;
         if ("Errors".equals(level) && !isError) return false;
-        if ("Warnings".equals(level) && !isWarning && !isError) return false;
+        if ("Warnings".equals(level) && !isWarning) return false;
 
         // Show-all toggle (suppress noise unless enabled)
         if (!showAllToggle.isSelected() && isNoise && !isEngineMsg && !isError) return false;
@@ -497,6 +504,13 @@ public class RunConsoleView extends BorderPane {
     }
 
     private class LogLineCell extends ListCell<String> {
+        LogLineCell() {
+            wrapTextProperty().bind(wordWrapBtn.selectedProperty());
+            // VirtualFlow measures wrapped cells against the visible log width.
+            maxWidthProperty().bind(javafx.beans.binding.Bindings.when(wordWrapBtn.selectedProperty())
+                .then(outputList.widthProperty().subtract(20)).otherwise(Double.MAX_VALUE));
+        }
+
         private String currentClass = null;
 
         @Override
@@ -522,21 +536,17 @@ public class RunConsoleView extends BorderPane {
 
     /** Called when the process exits. */
     public void onProcessExit(int exitCode) {
-        Platform.runLater(() -> {
-            if (exitCode == 0) {
-                setState(EngineState.STOPPED);
-                appendInfoMessage("Process exited normally.");
-            } else {
-                setState(EngineState.FAILED);
-                appendInfoMessage("Process exited with code " + exitCode);
-            }
-            processExited = true;
-            reload.setDisable(true);
-            closeInspector();
-            long elapsed = (System.currentTimeMillis() - startTime) / 1000;
-            elapsedLabel.setText(formatElapsed(elapsed) + " (finished)");
-            refreshLaunchBanner();
-        });
+        if (!Platform.isFxApplicationThread()) {
+            Platform.runLater(() -> onProcessExit(exitCode));
+            return;
+        }
+        lastExitCode = exitCode;
+        processExited = true;
+        setState(stopRequested || exitCode == 0 ? EngineState.STOPPED : EngineState.FAILED);
+        appendInfoMessage(stopRequested ? "Stopped by user." : "Process exited with code " + exitCode + ".");
+        reload.setDisable(true);
+        closeInspector();
+        elapsedLabel.setText(formatElapsed((System.currentTimeMillis() - startTime) / 1000));
     }
 
     private void appendInfoMessage(String msg) {
@@ -548,37 +558,48 @@ public class RunConsoleView extends BorderPane {
         else Platform.runLater(task);
     }
 
-    private StackPane createLaunchBanner() {
-        launchProgressIndicator.getStyleClass().add("run-console-launch-spinner");
-        launchProgressIndicator.setMinSize(22, 22);
-        launchProgressIndicator.setMaxSize(22, 22);
-        launchProgressIndicator.setPrefSize(22, 22);
-        launchProgressIndicator.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
-        launchProgressIndicator.setMouseTransparent(true);
-        launchProgressIndicator.setStyle("-fx-progress-color: #e8d8ad;");
-        VBox labels = new VBox(4, launchActivityLabel, launchDetailLabel);
-        HBox row = new HBox(10, launchProgressIndicator, labels);
-        row.setAlignment(Pos.CENTER_LEFT);
-        row.setMaxWidth(Double.MAX_VALUE);
-        row.getStyleClass().add("run-console-launch-content");
-        HBox.setHgrow(labels, Priority.ALWAYS);
+    private static Label railHeading(String text) {
+        Label label = new Label(text);
+        label.getStyleClass().add("session-group-heading");
+        return label;
+    }
 
-        Region progressLayer = new Region();
-        progressLayer.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-        progressLayer.getStyleClass().add("run-console-launch-progress-layer");
-        launchProgressFill.getStyleClass().add("run-console-launch-progress-fill");
-        launchProgressFill.setMouseTransparent(true);
-        launchProgressFill.prefWidthProperty().bind(progressLayer.widthProperty().multiply(launchProgressValue));
-        launchProgressFill.prefHeightProperty().bind(progressLayer.heightProperty());
-        StackPane progressStack = new StackPane(launchProgressFill);
-        progressStack.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-        progressStack.setMouseTransparent(true);
-        progressStack.getStyleClass().add("run-console-launch-progress-stack");
-        StackPane.setAlignment(launchProgressFill, Pos.CENTER_LEFT);
+    private ScrollPane createSessionRail() {
+        ProgressBar progress = new ProgressBar();
+        progress.progressProperty().bind(launchProgressValue);
+        progress.setMaxWidth(Double.MAX_VALUE);
+        progress.getStyleClass().add("session-progress");
+        progress.visibleProperty().bind(stateLabel.textProperty().isEqualTo("Building")
+            .or(stateLabel.textProperty().isEqualTo("Starting")));
+        progress.managedProperty().bind(progress.visibleProperty());
 
-        StackPane box = new StackPane(progressLayer, progressStack, row);
-        box.getStyleClass().add("run-console-launch-shell");
-        return box;
+        HBox state = new HBox(8, stateLabel, elapsedLabel);
+        state.setAlignment(Pos.CENTER_LEFT);
+        launchActivityLabel.setWrapText(true);
+        launchDetailLabel.setWrapText(true);
+        // Session outcome is already displayed next to the elapsed time.
+        launchActivityLabel.visibleProperty().bind(progress.visibleProperty());
+        launchActivityLabel.managedProperty().bind(progress.visibleProperty());
+        VBox session = new VBox(8, railHeading("Session"), state, progress, launchActivityLabel, launchDetailLabel);
+
+        workspaceValue.setWrapText(true);
+        taskValue.setWrapText(true);
+        taskValue.getStyleClass().add("session-task");
+        VBox target = new VBox(6, railHeading("Launch target"), workspaceValue, taskValue, launchOptionsButton);
+        perfCpuValue.getStyleClass().add("session-metric");
+        perfJvmValue.getStyleClass().add("session-metric");
+        perfFpsValue.getStyleClass().add("session-metric");
+        VBox metrics = new VBox(7, railHeading("Runtime metrics"), perfGraph.getCanvas(),
+            perfCpuValue, perfJvmValue, perfFpsValue);
+        VBox rail = new VBox(16, session, new Separator(), target, new Separator(), metrics);
+        rail.getStyleClass().add("session-rail");
+        ScrollPane scroll = new ScrollPane(rail);
+        scroll.getStyleClass().add("session-rail-scroll");
+        scroll.setFitToWidth(true);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scroll.setPrefWidth(208);
+        scroll.setMinWidth(180);
+        return scroll;
     }
 
     private void observeBuildProgress(String rawLine) {
@@ -645,13 +666,13 @@ public class RunConsoleView extends BorderPane {
             return "Compiling submodules OK";
         }
         if (engineState == EngineState.RUNNING) {
-            return "Engine boot completed successfully.";
+            return "Receiving game output.";
         }
         if (engineState == EngineState.STOPPED) {
-            return "Process completed. You can re-run or inspect the log below.";
+            return stopRequested ? "Stopped by user." : "Exit code 0";
         }
         if (engineState == EngineState.FAILED) {
-            return "Gradle reported a failure. Inspect the log below for the exact task and stack trace.";
+            return lastExitCode == null ? "See the error in Output." : "Exit code " + lastExitCode;
         }
         if (!compiledModules.isEmpty()) {
             return compiledModules.size() + (compiledModules.size() == 1 ? " module ready." : " modules ready.");
@@ -659,23 +680,11 @@ public class RunConsoleView extends BorderPane {
         if (sawGradleBootstrap) {
             return "Gradle daemon bootstrapped. Resolving build graph...";
         }
-        String context = launchToolLabel;
-        if (!launchTaskLabel.isBlank()) context += " -> " + launchTaskLabel;
-        if (!launchWorkspaceLabel.isBlank()) context += " @ " + launchWorkspaceLabel;
-        return context;
+        return "Starting " + launchToolLabel + ".";
     }
 
     private void updateLaunchProgress() {
-        double progress = computeLaunchProgress();
-        launchProgressValue.set(progress);
-        launchProgressIndicator.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
-        String fillColor = switch (engineState) {
-            case FAILED -> "rgba(255, 99, 132, 0.24)";
-            case RUNNING, STOPPED -> "rgba(78, 201, 131, 0.22)";
-            case STARTING -> "rgba(88, 211, 216, 0.20)";
-            case BUILDING -> "rgba(240, 183, 95, 0.20)";
-        };
-        launchProgressFill.setStyle("-fx-background-color: " + fillColor + "; -fx-background-radius: 8;");
+        launchProgressValue.set(computeLaunchProgress());
     }
 
     private double computeLaunchProgress() {
@@ -742,6 +751,7 @@ public class RunConsoleView extends BorderPane {
 
     private void stopProcess() {
         if (runningProcess != null && runningProcess.isAlive()) {
+            stopRequested = true;
             appendInfoMessage("Stopping process...");
             stopBtn.setDisable(true);
             terminateProcessTree(runningProcess, activeGradleOptions.reuseDaemon());
@@ -807,6 +817,7 @@ public class RunConsoleView extends BorderPane {
         MenuItem miFind = new MenuItem("Find...");
         miFind.setAccelerator(new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN));
         miFind.setOnAction(e -> {
+            tabs.getSelectionModel().select(outputTab);
             searchField.requestFocus();
             searchField.selectAll();
         });
@@ -904,7 +915,8 @@ public class RunConsoleView extends BorderPane {
 
     private FlowPane createToolBar() {
         FlowPane bar = new FlowPane(6, 6);
-        bar.getStyleClass().add("run-console-toolbar");
+        bar.getStyleClass().add("session-actions");
+        bar.setPrefWrapLength(340);
         bar.setAlignment(Pos.CENTER_LEFT);
 
         configureLaunchOptionsButton();
@@ -966,26 +978,18 @@ public class RunConsoleView extends BorderPane {
             } catch (java.io.IOException ex) { appendInfoMessage("Reload failed: " + ex.getMessage()); }
         });
 
-        bar.getChildren().addAll(runBtn, stopBtn, reload, launchOptionsButton, verticalSeparator(),
-            clearBtn, copyBtn, showAllToggle, autoScrollBtn, wordWrapBtn, verticalSeparator(), stateLabel, elapsedLabel);
+        runBtn.setText("Run again");
+        stopBtn.setText("Stop");
+        for (Button button : List.of(runBtn, stopBtn, reload)) {
+            button.getStyleClass().remove("run-console-icon-btn");
+            button.getStyleClass().add("editor-dialog-button");
+            button.setContentDisplay(ContentDisplay.LEFT);
+        }
+        bar.getChildren().addAll(runBtn, stopBtn, reload);
         return bar;
     }
 
     private VBox createInspector() {
-        VBox perfValues = new VBox(2, perfCpuValue, perfJvmValue, perfFpsValue);
-        perfValues.setAlignment(Pos.CENTER_LEFT);
-        perfValues.getStyleClass().add("run-console-perf-values");
-
-        HBox perfHudBox = new HBox(8, perfGraph.getCanvas(), perfValues);
-        perfHudBox.setAlignment(Pos.CENTER_LEFT);
-
-        StackPane perfGraphShell = new StackPane(perfHudBox);
-        perfGraphShell.setAlignment(Pos.CENTER_LEFT);
-        perfGraphShell.getStyleClass().add("run-console-perf-graph-shell");
-        perfGraphShell.setMinWidth(Region.USE_PREF_SIZE);
-        perfGraphShell.setPrefWidth(260);
-        perfGraphShell.setMaxWidth(Region.USE_PREF_SIZE);
-
         frameStats.setWrapText(true);
         caches.getStyleClass().add("layout-studio-table");
         addCacheColumn("VN cache", c -> c.name(), 140);
@@ -1003,7 +1007,7 @@ public class RunConsoleView extends BorderPane {
             try { Files.writeString(inspectorSession.resolve(RunTelemetry.INVENTORY_REQUEST), ""); }
             catch (java.io.IOException ex) { appendInfoMessage("Cache inspection failed: " + ex.getMessage()); }
         });
-        VBox inspector = new VBox(12, perfGraphShell, frameStats, inspectAssets, caches);
+        VBox inspector = new VBox(10, railHeading("Frame statistics"), frameStats, new Separator(), railHeading("Image caches"), inspectAssets, caches);
         inspector.setPadding(new Insets(12));
         VBox.setVgrow(caches, Priority.ALWAYS);
         return inspector;
@@ -1063,15 +1067,8 @@ public class RunConsoleView extends BorderPane {
         caches.getItems().setAll(s.caches());
     }
 
-    private static Separator verticalSeparator() {
-        Separator separator = new Separator(javafx.geometry.Orientation.VERTICAL);
-        separator.setPrefHeight(28);
-        return separator;
-    }
-
     private void configureLaunchOptionsButton() {
-        launchOptionsButton.getStyleClass().addAll(
-            "run-console-icon-btn", "run-console-launch-options-btn");
+        launchOptionsButton.getStyleClass().add("session-profile");
         launchOptionsButton.setGraphic(AeroIcon.of(AeroIcon.Kind.SETTINGS, 22));
         launchOptionsButton.setContentDisplay(ContentDisplay.LEFT);
         launchOptionsButton.setFocusTraversable(false);
@@ -1228,27 +1225,12 @@ public class RunConsoleView extends BorderPane {
         HBox bar = new HBox(12);
         bar.setAlignment(Pos.CENTER_LEFT);
         bar.setPadding(new Insets(3, 10, 3, 10));
-        bar.getStyleClass().add("run-console-status-bar");
+        bar.getStyleClass().add("session-status-bar");
 
         lineCountLabel.getStyleClass().add("run-console-meta");
         errorCountLabel.getStyleClass().add("run-console-meta");
         warnCountLabel.getStyleClass().add("run-console-meta");
-        lineCountLabel.getStyleClass().add("run-console-meta-chip");
-        errorCountLabel.getStyleClass().add("run-console-meta-chip");
-        warnCountLabel.getStyleClass().add("run-console-meta-chip");
-
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        Label bufferLabel = new Label("Buffer: 0");
-        bufferLabel.getStyleClass().add("run-console-meta-muted");
-        bufferLabel.getStyleClass().add("run-console-meta-chip");
-
-        // Update buffer label periodically via the existing append cycle
-        lineCountLabel.textProperty().addListener((o, ov, nv) ->
-            bufferLabel.setText("Buffer: " + rawLineBuffer.size()));
-
-        bar.getChildren().addAll(lineCountLabel, errorCountLabel, warnCountLabel, spacer, bufferLabel);
+        bar.getChildren().addAll(lineCountLabel, warnCountLabel, errorCountLabel);
         updateCounterBadgeStyles();
         return bar;
     }
@@ -1278,8 +1260,9 @@ public class RunConsoleView extends BorderPane {
     private void copyFilteredLines(boolean includeErrors, boolean includeWarnings) {
         StringBuilder sb = new StringBuilder();
         for (String line : rawLineBuffer) {
-            boolean isErr = ERROR_LINE.matcher(line).find();
-            boolean isWarn = !isErr && WARN_LINE.matcher(line).find();
+            String severity = classifyLine(line);
+            boolean isErr = severity.equals("run-console-line-error");
+            boolean isWarn = severity.equals("run-console-line-warn");
             if (includeErrors && isErr) sb.append(line).append("\n");
             if (includeWarnings && isWarn) sb.append(line).append("\n");
         }
@@ -1309,7 +1292,7 @@ public class RunConsoleView extends BorderPane {
     private static void terminateProcessTree(Process process, boolean preserveReusableDaemon) {
         if (process == null) return;
         ProcessHandle handle = process.toHandle();
-        List<ProcessHandle> descendants = handle.descendants().toList();
+        List<ProcessHandle> descendants = descendantsOf(handle);
         handle.destroy();
 
         Thread cleanup = new Thread(() -> {
@@ -1327,6 +1310,15 @@ public class RunConsoleView extends BorderPane {
         }, "jvn-runtime-process-cleanup");
         cleanup.setDaemon(true);
         cleanup.start();
+    }
+
+    private static List<ProcessHandle> descendantsOf(ProcessHandle process) {
+        try (var children = process.descendants()) {
+            return children.toList();
+        } catch (RuntimeException unavailable) {
+            // Some operating-system sandboxes permit stopping our child but deny process enumeration.
+            return List.of();
+        }
     }
 
     private static boolean isGradleDaemon(ProcessHandle process) {
