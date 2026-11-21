@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide shy]
-ginger: Let's make one last scene together. Give me a choice to remember and let the room change when I make it.
+ginger: Your turn to direct. Give me a choice, remember my answer, and let that answer change the light on stage.
 ginger: Write the scene, export it, and play both branches from a fresh start.
 > Review question -> check
 > Back to topics -> return_hub

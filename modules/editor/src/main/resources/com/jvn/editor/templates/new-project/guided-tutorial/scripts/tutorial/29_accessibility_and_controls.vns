@@ -9,35 +9,21 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide normal]
-ginger: Would you prefer to keep the stage still? Try reduced motion and see which parts of the lesson stay playable.
+ginger: If you'd rather I stood still, that's fine. Let's play the same scene both ways and keep every choice within reach.
 ginger: Change the motion setting in the topic menu, then replay Character movement or Camera movement.
 > Compare reduced motion -> preview_still
 > Review question -> check
 > Back to topics -> return_hub
 @label preview_still
 [if tutorial_still]
-ginger: With reduced motion on, Ginger uses a stationary pose.
+ginger: With reduced motion on, I stay where I am.
 [else]
-[move ginger guide normal exprdur=0]
 [move ginger rightmark ease_in_out_cubic 620]
-[wait 150]
-[move ginger rightmark normal exprdur=0]
-[wait 150]
-[move ginger rightmark normal exprdur=0]
-[wait 150]
-[move ginger rightmark normal exprdur=0]
-[wait 170]
+[wait 620]
 [move ginger rightmark thoughtful exprdur=90]
-ginger: With motion on, Ginger walks across the stage and back.
-[move ginger rightmark normal exprdur=0]
+ginger: With motion on, I'll cross the stage and come back.
 [move ginger guide ease_out_cubic 500]
-[wait 120]
-[move ginger guide normal exprdur=0]
-[wait 120]
-[move ginger guide normal exprdur=0]
-[wait 120]
-[move ginger guide normal exprdur=0]
-[wait 140]
+[wait 500]
 [move ginger guide normal exprdur=90]
 [endif]
 [jump check]

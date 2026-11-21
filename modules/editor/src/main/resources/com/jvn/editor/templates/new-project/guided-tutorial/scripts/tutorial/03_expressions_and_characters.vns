@@ -9,17 +9,19 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide thoughtful]
-ginger: If I tell you I'm fine, do you believe me? Watch my face when I say it again.
+ginger: Imagine I just read a note that was meant for somebody else. How would you read this next line?
 [show ginger guide embarrassed]
 ginger: Oh!
-[show ginger guide confused]
-ginger: Replace embarrassed with confused in the second show command. Run the same line again.
+[show ginger guide annoyed]
+ginger: Oh!
+[show ginger guide thoughtful]
+ginger: Same word. A rather different reply, isn't it? Replace embarrassed with confused in the second show command. Run the same line again.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
 ginger: How do you change my reaction in place?
 > Show ginger in the same slot with another expression. -> correct
-> Declare a new background named confused. -> retry
+> Declare a new background named curious. -> retry
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]

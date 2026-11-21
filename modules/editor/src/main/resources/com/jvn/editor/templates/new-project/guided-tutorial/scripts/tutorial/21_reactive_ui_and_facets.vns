@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide thoughtful]
-ginger: I'd like a progress bar that moves with the story. Watch it when we change the value it's reading.
+ginger: Let's make a progress bar listen to a number. When you change example_progress, watch what happens to its fill.
 ginger: Open the example below. Then change example_progress in the script and open it again.
 > Open the sample panel -> checklist
 > Review question -> check

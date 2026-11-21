@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide normal]
-ginger: Say hello in your own language. We can keep one line in the script and look up its words when it plays.
+ginger: How would you greet someone in your language? I'll look up my next line by its key, tutorial.greeting.
 ginger: i18n:tutorial.greeting
 ginger: That line uses tutorial.greeting in config/locales/en.properties. Edit its value and replay.
 > Review question -> check

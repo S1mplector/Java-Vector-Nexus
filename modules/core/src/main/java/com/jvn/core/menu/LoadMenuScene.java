@@ -140,6 +140,7 @@ public class LoadMenuScene implements Scene {
     saves.clear();
     List<String> names = new ArrayList<>(saveManager.listSaves());
     favorites.retainAll(names);
+    boolean gameScoped = saveManager.isGameScoped();
     List<String> filtered = new ArrayList<>();
     try {
       var times = new HashMap<String, Long>();
@@ -147,7 +148,7 @@ public class LoadMenuScene implements Scene {
         try {
           VnSaveData d = saveManager.load(n);
           times.put(n, d.getSaveTimestamp());
-          if (matchesCurrentScope(d)) {
+          if (gameScoped || matchesCurrentScope(d)) {
             if (!favoritesOnly || favorites.contains(n)) {
               filtered.add(n);
             }
@@ -169,7 +170,7 @@ public class LoadMenuScene implements Scene {
         return;
       }
     }
-    if (selected >= saves.size()) selected = Math.max(0, saves.size() - 1);
+    selected = saves.isEmpty() ? -1 : Math.max(0, Math.min(selected, saves.size() - 1));
   }
 
   public List<String> getSaves() { return saves; }

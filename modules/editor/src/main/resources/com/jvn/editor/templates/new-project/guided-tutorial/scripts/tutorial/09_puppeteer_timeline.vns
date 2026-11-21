@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide normal]
-ginger: I want to lean in a little when I speak. In Puppeteer I can move and grow in the same beat.
+ginger: Watch my feet and my shoulders. One mark on the timeline can change where I stand and how close I look.
 [if !tutorial_still]
 timeline {
   parallel {

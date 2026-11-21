@@ -946,18 +946,18 @@ public class VnPreviewView extends StackPane {
       VnScenario loaded = loadScenarioFromScript(script);
       VnSettings settings = activeScene == null ? null : activeScene.getState().getSettings();
       this.sourceScriptName = normalizeScriptKey(script);
-      this.scene = buildScene(loaded, label, sourceScriptName, settings, false);
-      if (activeScene != null) scene.getState().getVariables().putAll(activeScene.getState().getVariables());
+      this.scene = buildScene(loaded, null, sourceScriptName, settings, false);
+      if (activeScene != null) scene.getState().setVariables(activeScene.getState().getVariables());
+      if (label != null && !label.isBlank()) scene.getState().jumpToLabel(label);
       scene.onEnter();
       renderer.setAudioFacade(activeAudioFacade());
       storyboardPreviewLine = resolveCurrentStoryboardLine();
       emitStoryboardPreviewLineChanged();
       applyStoryboardUiState();
-      return VnInteropResult.block();
     } catch (Exception ex) {
       setActiveError(VnErrorOverlay.fromScriptLoadFailure(script, ex));
     }
-    return VnInteropResult.advance();
+    return VnInteropResult.block();
   }
 
   private VnScenario loadScenarioFromScript(String script) throws IOException {

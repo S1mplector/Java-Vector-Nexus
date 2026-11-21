@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide shy]
-ginger: So far you've read my lines one at a time. Let's put the next one on a page and see how it feels.
+ginger: Right now my words sit under my name. For the next line I'll give the whole page to the narrator.
 [mode dialogue nvl]
 narrator: This line is narration. It appears in the NVL layout.
 [mode dialogue standard]

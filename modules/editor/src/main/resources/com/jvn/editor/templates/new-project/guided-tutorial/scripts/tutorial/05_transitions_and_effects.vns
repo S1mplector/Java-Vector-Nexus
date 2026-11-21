@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide shy]
-ginger: Keep your eyes on the wall. I'll fade the lights and bring the scene back.
+ginger: Keep an eye on the edges of the stage. I'll fade the scene and bring the lights back up.
 [if !tutorial_still]
 [transition fade 380]
 [endif]

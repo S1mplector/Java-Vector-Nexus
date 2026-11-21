@@ -8,8 +8,8 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide thoughtful]
-ginger: I keep using the same little bell. Let's put it in one subroutine so I can call it from a few different scenes.
+[show ginger guide normal]
+ginger: I'd like to use the same chime twice. I'll put it under one label and call it whenever I need it.
 [call chime]
 ginger: Find the chime label. Change the sound there, then replay the call.
 > Review question -> check

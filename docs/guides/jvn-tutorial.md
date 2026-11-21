@@ -8,6 +8,10 @@ The topic menu is in `scripts/story/tutorial_hub.vns`. The examples are in `scri
 
 The topic picker follows the lesson-and-return structure of the [Ren’Py tutorial source](https://github.com/renpy/renpy/blob/master/tutorial/game/script.rpy). Ginger’s dialogue and examples are written for JVN.
 
+![Ginger introducing dialogue in the generated game](../assets/images/tutorial/jvn-tutorial.webp)
+
+[Watch Ginger’s movement example](../assets/images/tutorial/ginger-walk.mp4) · [View the four menus](https://github.com/S1mplector/Java-Vector-Nexus/releases/download/engine-v0.9.3/Ginger-menus.png)
+
 ## Lesson references
 
 | Lesson | Source | Reference |

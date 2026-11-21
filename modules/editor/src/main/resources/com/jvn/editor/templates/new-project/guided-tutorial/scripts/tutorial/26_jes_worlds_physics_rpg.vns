@@ -8,8 +8,8 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide thoughtful]
-ginger: Imagine bumping into an invisible edge. Where something looks solid and where it stops you can be two different shapes.
+[show ginger guide normal]
+ginger: If you touched the empty corner around a round button, should it count? That's the difference a collision shape makes.
 ginger: In the JES editor, use the example panel as a reference. Compare its drawn bounds with the collision shape you would give it.
 > Review question -> check
 > Back to topics -> return_hub

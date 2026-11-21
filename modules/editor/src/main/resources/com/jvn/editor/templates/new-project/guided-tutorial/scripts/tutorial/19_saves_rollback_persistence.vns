@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide normal]
-ginger: If you save here, what should I remember when you come back? Let's give the scene something worth keeping.
+ginger: Here's a chance to change your mind. Save before the question, choose an answer, then load and try the other one.
 ginger: Save at the next question. Answer it, reload, and try the other choice.
 > Review question -> check
 > Back to topics -> return_hub

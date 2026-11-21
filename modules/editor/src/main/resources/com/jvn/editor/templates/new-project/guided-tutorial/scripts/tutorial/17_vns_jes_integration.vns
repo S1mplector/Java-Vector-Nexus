@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide normal]
-ginger: I built a small panel in JES. You can visit it from my script and come back here when you're done.
+ginger: I left a little panel in another scene. Open it, then come back here. I'll keep our place.
 ginger: Open the example below. Press Enter or Esc to return. Its source is scripts/scenes/panel.jes.
 > Open the example scene -> visit
 > Review question -> check

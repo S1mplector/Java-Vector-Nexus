@@ -20,8 +20,8 @@ class TutorialChoiceRoutingTest {
   @Test
   void aChoiceCannotFallThroughToAnotherScript(@TempDir Path project) throws Exception {
     Path scripts = Files.createDirectories(project.resolve("scripts"));
-    Files.writeString(scripts.resolve("first.vns"), "@scenario first\n@label start\n[inc visits]\nFirst room.\n[end]\n");
-    Files.writeString(scripts.resolve("second.vns"), "@scenario second\n@label start\n[inc visits]\nSecond room.\n[end]\n");
+    Files.writeString(scripts.resolve("first.vns"), "@scenario first\n@label start\n[inc visits]\nnarrator: First room.\n[end]\n");
+    Files.writeString(scripts.resolve("second.vns"), "@scenario second\n@label start\n[inc visits]\nnarrator: Second room.\n[end]\n");
     Files.writeString(scripts.resolve("hub.vns"), """
         @scenario hub
         @label start
@@ -38,9 +38,12 @@ class TutorialChoiceRoutingTest {
         var engine = new Engine(ApplicationConfig.builder().build());
         var hub = start(engine, "hub.vns");
         hub.getState().setVariable("visits", 5);
+        hub.advanceFromClick();
         hub.advance();
         assertSame(hub, engine.scenes().peek());
         assertEquals(VnNodeType.CHOICE, hub.getState().getCurrentNode().getType());
+        hub.moveChoiceFocus(index == 0 ? 1 : -1);
+        assertEquals(index, hub.getState().getFocusedChoiceIndex());
         hub.selectChoice(index);
         var chosen = assertInstanceOf(VnScene.class, engine.scenes().peek());
         assertEquals(index == 0 ? "first" : "second", chosen.getScenario().getId());
@@ -51,8 +54,12 @@ class TutorialChoiceRoutingTest {
 
   @Test
   @EnabledIfEnvironmentVariable(named = "JVN_GENERATED_TUTORIAL", matches = ".+")
-  void allThirtyWizardLessonChoicesReturnToTheirOwnCategory() throws Exception {
+  void allThirtyWizardLessonChoicesReturnToTheirOwnCategory(@TempDir Path home) throws Exception {
     Path project = Path.of(System.getenv("JVN_GENERATED_TUTORIAL"));
+    String previousHome = System.getProperty("user.home");
+    String previousGame = System.getProperty(VnStoragePaths.GAME_ID_PROPERTY);
+    System.setProperty("user.home", home.toString());
+    VnStoragePaths.configureGame("ginger-course");
     String previousRoot = System.getProperty("jvn.assets.root");
     System.setProperty("jvn.assets.root", project.toString());
     AssetCatalog.setDefaultManager(new FilesystemAssetManager(project));
@@ -71,6 +78,19 @@ class TutorialChoiceRoutingTest {
           String id = String.format(java.util.Locale.ROOT, "tutorial_lesson_%02d", expected[page][index]);
           assertEquals(id, lesson.getScenario().getId(), choice.getTargetLabel());
           assertTrue(visited.add(id));
+          if (expected[page][index] == 7) {
+            var saves = new com.jvn.core.vn.save.VnSaveManager();
+            saves.save(lesson.getState(), "Rehearsal");
+            var loadEngine = new Engine(ApplicationConfig.builder().build());
+            var load = new com.jvn.core.menu.LoadMenuScene(loadEngine, saves, "story/tutorial_hub.vns", new VnSettings(), null);
+            assertTrue(load.getSaves().contains("Rehearsal"));
+            load.setSelected(load.getSaves().indexOf("Rehearsal"));
+            load.loadSelected();
+            var resumed = assertInstanceOf(VnScene.class, loadEngine.scenes().peek());
+            assertEquals(id, resumed.getScenario().getId());
+            assertEquals(((Number) lesson.getState().getVariable("tutorial_count")).intValue(),
+                ((Number) resumed.getState().getVariable("tutorial_count")).intValue());
+          }
           if (expected[page][index] == 10) choose(lesson, "read_note");
           choose(lesson, "return_hub");
           hub = assertInstanceOf(VnScene.class, engine.scenes().peek());
@@ -86,6 +106,8 @@ class TutorialChoiceRoutingTest {
       assertInstanceOf(com.jvn.core.menu.MainMenuScene.class, engine.scenes().peek());
     } finally {
       AssetCatalog.setDefaultManager(new ClasspathAssetManager());
+      System.setProperty("user.home", previousHome);
+      VnStoragePaths.configureGame(previousGame);
       if (previousRoot == null) System.clearProperty("jvn.assets.root");
       else System.setProperty("jvn.assets.root", previousRoot);
     }

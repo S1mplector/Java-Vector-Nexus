@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide shy]
-ginger: Inside the panel there's a little colored light. Let's see what happens when you treat them as two separate entities.
+ginger: The little light on this panel is an entity of its own. Shall we change its color without repainting the panel?
 ginger: Open scripts/scenes/panel.jes in the JES editor. Select the indicator and change its fill color.
 > Review question -> check
 > Back to topics -> return_hub

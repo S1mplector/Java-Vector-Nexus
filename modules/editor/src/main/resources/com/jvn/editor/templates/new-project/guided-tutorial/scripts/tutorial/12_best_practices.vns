@@ -8,8 +8,8 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide confused]
-ginger: Something went wrong in rehearsal. Can you tell me which choice you picked just before it happened?
+[show ginger guide angry]
+ginger: Suppose my face changes one line too soon. Could you give me a route back to the exact moment you saw it?
 ginger: Change one pose. Compare starting at that line with playing through it from the beginning.
 > Review question -> check
 > Back to topics -> return_hub

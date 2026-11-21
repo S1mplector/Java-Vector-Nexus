@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide normal]
-ginger: This studio starts with a blank wall. The script calls it room. What happens if you give that name a different picture?
+ginger: See the white wall behind me? I call it room in the script. Let's find the picture that name points to.
 ginger: Open scripts/definitions/characters.vns to see the image path. The bg command in this lesson selects it.
 > Review question -> check
 > Back to topics -> return_hub

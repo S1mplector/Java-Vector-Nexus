@@ -209,7 +209,7 @@ class GuidedTutorialIntegrationTest {
         renderer.renderSaveMenu(saveMenu, 1280, 720);
         save(canvas, "save");
         loadMenu = new com.jvn.core.menu.LoadMenuScene(null, saves, "story/tutorial_hub.vns", new VnSettings(), null);
-        assertTrue(loadMenu.getSaves().contains("Studio"));
+        assertEquals("Studio", loadMenu.getSelectedName());
         assertEquals("Load game", loadMenu.getDisplayTitle());
         renderer.renderLoadMenu(loadMenu, 1280, 720);
         save(canvas, "load");

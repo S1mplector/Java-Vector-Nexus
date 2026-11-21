@@ -52,6 +52,10 @@ public class VnSaveManager {
     return saveDirectory.toString();
   }
 
+  public boolean isGameScoped() {
+    return VnStoragePaths.isGameSaveDirectory(saveDirectory);
+  }
+
   public String sanitizeSaveName(String name) {
     return sanitizeFileName(name);
   }

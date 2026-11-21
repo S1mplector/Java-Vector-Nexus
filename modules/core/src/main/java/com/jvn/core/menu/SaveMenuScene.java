@@ -86,14 +86,14 @@ public class SaveMenuScene implements Scene {
     List<String> filtered = new ArrayList<>();
     String activeScriptName = resolveActiveScriptName();
     String activeScenarioId = resolveActiveScenarioId();
-    boolean hasScope = activeScriptName != null || activeScenarioId != null;
+    boolean filterByScene = !saveManager.isGameScoped() && (activeScriptName != null || activeScenarioId != null);
     try {
       var times = new HashMap<String, Long>();
       for (String n : list) {
         try {
           var data = saveManager.load(n);
           times.put(n, data.getSaveTimestamp());
-          if (!hasScope || matchesCurrentScope(data, activeScriptName, activeScenarioId)) {
+          if (!filterByScene || matchesCurrentScope(data, activeScriptName, activeScenarioId)) {
             filtered.add(n);
           }
         } catch (Exception e) {

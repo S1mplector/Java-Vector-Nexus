@@ -8,9 +8,9 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide thoughtful]
+[show ginger guide normal]
 ginger: Can you give me a different opening line? In the script, find my name followed by a colon. The words after it are mine.
-ginger: Open this lesson's .vns file, change this sentence, and run it again.
+ginger: Try giving me a secret to tell. Save the script and play this scene again to hear it.
 > Review question -> check
 > Back to topics -> return_hub
 @label check

@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide thoughtful]
-ginger: It's easier to see the dust when it moves. Watch a few particles drift past me.
+ginger: Can you spot the dust against the wall? Each speck is a particle with its own short time on stage.
 [if !tutorial_still]
 [particles dust intensity=0.24 opacity=0.52 speed=0.30 duration=3000]
 [endif]

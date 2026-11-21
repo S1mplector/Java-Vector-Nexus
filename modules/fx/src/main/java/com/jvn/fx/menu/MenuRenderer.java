@@ -264,9 +264,9 @@ public class MenuRenderer {
       int configuredVisible = parseItemExtraInt(template, "visibleSlotCount", 0);
       int drawSlots = Math.max(emptySlots, configuredVisible);
       if (theme.usesPaperMenus()) {
+        gc.setFont(Font.font("SansSerif", Math.min(20, h * .035)));
         gc.setFill(Color.web("#504a45"));
-        gc.setFont(Font.font("SansSerif", Math.min(22, h * .035)));
-        gc.fillText(Localization.t("load.no_saves"), w * .39, h * .30);
+        gc.fillText(Localization.t("load.no_saves"), w * .40, h * .30);
       } else if (drawSlots > 0 && scene != null) {
         String[] items = new String[drawSlots];
         boolean[] enabled = new boolean[drawSlots];
@@ -508,16 +508,15 @@ public class MenuRenderer {
   }
 
   private void drawPaperBackdrop(double w, double h) {
-    gc.setFill(Color.web("#fbfaf7"));
+    gc.setFill(Color.web("#fcfaf7"));
     gc.fillRect(0, 0, w, h);
-    gc.setFill(Color.web("#eee9e3"));
+    gc.setFill(Color.web("#eee9e2"));
     gc.fillRect(0, 0, w * .32, h * .89);
     Image portrait = loadImage(theme.getSecondaryMenuPortrait());
-    if (portrait != null && !portrait.isError() && portrait.getWidth() > 0 && portrait.getHeight() > 0) {
-      double scale = Math.min(w * .25 / portrait.getWidth(), h * .64 / portrait.getHeight());
-      double width = portrait.getWidth() * scale;
-      double height = portrait.getHeight() * scale;
-      gc.drawImage(portrait, w * .16 - width / 2, h * .89 - height, width, height);
+    if (portrait != null) {
+      double scale = Math.min(w * .26 / portrait.getWidth(), h * .63 / portrait.getHeight());
+      double pw = portrait.getWidth() * scale, ph = portrait.getHeight() * scale;
+      gc.drawImage(portrait, (w * .32 - pw) / 2, h * .89 - ph, pw, ph);
     }
     gc.setFill(Color.web("#c9c0b7"));
     gc.fillRect(0, h * .89, w, 1);
@@ -2068,14 +2067,16 @@ public class MenuRenderer {
 
   private double[] sliderGeometry(int index, int count, MenuItemSpec item, MenuItemSpec[] itemSpecs, MenuLayoutSpec layout, double w, double h) {
     Rect rowRect = resolveItemRect(index, count, item, itemSpecs, layout, 0, w, h);
-    if (theme.usesPaperMenus()) {
-      return new double[] {rowRect.x() + rowRect.w() * .55, rowRect.y() + rowRect.h() * .5, rowRect.w() * .39};
-    }
     double padX = Math.max(20, rowRect.w() * 0.16);
     double defaultSliderX = rowRect.x() + padX;
     double defaultSliderW = Math.max(140, rowRect.w() - (padX * 2));
     double defaultSliderY = rowRect.y() + rowRect.h() * 0.7;
 
+    if (theme.usesPaperMenus()) {
+      defaultSliderX = rowRect.x() + rowRect.w() * .55;
+      defaultSliderW = rowRect.w() * .39;
+      defaultSliderY = rowRect.y() + rowRect.h() * .5 - 3;
+    }
     Double sliderXRaw = parseExtraDouble(item, "sliderX");
     Double sliderYRaw = parseExtraDouble(item, "sliderY");
     Double sliderWRaw = parseExtraDouble(item, "sliderWidth");
@@ -2196,7 +2197,7 @@ public class MenuRenderer {
     if (knobImage != null && !knobImage.isError()) {
       gc.drawImage(knobImage, knobX, knobY, knobW, knobH);
     } else {
-      gc.setFill(Color.WHITE);
+      gc.setFill(theme.usesPaperMenus() ? Color.web("#875b46") : Color.WHITE);
       gc.fillOval(knobX, knobY, knobW, knobH);
     }
   }
@@ -2289,12 +2290,12 @@ public class MenuRenderer {
       return;
     }
     if (theme.usesPaperMenus()) {
-      gc.setFill(Color.web(enabled ? "#875b46" : "#a39a91"));
-      gc.fillRoundRect(rect.x(), rect.y(), rect.w(), rect.h(), rect.h(), rect.h());
+      double y = rect.y() + rect.h() * .22, height = rect.h() * .56;
+      gc.setFill(enabled ? Color.web("#85563f") : Color.web("#a49e99"));
+      gc.fillRoundRect(rect.x(), y, rect.w(), height, height, height);
+      double knob = height - 4;
       gc.setFill(Color.WHITE);
-      double d = rect.h() * .72;
-      gc.fillOval(rect.x() + (enabled ? rect.w() - d - rect.h() * .14 : rect.h() * .14),
-          rect.y() + rect.h() * .14, d, d);
+      gc.fillOval(enabled ? rect.x() + rect.w() - knob - 2 : rect.x() + 2, y + 2, knob, knob);
       return;
     }
     gc.setFill(enabled ? Color.rgb(213, 108, 94, 0.95) : Color.rgb(232, 225, 178, 0.92));
@@ -2321,18 +2322,13 @@ public class MenuRenderer {
   ) {
     if (item == null) return null;
     Rect rowRect = resolveItemRect(itemIndex, count, item, itemSpecs, layout, 0, canvasW, canvasH);
-    if (theme.usesPaperMenus()) {
-      double height = Math.min(19, rowRect.h() * .46);
-      return new Rect(rowRect.x() + rowRect.w() * .97 - height * 2,
-          rowRect.y() + (rowRect.h() - height) / 2, height * 2, height);
-    }
     Double toggleXRaw = parseExtraDouble(item, "toggleX");
     Double toggleYRaw = parseExtraDouble(item, "toggleY");
     Double toggleWidthRaw = parseExtraDouble(item, "toggleWidth");
     Double toggleHeightRaw = parseExtraDouble(item, "toggleHeight");
     String checkedAsset = extra(item, "toggleCheckedAsset");
     String uncheckedAsset = extra(item, "toggleUncheckedAsset");
-    if ((checkedAsset == null || checkedAsset.isBlank())
+    if (!theme.usesPaperMenus() && (checkedAsset == null || checkedAsset.isBlank())
         && (uncheckedAsset == null || uncheckedAsset.isBlank())
         && toggleXRaw == null && toggleYRaw == null && toggleWidthRaw == null && toggleHeightRaw == null) {
       return null;
@@ -2377,6 +2373,7 @@ public class MenuRenderer {
     } else {
       prefix = firstNonBlank(style != null ? style.itemPrefix() : null, theme.getItemPrefix());
     }
+    if (theme.usesPaperMenus() && selected && prefix != null && ">".equals(prefix.trim())) return base;
     return (prefix == null ? "" : prefix) + base;
   }
 

@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide thoughtful]
-ginger: The wall behind me hasn't changed. Do we need to shade it again for every frame?
+ginger: The wall hasn't moved and the light hasn't changed. Why shade the same picture again? Look at the cache on the second frame.
 ginger: Run scripts/examples/window-light/scene.vns from the engine repository. Compare its first frame with repeated renders.
 > Review question -> check
 > Back to topics -> return_hub

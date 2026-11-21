@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide thoughtful]
-ginger: There's a little room between my words and the edge of this box. Let's change that space and read the line again.
+ginger: See the space between my words and the edge of this box? Try making that margin a little wider.
 ginger: Increase dialogueTextHorizontalPadding in config/ui/dialogue.layout. Compare two window sizes.
 > Review question -> check
 > Back to topics -> return_hub

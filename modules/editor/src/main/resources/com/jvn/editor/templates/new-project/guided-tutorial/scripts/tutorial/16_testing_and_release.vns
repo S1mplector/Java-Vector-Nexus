@@ -8,8 +8,8 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide thoughtful]
-ginger: It works in the editor. Now imagine you're opening the exported game on a friend's computer. Can it still find the room?
+[show ginger guide normal]
+ginger: Let's send this scene to a friend. Will the chime still play when my project folder is nowhere nearby?
 ginger: Export the project. Launch the build outside the project folder and play the sound effects example.
 > Review question -> check
 > Back to topics -> return_hub
@@ -19,7 +19,7 @@ ginger: Which check exercises the files your audience receives?
 > Run the exported package. -> correct
 > Back to topics -> return_hub
 @label retry
-[show ginger guide confused]
+[show ginger guide sad]
 ginger: A packaged run resolves assets through the shipped project. Give it another try.
 [jump check]
 @label correct

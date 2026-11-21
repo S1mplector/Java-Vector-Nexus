@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide normal]
-ginger: Check your phone. I can send you a line there and carry on the same conversation on stage.
+ginger: I've left you a message. My name is the part you read. The chat uses my ID to work out who sent it.
 ginger: Open the sample conversation. Its contacts and display names are in config/phone/phone.properties.
 > Open the sample chat -> messages
 > Review question -> check

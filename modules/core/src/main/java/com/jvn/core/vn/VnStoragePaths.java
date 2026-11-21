@@ -69,6 +69,14 @@ public final class VnStoragePaths {
     return gameId.isEmpty() ? base : base.resolve("games").resolve(gameId);
   }
 
+  /** Games can load any chapter saved in their own per-game directory. */
+  public static boolean isGameSaveDirectory(Path directory) {
+    String gameId = normalizeId(System.getProperty(GAME_ID_PROPERTY));
+    if (gameId.isEmpty()) return false;
+    Path expected = Paths.get(System.getProperty("user.home"), ".jvn", "games", gameId, "saves");
+    return expected.toAbsolutePath().normalize().equals(directory.toAbsolutePath().normalize());
+  }
+
   public static Path saves() {
     return root().resolve("saves");
   }

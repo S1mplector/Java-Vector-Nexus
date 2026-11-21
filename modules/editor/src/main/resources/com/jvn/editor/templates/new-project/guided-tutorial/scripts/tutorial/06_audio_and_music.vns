@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide normal]
-ginger: Did you hear that? One sfx command rings the bell once. Let's try it together.
+ginger: That envelope could use a doorbell. Listen to this sound and imagine it just before the letter arrives.
 [sfx assets/tutorial/welcome.wav]
 ginger: Find welcome.wav in assets/tutorial. Replay the example to hear it again.
 > Review question -> check

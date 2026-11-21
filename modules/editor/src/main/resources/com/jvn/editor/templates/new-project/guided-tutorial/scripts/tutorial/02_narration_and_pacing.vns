@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide confused]
-ginger: Listen for the bell. I'll leave a little quiet before it rings. How long would you wait?
+ginger: Wait for the chime. I'll leave a little silence before it rings. Does that make you listen more closely?
 [wait 320]
 [sfx assets/tutorial/welcome.wav]
 ginger: Change the wait from 320 to 800 milliseconds, then listen again.

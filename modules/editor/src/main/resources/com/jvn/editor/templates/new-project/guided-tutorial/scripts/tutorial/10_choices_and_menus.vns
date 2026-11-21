@@ -9,19 +9,18 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide normal]
-ginger: I found an envelope under the studio door. Shall we open it now, or save it for later?
+ginger: I found an envelope wedged under the studio door. Shall we open it?
 > Open the envelope -> read_note
-> Leave it on the table -> leave_note
+> Hold it up to the light -> look_inside
 @label read_note
 [show ginger guide embarrassed]
-ginger: It's our rehearsal schedule. We were supposed to start ten minutes ago!
+ginger: It's my own handwriting. “Remember to write an example about choices.” Well, that's one thing done!
 [jump compare]
-@label leave_note
-[show ginger guide thoughtful]
-ginger: I'll put it beside the bell. Whoever comes in next will see it.
-[jump compare]
+@label look_inside
+[show ginger guide confused]
+ginger: There's a folded page inside. I can just make out the word “choices” through the paper.
 @label compare
-ginger: We both ended up here, but you only heard the reply you chose. Both labels jump back to this line.
+ginger: We ended up here together, but you decided which line I said. Follow the arrows in this script to see where the paths meet.
 > Review question -> check
 > Back to topics -> return_hub
 @label check

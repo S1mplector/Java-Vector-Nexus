@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide thoughtful]
-ginger: Look closely at my outline. I'll turn the image effect on and off so you can compare it on the same pose.
+ginger: Look at the edge of my sleeve. I'll switch the effect on and off so you can spot what changed.
 [if !tutorial_still]
 [set character.ginger.imageEffect pikupiku.lineboil]
 [endif]

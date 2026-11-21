@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide thoughtful]
-ginger: I want to rehearse just this moment. Open Puppeteer at this script line to see the stage I'm standing on.
+ginger: Let's change my expression without replaying the whole scene. Put the cursor on the line you want to see.
 ginger: Place the cursor on this line, open Puppeteer, then return to the source and change the pose.
 > Review question -> check
 > Back to topics -> return_hub

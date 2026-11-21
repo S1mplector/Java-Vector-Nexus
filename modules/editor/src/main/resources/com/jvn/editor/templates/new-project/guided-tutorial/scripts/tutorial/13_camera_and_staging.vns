@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide thoughtful]
-ginger: Come a little closer. Watch what changes when the camera moves and I stay still.
+ginger: Stay where you are. I'll bring the camera closer so you can see my expression.
 [if !tutorial_still]
 timeline {
   parallel {
@@ -18,7 +18,7 @@ timeline {
   }
 }
 [endif]
-ginger: Compare the two keyframes in Puppeteer. Watch Ginger as the scale increases.
+ginger: Compare the two keyframes in Puppeteer. Watch my face as the shot gets tighter.
 > Review question -> check
 > Back to topics -> return_hub
 @label check

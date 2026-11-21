@@ -9,7 +9,7 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide thoughtful]
-ginger: Have we met before? A flag lets me remember a yes or a no the next time you visit.
+ginger: Let's give the scene a memory. I'll set a flag when we find the letter, then ask the script whether we've seen it.
 [flag example_ready]
 [if example_ready]
 ginger: This line appears because the flag is true.
@@ -23,7 +23,7 @@ ginger: What keeps a flag value between dialogue lines?
 > A label name. -> retry
 > Back to topics -> return_hub
 @label retry
-[show ginger guide confused]
+[show ginger guide sad]
 ginger: The flag writes state and the condition reads it. Give it another try.
 [jump check]
 @label correct

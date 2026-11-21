@@ -814,6 +814,7 @@ public class RuntimeVnInterop implements VnInterop, VnTimelineAccessorProvider {
         }
       } catch (Exception ex) {
         reportInteropFailure(scene, "vns", "goto " + target, ex);
+        return VnInteropResult.block();
       }
       return VnInteropResult.advance();
     }
@@ -859,9 +860,9 @@ public class RuntimeVnInterop implements VnInterop, VnTimelineAccessorProvider {
     VnScene vn = new VnScene(sc);
     vn.getState().setSourceScriptName(script);
     if (current.getAudioFacade() != null) vn.setAudioFacade(current.getAudioFacade());
+    vn.getState().setVariables(current.getState().getVariables());
     // carry settings
     copySettings(current.getState().getSettings(), vn.getState().getSettings());
-    vn.getState().getVariables().putAll(current.getState().getVariables());
     vn.setInterop(this);
     return vn;
   }
