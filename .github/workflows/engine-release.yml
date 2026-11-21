@@ -6,6 +6,8 @@ on:
     paths:
       - '.github/workflows/engine-release.yml'
       - 'gradle.properties'
+      - 'build.gradle.kts'
+      - 'modules/**'
       - 'scripts/package-native-hub.py'
       - 'scripts/ship-engine.py'
       - 'scripts/windows-hub.iss'
@@ -141,6 +143,8 @@ jobs:
             assets+=("$file")
           done
           if [[ "$GITHUB_REF_TYPE" = branch ]]; then
+            current=$(gh api "repos/$GH_REPO/git/ref/heads/$GITHUB_REF_NAME" --jq .object.sha)
+            [[ "$current" = "$GITHUB_SHA" ]] || { echo "A newer release commit is building."; exit 0; }
             if ! gh api --method POST "repos/$GH_REPO/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA" --silent; then
               [[ "$(gh api "repos/$GH_REPO/commits/$TAG" --jq .sha)" = "$GITHUB_SHA" ]] || exit 1
             fi
