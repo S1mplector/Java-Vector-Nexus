@@ -181,7 +181,7 @@ class NewProjectScaffoldTemplateWiringTest {
     for (String path : TUTORIAL_TEMPLATE_PATHS) {
       String rendered = render(path);
       String done = String.format(java.util.Locale.ROOT, "tutorial_done_%02d", ++number);
-      assertTrue(rendered.contains("[show pip guide "), path);
+      assertTrue(rendered.contains("[show ginger guide "), path);
       assertTrue(rendered.contains("[if !" + done + "]\n[flag " + done + "]\n[inc tutorial_count]\n[endif]"), path);
       assertTrue(rendered.indexOf("[inc tutorial_count]") > rendered.indexOf("@label return_hub"), path);
     }
@@ -225,7 +225,7 @@ class NewProjectScaffoldTemplateWiringTest {
         @charimg lavender happy assets/lavender.png
         @charimg lavender emphasis assets/lavender.png
         """;
-    String definitions = rendered.contains("pip ") ? loadTemplate("guided-tutorial/characters.vns") : sharedCharacters;
+    String definitions = rendered.contains("ginger ") ? loadTemplate("guided-tutorial/characters.vns") : sharedCharacters;
     String stage = loadTemplate("assets/tutorial/dusk.stagepreset");
     new VnScriptParser().parse(
         new ByteArrayInputStream(rendered.getBytes(StandardCharsets.UTF_8)),

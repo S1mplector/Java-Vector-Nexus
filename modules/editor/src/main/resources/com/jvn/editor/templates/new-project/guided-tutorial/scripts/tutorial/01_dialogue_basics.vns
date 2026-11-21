@@ -5,26 +5,26 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide listen]
-pip: This is dialogue. In VNS, write the character ID, a colon, and the words you want them to say.
-pip: Open this lesson's .vns file, change this sentence, and run it again.
+[show ginger guide thoughtful]
+ginger: Can you give me a different opening line? In the script, find my name followed by a colon. The words after it are mine.
+ginger: Open this lesson's .vns file, change this sentence, and run it again.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: Which line displays dialogue?
-> pip: Hello! -> correct
+ginger: Which line displays dialogue?
+> ginger: Hello! -> correct
 > @label start_here -> retry
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: A speaker ID before a colon makes a dialogue line. A label names a place to jump. Give it another try.
+[show ginger guide confused]
+ginger: A speaker ID before a colon makes a dialogue line. A label names a place to jump. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: A speaker ID before a colon makes a dialogue line. A label names a place to jump.
+[show ginger guide normal]
+ginger: A speaker ID before a colon makes a dialogue line. A label names a place to jump.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

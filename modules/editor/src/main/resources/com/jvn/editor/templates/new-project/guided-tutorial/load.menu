@@ -1,0 +1,14 @@
+titleText=Load game
+hintsText=Enter to load    /    Esc to return    /    Left or right to change page
+items=save_slot
+item.save_slot.action=load_menu
+layout=slots
+defaultItemStyle=slot
+wrapSelection=true
+item.save_slot.style=slot
+item.save_slot.showSidePreview=false
+item.save_slot.slotPreviewEnabled=true
+item.save_slot.slotPreviewX=0.76
+item.save_slot.slotPreviewY=0.08
+item.save_slot.slotPreviewWidth=0.22
+item.save_slot.slotPreviewHeight=0.84

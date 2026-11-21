@@ -5,30 +5,30 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide notes]
-pip: A flag stores a true or false value. This example sets a flag, then reads it.
+[show ginger guide thoughtful]
+ginger: Have we met before? A flag lets me remember a yes or a no the next time you visit.
 [flag example_ready]
 [if example_ready]
-pip: This line appears because the flag is true.
+ginger: This line appears because the flag is true.
 [endif]
-pip: Change the condition to its opposite and replay the example.
+ginger: Change the condition to its opposite and replay the example.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: What keeps a flag value between dialogue lines?
+ginger: What keeps a flag value between dialogue lines?
 > A story variable. -> correct
 > A label name. -> retry
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: The flag writes state and the condition reads it. Give it another try.
+[show ginger guide confused]
+ginger: The flag writes state and the condition reads it. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: The flag writes state and the condition reads it.
+[show ginger guide normal]
+ginger: The flag writes state and the condition reads it.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

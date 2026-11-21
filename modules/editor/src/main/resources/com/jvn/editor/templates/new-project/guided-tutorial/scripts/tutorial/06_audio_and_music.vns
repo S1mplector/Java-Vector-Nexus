@@ -5,27 +5,27 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide present]
-pip: The sfx command plays a sound once. Listen to this example.
+[show ginger guide normal]
+ginger: Did you hear that? One sfx command rings the bell once. Let's try it together.
 [sfx assets/tutorial/welcome.wav]
-pip: Find welcome.wav in assets/tutorial. Replay the example to hear it again.
+ginger: Find welcome.wav in assets/tutorial. Replay the example to hear it again.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: Which command fits a short sound effect?
+ginger: Which command fits a short sound effect?
 > bgm -> retry
 > sfx -> correct
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: A one-shot sound can finish while the scene continues. Give it another try.
+[show ginger guide confused]
+ginger: A one-shot sound can finish while the scene continues. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: A one-shot sound can finish while the scene continues.
+[show ginger guide normal]
+ginger: A one-shot sound can finish while the scene continues.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

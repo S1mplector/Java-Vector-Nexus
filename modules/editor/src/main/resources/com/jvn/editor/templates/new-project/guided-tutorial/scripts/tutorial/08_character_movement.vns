@@ -5,56 +5,40 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide point]
-pip: A move command changes a character's position over time. Watch Pip move toward the right.
+[show ginger guide thoughtful]
+ginger: See the empty spot on the right? I'll cross over. Watch where I start and where I stop.
 [if !tutorial_still]
-[move pip guide stride-a-right exprdur=0]
-[move pip rightmark ease_in_out_cubic 740]
-[wait 180]
-[move pip rightmark stride-b-right exprdur=0]
-[wait 180]
-[move pip rightmark stride-c-right exprdur=0]
-[wait 180]
-[move pip rightmark stride-b-right exprdur=0]
-[wait 200]
-[move pip rightmark neutral exprdur=90]
+[move ginger rightmark ease_in_out_cubic 740]
+[wait 740]
 [endif]
 [if tutorial_still]
-[show pip guide point]
-pip: In reduced motion, Pip points toward the right from the starting position.
+[show ginger guide thoughtful]
+ginger: In reduced motion, I'll stay right here. The destination is still the mark on the right.
 [else]
-pip: Pip is at the second position. The background stayed still.
+ginger: Here I am at the second mark. The background stayed still.
 [endif]
 [if !tutorial_still]
-[move pip rightmark stride-a-left exprdur=0]
-[move pip guide ease_out_cubic 560]
-[wait 140]
-[move pip guide stride-b-left exprdur=0]
-[wait 140]
-[move pip guide stride-c-left exprdur=0]
-[wait 140]
-[move pip guide stride-b-left exprdur=0]
-[wait 140]
-[move pip guide point exprdur=90]
+[move ginger guide ease_out_cubic 560]
+[wait 560]
 [endif]
-pip: Change the duration of the first move, then replay it.
+ginger: Change the duration of the first move, then replay it.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: What lets an actor move without replacing the set?
+ginger: What lets an actor move without replacing the set?
 > A new stage preset. -> retry
 > A character position. -> correct
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: Character positions belong to the actor. Give it another try.
+[show ginger guide confused]
+ginger: Character positions belong to the actor. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: Character positions belong to the actor.
+[show ginger guide normal]
+ginger: Character positions belong to the actor.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

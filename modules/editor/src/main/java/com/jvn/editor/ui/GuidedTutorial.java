@@ -19,15 +19,17 @@ final class GuidedTutorial {
     copy(root, "guided-tutorial/characters.vns", "scripts/definitions/characters.vns");
     copy(root, "assets/tutorial/dusk.stagepreset", "scripts/definitions/dusk.stagepreset");
     copy(root, "guided-tutorial/panel.jes", "scripts/scenes/panel.jes");
-    copy(root, "assets/tutorial/icon.png", "assets/icon.png");
     for (String file : List.of("white.png", "welcome.wav", "CaveatBrush-Regular.ttf", "CaveatBrush-OFL.txt",
-        "neutral.png", "wave.png", "curious.png", "point.png", "surprised.png", "listen.png", "cheer.png",
-        "present.png", "notes.png",
-        "stride-a-right.png", "stride-a-left.png", "stride-b-right.png", "stride-b-left.png",
-        "stride-c-right.png", "stride-c-left.png")) {
+        "ginger_angry.png", "ginger_annoyed.png", "ginger_confused.png", "ginger_embarrassed.png",
+        "ginger_normal.png", "ginger_sad.png", "ginger_shy.png", "ginger_thoughtful.png")) {
       String path = "assets/tutorial/" + file;
       copy(root, path, path);
     }
+    Path portrait = root.resolve("assets/tutorial/ginger_normal.png");
+    var image = javax.imageio.ImageIO.read(portrait.toFile());
+    int size = Math.min(image.getWidth(), image.getHeight());
+    javax.imageio.ImageIO.write(image.getSubimage((image.getWidth() - size) / 2, 0, size, size),
+        "png", root.resolve("assets/icon.png").toFile());
     for (String path : List.of("config/facets/tutorial_card.facet", "config/phone/phone.properties"))
       copy(root, path, path);
     copyCourse(root, "scripts/story/tutorial_hub.vns");
@@ -56,11 +58,25 @@ final class GuidedTutorial {
         Math.round(24 * scale), Math.max(18, Math.round(24 * scale)), Math.max(14, Math.round(18 * scale)),
         Math.max(14, Math.round(20 * scale)), Math.max(26, Math.round(39 * scale))),
         java.nio.file.StandardOpenOption.APPEND);
-    Files.writeString(root.resolve("config/locales/en.properties"), "\ntutorial.greeting=Hello from the English translation.\n",
+    Files.writeString(root.resolve("config/locales/en.properties"), "\ntutorial.greeting=Hello from the English translation.\n"
+            + "load.no_saves=No saved games yet.\nload.no_preview=No thumbnail\n",
         java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
     if (!menus) return;
+    for (String menu : List.of("save", "load")) {
+      String target = "config/menu/menus/" + menu + ".menu";
+      if (Files.exists(root.resolve(target))) copy(root, "guided-tutorial/" + menu + ".menu", target);
+    }
     copy(root, "guided-tutorial/menu.theme", "config/menu/theme/menu.theme");
     copy(root, "guided-tutorial/main.layout", "config/menu/layouts/default.layout");
+    for (String layout : List.of("settings", "slots", "submenu")) {
+      copy(root, "guided-tutorial/" + layout + ".layout", "config/menu/layouts/" + layout + ".layout");
+    }
+    copy(root, "guided-tutorial/pause.menu", "config/menu/menus/pause.menu");
+    Path registry = root.resolve("config/menu/registry/menu.registry");
+    Properties menuRegistry = new Properties();
+    try (var reader = Files.newBufferedReader(registry)) { menuRegistry.load(reader); }
+    menuRegistry.setProperty("menus", menuRegistry.getProperty("menus") + ",pause");
+    try (var writer = Files.newBufferedWriter(registry)) { menuRegistry.store(writer, "Tutorial menus"); }
     for (String style : List.of("default", "submenu", "settings", "slot")) {
       copy(root, "guided-tutorial/tutorial.style", "config/menu/styles/" + style + ".style");
     }
@@ -71,7 +87,7 @@ final class GuidedTutorial {
     items.remove("extras");
     properties.setProperty("items", String.join(",", items));
     properties.setProperty("titleText", "JVN Tutorial");
-    properties.setProperty("subtitleText", "30 lessons with Pip");
+    properties.setProperty("subtitleText", "30 lessons with Ginger");
     properties.setProperty("item.new_game.label", "Start tutorial");
     properties.setProperty("item.continue.label", "Load game");
     properties.setProperty("backgroundAsset", "assets/tutorial/white.png");

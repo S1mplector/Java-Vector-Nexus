@@ -5,12 +5,12 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide notes]
-pip: A facet displays values from the running game. This example binds a progress bar to a variable.
-pip: Open the example below. Then change example_progress in the script and open it again.
+[show ginger guide thoughtful]
+ginger: I'd like a progress bar that moves with the story. Watch it when we change the value it's reading.
+ginger: Open the example below. Then change example_progress in the script and open it again.
 > Open the sample panel -> checklist
 > Review question -> check
 > Back to topics -> return_hub
@@ -19,17 +19,17 @@ pip: Open the example below. Then change example_progress in the script and open
 [set example_progress 0.75]
 [screen call tutorial_card]
 @label check
-pip: What should drive a progress bar?
+ginger: What should drive a progress bar?
 > The state value that changes. -> correct
 > A copied screenshot of the readout. -> retry
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: A binding reads the current value whenever the UI updates. Give it another try.
+[show ginger guide confused]
+ginger: A binding reads the current value whenever the UI updates. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: A binding reads the current value whenever the UI updates.
+[show ginger guide normal]
+ginger: A binding reads the current value whenever the UI updates.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

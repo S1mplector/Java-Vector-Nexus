@@ -2,13 +2,11 @@
 
 Choose **Start tutorial** and select a topic. Each example explains one feature, shows the relevant commands, and suggests an edit to try. Choose **Back to topics** to finish, or take the optional review question. Replaying a topic counts once.
 
-Use **Progress and motion** to check completion or toggle movement. Try **Character movement** to see Pip walk, **Puppeteer timelines** to edit Pip’s movement, or **Stage lighting** to compare the stage before and after applying a preset.
+Use **Progress and motion** to check completion or toggle movement. Try **Character movement** to move Ginger across the stage, **Puppeteer timelines** to edit Ginger’s movement, or **Stage lighting** to compare the stage before and after applying a preset.
 
 The topic menu is in `scripts/story/tutorial_hub.vns`. The examples are in `scripts/tutorial/` and the background and character poses are in `assets/tutorial/`.
 
-![Pip introducing dialogue on the tutorial stage](../assets/images/tutorial/jvn-tutorial.webp)
-
-[Watch the character movement example.](../assets/images/tutorial/pip-walk.mp4)
+The topic picker follows the lesson-and-return structure of the [Ren’Py tutorial source](https://github.com/renpy/renpy/blob/master/tutorial/game/script.rpy). Ginger’s dialogue and examples are written for JVN.
 
 ## Lesson references
 

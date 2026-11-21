@@ -29,6 +29,9 @@ public class VnState {
   private VnScenario scenario;
   private String sourceScriptName;
   private int currentNodeIndex;
+  private int focusedChoiceIndex = -1;
+  public int getFocusedChoiceIndex() { return focusedChoiceIndex; }
+  public void setFocusedChoiceIndex(int index) { focusedChoiceIndex = index; }
   private String currentBackgroundId;
   private String previousBackgroundId;
   private final Map<CharacterPosition, CharacterSlot> visibleCharacters;

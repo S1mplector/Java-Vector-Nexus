@@ -294,6 +294,19 @@ public class FxLauncher extends Application {
         return;
       }
 
+      if (cur instanceof VnScene vn && vn.getState().getCurrentNode() != null
+          && vn.getState().getCurrentNode().getType() == com.jvn.core.vn.VnNodeType.CHOICE) {
+        if (e.getCode() == KeyCode.UP || e.getCode() == KeyCode.DOWN) {
+          vn.moveChoiceFocus(e.getCode() == KeyCode.UP ? -1 : 1);
+          e.consume();
+          return;
+        }
+        if (e.getCode() == KeyCode.ENTER && vn.getState().getFocusedChoiceIndex() >= 0) {
+          vn.selectChoice(vn.getState().getFocusedChoiceIndex());
+          e.consume();
+          return;
+        }
+      }
       if (e.getCode() == KeyCode.SPACE || e.getCode() == KeyCode.ENTER) {
         if (!handleMenuEnter()) handleAdvance();
       } else if (e.getCode() == KeyCode.CONTROL || e.getCode() == KeyCode.COMMAND) {
@@ -421,6 +434,7 @@ public class FxLauncher extends Application {
 
     canvas.setOnMouseMoved(e -> {
       com.jvn.core.scene.Scene currentScene = engine != null ? engine.scenes().peek() : null;
+      if (currentScene instanceof VnScene vn) vn.getState().setFocusedChoiceIndex(-1);
       mouseX = toSceneX(e.getX(), currentScene);
       mouseY = toSceneY(e.getY(), currentScene);
       if (engine != null && engine.input() != null) engine.input().setMousePosition(mouseX, mouseY);

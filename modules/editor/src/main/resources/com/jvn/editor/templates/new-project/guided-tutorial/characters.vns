@@ -1,22 +1,15 @@
-@character pip "Pip"
+@character ginger "Ginger"
 @character narrator "Narrator"
 @background room assets/tutorial/white.png
 @stagepreset dusk /definitions/dusk.stagepreset
-@charimg pip wave assets/tutorial/wave.png
-@charimg pip neutral assets/tutorial/neutral.png
-@charimg pip curious assets/tutorial/curious.png
-@charimg pip point assets/tutorial/point.png
-@charimg pip surprised assets/tutorial/surprised.png
-@charimg pip listen assets/tutorial/listen.png
-@charimg pip cheer assets/tutorial/cheer.png
-@charimg pip present assets/tutorial/present.png
-@charimg pip notes assets/tutorial/notes.png
+@charimg ginger angry assets/tutorial/ginger_angry.png
+@charimg ginger annoyed assets/tutorial/ginger_annoyed.png
+@charimg ginger confused assets/tutorial/ginger_confused.png
+@charimg ginger embarrassed assets/tutorial/ginger_embarrassed.png
+@charimg ginger normal assets/tutorial/ginger_normal.png
+@charimg ginger sad assets/tutorial/ginger_sad.png
+@charimg ginger shy assets/tutorial/ginger_shy.png
+@charimg ginger thoughtful assets/tutorial/ginger_thoughtful.png
 @position guide 0.50 0.99
 @position topics 0.26 0.99
 @position rightmark 0.78 0.99
-@charimg pip stride-a-right assets/tutorial/stride-a-right.png
-@charimg pip stride-a-left assets/tutorial/stride-a-left.png
-@charimg pip stride-b-right assets/tutorial/stride-b-right.png
-@charimg pip stride-b-left assets/tutorial/stride-b-left.png
-@charimg pip stride-c-right assets/tutorial/stride-c-right.png
-@charimg pip stride-c-left assets/tutorial/stride-c-left.png

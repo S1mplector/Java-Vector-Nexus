@@ -5,29 +5,29 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide present]
-pip: A VNS script can open a JES scene, then resume the lesson when you close it.
-pip: Open the example below. Press Enter or Esc to return. Its source is scripts/scenes/panel.jes.
+[show ginger guide normal]
+ginger: I built a small panel in JES. You can visit it from my script and come back here when you're done.
+ginger: Open the example below. Press Enter or Esc to return. Its source is scripts/scenes/panel.jes.
 > Open the example scene -> visit
 > Review question -> check
 > Back to topics -> return_hub
 @label visit
 [jes push scripts/scenes/panel.jes label check]
 @label check
-pip: Where would you edit a JES panel?
+ginger: Where would you edit a JES panel?
 > In the .jes scene that owns it. -> correct
 > In the speaker declaration. -> retry
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: VNS controls story flow. JES owns the entities in its scene. Give it another try.
+[show ginger guide confused]
+ginger: VNS controls story flow. JES owns the entities in its scene. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: VNS controls story flow. JES owns the entities in its scene.
+[show ginger guide normal]
+ginger: VNS controls story flow. JES owns the entities in its scene.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

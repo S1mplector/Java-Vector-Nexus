@@ -5,26 +5,26 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide curious]
-pip: To reproduce a scene bug, record the script, the line, and the choices that led there.
-pip: Change one pose. Compare starting at that line with playing through it from the beginning.
+[show ginger guide confused]
+ginger: Something went wrong in rehearsal. Can you tell me which choice you picked just before it happened?
+ginger: Change one pose. Compare starting at that line with playing through it from the beginning.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: Which report makes a scene bug reproducible?
+ginger: Which report makes a scene bug reproducible?
 > A screenshot of the project folder. -> retry
 > The script, source line and exact preceding choice. -> correct
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: The same state and cursor give the reviewer a repeatable starting point. Give it another try.
+[show ginger guide confused]
+ginger: The same state and cursor give the reviewer a repeatable starting point. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: The same state and cursor give the reviewer a repeatable starting point.
+[show ginger guide normal]
+ginger: The same state and cursor give the reviewer a repeatable starting point.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

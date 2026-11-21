@@ -49,6 +49,16 @@ public final class WhatsNewCatalog {
   private static Map<String, Release> createReleases() {
     Map<String, Release> releases = new LinkedHashMap<>();
     add(releases, new Release(
+        "v0.9.3", "Meet Ginger in the tutorial workspace.",
+        List.of(
+            new Section("Ginger’s studio", "Create a Tutorial Workspace with Ginger and choose Start tutorial.", List.of(
+                "Explore 30 lessons. Follow either branch in the envelope example and return to your topic list.",
+                "Use the arrows and Enter to choose a route. Progress follows you between lessons."),
+                AeroIcon.Kind.DOCUMENTATION, null),
+            new Section("In-game menus", "Pause, Settings, Save and Load share the tutorial’s illustrated menu design.", List.of(
+                "Adjust settings with sliders and switches. Browse saved games with inline thumbnails."),
+                AeroIcon.Kind.PROJECT, null)), true));
+    add(releases, new Release(
         "v0.9.2", "Create a playable project with Pip from New Project.",
         List.of(
             new Section("Tutorial Workspace with Pip", "Choose Tutorial Workspace with Pip, then Create Pip Tutorial.", List.of(

@@ -61,6 +61,7 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
+          export JVN_TUTORIAL_QA_DIR="$RUNNER_TEMP/jvn-tutorial-preview"
           export JVN_PACKAGED_ENGINE_ROOT="$RUNNER_TEMP/jvn-release-workspace"
           engine="$(java -jar "build/distributions/jvn-engine-hub-lite-$VERSION.jar" --extract-only | tail -n 1)"
           cd "$engine"
@@ -78,6 +79,11 @@ jobs:
       - name: Build packages and test the installed Hub
         shell: bash
         run: python scripts/package-native-hub.py "$VERSION" "build/distributions/jvn-engine-hub-lite-$VERSION.jar" build/native-hub --test-install
+      - name: Include the wizard-generated tutorial and menu preview
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          cp "$RUNNER_TEMP/jvn-tutorial-preview/Ginger-Tutorial.zip" "$RUNNER_TEMP/jvn-tutorial-preview/Ginger-menus.png" build/native-hub/
       - uses: actions/upload-artifact@v4
         with:
           name: hub-${{ matrix.runner }}
@@ -115,6 +121,10 @@ jobs:
             test -s "$file"
             sha256sum --check --strict "$file.sha256"
             assets+=("$file" "$file.sha256")
+          done
+          for file in Ginger-Tutorial.zip Ginger-menus.png; do
+            test -s "$file"
+            assets+=("$file")
           done
           if [[ "$GITHUB_REF_TYPE" = branch ]]; then
             if ! gh api --method POST "repos/$GH_REPO/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA" --silent; then

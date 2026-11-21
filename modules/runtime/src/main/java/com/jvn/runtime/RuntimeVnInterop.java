@@ -810,6 +810,7 @@ public class RuntimeVnInterop implements VnInterop, VnTimelineAccessorProvider {
         if (newScene != null) {
           if (label != null && !label.isBlank()) newScene.getState().jumpToLabel(label);
           engine.scenes().replace(newScene);
+          return VnInteropResult.block();
         }
       } catch (Exception ex) {
         reportInteropFailure(scene, "vns", "goto " + target, ex);
@@ -834,7 +835,7 @@ public class RuntimeVnInterop implements VnInterop, VnTimelineAccessorProvider {
         case "replace":
         default:
           engine.scenes().replace(newScene);
-          break;
+          return VnInteropResult.block();
       }
     } catch (Exception ex) {
       reportInteropFailure(scene, "vns", cmd + " " + script, ex);
@@ -860,6 +861,7 @@ public class RuntimeVnInterop implements VnInterop, VnTimelineAccessorProvider {
     if (current.getAudioFacade() != null) vn.setAudioFacade(current.getAudioFacade());
     // carry settings
     copySettings(current.getState().getSettings(), vn.getState().getSettings());
+    vn.getState().getVariables().putAll(current.getState().getVariables());
     vn.setInterop(this);
     return vn;
   }

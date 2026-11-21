@@ -1,0 +1,10 @@
+titleText=Paused
+layout=submenu
+defaultItemStyle=submenu
+hintsText=Esc to resume
+items=resume,save,load,settings,main_menu
+item.resume.action=back
+item.save.action=save_menu
+item.load.action=load_menu
+item.settings.action=settings_menu
+item.main_menu.action=main_menu

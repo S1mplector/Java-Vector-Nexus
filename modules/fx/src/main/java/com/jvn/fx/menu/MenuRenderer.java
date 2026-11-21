@@ -158,14 +158,16 @@ public class MenuRenderer {
   public void renderPauseMenu(PauseMenuScene scene, double w, double h) {
     MenuLayoutSpec layout = scene != null ? scene.getMenuLayout() : null;
     MenuStyleSpec screenStyle = scene != null ? scene.getDefaultMenuStyle() : null;
-    drawGameplayMenuBackdrop(w, h);
+    if (theme.usesPaperMenus()) drawPaperBackdrop(w, h);
+    else drawGameplayMenuBackdrop(w, h);
 
     String title = scene != null ? scene.getDisplayTitle() : "Paused";
     String subtitle = scene != null ? scene.getDisplaySubtitle() : null;
     double titleY = (layout != null && layout.titleY() != null)
         ? resolve(layout.titleY(), h)
         : resolve(theme.getTitleY(), h);
-    drawHeader(title, subtitle, w, titleY, screenStyle, layout);
+    if (theme.usesPaperMenus()) drawPaperTitle(title, w, h);
+    else drawHeader(title, subtitle, w, titleY, screenStyle, layout);
 
     String[] items = scene != null ? scene.getDisplayItems() : new String[]{"Resume"};
     boolean[] enabled = new boolean[items.length];
@@ -189,12 +191,14 @@ public class MenuRenderer {
     MenuLayoutSpec layout = scene != null ? scene.getMenuLayout() : null;
     MenuStyleSpec screenStyle = scene != null ? scene.getDefaultMenuStyle() : null;
     String screenBg = scene != null && scene.getMenuScreen() != null ? scene.getMenuScreen().backgroundAsset() : null;
-    if (scene != null && scene.getCurrentVnScene() != null) drawGameplayMenuBackdrop(w, h);
+    if (theme.usesPaperMenus()) drawPaperBackdrop(w, h);
+    else if (scene != null && scene.getCurrentVnScene() != null) drawGameplayMenuBackdrop(w, h);
     else drawScreenBackground(w, h, screenStyle, false, screenBg);
     String title = scene != null ? scene.getDisplayTitle() : Localization.t("save.title");
     String subtitle = scene != null ? scene.getDisplaySubtitle() : null;
     double titleY = (layout != null && layout.titleY() != null) ? resolve(layout.titleY(), h) : 60.0;
-    drawHeader(title, subtitle, w, titleY, screenStyle, layout);
+    if (theme.usesPaperMenus()) drawPaperTitle(title, w, h);
+    else drawHeader(title, subtitle, w, titleY, screenStyle, layout);
     List<String> saves = scene.getSaves();
     String[] items = new String[(saves.size() + 1)];
     items[0] = scene.getNewSlotLabel();
@@ -241,12 +245,14 @@ public class MenuRenderer {
     MenuLayoutSpec layout = scene != null ? scene.getMenuLayout() : null;
     MenuStyleSpec screenStyle = scene != null ? scene.getDefaultMenuStyle() : null;
     String screenBg = scene != null && scene.getMenuScreen() != null ? scene.getMenuScreen().backgroundAsset() : null;
-    if (scene != null && scene.getGameplayVnScene() != null) drawGameplayMenuBackdrop(w, h);
+    if (theme.usesPaperMenus()) drawPaperBackdrop(w, h);
+    else if (scene != null && scene.getGameplayVnScene() != null) drawGameplayMenuBackdrop(w, h);
     else drawScreenBackground(w, h, screenStyle, false, screenBg);
     String title = scene != null ? scene.getDisplayTitle() : Localization.t("load.title");
     String subtitle = scene != null ? scene.getDisplaySubtitle() : null;
     double titleY = (layout != null && layout.titleY() != null) ? resolve(layout.titleY(), h) : 60.0;
-    drawHeader(title, subtitle, w, titleY, screenStyle, layout);
+    if (theme.usesPaperMenus()) drawPaperTitle(title, w, h);
+    else drawHeader(title, subtitle, w, titleY, screenStyle, layout);
     List<String> saves = scene.getSaves();
     int visibleStartIndex = 0;
     int visibleDrawCount = 0;
@@ -257,7 +263,11 @@ public class MenuRenderer {
       int emptySlots = parseItemExtraInt(template, "emptySlotCount", scene != null ? scene.getPageSize() : 0);
       int configuredVisible = parseItemExtraInt(template, "visibleSlotCount", 0);
       int drawSlots = Math.max(emptySlots, configuredVisible);
-      if (drawSlots > 0 && scene != null) {
+      if (theme.usesPaperMenus()) {
+        gc.setFill(Color.web("#504a45"));
+        gc.setFont(Font.font("SansSerif", Math.min(22, h * .035)));
+        gc.fillText(Localization.t("load.no_saves"), w * .39, h * .30);
+      } else if (drawSlots > 0 && scene != null) {
         String[] items = new String[drawSlots];
         boolean[] enabled = new boolean[drawSlots];
         MenuStyleSpec[] styles = new MenuStyleSpec[drawSlots];
@@ -449,12 +459,14 @@ public class MenuRenderer {
     MenuLayoutSpec layout = scene != null ? scene.getMenuLayout() : null;
     MenuStyleSpec screenStyle = scene != null ? scene.getDefaultMenuStyle() : null;
     String screenBg = scene != null && scene.getMenuScreen() != null ? scene.getMenuScreen().backgroundAsset() : null;
-    if (scene != null && scene.getGameplayVnScene() != null) drawGameplayMenuBackdrop(w, h);
+    if (theme.usesPaperMenus()) drawPaperBackdrop(w, h);
+    else if (scene != null && scene.getGameplayVnScene() != null) drawGameplayMenuBackdrop(w, h);
     else drawScreenBackground(w, h, screenStyle, false, screenBg);
     String title = scene != null ? scene.getDisplayTitle() : Localization.t("settings.title");
     String subtitle = scene != null ? scene.getDisplaySubtitle() : null;
     double titleY = (layout != null && layout.titleY() != null) ? resolve(layout.titleY(), h) : 60.0;
-    drawHeader(title, subtitle, w, titleY, screenStyle, layout);
+    if (theme.usesPaperMenus()) drawPaperTitle(title, w, h);
+    else drawHeader(title, subtitle, w, titleY, screenStyle, layout);
 
     String[] items = scene.getDisplayItems();
     boolean[] enabled = new boolean[items.length];
@@ -493,6 +505,31 @@ public class MenuRenderer {
   private void clear(double w, double h) {
     gc.setFill(theme.getBackgroundColor());
     gc.fillRect(0, 0, w, h);
+  }
+
+  private void drawPaperBackdrop(double w, double h) {
+    gc.setFill(Color.web("#fbfaf7"));
+    gc.fillRect(0, 0, w, h);
+    gc.setFill(Color.web("#eee9e3"));
+    gc.fillRect(0, 0, w * .32, h * .89);
+    Image portrait = loadImage(theme.getSecondaryMenuPortrait());
+    if (portrait != null && !portrait.isError() && portrait.getWidth() > 0 && portrait.getHeight() > 0) {
+      double scale = Math.min(w * .25 / portrait.getWidth(), h * .64 / portrait.getHeight());
+      double width = portrait.getWidth() * scale;
+      double height = portrait.getHeight() * scale;
+      gc.drawImage(portrait, w * .16 - width / 2, h * .89 - height, width, height);
+    }
+    gc.setFill(Color.web("#c9c0b7"));
+    gc.fillRect(0, h * .89, w, 1);
+  }
+
+  private void drawPaperTitle(String title, double w, double h) {
+    gc.setFill(Color.web("#302d2a"));
+    gc.setFont(ProjectFontResolver.resolve(projectRoot, theme.getTitleFontFamily(), FontWeight.NORMAL,
+        Math.min(w * .06, h * .095), "Serif"));
+    if (title != null) gc.fillText(title, w * .035, h * .15, w * .26);
+    gc.setFill(Color.web("#a6644d"));
+    gc.fillRect(w * .035, h * .185, w * .06, 3);
   }
 
   private void drawGameplayMenuBackdrop(double w, double h) {
@@ -871,6 +908,12 @@ public class MenuRenderer {
         Image buttonBg = loadImage(backgroundAsset);
         if (buttonBg != null) {
           gc.drawImage(buttonBg, rect.x(), rect.y(), rect.w(), rect.h());
+        } else if (theme.usesPaperMenus()) {
+          gc.setFill(sel ? Color.web("#eee3d9") : Color.WHITE);
+          gc.fillRoundRect(rect.x(), rect.y(), rect.w(), rect.h(), 8, 8);
+          gc.setStroke(sel ? Color.web("#99634b") : Color.web("#d8d1c9"));
+          gc.setLineWidth(sel ? 1.6 : 1);
+          gc.strokeRoundRect(rect.x(), rect.y(), rect.w(), rect.h(), 8, 8);
         } else {
           Color bgFill = !isEnabled
               ? Color.rgb(80, 80, 90, 0.45)
@@ -1148,6 +1191,7 @@ public class MenuRenderer {
     double yStart = layout != null ? resolve(layout.listYStart(), h) : resolve(theme.getListYStart(), h);
     double lineH = layout != null ? layout.lineHeight() : theme.getLineHeight();
     if (lineH <= 0) lineH = theme.getLineHeight();
+    if (theme.usesPaperMenus()) lineH = Math.min(lineH, h * .70 / Math.max(1, count));
     double widthFactor = layout != null ? clamp(layout.listWidthFactor(), 0.1, 1.0) : 1.0;
     double listW = areaWidth * widthFactor;
     Double xCenter = layout != null ? layout.listXCenter() : null;
@@ -1879,9 +1923,9 @@ public class MenuRenderer {
           drawImageCover(placeholder, previewRect);
         }
       } else {
-        gc.setFill(Color.rgb(32, 36, 48, 0.95));
+        gc.setFill(theme.usesPaperMenus() ? Color.web("#e5ded6") : Color.rgb(32, 36, 48, 0.95));
         gc.fillRoundRect(previewRect.x(), previewRect.y(), previewRect.w(), previewRect.h(), 7, 7);
-        gc.setFill(Color.rgb(205, 212, 225, 0.85));
+        gc.setFill(theme.usesPaperMenus() ? Color.web("#544b44") : Color.rgb(205, 212, 225, 0.85));
         gc.setFont(theme.getHintFont());
         String txt = firstNonBlank(
             extra(itemSpec, "slotPreviewFallbackText"),
@@ -2024,6 +2068,9 @@ public class MenuRenderer {
 
   private double[] sliderGeometry(int index, int count, MenuItemSpec item, MenuItemSpec[] itemSpecs, MenuLayoutSpec layout, double w, double h) {
     Rect rowRect = resolveItemRect(index, count, item, itemSpecs, layout, 0, w, h);
+    if (theme.usesPaperMenus()) {
+      return new double[] {rowRect.x() + rowRect.w() * .55, rowRect.y() + rowRect.h() * .5, rowRect.w() * .39};
+    }
     double padX = Math.max(20, rowRect.w() * 0.16);
     double defaultSliderX = rowRect.x() + padX;
     double defaultSliderW = Math.max(140, rowRect.w() - (padX * 2));
@@ -2111,7 +2158,7 @@ public class MenuRenderer {
     if (trackImage != null && !trackImage.isError()) {
       gc.drawImage(trackImage, x, y, w, trackH);
     } else {
-      gc.setFill(Color.rgb(255, 255, 255, 0.15));
+      gc.setFill(theme.usesPaperMenus() ? Color.web("#dbd3ca") : Color.rgb(255, 255, 255, 0.15));
       gc.fillRoundRect(x, y, w, trackH, 6, 6);
     }
 
@@ -2241,6 +2288,15 @@ public class MenuRenderer {
       gc.drawImage(image, rect.x(), rect.y(), rect.w(), rect.h());
       return;
     }
+    if (theme.usesPaperMenus()) {
+      gc.setFill(Color.web(enabled ? "#875b46" : "#a39a91"));
+      gc.fillRoundRect(rect.x(), rect.y(), rect.w(), rect.h(), rect.h(), rect.h());
+      gc.setFill(Color.WHITE);
+      double d = rect.h() * .72;
+      gc.fillOval(rect.x() + (enabled ? rect.w() - d - rect.h() * .14 : rect.h() * .14),
+          rect.y() + rect.h() * .14, d, d);
+      return;
+    }
     gc.setFill(enabled ? Color.rgb(213, 108, 94, 0.95) : Color.rgb(232, 225, 178, 0.92));
     gc.fillRect(rect.x(), rect.y(), rect.w(), rect.h());
     gc.setStroke(highlight ? Color.rgb(18, 18, 18, 0.95) : Color.rgb(38, 38, 38, 0.7));
@@ -2265,6 +2321,11 @@ public class MenuRenderer {
   ) {
     if (item == null) return null;
     Rect rowRect = resolveItemRect(itemIndex, count, item, itemSpecs, layout, 0, canvasW, canvasH);
+    if (theme.usesPaperMenus()) {
+      double height = Math.min(19, rowRect.h() * .46);
+      return new Rect(rowRect.x() + rowRect.w() * .97 - height * 2,
+          rowRect.y() + (rowRect.h() - height) / 2, height * 2, height);
+    }
     Double toggleXRaw = parseExtraDouble(item, "toggleX");
     Double toggleYRaw = parseExtraDouble(item, "toggleY");
     Double toggleWidthRaw = parseExtraDouble(item, "toggleWidth");

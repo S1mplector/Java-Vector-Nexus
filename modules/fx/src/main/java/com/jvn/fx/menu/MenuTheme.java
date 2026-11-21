@@ -63,6 +63,8 @@ public class MenuTheme {
   private String labelQuit = null;
 
   private boolean dockPresentation;
+  private boolean paperMenus;
+  private String secondaryMenuPortrait;
   private boolean menuMotion = true;
   private String titleImageEffect;
 
@@ -190,6 +192,8 @@ public class MenuTheme {
 
     // Title screen assets
     backgroundImagePath = emptyToNull(p.getProperty("backgroundImage"));
+    paperMenus = "paper".equalsIgnoreCase(p.getProperty("secondaryMenuPresentation"));
+    secondaryMenuPortrait = p.getProperty("secondaryMenuPortrait");
     dockPresentation = "dock".equalsIgnoreCase(p.getProperty("mainMenuPresentation", "list"));
     menuMotion = parseBool(p.getProperty("menuMotion"), true);
     titleImageEffect = emptyToNull(p.getProperty("titleImageEffect"));
@@ -304,6 +308,8 @@ public class MenuTheme {
 
   // Title screen asset getters
   public String getBackgroundImagePath() { return backgroundImagePath; }
+  public boolean usesPaperMenus() { return paperMenus; }
+  public String getSecondaryMenuPortrait() { return secondaryMenuPortrait; }
   public boolean isDockPresentation() { return dockPresentation; }
   public boolean isMenuMotion() { return menuMotion; }
   public String getTitleImageEffect() { return titleImageEffect; }

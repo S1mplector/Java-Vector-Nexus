@@ -5,34 +5,34 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide neutral]
-pip: A Puppeteer timeline can move and scale a character. Watch Pip.
+[show ginger guide normal]
+ginger: I want to lean in a little when I speak. In Puppeteer I can move and grow in the same beat.
 [if !tutorial_still]
 timeline {
   parallel {
-    move "pip" { x:96 y:-12 dur:640 easing:ease_out }
-    scale "pip" { sx:1.08 sy:1.08 dur:640 easing:ease_out }
+    move "ginger" { x:96 y:-12 dur:640 easing:ease_out }
+    scale "ginger" { sx:1.08 sy:1.08 dur:640 easing:ease_out }
   }
 }
 [endif]
-pip: Open this timeline in Puppeteer. Change the final X position or duration, apply it, and replay.
+ginger: Open this timeline in Puppeteer. Change the final X position or duration, apply it, and replay.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: Which target moves this character?
-> pip -> correct
+ginger: Which target moves this character?
+> ginger -> correct
 > bg_current -> retry
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: Use the character ID to animate Pip. Give it another try.
+[show ginger guide confused]
+ginger: Use the character ID to animate Ginger. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: Use the character ID to animate Pip.
+[show ginger guide normal]
+ginger: Use the character ID to animate Ginger.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

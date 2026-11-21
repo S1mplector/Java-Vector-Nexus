@@ -9,3 +9,5 @@ itemColor=#333333
 itemSelectedColor=#141414
 hintColor=#686868
 accentColor=#545454
+secondaryMenuPresentation=paper
+secondaryMenuPortrait=assets/tutorial/ginger_thoughtful.png

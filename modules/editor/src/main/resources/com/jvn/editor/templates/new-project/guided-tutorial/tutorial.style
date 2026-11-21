@@ -10,3 +10,5 @@ hintsColor=#555555
 backgroundColor=#FFFFFF
 backgroundOpacity=1
 backgroundAsset=assets/tutorial/white.png
+itemFontSize=18
+hintsFontSize=13

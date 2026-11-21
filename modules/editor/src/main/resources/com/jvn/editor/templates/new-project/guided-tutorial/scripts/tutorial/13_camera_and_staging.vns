@@ -5,34 +5,34 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide point]
-pip: This example moves in for a closer shot of Pip.
+[show ginger guide thoughtful]
+ginger: Come a little closer. Watch what changes when the camera moves and I stay still.
 [if !tutorial_still]
 timeline {
   parallel {
-    move "pip" { x:-48 y:24 dur:640 easing:ease_out }
-    scale "pip" { sx:1.16 sy:1.16 dur:640 easing:ease_out }
+    move "ginger" { x:-48 y:24 dur:640 easing:ease_out }
+    scale "ginger" { sx:1.16 sy:1.16 dur:640 easing:ease_out }
   }
 }
 [endif]
-pip: Compare the two keyframes in Puppeteer. Watch Pip as the scale increases.
+ginger: Compare the two keyframes in Puppeteer. Watch Ginger as the scale increases.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: Why pair a small pan with a zoom?
+ginger: Why pair a small pan with a zoom?
 > To adjust the subject’s framing as it grows. -> correct
 > To change the speaker name. -> retry
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: Position and scale together control where the subject lands in the frame. Give it another try.
+[show ginger guide confused]
+ginger: Position and scale together control where the subject lands in the frame. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: Position and scale together control where the subject lands in the frame.
+[show ginger guide normal]
+ginger: Position and scale together control where the subject lands in the frame.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

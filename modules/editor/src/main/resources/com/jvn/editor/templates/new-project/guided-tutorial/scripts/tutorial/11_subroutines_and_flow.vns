@@ -5,27 +5,27 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide listen]
-pip: A subroutine lets several parts of a script use the same commands. This one plays a sound.
+[show ginger guide thoughtful]
+ginger: I keep using the same little bell. Let's put it in one subroutine so I can call it from a few different scenes.
 [call chime]
-pip: Find the chime label. Change the sound there, then replay the call.
+ginger: Find the chime label. Change the sound there, then replay the call.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: Which command comes at the end of a local subroutine?
+ginger: Which command comes at the end of a local subroutine?
 > return -> correct
 > end -> retry
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: Return resumes the caller. End finishes the scenario. Give it another try.
+[show ginger guide confused]
+ginger: Return resumes the caller. End finishes the scenario. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: Return resumes the caller. End finishes the scenario.
+[show ginger guide normal]
+ginger: Return resumes the caller. End finishes the scenario.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

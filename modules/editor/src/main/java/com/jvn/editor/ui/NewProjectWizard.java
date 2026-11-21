@@ -54,7 +54,7 @@ import javafx.stage.*;
 public class NewProjectWizard extends Stage {
   private enum ProjectTemplate {
     STARTER_STORY("Starter Story", "A lean starter project with a playable story flow, menu pack, and demo assets."),
-    TUTORIAL_WORKSPACE("Tutorial Workspace with Pip", "Pip’s monochrome tutorial with 30 independently playable topics."),
+    TUTORIAL_WORKSPACE("Tutorial Workspace with Ginger", "Ginger’s monochrome tutorial with 30 independently playable topics."),
     BLANK_SANDBOX("Blank Sandbox", "A stripped-down project for custom pipelines, no demo assets, and blank menu wiring."),
     CUSTOM("Custom", "A manual combination of modules and starter content.");
 
@@ -588,7 +588,7 @@ public class NewProjectWizard extends Stage {
     addStyleClasses(intro, "new-project-wizard-summary");
 
     chkStarterStory = createCheckBox("Starter Story Flow", true);
-    chkTutorialPack = createCheckBox("JVN tutorial with Pip (30 topics)", false);
+    chkTutorialPack = createCheckBox("JVN tutorial with Ginger (30 topics)", false);
     chkBundledDemoAssets = createCheckBox("Starter story artwork and music", true);
     chkTitleScreen = createCheckBox("Main Menu Profile Pack", true);
     chkSaveSystem = createCheckBox("Load/Save Menu Profiles", true);
@@ -662,7 +662,7 @@ public class NewProjectWizard extends Stage {
     options.add(chkBlankMenus, 1, 3);
 
     tip(chkStarterStory, "Include Lavender’s sample prologue, route split and epilogue.");
-    tip(chkTutorialPack, "Start at Pip’s topic menu and play any of the 30 lessons.");
+    tip(chkTutorialPack, "Start at Ginger’s topic menu and play any of the 30 lessons.");
     tip(chkBundledDemoAssets, "Include starter artwork and music for Lavender’s story.");
     tip(chkTitleScreen, "Create menu screens, layouts, styles and their registry.");
     tip(chkSaveSystem, "Create the default load and save menus.");
@@ -794,7 +794,7 @@ public class NewProjectWizard extends Stage {
 
     btnCreate = new Button("Create Project");
     btnCreate.textProperty().bind(javafx.beans.binding.Bindings.when(chkTutorialPack.selectedProperty())
-        .then("Create Pip Tutorial").otherwise("Create Project"));
+        .then("Create Ginger Tutorial").otherwise("Create Project"));
     btnCreate.setMinWidth(150);
     btnCreate.setGraphic(CssIcon.plusBold("#8bcf98"));
     btnCreate.setContentDisplay(ContentDisplay.LEFT);
@@ -913,7 +913,7 @@ public class NewProjectWizard extends Stage {
     ProjectTemplate template = selectedProjectTemplate();
     String summary = switch (template) {
       case STARTER_STORY -> "Recommended default. Creates a playable story skeleton, demo assets, and ready-to-run menu profiles without the larger tutorial pack.";
-      case TUTORIAL_WORKSPACE -> "Starts at Pip’s topic menu. Choose a lesson on writing, animation, lighting, or game UI.";
+      case TUTORIAL_WORKSPACE -> "Starts at Ginger’s topic menu. Choose a lesson on writing, animation, lighting, or game UI.";
       case BLANK_SANDBOX -> "Creates the runtime/config skeleton with blank story scripts, no bundled assets, and blank menu wiring.";
       case CUSTOM -> "Custom workspace. The selected feature modules determine which files are created.";
     };
@@ -1194,7 +1194,7 @@ public class NewProjectWizard extends Stage {
     sb.append("\u251c\u2500\u2500 assets/\n");
     if (includeTutorialPack) {
       sb.append("│   ├── icon.png\n");
-      sb.append("│   └── tutorial/ (white stage, Pip, interface, sound)\n");
+      sb.append("│   └── tutorial/ (white stage, Ginger, interface, sound)\n");
     } else if (includeDemoAssets) {
       sb.append("\u2502   \u2514\u2500\u2500 demo/\n");
       sb.append("\u2502       \u251c\u2500\u2500 backgrounds/\n");

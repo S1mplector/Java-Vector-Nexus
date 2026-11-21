@@ -5,26 +5,26 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide notes]
-pip: The dialogue layout controls the space between the text and the edge of the box.
-pip: Increase dialogueTextHorizontalPadding in config/ui/dialogue.layout. Compare two window sizes.
+[show ginger guide thoughtful]
+ginger: There's a little room between my words and the edge of this box. Let's change that space and read the line again.
+ginger: Increase dialogueTextHorizontalPadding in config/ui/dialogue.layout. Compare two window sizes.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: Which setting changes text inset inside the panel?
+ginger: Which setting changes text inset inside the panel?
 > dialogueTextHorizontalPadding -> correct
 > characterBaselineY -> retry
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: Padding changes the inner margin. Character framing is independent. Give it another try.
+[show ginger guide confused]
+ginger: Padding changes the inner margin. Character framing is independent. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: Padding changes the inner margin. Character framing is independent.
+[show ginger guide normal]
+ginger: Padding changes the inner margin. Character framing is independent.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

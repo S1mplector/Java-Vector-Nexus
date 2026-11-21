@@ -5,26 +5,26 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide wave]
-pip: The JES example has a panel and a small colored indicator. Each is a separate entity.
-pip: Open scripts/scenes/panel.jes in the JES editor. Select the indicator and change its fill color.
+[show ginger guide shy]
+ginger: Inside the panel there's a little colored light. Let's see what happens when you treat them as two separate entities.
+ginger: Open scripts/scenes/panel.jes in the JES editor. Select the indicator and change its fill color.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: Which change should affect only the indicator?
+ginger: Which change should affect only the indicator?
 > Edit the named indicator entity. -> correct
 > Tint the entire stage. -> retry
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: Separate entities give the editor independent targets. Give it another try.
+[show ginger guide confused]
+ginger: Separate entities give the editor independent targets. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: Separate entities give the editor independent targets.
+[show ginger guide normal]
+ginger: Separate entities give the editor independent targets.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

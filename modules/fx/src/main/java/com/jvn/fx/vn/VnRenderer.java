@@ -522,7 +522,8 @@ public class VnRenderer {
             renderNvlHistory(state, width, height);
           }
           renderChoices(currentNode.getChoices(), width, height,
-              getHoveredChoiceIndex(currentNode.getChoices(), width, height, mouseX, mouseY));
+              state.getFocusedChoiceIndex() >= 0 ? state.getFocusedChoiceIndex() :
+                  getHoveredChoiceIndex(currentNode.getChoices(), width, height, mouseX, mouseY));
           break;
         case BACKGROUND:
         case TRANSITION:

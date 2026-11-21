@@ -5,26 +5,26 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide neutral]
-pip: A save records the current scene and its variables. Rollback restores an earlier state.
-pip: Save at the next question. Answer it, reload, and try the other choice.
+[show ginger guide normal]
+ginger: If you save here, what should I remember when you come back? Let's give the scene something worth keeping.
+ginger: Save at the next question. Answer it, reload, and try the other choice.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: Where should a story choice be stored?
+ginger: Where should a story choice be stored?
 > In VN state so save and rollback can restore it. -> correct
 > Only in the displayed dialogue text. -> retry
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: A replay can reconstruct the story from its saved state. Give it another try.
+[show ginger guide confused]
+ginger: A replay can reconstruct the story from its saved state. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: A replay can reconstruct the story from its saved state.
+[show ginger guide normal]
+ginger: A replay can reconstruct the story from its saved state.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

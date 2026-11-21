@@ -5,26 +5,26 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide neutral]
-pip: A background has an ID and an image path. This white backdrop uses the ID room.
-pip: Open scripts/definitions/characters.vns to see the image path. The bg command in this lesson selects it.
+[show ginger guide normal]
+ginger: This studio starts with a blank wall. The script calls it room. What happens if you give that name a different picture?
+ginger: Open scripts/definitions/characters.vns to see the image path. The bg command in this lesson selects it.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: What belongs after bg?
+ginger: What belongs after bg?
 > The name of the current speaker. -> retry
 > The ID declared for the backdrop. -> correct
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: The declaration maps an ID to an image. The scene command selects it. Give it another try.
+[show ginger guide confused]
+ginger: The declaration maps an ID to an image. The scene command selects it. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: The declaration maps an ID to an image. The scene command selects it.
+[show ginger guide normal]
+ginger: The declaration maps an ID to an image. The scene command selects it.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

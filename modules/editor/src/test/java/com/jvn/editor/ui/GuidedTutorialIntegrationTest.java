@@ -38,20 +38,20 @@ class GuidedTutorialIntegrationTest {
         wizard.show();
         RadioButton tutorial = wizard.getScene().getRoot().lookupAll(".radio-button").stream()
             .filter(RadioButton.class::isInstance).map(RadioButton.class::cast)
-            .filter(choice -> choice.getText().equals("Tutorial Workspace with Pip")).findFirst().orElseThrow();
+            .filter(choice -> choice.getText().equals("Tutorial Workspace with Ginger")).findFirst().orElseThrow();
         tutorial.fire();
         assertTrue(((CheckBox) field(wizard, "chkTutorialPack")).isSelected());
         ((CheckBox) field(wizard, "chkGitInit")).setSelected(false);
         ((javafx.scene.control.TextField) field(wizard, "txtLocation")).setText(parent.toString());
-        ((javafx.scene.control.TextField) field(wizard, "txtProjectName")).setText("PipStudio");
+        ((javafx.scene.control.TextField) field(wizard, "txtProjectName")).setText("GingerStudio");
         var create = (javafx.scene.control.Button) field(wizard, "btnCreate");
         assertTrue(tutorial.isSelected());
-        assertEquals("Create Pip Tutorial", create.getText());
+        assertEquals("Create Ginger Tutorial", create.getText());
         assertFalse(create.isDisabled());
         create.fire();
         assertNotNull(wizard.getCreatedProjectDir());
         project = wizard.getCreatedProjectDir().toPath();
-        assertEquals(parent.resolve("PipStudio"), project);
+        assertEquals(parent.resolve("GingerStudio"), project);
       } finally { wizard.close(); owner.close(); }
       return null;
     });
@@ -65,14 +65,11 @@ class GuidedTutorialIntegrationTest {
     try (var reader = Files.newBufferedReader(project.resolve("config/ui/dialogue.layout"))) { layout.load(reader); }
     assertEquals("#FFFFFF", layout.getProperty("nameTextColor"));
     assertEquals("#000000B8", layout.getProperty("textBoxColor"));
-    for (String image : List.of("icon", "tutorial/wave", "tutorial/neutral", "tutorial/curious", "tutorial/point",
-        "tutorial/surprised", "tutorial/listen", "tutorial/cheer", "tutorial/notes", "tutorial/present", "tutorial/stride-a-left", "tutorial/stride-b-left",
-        "tutorial/stride-c-left", "tutorial/stride-a-right", "tutorial/stride-b-right", "tutorial/stride-c-right")) {
-      var bitmap = ImageIO.read(project.resolve("assets/" + image + ".png").toFile());
-      assertEquals(900, bitmap.getWidth(), image);
-      assertEquals(900, bitmap.getHeight(), image);
-      assertEquals(0, bitmap.getRGB(0, 0) >>> 24, image);
-      assertTrue((bitmap.getRGB(450, 450) >>> 24) >= 248, image);
+    for (String pose : List.of("normal", "angry", "shy", "sad", "confused", "embarrassed", "annoyed", "thoughtful")) {
+      var bitmap = ImageIO.read(project.resolve("assets/tutorial/ginger_" + pose + ".png").toFile());
+      assertEquals(500, bitmap.getWidth(), pose);
+      assertEquals(1280, bitmap.getHeight(), pose);
+      assertTrue(bitmap.getColorModel().hasAlpha(), pose);
     }
     assertDoesNotThrow(() -> JesLoader.load(Files.readString(project.resolve("scripts/scenes/panel.jes"))));
     AssetCatalog.setDefaultManager(new FilesystemAssetManager(project));
@@ -128,9 +125,9 @@ class GuidedTutorialIntegrationTest {
         var movement = open(loader, "tutorial/08_character_movement.vns", Map.of("tutorial_still", still));
         movement.update(800);
         var state = movement.getState();
-        var desk = state.getCharacterPosition("pip");
+        var desk = state.getCharacterPosition("ginger");
         movement.advance();
-        var mark = state.getCharacterPosition("pip");
+        var mark = state.getCharacterPosition("ginger");
         assertEquals(still, desk.equals(mark));
         var visual = state.getCharacterVisual(mark);
         double start = visual.getOffsetX();
@@ -155,8 +152,9 @@ class GuidedTutorialIntegrationTest {
         }
       }
       var hub = open(loader, "story/tutorial_hub.vns", Map.of());
-      assertEquals(VnNodeType.CHOICE, hub.getState().getCurrentNode().getType(), "Start opens the topic list immediately");
-      assertEquals(7, hub.getState().getCurrentNode().getChoices().size());
+      assertEquals(VnNodeType.DIALOGUE, hub.getState().getCurrentNode().getType());
+      goToChoice(hub, "goodbye", "greeting");
+      assertEquals(8, hub.getState().getCurrentNode().getChoices().size());
       hub.update(700);
       capture(hub, "board");
       Set<String> visitedTopics = new HashSet<>();
@@ -180,7 +178,7 @@ class GuidedTutorialIntegrationTest {
       FxToolkit.runFx(() -> {
         var menu = new MainMenuScene(null, new VnSettings(), null, "story/tutorial_hub.vns", null);
         assertEquals("JVN Tutorial", menu.getDisplayTitle());
-        assertEquals("30 lessons with Pip", menu.getDisplaySubtitle());
+        assertEquals("30 lessons with Ginger", menu.getDisplaySubtitle());
         assertEquals("Start tutorial", menu.getDisplayItems()[0]);
         menu.setSelected(0);
         Canvas canvas = new Canvas(1280, 720);
@@ -188,9 +186,60 @@ class GuidedTutorialIntegrationTest {
         renderer.setProjectRoot(project.toFile());
         renderer.renderMainMenu(menu, 1280, 720);
         save(canvas, "title");
+        var saves = new com.jvn.core.vn.save.VnSaveManager(parent.resolve("menu-saves").toString());
+        var pause = new com.jvn.core.menu.PauseMenuScene(null, hub, saves, "story/tutorial_hub.vns", null);
+        assertEquals("resume", pause.getItem(0).id());
+        renderer.renderPauseMenu(pause, 1280, 720);
+        save(canvas, "pause");
+        renderer.renderSettings(new com.jvn.core.menu.SettingsScene(new VnSettings()), 1280, 720);
+        save(canvas, "settings");
+        com.jvn.core.localization.Localization.init("en", getClass().getClassLoader());
+        assertEquals("No saved games yet.", com.jvn.core.localization.Localization.t("load.no_saves"));
+        var loadMenu = new com.jvn.core.menu.LoadMenuScene(null, saves, "story/tutorial_hub.vns", new VnSettings(), null);
+        renderer.renderLoadMenu(loadMenu, 1280, 720);
+        save(canvas, "empty-load");
+        saves.save(hub.getState(), "Studio");
+        var saveMenu = new com.jvn.core.menu.SaveMenuScene(null, saves, hub);
+        saveMenu.onEnter();
+        assertEquals("Save game", saveMenu.getDisplayTitle());
+        renderer.renderSaveMenu(saveMenu, 1280, 720);
+        save(canvas, "save");
+        loadMenu.onEnter();
+        assertTrue(loadMenu.getSaves().contains("Studio"));
+        assertEquals("Load game", loadMenu.getDisplayTitle());
+        renderer.renderLoadMenu(loadMenu, 1280, 720);
+        save(canvas, "load");
         return null;
       });
-    } finally { AssetCatalog.setDefaultManager(new ClasspathAssetManager()); }
+      String export = System.getenv("JVN_TUTORIAL_QA_DIR");
+      if (export != null && !export.isBlank()) {
+        Path output = Path.of(export);
+        try (var zip = new java.util.zip.ZipOutputStream(Files.newOutputStream(output.resolve("Ginger-Tutorial.zip")));
+             var files = Files.walk(project)) {
+          for (Path file : files.filter(Files::isRegularFile).sorted().toList()) {
+            String name = "GingerTutorial/" + project.relativize(file).toString().replace('\\', '/');
+            zip.putNextEntry(new java.util.zip.ZipEntry(name));
+            Files.copy(file, zip);
+            zip.closeEntry();
+          }
+        }
+        var sheet = new java.awt.image.BufferedImage(1280, 720, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        var graphics = sheet.createGraphics();
+        try {
+          graphics.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
+              java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+          var menus = List.of("pause", "settings", "save", "load");
+          for (int i = 0; i < menus.size(); i++) {
+            var screen = ImageIO.read(output.resolve(menus.get(i) + ".png").toFile());
+            graphics.drawImage(screen, i % 2 * 640, i / 2 * 360, 640, 360, null);
+          }
+        } finally { graphics.dispose(); }
+        ImageIO.write(sheet, "png", output.resolve("Ginger-menus.png").toFile());
+      }
+    } finally {
+      AssetCatalog.setDefaultManager(new ClasspathAssetManager());
+      com.jvn.core.localization.Localization.init("en", getClass().getClassLoader());
+    }
   }
 
   private static VnScene open(VnScenarioLoader loader, String path, Map<String, Object> variables) throws Exception {
@@ -207,7 +256,7 @@ class GuidedTutorialIntegrationTest {
       assertNotNull(node, description + " ended before " + target);
       if (node.getType() == VnNodeType.CHOICE) {
         if (node.getChoices().stream().anyMatch(c -> target.equals(c.getTargetLabel()))) return;
-        pick(scene, "check");
+        pick(scene, node.getChoices().stream().anyMatch(c -> "read_note".equals(c.getTargetLabel())) ? "read_note" : "check");
       } else if (node.getType() == VnNodeType.DIALOGUE) {
         scene.advance();
       } else {

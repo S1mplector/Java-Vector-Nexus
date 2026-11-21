@@ -5,30 +5,30 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide wave]
-pip: Watch the stage as the scene fades and its lighting changes.
+[show ginger guide shy]
+ginger: Keep your eyes on the wall. I'll fade the lights and bring the scene back.
 [if !tutorial_still]
 [transition fade 380]
 [endif]
 [stage dusk]
-pip: Change the fade duration and replay the transition.
+ginger: Change the fade duration and replay the transition.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: Which value changes how long the fade lasts?
+ginger: Which value changes how long the fade lasts?
 > The duration in milliseconds. -> correct
 > The number of dialogue lines. -> retry
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: Timing belongs to the transition, so the script can keep its pacing. Give it another try.
+[show ginger guide confused]
+ginger: Timing belongs to the transition, so the script can keep its pacing. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: Timing belongs to the transition, so the script can keep its pacing.
+[show ginger guide normal]
+ginger: Timing belongs to the transition, so the script can keep its pacing.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

@@ -5,29 +5,29 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide wave]
-pip: Standard dialogue shows a speaker and a text box. The next line uses NVL, a page-style layout.
+[show ginger guide shy]
+ginger: So far you've read my lines one at a time. Let's put the next one on a page and see how it feels.
 [mode dialogue nvl]
 narrator: This line is narration. It appears in the NVL layout.
 [mode dialogue standard]
-pip: This line uses standard dialogue again. Find both mode commands in the script.
+ginger: This line uses standard dialogue again. Find both mode commands in the script.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: Why restore the dialogue mode at the boundary?
+ginger: Why restore the dialogue mode at the boundary?
 > So the character art is deleted. -> retry
 > So the next scene opens with its intended layout. -> correct
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: Presentation can persist across scene boundaries. Give it another try.
+[show ginger guide confused]
+ginger: Presentation can persist across scene boundaries. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: Presentation can persist across scene boundaries.
+[show ginger guide normal]
+ginger: Presentation can persist across scene boundaries.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

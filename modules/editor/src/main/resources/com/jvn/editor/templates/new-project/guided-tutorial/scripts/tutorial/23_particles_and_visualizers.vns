@@ -5,31 +5,31 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide point]
-pip: A particle effect draws many small moving sprites. This example uses dust.
+[show ginger guide thoughtful]
+ginger: It's easier to see the dust when it moves. Watch a few particles drift past me.
 [if !tutorial_still]
 [particles dust intensity=0.24 opacity=0.52 speed=0.30 duration=3000]
 [endif]
-pip: Watch the particles against the white background. Reduced motion keeps the example still.
+ginger: Watch the particles against the white background. Reduced motion keeps the example still.
 [particles stop]
-pip: Change the intensity in the particles command, then replay.
+ginger: Change the intensity in the particles command, then replay.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: Which comparison tells you whether the effect helps?
+ginger: Which comparison tells you whether the effect helps?
 > Read the same line with the effect on and off. -> correct
 > Check the particle count alone. -> retry
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: The reader experiences the composed frame, not a counter. Give it another try.
+[show ginger guide confused]
+ginger: The reader experiences the composed frame, not a counter. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: The reader experiences the composed frame, not a counter.
+[show ginger guide normal]
+ginger: The reader experiences the composed frame, not a counter.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

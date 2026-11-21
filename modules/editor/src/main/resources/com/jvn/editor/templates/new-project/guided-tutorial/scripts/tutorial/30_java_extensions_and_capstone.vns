@@ -5,26 +5,26 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide wave]
-pip: Combine three features in a small example: a choice, a saved variable, and a change in lighting.
-pip: Write the scene, export it, and play both branches from a fresh start.
+[show ginger guide shy]
+ginger: Let's make one last scene together. Give me a choice to remember and let the room change when I make it.
+ginger: Write the scene, export it, and play both branches from a fresh start.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: Which test checks both branches in the finished build?
+ginger: Which test checks both branches in the finished build?
 > The first frame looks right in the editor. -> retry
 > Both routes work from a fresh start in the exported build. -> correct
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: Testing both branches checks the exported scene and its assets. Give it another try.
+[show ginger guide confused]
+ginger: Testing both branches checks the exported scene and its assets. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: Testing both branches checks the exported scene and its assets.
+[show ginger guide normal]
+ginger: Testing both branches checks the exported scene and its assets.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

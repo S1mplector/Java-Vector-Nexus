@@ -308,7 +308,7 @@ public class VnScene implements Scene {
    */
   public void advance() {
     VnNode current = state.getCurrentNode();
-    if (current == null) return;
+    if (current == null || current.getType() == VnNodeType.CHOICE || current.getType() == VnNodeType.END) return;
 
     if (releaseTextTagWait()) return;
     if (nowaitPending) {
@@ -363,6 +363,23 @@ public class VnScene implements Scene {
   /**
    * Select a choice option
    */
+  public void moveChoiceFocus(int direction) {
+    VnNode node = state.getCurrentNode();
+    if (node == null || node.getType() != VnNodeType.CHOICE || node.getChoices().isEmpty()) return;
+    int count = node.getChoices().size();
+    int index = state.getFocusedChoiceIndex();
+    if (index < 0) index = direction < 0 ? 0 : -1;
+    for (int i = 0; i < count; i++) {
+      index = Math.floorMod(index + direction, count);
+      Choice choice = node.getChoices().get(index);
+      String condition = choice.getCondition();
+      if (choice.isEnabled() && (condition == null || condition.isBlank() || evalChoiceCondition(condition))) {
+        state.setFocusedChoiceIndex(index);
+        return;
+      }
+    }
+  }
+
   public void selectChoice(int choiceIndex) {
     VnNode current = state.getCurrentNode();
     if (current == null || current.getType() != VnNodeType.CHOICE) return;
@@ -422,6 +439,7 @@ public class VnScene implements Scene {
           return; // Interactive - stop loop
 
         case CHOICE:
+          state.setFocusedChoiceIndex(-1);
           // Disable skip/auto-play at choices
           if (state.isSkipMode() && !state.getSettings().isSkipAfterChoices()) {
             state.setSkipMode(false);

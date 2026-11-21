@@ -5,27 +5,27 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide neutral]
-pip: Use a localization key to display a line in the selected language.
-pip: i18n:tutorial.greeting
-pip: That line uses tutorial.greeting in config/locales/en.properties. Edit its value and replay.
+[show ginger guide normal]
+ginger: Say hello in your own language. We can keep one line in the script and look up its words when it plays.
+ginger: i18n:tutorial.greeting
+ginger: That line uses tutorial.greeting in config/locales/en.properties. Edit its value and replay.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: What should stay the same when you rewrite a translation?
+ginger: What should stay the same when you rewrite a translation?
 > Every character of the translated sentence. -> retry
 > Its lookup key. -> correct
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: Stable keys let the same scene select a different localized line. Give it another try.
+[show ginger guide confused]
+ginger: Stable keys let the same scene select a different localized line. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: Stable keys let the same scene select a different localized line.
+[show ginger guide normal]
+ginger: Stable keys let the same scene select a different localized line.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

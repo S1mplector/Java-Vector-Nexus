@@ -5,26 +5,37 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide present]
-pip: Each choice points to a label. The game continues at the label the player selects.
-pip: Look at the two choices below. Follow each destination in the script.
+[show ginger guide normal]
+ginger: I found an envelope under the studio door. Shall we open it now, or save it for later?
+> Open the envelope -> read_note
+> Leave it on the table -> leave_note
+@label read_note
+[show ginger guide embarrassed]
+ginger: It's our rehearsal schedule. We were supposed to start ten minutes ago!
+[jump compare]
+@label leave_note
+[show ginger guide thoughtful]
+ginger: I'll put it beside the bell. Whoever comes in next will see it.
+[jump compare]
+@label compare
+ginger: We both ended up here, but you only heard the reply you chose. Both labels jump back to this line.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: What does the arrow after a choice point to?
+ginger: What does the arrow after a choice point to?
 > A sprite expression. -> retry
 > A destination label. -> correct
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: Each branch can perform different work before both paths meet. Give it another try.
+[show ginger guide confused]
+ginger: Each branch can perform different work before both paths meet. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: Each branch can perform different work before both paths meet.
+[show ginger guide normal]
+ginger: Each branch can perform different work before both paths meet.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

@@ -5,53 +5,53 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide neutral]
-pip: A stage preset changes the lighting. Compare the stage and Pip before and after the preset is applied.
+[show ginger guide normal]
+ginger: Take a look at my face before I change the stage lights. Do those shadows still fall in the same place?
 [stage dusk]
 [if !tutorial_still]
-[move pip guide stride-a-right exprdur=0]
-[move pip rightmark ease_in_out_cubic 640]
+[move ginger guide normal exprdur=0]
+[move ginger rightmark ease_in_out_cubic 640]
 [wait 160]
-[move pip rightmark stride-b-right exprdur=0]
+[move ginger rightmark normal exprdur=0]
 [wait 160]
-[move pip rightmark stride-c-right exprdur=0]
+[move ginger rightmark normal exprdur=0]
 [wait 160]
-[move pip rightmark stride-b-right exprdur=0]
+[move ginger rightmark normal exprdur=0]
 [wait 160]
-[move pip rightmark point exprdur=90]
+[move ginger rightmark thoughtful exprdur=90]
 [endif]
-pip: The dusk preset is active. Notice the cooler stage and warm key light.
+ginger: The dusk preset is active. Notice the cooler stage and warm key light.
 [stage clear]
 [if !tutorial_still]
-[move pip rightmark stride-a-left exprdur=0]
-[move pip guide ease_out_cubic 510]
+[move ginger rightmark normal exprdur=0]
+[move ginger guide ease_out_cubic 510]
 [wait 120]
-[move pip guide stride-b-left exprdur=0]
+[move ginger guide normal exprdur=0]
 [wait 120]
-[move pip guide stride-c-left exprdur=0]
+[move ginger guide normal exprdur=0]
 [wait 120]
-[move pip guide stride-b-left exprdur=0]
+[move ginger guide normal exprdur=0]
 [wait 150]
-[move pip guide neutral exprdur=90]
+[move ginger guide normal exprdur=90]
 [endif]
-pip: Open dusk.stagepreset in Lighting Studio, adjust exposure, and compare the result in Puppeteer.
+ginger: Open dusk.stagepreset in Lighting Studio, adjust exposure, and compare the result in Puppeteer.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: How do you restore the original lighting in VNS?
-> Hide Pip. -> retry
+ginger: How do you restore the original lighting in VNS?
+> Hide Ginger. -> retry
 > Use the stage clear command. -> correct
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: Clearing the active stage restores the ungraded background. Give it another try.
+[show ginger guide confused]
+ginger: Clearing the active stage restores the ungraded background. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: Clearing the active stage restores the ungraded background.
+[show ginger guide normal]
+ginger: Clearing the active stage restores the ungraded background.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

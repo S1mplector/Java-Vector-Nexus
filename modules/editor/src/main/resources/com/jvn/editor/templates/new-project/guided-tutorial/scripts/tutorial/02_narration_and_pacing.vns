@@ -5,28 +5,28 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide curious]
-pip: A wait pauses the script. Listen for the short gap before the sound plays.
+[show ginger guide confused]
+ginger: Listen for the bell. I'll leave a little quiet before it rings. How long would you wait?
 [wait 320]
 [sfx assets/tutorial/welcome.wav]
-pip: Change the wait from 320 to 800 milliseconds, then listen again.
+ginger: Change the wait from 320 to 800 milliseconds, then listen again.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: Which change delays the chime without slowing the words?
+ginger: Which change delays the chime without slowing the words?
 > Lower the text speed. -> retry
 > Increase the wait before the sound. -> correct
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: A wait holds the scene. Text speed controls how the current line appears. Give it another try.
+[show ginger guide confused]
+ginger: A wait holds the scene. Text speed controls how the current line appears. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: A wait holds the scene. Text speed controls how the current line appears.
+[show ginger guide normal]
+ginger: A wait holds the scene. Text speed controls how the current line appears.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

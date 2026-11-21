@@ -5,29 +5,29 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide point]
-pip: Watch how changing the expression affects the same line.
-[show pip guide surprised]
-pip: Oh!
-[show pip guide curious]
-pip: Replace surprised with curious in the second show command. Run the same line again.
+[show ginger guide thoughtful]
+ginger: If I tell you I'm fine, do you believe me? Watch my face when I say it again.
+[show ginger guide embarrassed]
+ginger: Oh!
+[show ginger guide confused]
+ginger: Replace embarrassed with confused in the second show command. Run the same line again.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: How do you change my reaction in place?
-> Show pip in the same slot with another expression. -> correct
-> Declare a new background named curious. -> retry
+ginger: How do you change my reaction in place?
+> Show ginger in the same slot with another expression. -> correct
+> Declare a new background named confused. -> retry
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: The slot stays occupied while its expression changes. Give it another try.
+[show ginger guide confused]
+ginger: The slot stays occupied while its expression changes. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: The slot stays occupied while its expression changes.
+[show ginger guide normal]
+ginger: The slot stays occupied while its expression changes.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

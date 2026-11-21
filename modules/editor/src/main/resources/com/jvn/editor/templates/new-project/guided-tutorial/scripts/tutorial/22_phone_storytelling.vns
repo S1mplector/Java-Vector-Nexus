@@ -5,37 +5,37 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide present]
-pip: A phone message uses a chat ID and a sender ID. The title is what the player sees.
-pip: Open the sample conversation. Its contacts and display names are in config/phone/phone.properties.
+[show ginger guide normal]
+ginger: Check your phone. I can send you a line there and carry on the same conversation on stage.
+ginger: Open the sample conversation. Its contacts and display names are in config/phone/phone.properties.
 > Open the sample chat -> messages
 > Review question -> check
 > Back to topics -> return_hub
 @label messages
-[phone contact pip name="Pip"]
-[phone thread example title="Example chat" participants=player,pip]
+[phone contact ginger name="Ginger"]
+[phone thread example title="Example chat" participants=player,ginger]
 [if !tutorial_message_sent]
-[phone message example pip "This is a sample message from Pip." time=17:10]
+[phone message example ginger "This is a sample message from Ginger." time=17:10]
 [flag tutorial_message_sent]
 [endif]
 [phone open chat example]
-pip: Use the back control to close the chat and return to this lesson.
+ginger: Use the back control to close the chat and return to this lesson.
 [phone close]
 @label check
-pip: Which identifier should incoming messages target?
+ginger: Which identifier should incoming messages target?
 > Whatever title is currently displayed. -> retry
 > The stable chat ID. -> correct
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: The ID routes the message even after the title is translated. Give it another try.
+[show ginger guide confused]
+ginger: The ID routes the message even after the title is translated. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: The ID routes the message even after the title is translated.
+[show ginger guide normal]
+ginger: The ID routes the message even after the title is translated.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub

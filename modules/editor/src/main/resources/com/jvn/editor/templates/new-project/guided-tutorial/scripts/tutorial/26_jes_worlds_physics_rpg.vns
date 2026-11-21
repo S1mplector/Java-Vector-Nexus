@@ -5,26 +5,26 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char pip global on]
+[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show pip guide listen]
-pip: A visible shape can have different bounds from its collision shape.
-pip: In the JES editor, use the example panel as a reference. Compare its drawn bounds with the collision shape you would give it.
+[show ginger guide thoughtful]
+ginger: Imagine bumping into an invisible edge. Where something looks solid and where it stops you can be two different shapes.
+ginger: In the JES editor, use the example panel as a reference. Compare its drawn bounds with the collision shape you would give it.
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-pip: What determines whether two physical objects can collide?
+ginger: What determines whether two physical objects can collide?
 > Their displayed colors. -> retry
 > Their physics bodies and collision shapes. -> correct
 > Back to topics -> return_hub
 @label retry
-[show pip guide curious]
-pip: Visual bounds and collision shapes serve different purposes. Give it another try.
+[show ginger guide confused]
+ginger: Visual bounds and collision shapes serve different purposes. Give it another try.
 [jump check]
 @label correct
-[show pip guide cheer]
-pip: Visual bounds and collision shapes serve different purposes.
+[show ginger guide normal]
+ginger: Visual bounds and collision shapes serve different purposes.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
