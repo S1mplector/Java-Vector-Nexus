@@ -1,5 +1,7 @@
 package com.jvn.editor.ui;
 
+import static com.jvn.editor.ui.EditorTheme.graphiteGraphic;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.Path;
@@ -292,7 +294,7 @@ public class GameBuildPublisherView extends BorderPane {
     gameIconField.setPromptText("No package icon selected");
     styleField(gameIconField);
     chooseGameIconButton = button("Choose Icon", ButtonTone.SECONDARY, false);
-    chooseGameIconButton.setGraphic(AeroIcon.of(AeroIcon.Kind.IMAGE_ATTRIBUTES, 18));
+    chooseGameIconButton.setGraphic(graphiteGraphic(AeroIcon.of(AeroIcon.Kind.IMAGE_ATTRIBUTES, 18)));
     chooseGameIconButton.setOnAction(e -> chooseGameIcon());
     clearGameIconButton = button("Clear", ButtonTone.SECONDARY, false);
     clearGameIconButton.setOnAction(e -> clearGameIcon());
@@ -310,7 +312,7 @@ public class GameBuildPublisherView extends BorderPane {
 
 
     openProjectButton = button("Open Project", ButtonTone.SECONDARY, false);
-    openProjectButton.setGraphic(AeroIcon.of(AeroIcon.Kind.OPEN_PROJECT, 18));
+    openProjectButton.setGraphic(graphiteGraphic(AeroIcon.of(AeroIcon.Kind.OPEN_PROJECT, 18)));
     openProjectButton.setOnAction(e -> openProjectFolder());
     openReleaseConfigButton = button("Create Release Config", ButtonTone.SECONDARY, false);
     openReleaseConfigButton.setOnAction(e -> openReleaseConfig());
@@ -327,7 +329,7 @@ public class GameBuildPublisherView extends BorderPane {
     TitledPane projectFiles = disclosure("Project files", new VBox(8, projectField, manifestLabel));
 
     shipBuildButton = button("Ship Build", ButtonTone.PRIMARY, false);
-    shipBuildButton.setGraphic(AeroIcon.buildProject(22));
+    shipBuildButton.setGraphic(graphiteGraphic(AeroIcon.buildProject(22)));
     shipBuildButton.getStyleClass().add("build-publisher-cta");
     shipBuildButton.setAccessibleHelp("Builds the selected package plan and writes its release manifest.");
     shipBuildButton.setOnAction(e -> shipSelectedBuild());
@@ -336,11 +338,11 @@ public class GameBuildPublisherView extends BorderPane {
     buildAllButton = button("Build All Targets", ButtonTone.PRIMARY, false);
     buildAllButton.setOnAction(e -> buildAllTargets());
     preflightButton = button("Package Preflight", ButtonTone.SECONDARY, false);
-    preflightButton.setGraphic(AeroIcon.of(AeroIcon.Kind.DIAGNOSTICS, 18));
+    preflightButton.setGraphic(graphiteGraphic(AeroIcon.of(AeroIcon.Kind.DIAGNOSTICS, 18)));
     preflightButton.setOnAction(e -> runPreflight());
     preflightButton.setTooltip(new Tooltip("Check the manifest, target, output, and release settings."));
     dependencyScanButton = button("Scan Game Content", ButtonTone.PRIMARY, false);
-    dependencyScanButton.setGraphic(AeroIcon.of(AeroIcon.Kind.ASSETS, 18));
+    dependencyScanButton.setGraphic(graphiteGraphic(AeroIcon.of(AeroIcon.Kind.ASSETS, 18)));
     dependencyScanButton.setOnAction(e -> runDependencyScan());
     dependencyScanButton.setTooltip(new Tooltip("Find missing assets, broken links, and unused media."));
     dependencyConsoleButton = button("Run Console Scan", ButtonTone.SECONDARY, false);
@@ -350,7 +352,7 @@ public class GameBuildPublisherView extends BorderPane {
     clearDependencyReportButton = button("Clear Report", ButtonTone.SECONDARY, false);
     clearDependencyReportButton.setOnAction(e -> clearDependencyReport());
     releaseButton = button("Run Release Hooks", ButtonTone.SECONDARY, false);
-    releaseButton.setGraphic(AeroIcon.of(AeroIcon.Kind.MANIFEST, 18));
+    releaseButton.setGraphic(graphiteGraphic(AeroIcon.of(AeroIcon.Kind.MANIFEST, 18)));
     releaseButton.setOnAction(e -> runReleaseProfile());
     nativeReleaseButton = button("Sign & Release Package", ButtonTone.PRIMARY, false);
     nativeReleaseButton.setOnAction(e -> runReleaseProfile());
@@ -365,7 +367,7 @@ public class GameBuildPublisherView extends BorderPane {
     nativeVerifyButton = button("Verify Package", ButtonTone.SECONDARY, false);
     nativeVerifyButton.setOnAction(e -> runPackagedArtifactSmokeTest());
     smokeTestButton = button("Verify Packaged Build", ButtonTone.SECONDARY, false);
-    smokeTestButton.setGraphic(AeroIcon.of(AeroIcon.Kind.INSPECTOR, 18));
+    smokeTestButton.setGraphic(graphiteGraphic(AeroIcon.of(AeroIcon.Kind.INSPECTOR, 18)));
     smokeTestButton.setOnAction(e -> runPackagedArtifactSmokeTest());
     updateBundleButton = button("Build Signed Update", ButtonTone.SECONDARY, false);
     updateBundleButton.setOnAction(e -> writeSignedUpdateBundle());
@@ -386,7 +388,7 @@ public class GameBuildPublisherView extends BorderPane {
     cleanOutputButton = button("Clean Artifacts", ButtonTone.DANGER, false);
     cleanOutputButton.setOnAction(e -> cleanBuildArtifacts());
     refreshArtifactsButton = button("Refresh Artifacts", ButtonTone.SECONDARY, false);
-    refreshArtifactsButton.setGraphic(RefreshIcon.compact());
+    refreshArtifactsButton.setGraphic(graphiteGraphic(RefreshIcon.compact()));
     refreshArtifactsButton.setOnAction(e -> refreshArtifactInventory());
 
     FlowPane optionsRow = new FlowPane(12, 8, offlineModeCheck, refreshRuntimeCheck);
@@ -427,7 +429,7 @@ public class GameBuildPublisherView extends BorderPane {
     VBox releaseCard = card("Release actions", nativeReleaseBox, buildOnlyPane, advancedReleasePane);
 
 
-    FlowPane dependencyBadgeRow = new FlowPane(6, 6, dependencyErrorsBadgeLabel, dependencyWarningsBadgeLabel, dependencyInfoBadgeLabel);
+    FlowPane dependencyBadgeRow = new FlowPane(16, 6, dependencyErrorsBadgeLabel, dependencyWarningsBadgeLabel, dependencyInfoBadgeLabel);
     dependencyBadgeRow.setAlignment(Pos.CENTER_LEFT);
     Label dependencyActionsHelp = new Label("Scan content first to catch broken project references. Package preflight checks the selected release configuration.");
     dependencyActionsHelp.setWrapText(true);
@@ -454,7 +456,7 @@ public class GameBuildPublisherView extends BorderPane {
     Label projectName = new Label();
     projectName.textProperty().bind(nameField.textProperty().concat("  ·  ").concat(versionField.textProperty()));
     projectName.getStyleClass().add("build-project-caption");
-    HBox header = new HBox(12, AeroIcon.buildProject(36), new VBox(2, title, projectName));
+    HBox header = new HBox(12, graphiteGraphic(AeroIcon.buildProject(36)), new VBox(2, title, projectName));
     header.setAlignment(Pos.CENTER_LEFT);
     header.getStyleClass().add("session-header");
     setTop(header);
@@ -478,7 +480,7 @@ public class GameBuildPublisherView extends BorderPane {
       @Override protected void updateItem(BuildPage page, boolean empty) {
         super.updateItem(page, empty);
         setText(empty || page == null ? null : page.title());
-        setGraphic(empty || page == null ? null : AeroIcon.of(page.icon(), 20));
+        setGraphic(empty || page == null ? null : graphiteGraphic(AeroIcon.of(page.icon(), 20)));
       }
     });
     navigation.getSelectionModel().selectedItemProperty().addListener((obs, old, page) -> {
@@ -539,7 +541,7 @@ public class GameBuildPublisherView extends BorderPane {
   }
 
   private Button formatChoice(String title, String detail, AeroIcon.Kind icon, Runnable action) {
-    Label name = new Label(title, AeroIcon.of(icon, 20));
+    Label name = new Label(title, graphiteGraphic(AeroIcon.of(icon, 20)));
     name.getStyleClass().add("build-format-name");
     Label description = new Label(detail);
     description.getStyleClass().add("build-project-caption");
@@ -605,7 +607,7 @@ public class GameBuildPublisherView extends BorderPane {
     addCheck(checks, "Renderer tests", ":fx:test", false);
     addCheck(checks, "Runtime tests", ":runtime:test", false);
     addCheck(checks, "Existing package integrity", "smokeTestJvnGameRelease", false);
-    Button run = new Button("Run selected checks", AeroIcon.of(AeroIcon.Kind.RUN, 20));
+    Button run = new Button("Run selected checks", graphiteGraphic(AeroIcon.of(AeroIcon.Kind.RUN, 20)));
     run.setOnAction(e -> {
       List<String> tasks = testChoices.entrySet().stream().filter(entry -> entry.getValue().isSelected())
           .map(Map.Entry::getKey).toList();
@@ -650,7 +652,7 @@ public class GameBuildPublisherView extends BorderPane {
 
   private void styleBadge(Label label) {
     label.getStyleClass().add("build-publisher-badge");
-    label.setMinHeight(24);
+
   }
 
   private void styleField(TextField field) {

@@ -1,8 +1,11 @@
 package com.jvn.editor.ui;
 
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
+import javafx.scene.effect.ColorAdjust;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 public final class EditorTheme {
@@ -66,8 +69,8 @@ public final class EditorTheme {
     return stylesheet.contains(DARK_CSS_PATH) || stylesheet.contains(LIGHT_CSS_PATH);
   }
 
-  private static String cssUrl() {
-    String path = cssPath(currentTheme);
+  private static String cssUrl(Theme theme) {
+    String path = cssPath(theme);
     if (cachedCssUrl != null && path.equals(cachedCssPath)) return cachedCssUrl;
     var url = EditorTheme.class.getResource(path);
     cachedCssPath = path;
@@ -76,7 +79,7 @@ public final class EditorTheme {
   }
 
   public static String stylesheetUrl() {
-    return cssUrl();
+    return cssUrl(currentTheme);
   }
 
   public static Theme theme() {
@@ -95,9 +98,18 @@ public final class EditorTheme {
     setTheme(parseTheme(themeName));
   }
 
+  // Keep the filter on the icon wrapper so hover effects on the artwork stay monochrome.
+  static Node graphiteGraphic(Node artwork) {
+    StackPane graphic = new StackPane(artwork);
+    graphic.setEffect(new ColorAdjust(0, -1, 0, 0));
+    graphic.setMouseTransparent(true);
+    return graphic;
+  }
+
   public static void apply(Scene scene) {
     if (scene == null) return;
-    String css = cssUrl();
+    boolean graphite = scene.getRoot() instanceof RunConsoleView || scene.getRoot() instanceof GameBuildPublisherView;
+    String css = cssUrl(graphite ? Theme.DARK : currentTheme);
     if (css.isEmpty()) return;
     scene.getStylesheets().removeIf(EditorTheme::isThemeStylesheet);
     if (!scene.getStylesheets().contains(css)) scene.getStylesheets().add(css);
@@ -111,7 +123,7 @@ public final class EditorTheme {
   public static <T extends Dialog<?>> T apply(T dialog) {
     if (dialog == null) return null;
     DialogPane pane = dialog.getDialogPane();
-    String css = cssUrl();
+    String css = cssUrl(currentTheme);
     if (!css.isEmpty()) {
       pane.getStylesheets().removeIf(EditorTheme::isThemeStylesheet);
       if (!pane.getStylesheets().contains(css)) pane.getStylesheets().add(css);

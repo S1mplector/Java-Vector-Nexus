@@ -1,5 +1,7 @@
 package com.jvn.editor.ui;
 
+import static com.jvn.editor.ui.EditorTheme.graphiteGraphic;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -139,8 +141,8 @@ public class RunConsoleView extends BorderPane {
     private Path inspectorSession;
     private final Label frameStats = new Label("Waiting for a frame from the game…");
     private final TableView<RunTelemetry.Cache> caches = new TableView<>();
-    private final Button inspectAssets = new Button("Capture asset inventory", AeroIcon.of(AeroIcon.Kind.ASSETS, 18));
-    private final Button reload = new Button("Hot reload", AeroIcon.of(AeroIcon.Kind.REFRESH, 20));
+    private final Button inspectAssets = new Button("Capture asset inventory", graphiteGraphic(AeroIcon.of(AeroIcon.Kind.ASSETS, 18)));
+    private final Button reload = new Button("Hot reload", graphiteGraphic(AeroIcon.of(AeroIcon.Kind.REFRESH, 20)));
     private final Tab inspectTab = new Tab("Render inspector");
     private final Set<String> compiledModules = Collections.synchronizedSet(new LinkedHashSet<>());
     private volatile boolean sawGradleBootstrap = false;
@@ -193,8 +195,8 @@ public class RunConsoleView extends BorderPane {
 
     private static final Color PERF_GRID_BG = Color.web("#111111");
     private static final Color PERF_GRID_LINE = Color.web("#2a2a2a");
-    private static final Color PERF_CPU_COLOR = Color.web("#f27333");
-    private static final Color PERF_JVM_COLOR = Color.web("#49a5ff");
+    private static final Color PERF_CPU_COLOR = Color.web("#b9b9b9");
+    private static final Color PERF_JVM_COLOR = Color.web("#888888");
     private static final Color PERF_FPS_COLOR = Color.web("#f4f4f4");
     private static final Pattern COMPILE_TASK = Pattern.compile("^> Task (:[^\\s]+):compileJava(?:\\s+.*)?$");
 
@@ -214,7 +216,7 @@ public class RunConsoleView extends BorderPane {
         stateLabel.getStyleClass().add("run-console-state");
         elapsedLabel.getStyleClass().add("run-console-elapsed");
 
-        Label heading = new Label("JVN Runtime".equals(title) ? "Run workspace" : title, AeroIcon.of(AeroIcon.Kind.RUN, 30));
+        Label heading = new Label("JVN Runtime".equals(title) ? "Run workspace" : title, graphiteGraphic(AeroIcon.of(AeroIcon.Kind.RUN, 30)));
         heading.getStyleClass().add("session-window-title");
         heading.setGraphicTextGap(10);
         HBox header = new HBox(16, heading, createToolBar());
@@ -237,8 +239,8 @@ public class RunConsoleView extends BorderPane {
         VBox output = new VBox(filters, outputList);
         VBox.setVgrow(outputList, Priority.ALWAYS);
         outputTab.setContent(output);
-        outputTab.setGraphic(AeroIcon.of(AeroIcon.Kind.SCRIPT_EDITOR, 18));
-        inspectTab.setGraphic(AeroIcon.of(AeroIcon.Kind.INSPECTOR, 18));
+        outputTab.setGraphic(graphiteGraphic(AeroIcon.of(AeroIcon.Kind.SCRIPT_EDITOR, 18)));
+        inspectTab.setGraphic(graphiteGraphic(AeroIcon.of(AeroIcon.Kind.INSPECTOR, 18)));
         inspectTab.setContent(createInspector());
         inspectTab.setDisable(true);
         tabs.getTabs().addAll(outputTab, inspectTab);
@@ -261,7 +263,7 @@ public class RunConsoleView extends BorderPane {
     private static Button iconButton(Node icon, String tooltipText) {
         Button btn = new Button();
         btn.getStyleClass().add("run-console-icon-btn");
-        btn.setGraphic(icon);
+        btn.setGraphic(graphiteGraphic(icon));
         btn.setAccessibleText(tooltipText);
         btn.setTooltip(new Tooltip(tooltipText));
         btn.setFocusTraversable(true);
@@ -271,7 +273,7 @@ public class RunConsoleView extends BorderPane {
     private static ToggleButton iconToggle(
         Node icon, String tooltipText) {
         ToggleButton button = new ToggleButton();
-        button.setGraphic(icon);
+        button.setGraphic(graphiteGraphic(icon));
         button.setAccessibleText(tooltipText);
         button.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
         button.setTooltip(new Tooltip(tooltipText));
@@ -1058,7 +1060,7 @@ public class RunConsoleView extends BorderPane {
         perfCpuValue.setText(s.cpuPercent() < 0 ? "CPU —" : String.format(Locale.ROOT, "CPU %.0f%%", s.cpuPercent()));
         perfJvmValue.setText(String.format(Locale.ROOT, "Heap %.0f MiB", heap));
         perfFpsValue.setText(String.format(Locale.ROOT, "%.1f FPS", s.fps()));
-        perfGraphTooltip.setText("Game process • last 120 samples • CPU, heap and frame rate");
+        perfGraphTooltip.setText("Game process • last 120 samples • CPU dashed, heap shaded, FPS dotted");
         perfGraph.pushSample(s.cpuPercent(), heap, s.fps(), heap);
         String draws = s.layerDraws() < 0 ? "" : String.format(Locale.ROOT,
             "   •   VN draws %d character / %d other   •   %d relights", s.layerDraws(), s.otherDraws(), s.relights());
@@ -1069,7 +1071,7 @@ public class RunConsoleView extends BorderPane {
 
     private void configureLaunchOptionsButton() {
         launchOptionsButton.getStyleClass().add("session-profile");
-        launchOptionsButton.setGraphic(AeroIcon.of(AeroIcon.Kind.SETTINGS, 22));
+        launchOptionsButton.setGraphic(graphiteGraphic(AeroIcon.of(AeroIcon.Kind.SETTINGS, 22)));
         launchOptionsButton.setContentDisplay(ContentDisplay.LEFT);
         launchOptionsButton.setFocusTraversable(false);
 
@@ -1366,6 +1368,7 @@ public class RunConsoleView extends BorderPane {
             g.setFill(PERF_GRID_BG);
             g.fillRect(0, 0, w, h);
 
+            g.setLineDashes();
             g.setStroke(PERF_GRID_LINE);
             g.setLineWidth(1.0);
             for (int row = 1; row < 4; row++) {
@@ -1411,6 +1414,7 @@ public class RunConsoleView extends BorderPane {
             }
             g.stroke();
 
+            g.setLineDashes(5, 3);
             g.setStroke(PERF_CPU_COLOR.deriveColor(0, 1, 1, 0.92));
             g.setLineWidth(1.5);
             g.beginPath();
@@ -1423,6 +1427,7 @@ public class RunConsoleView extends BorderPane {
             }
             g.stroke();
 
+            g.setLineDashes(1, 3);
             g.setStroke(PERF_FPS_COLOR.deriveColor(0, 1, 1, 0.9));
             g.setLineWidth(1.5);
             g.beginPath();

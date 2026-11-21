@@ -98,9 +98,9 @@
 
 .session-log-tools .toggle-button, .session-rail .session-profile {
   -fx-background-color: transparent;
-  -fx-background-radius: 4;
+  -fx-background-radius: 2;
   -fx-border-color: -jvn-aero-edge;
-  -fx-border-radius: 4;
+  -fx-border-radius: 2;
 }
 .session-rail .session-profile > .label { -fx-text-fill: -jvn-aero-text; }
 .session-rail .session-profile .arrow { -fx-background-color: -jvn-aero-muted; }
@@ -152,36 +152,109 @@
 .build-publisher-root .build-page-content { -fx-padding: 18 22; }
 .build-workspace-section { -fx-padding: 0 0 16 0; -fx-border-width: 0 0 1 0; -fx-border-color: -jvn-aero-edge; }
 .build-workspace-section .build-publisher-card-title { -fx-text-fill: -jvn-aero-text; -fx-font-size: 16px; -fx-font-weight: bold; }
+/* Package formats read as one selector, with an underline on the active format. */
 .build-publisher-root .build-format-choice {
-  -fx-alignment: center-left; -fx-background-color: -jvn-aero-surface;
-  -fx-border-color: -jvn-aero-edge; -fx-border-radius: 5; -fx-background-radius: 5;
-  -fx-padding: 9 11;
+  -fx-alignment: center-left;
+  -fx-padding: 7 10;
+  -fx-background-color: transparent;
+  -fx-border-color: transparent transparent -jvn-aero-edge transparent;
+  -fx-border-width: 0 0 2 0;
+  -fx-background-radius: 0;
+  -fx-border-radius: 0;
 }
 .build-format-choice .build-format-name { -fx-text-fill: -jvn-aero-text; -fx-font-size: 13px; -fx-font-weight: bold; }
-.build-publisher-root .build-format-choice:hover { -fx-background-color: -jvn-aero-hover; }
-.build-publisher-root .build-format-choice:selected { -fx-border-color: -jvn-aero-focus; -fx-background-color: -jvn-aero-selected; }
-.build-publisher-root .build-format-choice:focused { -fx-border-color: -fx-focus-color; }
-
-.build-publisher-root .build-actions .build-publisher-cta {
-  -fx-background-color: -jvn-aero-button;
-  -fx-border-color: -jvn-aero-control-edge;
-  -fx-text-fill: -jvn-aero-text;
-  -fx-padding: 7 15;
-  -fx-border-radius: 5;
-  -fx-background-radius: 5;
+.build-publisher-root .build-format-choice:hover { -fx-background-color: -jvn-aero-surface; }
+.build-publisher-root .build-format-choice:selected {
+  -fx-background-color: -jvn-aero-field;
+  -fx-border-color: transparent transparent -jvn-aero-text transparent;
+}
+.build-publisher-root .build-format-choice:focused {
+  -fx-border-width: 1 1 2 1;
+  -fx-border-color: -jvn-aero-focus;
 }
 
 .run-console-root .session-rail { -fx-background-color: -jvn-aero-surface; }
 .run-console-root .run-console-state,
-.build-publisher-root .build-publisher-workflow-notice {
-  -fx-background-color: -jvn-aero-field;
-  -fx-border-color: -jvn-aero-edge;
-  -fx-text-fill: -jvn-aero-text;
+.run-console-root .run-console-meta,
+.build-publisher-root .build-publisher-badge,
+.build-publisher-root .build-publisher-workflow-notice,
+.build-publisher-root .build-publisher-dependency-summary,
+.build-publisher-root .build-publisher-dependency-placeholder,
+.build-publisher-root .build-publisher-dependency-group,
+.build-publisher-root .build-publisher-native-release,
+.build-publisher-root .build-publisher-command-preview,
+.build-publisher-root .build-publisher-artifact-inventory {
+  -fx-background-color: transparent;
+  -fx-border-width: 0;
+  -fx-border-radius: 0;
+  -fx-background-radius: 0;
+  -fx-padding: 0;
+  -fx-text-fill: -jvn-aero-muted;
 }
-.run-console-root .run-console-state-failed,
-.build-publisher-root .build-publisher-workflow-notice-blocked { -fx-text-fill: -jvn-status-icon-red; }
-.build-publisher-root .build-publisher-workflow-notice-pending { -fx-text-fill: -jvn-aero-warning; }
+.build-publisher-root .build-publisher-finding-row {
+  -fx-background-color: transparent;
+  -fx-border-color: transparent transparent -jvn-aero-edge transparent;
+  -fx-border-width: 0 0 1 0;
+  -fx-background-radius: 0;
+  -fx-border-radius: 0;
+  -fx-padding: 6 0;
+}
+.build-publisher-root .build-publisher-finding-category,
+.build-publisher-root .build-publisher-finding-location,
+.build-publisher-root .build-publisher-finding-target,
+.build-publisher-root .build-publisher-note,
+.run-console-root .run-console-perf-value,
+.run-console-root .run-console-launch-activity { -fx-text-fill: -jvn-aero-muted; }
+
+.run-console-root .run-console-state,
+.run-console-root .run-console-meta-alert,
+.run-console-root .run-console-meta-warn,
+.build-publisher-root .build-publisher-badge-error,
+.build-publisher-root .build-publisher-workflow-notice-blocked,
+.build-publisher-root .build-publisher-note-error {
+  -fx-text-fill: -jvn-aero-text;
+  -fx-font-weight: bold;
+}
+
+.build-publisher-root .build-publisher-button,
+.run-console-root .session-actions .button {
+  -fx-background-color: -jvn-aero-button;
+  -fx-border-color: -jvn-aero-control-edge;
+  -fx-text-fill: -jvn-aero-text;
+  -fx-border-radius: 2;
+  -fx-background-radius: 2;
+}
+.build-publisher-root .build-publisher-button:hover,
+.run-console-root .session-actions .button:hover { -fx-background-color: -jvn-aero-hover; }
+.build-publisher-root .build-publisher-button:pressed,
+.run-console-root .session-actions .button:pressed { -fx-background-color: -jvn-aero-pressed; }
+.build-publisher-root .build-publisher-button:focused,
+.run-console-root .session-actions .button:focused { -fx-border-color: -jvn-aero-focus; }
+
+.build-publisher-root .build-publisher-disclosure,
+.build-publisher-root .build-publisher-disclosure > .title,
+.build-publisher-root .build-publisher-disclosure > .content {
+  -fx-background-color: transparent;
+  -fx-border-width: 0;
+  -fx-background-radius: 0;
+  -fx-border-radius: 0;
+}
+.build-publisher-root .build-publisher-disclosure > .title { -fx-padding: 6 0; }
+.build-publisher-root .build-publisher-disclosure:focused > .title {
+  -fx-background-color: -jvn-aero-surface;
+  -fx-border-width: 0 0 1 0;
+  -fx-border-color: -jvn-aero-focus;
+}
+.build-publisher-root .build-publisher-disclosure > .content { -fx-padding: 6 0 10 16; }
+.build-publisher-root .layout-launcher-field,
+.build-publisher-root .combo-box-base.layout-launcher-field > .arrow-button,
+.run-console-root .run-console-search-field,
+.run-console-root .run-console-filter-combo {
+  -fx-background-radius: 2;
+  -fx-border-radius: 2;
+}
+
 .run-console-root .run-console-output .list-cell { -fx-text-fill: -jvn-aero-text; }
 .run-console-root .run-console-output .run-console-line-noise { -fx-text-fill: -jvn-aero-muted; }
-.run-console-root .run-console-output .run-console-line-error { -fx-text-fill: -jvn-status-icon-red; }
-.run-console-root .run-console-output .run-console-line-warn { -fx-text-fill: -jvn-aero-warning; }
+.run-console-root .run-console-output .run-console-line-error,
+.run-console-root .run-console-output .run-console-line-warn { -fx-font-weight: bold; }

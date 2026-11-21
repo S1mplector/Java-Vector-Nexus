@@ -24,27 +24,33 @@ class GameBuildPublisherViewFxTest {
   @TempDir Path tempDir;
 
   @Test
-  void buildAndRunUseTheEditorsWorkspacePaintsInBothThemes() throws Exception {
+  void buildAndRunUseFlatGraphiteChromeAcrossEditorThemes() throws Exception {
     runFx(() -> {
-      for (String theme : java.util.List.of("editor.css", "editor-light.css")) {
-        String stylesheet = EditorTheme.class.getResource("/com/jvn/editor/" + theme).toExternalForm();
-        var chrome = new Pane();
-        chrome.getStyleClass().add("editor-workspace-panel");
-        var editor = new Pane(chrome);
-        new Scene(editor).getStylesheets().add(stylesheet);
-        editor.applyCss();
-
-        var run = new RunConsoleView("JVN Runtime");
-        try {
-          for (Region workspace : java.util.List.of(createView(), run)) {
-            new Scene(workspace).getStylesheets().add(stylesheet);
+      var original = EditorTheme.theme();
+      var chrome = new Pane();
+      chrome.getStyleClass().add("editor-workspace-panel");
+      var editor = new Pane(chrome);
+      style(new Scene(editor));
+      editor.applyCss();
+      var run = new RunConsoleView("JVN Runtime");
+      try {
+        for (Region workspace : java.util.List.of(createView(), run)) {
+          var scene = new Scene(workspace);
+          for (var theme : EditorTheme.Theme.values()) {
+            EditorTheme.setTheme(theme);
+            EditorTheme.apply(scene);
             workspace.applyCss();
-            assertEquals(background(editor), background(workspace), theme);
-            assertEquals(background(chrome), background((Region) workspace.lookup(".session-header")), theme);
+            assertEquals(background(editor), background(workspace));
+            assertEquals(background(chrome), background((Region) workspace.lookup(".session-header")));
+            String status = workspace == run ? ".run-console-state" : ".build-publisher-badge";
+            var label = (javafx.scene.control.Label) workspace.lookup(status);
+            assertEquals(javafx.scene.paint.Color.TRANSPARENT, background(label));
+            assertEquals(javafx.geometry.Insets.EMPTY, label.getPadding());
           }
-        } finally {
-          run.dispose();
         }
+      } finally {
+        run.dispose();
+        EditorTheme.setTheme(original);
       }
       return null;
     });
@@ -63,8 +69,8 @@ class GameBuildPublisherViewFxTest {
       scene.getRoot().applyCss();
       scene.getRoot().layout();
 
-      assertTrue(view.preflightButtonForTest().getGraphic() instanceof AeroIcon);
-      assertTrue(view.dependencyScanButtonForTest().getGraphic() instanceof AeroIcon);
+      assertTrue(view.preflightButtonForTest().getGraphic().lookup(".jvn-aero-icon") instanceof AeroIcon);
+      assertTrue(view.dependencyScanButtonForTest().getGraphic().lookup(".jvn-aero-icon") instanceof AeroIcon);
       assertTrue(view.preflightButtonForTest().minHeight(-1) <= 40);
       assertTrue(view.dependencyScanButtonForTest().minHeight(-1) <= 40);
       assertTrue(view.preflightButtonForTest().minWidth(-1) < 220);
