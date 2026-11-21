@@ -79,6 +79,17 @@ jobs:
           unzip -q "$JVN_TUTORIAL_QA_DIR/Ginger-Tutorial.zip" -d "$RUNNER_TEMP/tutorial-routing"
           export JVN_GENERATED_TUTORIAL="$RUNNER_TEMP/tutorial-routing/GingerTutorial"
           ./gradlew :runtime:test --tests com.jvn.runtime.TutorialChoiceRoutingTest --no-daemon
+      - name: Report failing packaged tests
+        if: failure() && runner.os == 'Linux'
+        shell: bash
+        run: |
+          python - <<'PY'
+          import glob, os, xml.etree.ElementTree as ET
+          for path in glob.glob(os.environ["RUNNER_TEMP"] + "/jvn-release-workspace/**/TEST-*.xml", recursive=True):
+              for case in ET.parse(path).iter("testcase"):
+                  for failure in case.findall("failure"):
+                      print(case.get("classname"), case.get("name"), failure.get("message"))
+          PY
       - name: Build packages and test the installed Hub
         shell: bash
         run: python scripts/package-native-hub.py "$VERSION" "build/distributions/jvn-engine-hub-lite-$VERSION.jar" build/native-hub --test-install

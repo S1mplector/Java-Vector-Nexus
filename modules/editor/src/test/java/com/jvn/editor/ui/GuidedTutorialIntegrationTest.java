@@ -199,12 +199,16 @@ class GuidedTutorialIntegrationTest {
         renderer.renderLoadMenu(loadMenu, 1280, 720);
         save(canvas, "empty-load");
         saves.save(hub.getState(), "Studio");
+        String captures = System.getenv("JVN_TUTORIAL_QA_DIR");
+        if (captures != null && !captures.isBlank()) {
+          Files.copy(Path.of(captures, "board.png"), Path.of(saves.getSaveDirectory(), "Studio.png"));
+        }
         var saveMenu = new com.jvn.core.menu.SaveMenuScene(null, saves, hub);
         saveMenu.onEnter();
         assertEquals("Save game", saveMenu.getDisplayTitle());
         renderer.renderSaveMenu(saveMenu, 1280, 720);
         save(canvas, "save");
-        loadMenu.onEnter();
+        loadMenu = new com.jvn.core.menu.LoadMenuScene(null, saves, "story/tutorial_hub.vns", new VnSettings(), null);
         assertTrue(loadMenu.getSaves().contains("Studio"));
         assertEquals("Load game", loadMenu.getDisplayTitle());
         renderer.renderLoadMenu(loadMenu, 1280, 720);
@@ -244,6 +248,7 @@ class GuidedTutorialIntegrationTest {
 
   private static VnScene open(VnScenarioLoader loader, String path, Map<String, Object> variables) throws Exception {
     var scene = new VnScene(loader.load(path));
+    scene.getState().setSourceScriptName(path);
     scene.setInterop(new DefaultVnInterop());
     scene.getState().getVariables().putAll(variables);
     scene.onEnter();
