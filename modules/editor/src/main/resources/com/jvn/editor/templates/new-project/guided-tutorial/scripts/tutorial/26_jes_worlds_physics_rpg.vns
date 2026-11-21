@@ -8,9 +8,21 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide normal]
-ginger: If you touched the empty corner around a round button, should it count? That's the difference a collision shape makes.
-ginger: In the JES editor, use the example panel as a reference. Compare its drawn bounds with the collision shape you would give it.
+[show ginger beside_code normal]
+[set tutorial_source scripts/scenes/collider.jes]
+[set tutorial_excerpt footprint]
+[set ui.dialogueFacet tutorial_code]
+ginger: A collider defines the region used for contact tests. A sprite's rectangular image bounds may include transparent corners.
+narrator: {i}Geometry example: centre (50, 50), radius 50. Compare a circle with a 100 by 100 box at the same centre.{/i}
+ginger: The point (5, 5) is inside the box. Its distance from the centre is about 64 pixels, so it is outside the circle.
+ginger: Now test (50, 10). Its distance from the centre is 40 pixels. Both shapes include it. These two points are enough to distinguish the shapes in a test.
+ginger: Use a circle for a round footprint and a box for a rectangular one. Test near a corner as well as near the middle of an edge.
+ginger: For a point and circle, subtract the centre from the point on each axis. Square both offsets and add them. Compare that sum with the squared radius. You can do the test without taking a square root.
+ginger: For the box in this example, each coordinate lies between 0 and 100. A point near a corner can pass both box limits while still lying outside the circle.
+[clear ui.dialogueFacet]
+> Inspect the JES body -> visit_body
+> Test a point -> pick_point
+> Calculate a contact test -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
@@ -20,17 +32,86 @@ ginger: What determines whether two physical objects can collide?
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: Visual bounds and collision shapes serve different purposes. Give it another try.
+ginger: Changing the sprite colour leaves both test points in exactly the same positions relative to the collider.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: Visual bounds and collision shapes serve different purposes.
+ginger: The physics bodies and collision shapes define contact. The visible image helps you check whether the geometry matches the intended footprint.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_26]
 [flag tutorial_done_26]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_5]
+[end]
+
+@label visit_body
+[jes push scripts/scenes/collider.jes label check]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/scenes/collider.jes]
+[set tutorial_excerpt footprint]
+[set ui.dialogueFacet tutorial_code]
+ginger: Read the JES body definition. Its centre is (50, 50) and its radius is 50. The reference box has width and height 100 centred at the same point.
+ginger: Test (5, 5) by hand. The offsets are -45 and -45. Their squares add to 4,050. The squared radius is 2,500, so the point misses the circle even though it lies inside the box.
+ginger: Test (20, 10). The offsets are -30 and -40. Their squares add to exactly 2,500. This point lies on the mathematical boundary. Decide whether your point test should include equality.
+ginger: Now move one unit farther left to (19, 10). The squared distance becomes 2,561. This is a useful near-boundary case because it distinguishes a correct threshold from a loose approximation.
+@label practice_question
+ginger: Using an inclusive point test, which point lies exactly on the boundary?
+> (19, 10). -> practice_hint
+> (20, 10). -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: At (19, 10), the horizontal offset is -31, whose square is 961. Add 1,600 and compare the result with 2,500.
+[jump practice_question]
+@label practice_result
+ginger: At (20, 10), 900 plus 1,600 equals 2,500. Keep the on-boundary and just-outside cases together when testing your own contact logic.
+[clear ui.dialogueFacet]
+> Test a point -> pick_point
+> Inspect the JES body -> visit_body
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub
+
+@label pick_point
+> Corner (5, 5) -> point_corner
+> Boundary (20, 10) -> point_boundary
+> Just outside (19, 10) -> point_outside
+> Back to topics -> return_hub
+@label point_corner
+[set point_x 5]
+[set point_y 5]
+[jump test_point]
+@label point_boundary
+[set point_x 20]
+[set point_y 10]
+[jump test_point]
+@label point_outside
+[set point_x 19]
+[set point_y 10]
+@label test_point
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/26_jes_worlds_physics_rpg.vns]
+[set tutorial_excerpt distance]
+[set ui.dialogueFacet tutorial_code]
+# region distance
+[eval dx = point_x - 50]
+[eval dy = point_y - 50]
+[eval squared = dx * dx + dy * dy]
+[eval inside = squared <= 50 * 50]
+# endregion
+ginger: Point ({b}${point_x}, ${point_y}{/b}). The squared distance is {b}${squared}{/b}. Does it fit within a squared radius of 2,500?
+[if inside]
+ginger: Inside, including the boundary. Both tests accept this point. Move one unit left and compare the two sums.
+[else]
+ginger: Outside the circle. Both coordinates still fit the box, so the box accepts this point.
+[endif]
+[clear ui.dialogueFacet]
+> Test another point -> pick_point
+> Review question -> check
+> Back to topics -> return_hub

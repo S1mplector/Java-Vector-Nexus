@@ -172,7 +172,7 @@ final class AssetDeclarationWriter {
             : suggestion.owner();
         yield "@charlayer " + owner + " " + suggestion.label() + " " + path;
       }
-      case AUDIO, VIDEO, FONT, DATA, UNKNOWN -> "";
+      case AUDIO, MUSIC, SOUND_EFFECT, VOICE, PROJECT_ICON, VIDEO, FONT, DATA, UNKNOWN -> "";
     };
   }
 

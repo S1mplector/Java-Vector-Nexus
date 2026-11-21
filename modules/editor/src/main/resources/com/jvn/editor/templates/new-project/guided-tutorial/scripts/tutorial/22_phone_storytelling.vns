@@ -8,40 +8,80 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide normal]
-ginger: I've left you a message. My name is the part you read. The chat uses my ID to work out who sent it.
-ginger: Open the sample conversation. Its contacts and display names are in config/phone/phone.properties.
-> Open the sample chat -> messages
+[show ginger beside_code normal]
+[set tutorial_source scripts/tutorial/22_phone_storytelling.vns]
+[set tutorial_excerpt thread]
+[set ui.dialogueFacet tutorial_code]
+ginger: A chat thread has an ID, a display title and participants. Messages specify the thread and the sender separately.
+[set tutorial_excerpt messages]
+ginger: Open the sample chat. It contains two test messages in the same thread with different timestamps. Reopen it and check the message count.
+ginger: In this script, {b}example{/b} identifies the thread and ginger identifies the sender. Rename the display title and verify that both messages still open together.
+ginger: Track three values separately. The thread ID selects the conversation, the sender ID identifies the participant, and the timestamp belongs to the individual message.
+ginger: The flag around the send commands matters when you reopen the sample. Opening an existing thread and appending its seed messages are two different operations.
+[clear ui.dialogueFacet]
+> Open sample chat -> messages
+> Trace one message into its thread -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label messages
+# region thread
 [phone contact ginger name="Ginger"]
 [phone thread example title="Example chat" participants=player,ginger]
+# endregion
 [if !tutorial_message_sent]
-[phone message example ginger "This is a sample message from Ginger." time=17:10]
+# region messages
+[phone message example ginger "First message in the example thread." time=17:10]
+[phone message example ginger "Second message, one minute later." time=17:11]
+# endregion
 [flag tutorial_message_sent]
 [endif]
 [phone open chat example]
-ginger: Use the back control to close the chat and return to this lesson.
+ginger: Use the back control to close the chat. The example uses a flag so replaying it doesn't append duplicate messages.
 [phone close]
 @label check
-ginger: Which identifier should incoming messages target?
+ginger: Which identifier selects the conversation that receives a message?
 > Whatever title is currently displayed. -> retry
 > The stable chat ID. -> correct
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: The ID routes the message even after the title is translated. Give it another try.
+ginger: A display title can be edited or translated. Look at the first argument after phone message.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: The ID routes the message even after the title is translated.
+ginger: Use the thread ID for the conversation and the contact ID for the sender.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_22]
 [flag tutorial_done_22]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_4]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/22_phone_storytelling.vns]
+[set tutorial_excerpt messages]
+[set ui.dialogueFacet tutorial_code]
+ginger: Start a fresh run, open the chat, and count the messages. Close it, return to the same example in that run, and count again. The pair should appear only once.
+ginger: Follow the first visit in the source. The flag is initially unset, so the sends execute and the script sets the flag. On the next visit the conditional skips those sends.
+ginger: Change the display title and leave the thread ID unchanged. Check that the messages still belong to the same conversation. Then edit only the second timestamp and compare the entries.
+ginger: If a reopen adds duplicates, inspect the condition that guards the sends before changing the timestamps. A different clock value cannot prevent a send instruction from running twice.
+@label practice_question
+ginger: The title changed and the same thread now gains two messages on every visit. What do you trace first?
+> The displayed timestamps. -> practice_hint
+> The send guard and the flag it updates. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: A timestamp describes an entry that was already created. Trace the instructions that create the extra pair.
+[jump practice_question]
+@label practice_result
+ginger: Messages are added by executing send commands. Confirm when the flag is written and whether the next visit reads the same variable.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

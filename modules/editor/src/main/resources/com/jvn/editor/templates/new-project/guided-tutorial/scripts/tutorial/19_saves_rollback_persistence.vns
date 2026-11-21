@@ -8,29 +8,84 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide normal]
-ginger: Here's a chance to change your mind. Save before the question, choose an answer, then load and try the other one.
-ginger: Save at the next question. Answer it, reload, and try the other choice.
+[show ginger beside_code normal]
+[set tutorial_source scripts/tutorial/19_saves_rollback_persistence.vns]
+[set tutorial_excerpt branches]
+[set ui.dialogueFacet tutorial_code]
+ginger: Save a slot before selecting a test value. You can reload that slot and run the other branch from exactly the same point.
+ginger: At the choices, open Pause and choose {b}Save{/b}. Create a slot, resume, then select A or B. Watch the value printed after the selection.
+ginger: A slot captures a particular moment in the route. Save before the choice to test both inputs from the same starting point. Save after the write to check how the resulting state restores.
+ginger: The printed result gives you a way to inspect example_value. A restored sprite alone cannot tell you whether the variable and script position came back together.
+@label select_value
+# region branches
+> Set value to A -> select_a
+> Set value to B -> select_b
+# endregion
+> Separate saved state from new input -> practice
+> Review question -> check
+> Back to topics -> return_hub
+@label select_a
+[set example_value A]
+ginger: This branch writes A to {b}example_value{/b}.
+[jump display_value]
+@label select_b
+[set example_value B]
+ginger: This branch writes B to {b}example_value{/b}.
+@label display_value
+[set tutorial_excerpt display]
+# region display
+narrator: Current value: {b}${example_value}{/b}.
+# endregion
+ginger: Open Load and select your slot. Choose the other value. The readout should now show that value, and you should still be in this lesson.
+[clear ui.dialogueFacet]
+> Separate saved state from new input -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: Where should a story choice be stored?
+[clear ui.dialogueFacet]
+ginger: Where should you store a choice that must survive saving and loading?
 > In VN state so save and rollback can restore it. -> correct
 > Only in the displayed dialogue text. -> retry
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: A replay can reconstruct the story from its saved state. Give it another try.
+ginger: A line of text displays the result. Subsequent conditions need a value they can read from VN state.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: A replay can reconstruct the story from its saved state.
+ginger: Store the value in VN state. Check the restored value and the current script location when testing a save.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_19]
 [flag tutorial_done_19]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_5]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/19_saves_rollback_persistence.vns]
+[set tutorial_excerpt display]
+[set ui.dialogueFacet tutorial_code]
+ginger: Create slot Before at the A/B choice. Choose A, advance to the printed value, and save again under a second name. You now have snapshots on opposite sides of the write.
+ginger: Load Before and choose B. The next readout should be B. Load the later slot and check the current line and readout before making any new choice.
+ginger: Trace that readout back to the assignment on each branch. Both routes use the same output line, so a difference there should come from a different stored value.
+ginger: Test rollback separately on the same route. Step back through dialogue and inspect when the value changes. Record the exact stop you reached rather than assuming one press returns to the choice.
+@label practice_question
+ginger: Which slot lets you choose B without replaying the whole lesson?
+> The slot captured before the A/B choice. -> practice_result
+> The slot captured on the readout after choosing A. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: The later slot already passed the choice. Locate the snapshot whose instruction position is on the input you want to repeat.
+[jump practice_question]
+@label practice_result
+ginger: The earlier slot restores the decision point. Choosing B then executes its write before the shared readout is evaluated.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

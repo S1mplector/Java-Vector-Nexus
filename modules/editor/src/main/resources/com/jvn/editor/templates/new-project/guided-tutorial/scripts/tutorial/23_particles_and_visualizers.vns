@@ -8,34 +8,75 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide thoughtful]
-ginger: Can you spot the dust against the wall? Each speck is a particle with its own short time on stage.
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/23_particles_and_visualizers.vns]
+[set tutorial_excerpt dust]
+[set ui.dialogueFacet tutorial_code]
+ginger: This example starts the dust emitter for three seconds. Observe the particles against the white background and check how easily you can read the dialogue.
 [if !tutorial_still]
+# region dust
 [particles dust intensity=0.24 opacity=0.52 speed=0.30 duration=3000]
+# endregion
+ginger: The intensity is {b}0.24{/b}. Speed and opacity are set separately. Advance to stop the emitter before the next comparison.
+[else]
+ginger: Reduced motion is enabled. The example skips the emitter and continues to the same exercise.
 [endif]
-ginger: Watch the particles against the white background. Reduced motion keeps the example still.
+# region stop
 [particles stop]
-ginger: Change the intensity in the particles command, then replay.
+# endregion
+ginger: Change intensity from {color=#FFD7A3}0.24{/color} to 0.48. Leave speed and opacity alone. Compare the density and the readability of the text.
+[set tutorial_excerpt stop]
+ginger: Use [particles stop] at the end of an effect if the following section should start with a clear background.
+ginger: Duration sets an upper time for this effect. An explicit stop can end it earlier when the player advances. Record whether you waited on the line before comparing two runs.
+ginger: Intensity, opacity and speed answer different questions. How full does the effect look, how visible is each particle, and how quickly does it travel? Change one field per comparison.
+[clear ui.dialogueFacet]
+> Compare particle settings independently -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: Which comparison tells you whether the effect helps?
+ginger: Which comparison shows whether the effect affects readability?
 > Read the same line with the effect on and off. -> correct
 > Check the particle count alone. -> retry
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: The reader experiences the composed frame, not a counter. Give it another try.
+ginger: The particle count alone doesn't tell you how clearly the words stand out. Compare the same text in both conditions.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: The reader experiences the composed frame, not a counter.
+ginger: Read the same line with the effect enabled and disabled, using the same window size.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_23]
 [flag tutorial_done_23]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_3]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/23_particles_and_visualizers.vns]
+[set tutorial_excerpt dust]
+[set ui.dialogueFacet tutorial_code]
+ginger: Run the original intensity, 0.24, against the white background. Pick one word in the dialogue and watch the space around it for a fixed interval.
+ginger: Double intensity to 0.48 and keep speed, opacity and duration fixed. Compare the density across several frames. A random emitter will not put the same particle at the same point each time.
+ginger: Restore intensity and lower only opacity. The particles should become less conspicuous even if the emitter is still producing them. Then restore opacity and change speed to compare motion.
+ginger: Test a rapid advance and a slow read. On the rapid route the stop instruction can cut the effect short. On the slow route the configured duration can expire first.
+@label practice_question
+ginger: The effect ends sooner only when the player advances quickly. Which instruction explains it?
+> The explicit stop reached after the dialogue. -> practice_result
+> The unchanged opacity value. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Opacity affects visibility. Follow the script beyond the line that waits for player input and find the instruction that ends the emitter.
+[jump practice_question]
+@label practice_result
+ginger: The advance changes when execution reaches stop. Measure the interval from effect start to that instruction on both routes.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

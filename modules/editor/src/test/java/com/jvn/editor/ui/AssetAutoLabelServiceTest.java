@@ -557,6 +557,106 @@ class AssetAutoLabelServiceTest {
     assertTrue(suggestion.reason().contains("2 declared siblings"));
   }
 
+  @Test
+  void identifiesWholePosesLayersAndUnrelatedArtInMixedDirectories() throws Exception {
+    Path project = createProject();
+    for (String file : java.util.List.of("eyes.png", "GingerThoughtful.png", "gingerEyesClosed.png",
+        "gingerbread.png", "gingerMenuIcon.png", "plate.png", "bg_station.png")) {
+      touch(project.resolve("assets/art").resolve(file));
+    }
+    touch(project.resolve("assets/characters/ada/neutral.png"));
+    touch(project.resolve("assets/characters/ada/ref.png"));
+    Files.writeString(project.resolve("scripts/definitions/visuals.vns"), """
+        @character ginger "Ginger"
+        @character ada "Ada"
+        @charlayer ginger eyes assets/art/eyes.png
+        @charimg ginger borrowed assets/characters/ada/ref.png
+        """);
+    var scan = new AssetAutoLabelService().preview(project);
+    var pose = byPath(scan, "assets/art/GingerThoughtful.png");
+    assertEquals(AssetKind.CHARACTER_SPRITE, pose.kind());
+    assertEquals("ginger", pose.owner());
+    assertEquals("thoughtful", pose.label());
+    assertTrue(pose.confidence() >= .8);
+    var layer = byPath(scan, "assets/art/gingerEyesClosed.png");
+    assertEquals(AssetKind.CHARACTER_LAYER, layer.kind());
+    assertEquals("ginger", layer.owner());
+    assertEquals(AssetKind.UI, byPath(scan, "assets/art/gingerMenuIcon.png").kind());
+    assertEquals(AssetKind.BACKGROUND, byPath(scan, "assets/art/bg_station.png").kind());
+    assertEquals("ada", byPath(scan, "assets/characters/ada/neutral.png").owner());
+    for (String unrelated : java.util.List.of("plate.png", "gingerbread.png")) {
+      var image = byPath(scan, "assets/art/" + unrelated);
+      assertEquals(AssetKind.UNKNOWN, image.kind());
+      assertEquals("", image.owner());
+      assertTrue(image.confidence() < .8);
+    }
+  }
+
+  @Test
+  void resolvesRuntimePathsAndUsesScriptAndConfigurationEvidence() throws Exception {
+    Path project = createProject();
+    for (String file : java.util.List.of("game/images/hall.png", "game/images/brand.png", "game/fonts/type.woff2",
+        "game/audio/welcome.wav", "game/audio/shared.ogg", "game/audio/voice/ada/line.wav")) {
+      touch(project.resolve(file));
+    }
+    Files.createDirectories(project.resolve("game/scripts"));
+    Files.writeString(project.resolve("game/scripts/demo.vns"), """
+        @background hall hall.png
+        [sfx welcome.wav]
+        [bgm shared.ogg]
+        [sfx shared.ogg]
+        """);
+    Files.createDirectories(project.resolve("config"));
+    Files.writeString(project.resolve("config/ui.properties"),
+        "profile.release.icon=game/images/brand.png\ntitleFontFamily=game/fonts/type.woff2\n");
+    var service = new AssetAutoLabelService();
+    var scan = service.preview(project);
+    assertEquals(0, scan.missingCount());
+    assertEquals(LabelStatus.DECLARED, byPath(scan, "game/images/hall.png").status());
+    var icon = byPath(scan, "game/images/brand.png");
+    assertEquals(AssetKind.PROJECT_ICON, icon.kind());
+    assertTrue(icon.reason().contains("profile.release.icon"));
+    assertTrue(byPath(scan, "game/fonts/type.woff2").reason().contains("titleFontFamily"));
+    var sound = byPath(scan, "game/audio/welcome.wav");
+    assertEquals(AssetKind.SOUND_EFFECT, sound.kind());
+    assertTrue(sound.reason().contains("demo.vns:2"));
+    var shared = byPath(scan, "game/audio/shared.ogg");
+    assertEquals(AssetKind.AUDIO, shared.kind());
+    assertTrue(shared.confidence() < .8);
+    var voice = byPath(scan, "game/audio/voice/ada/line.wav");
+    assertEquals(AssetKind.VOICE, voice.kind());
+    assertEquals("ada", voice.owner());
+    var applied = service.applyDeclarations(project, java.util.List.of(sound, icon, voice));
+    assertEquals(3, applied.labelsSaved());
+    assertEquals(0, applied.declarationsGenerated());
+    assertEquals("ada", byPath(service.preview(project), voice.relativePath()).owner());
+    var dropped = service.suggestDroppedAsset(project, touch(tempDir.resolve("drop/characters/ada/idle.png")));
+    assertEquals("ada", dropped.owner());
+    assertEquals(AssetKind.CHARACTER_SPRITE, dropped.kind());
+  }
+
+  @Test
+  void identifiesRenamedCopiesAndFlagsImagesSharedBetweenActors() throws Exception {
+    Path project = createProject();
+    byte[] png = java.util.Base64.getDecoder().decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+    for (String file : java.util.List.of("assets/art/hero.png", "assets/import/untitled.png")) {
+      Files.write(touch(project.resolve(file)), png);
+    }
+    var script = project.resolve("scripts/definitions/visuals.vns");
+    Files.writeString(script, "@charimg ada idle assets/art/hero.png");
+    var service = new AssetAutoLabelService();
+    var copy = byPath(service.preview(project), "assets/import/untitled.png");
+    assertEquals(AssetKind.CHARACTER_SPRITE, copy.kind());
+    assertEquals("ada", copy.owner());
+    assertTrue(copy.reason().contains("Identical file"));
+    assertTrue(copy.confidence() >= .8);
+    Files.writeString(script, "\n@charimg ben idle assets/art/hero.png", java.nio.file.StandardOpenOption.APPEND);
+    var shared = byPath(service.preview(project), "assets/import/untitled.png");
+    assertTrue(shared.confidence() < .8);
+    assertEquals("", shared.owner());
+  }
+
   private Path createProject() throws Exception {
     Path project = tempDir.resolve("project");
     Files.createDirectories(project.resolve("scripts/story"));

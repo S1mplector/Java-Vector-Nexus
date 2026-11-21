@@ -8,33 +8,87 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide normal]
-ginger: I'd like to use the same chime twice. I'll put it under one label and call it whenever I need it.
+[show ginger beside_code normal]
+[set tutorial_source scripts/tutorial/11_subroutines_and_flow.vns]
+[set tutorial_excerpt subroutine]
+[set ui.dialogueFacet tutorial_code]
+ginger: Two different lines in this script call the same {b}chime{/b} subroutine. Listen for the sound, then check which line appears after each call.
 [call chime]
-ginger: Find the chime label. Change the sound there, then replay the call.
+ginger: First call complete. The script resumed at the line immediately after the first call.
+narrator: {i}Advance to run the second call.{/i}
+[call chime]
+ginger: Second call complete. The same return command brought us to a different line because this call started somewhere else.
+ginger: Find @label chime at the end of the file. Add [wait 300] just before sfx and replay. Both calls should now have the same delay.
+ginger: A local call remembers where execution should resume. Both calls enter the same chime label, but each has a different line immediately after it. That is why the same return can lead to two places.
+ginger: When tracing a call, jot down its next line before following the target. At return, cross off that saved location and resume there.
+[clear ui.dialogueFacet]
+> Follow the return address -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: Which command comes at the end of a local subroutine?
+ginger: Which command resumes execution after a local call?
 > return -> correct
 > end -> retry
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: Return resumes the caller. End finishes the scenario. Give it another try.
+ginger: End finishes the scene. Look for the command at the end of the chime block.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: Return resumes the caller. End finishes the scenario.
+ginger: Return resumes at the instruction following the call. You only need one copy of the shared sound commands.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_11]
 [flag tutorial_done_11]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_1]
+[end]
+# region subroutine
 @label chime
 [sfx assets/tutorial/welcome.wav]
 [return]
+# endregion
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/11_subroutines_and_flow.vns]
+[set tutorial_excerpt subroutine]
+[set ui.dialogueFacet tutorial_code]
+ginger: Find both calls and label the lines after them A and B in your notes. Follow the first call into chime, then follow return back to A. Repeat from the second call.
+ginger: Put a short wait before the sound inside chime. Both calls should now delay their sound. Move the wait out of chime and place it just before the second call. Only that invocation should change.
+ginger: If the first call never resumes, inspect every path out of the subroutine. A jump to an unrelated destination can carry execution away before it reaches return.
+[set tutorial_excerpt nested_calls]
+ginger: For a nested call, keep a second saved location above the first one. The inner routine returns to its caller before the outer routine resumes the main sequence.
+@label practice_question
+ginger: A calls B and B calls C. Which statement follows C's return?
+> The line after the call to C inside B. -> practice_result
+> The line after the call to B inside A. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: There are two pending returns. Start with the location saved by the most recent call.
+[jump practice_question]
+@label practice_result
+ginger: C finishes the most recent call first. B still has work to do before its own return takes execution back to A.
+ginger: Advance to run the nested calls. Follow the return order in the code panel.
+[set lab_calls 0]
+[call outer_probe]
+ginger: Back in the caller. The counter is ${lab_calls}. The inner routine added one and the outer routine added ten after it resumed.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub
+
+# region nested_calls
+@label outer_probe
+[call inner_probe]
+[inc lab_calls 10]
+[return]
+@label inner_probe
+[inc lab_calls 1]
+[return]
+# endregion

@@ -122,38 +122,13 @@ Project run from editor:
    - `--assets <projectRoot>`
    - normalized `--script <entryVns>` when manifest entry is defined
    - otherwise runtime-side entry resolution (`entryVns`/property/discovery)
-3. Executes Gradle with isolated user home:
-   - `.jvn-gradle-user-home`
-   - `--no-daemon`, `--console=plain`, VFS watch disabled
-
-This design avoids shared global lock issues and makes editor-run more consistent across machines.
+3. Opens the [Run workspace](run-console.md) for output, filtering and runtime inspection. Source launches use the configured Gradle policy. **Fast Launch** reuses the daemon and caches. Choose **Compatibility** in Gradle Launch Options to use the project-local Gradle home.
 
 ## Game Build & Publish
 
-Open **Build -> Build & Publish...**, **File -> Project -> Build & Publish...**, **Run -> Build & Publish...**, or the Project Explorer root **Build** button to package the current JVN game project.
+Choose **Build → Build & Publish...** or the **Build** action at the project root. Use **Package** to select a format and target, **Checks** for dependency and test results, **Release** for the plan and release profile, and **Artifacts** for outputs and commands.
 
-The popup now supports:
-
-- **Portable Zip**: cross-target zip, Java required on the player machine
-- **Desktop Bundle**: cross-target self-contained zip with a packaged target runtime
-- **Native Package**: current-host `jpackage` output such as `dmg`, `pkg`, `exe`, `msi`, `deb`, `rpm`, or `app-image`
-
-The popup reads `jvn.project`, lets you set the release name/version, target, format, native package type, and release profile, validates the selection, and launches the matching Gradle task in the run console. **Scan Dependencies** runs the deeper shipping validator inside the popup, grouping errors, warnings, and cleanup notes for missing media, broken menu/script/stage/timeline references, unused media, and packaging blockers. Each finding can be copied or opened at the closest local source file/folder, and **Run Console Scan** remains available for Gradle-style output. Outputs are written to `build/distributions/games/` in the JVN workspace by default, or to the `jvnBuildDir` location configured in the workspace `gradle.properties`.
-
-Build actions stay disabled until the selected project is packageable. The validation checks for a readable `jvn.project`, `type=vn` or `type=jes`, an existing VN `entryVns` or JES `entry` file, a supported target, a writable output folder, accidental selection of the engine workspace, and release-profile availability when native packaging is selected.
-
-Portable zips and desktop bundles can target any supported desktop platform from the popup. The first desktop-bundle build for a target downloads and verifies a packaged runtime, then reuses the local cache on later builds. Native packages remain host-only, so the popup requires the **Current machine** target for that mode. The **Run Release Profile** action builds the selected artifact and then runs any configured signing, notarization, and publish hooks from the game's release profile.
-
-For CLI usage and target details, see [Build System](../../project-setup/release/build-system.md).
-For the format chooser and shipping guidance, see [JVN Build And Release Docs](../../project-setup/release/README.md).
-
-Related preferences live in [Editor And Launcher Settings](settings.md):
-
-- confirm before running from the editor
-- save dirty files before project runs
-- runtime performance HUD on project launch
-- default Gradle `-x test` behavior when `jvn.project` does not define `args`
-- sidebar panel default placement and chooser visibility
+Follow the [Build workspace walkthrough](build-workspace.md) to produce a test build. For task names, target combinations and profile keys, see the [build system reference](../../project-setup/release/build-system.md).
 
 ## Tool Access Patterns
 

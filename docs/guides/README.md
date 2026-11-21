@@ -3,6 +3,8 @@
 Guides are task-oriented learning paths. They explain how to build something; normative language
 rules and subsystem contracts live in the scripting and runtime references.
 
+[Show a source excerpt in dialogue](show-source-in-dialogue.md) walks through a code panel backed by an editable project file.
+
 ## First Steps
 
 1. [Getting Started](getting-started.md)

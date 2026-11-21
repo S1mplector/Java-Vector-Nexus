@@ -36,25 +36,30 @@ final class AssetDeclarationCatalog {
     Map<String, Integer> aliasCounts = new HashMap<>();
     Set<String> characterIds = new LinkedHashSet<>();
     Set<String> conflictingPaths = new LinkedHashSet<>();
-    Path scripts = root.resolve("scripts");
-    if (!Files.isDirectory(scripts)) return Index.empty();
-
-    List<Path> files;
-    try (Stream<Path> stream = Files.walk(scripts)) {
-      files = stream.filter(Files::isRegularFile)
-          .filter(path -> path.getFileName().toString().toLowerCase(java.util.Locale.ROOT).endsWith(".vns"))
-          .sorted().toList();
+    AssetUsageIndex usage = new AssetUsageIndex(root);
+    usage.readConfigurations();
+    List<Path> files = new ArrayList<>();
+    for (String folder : List.of("scripts", "game/scripts")) {
+      Path scripts = root.resolve(folder);
+      if (!Files.isDirectory(scripts)) continue;
+      try (Stream<Path> stream = Files.walk(scripts)) {
+        files.addAll(stream.filter(Files::isRegularFile)
+            .filter(path -> path.getFileName().toString().toLowerCase(java.util.Locale.ROOT).endsWith(".vns"))
+            .sorted().toList());
+      }
     }
     for (Path script : files) {
       List<String> lines = Files.readAllLines(script, StandardCharsets.UTF_8);
       for (int i = 0; i < lines.size(); i++) {
         String line = lines.get(i);
+        usage.readCommand(line, script, i + 1);
         Matcher character = CHARACTER.matcher(line);
         if (character.matches()) {
           characterIds.add(AssetPathHeuristics.sanitizeId(character.group(1)));
         }
-        Declaration declaration = declaration(script, i + 1, line);
+        Declaration declaration = declaration(script, i + 1, line, usage);
         if (declaration == null || declaration.relativePath().isBlank()) continue;
+        if (AssetPathHeuristics.characterArt(declaration.kind())) characterIds.add(declaration.owner());
         Declaration previous = byPath.putIfAbsent(declaration.relativePath(), declaration);
         if (previous != null
             && (!previous.owner().equals(declaration.owner())
@@ -72,15 +77,16 @@ final class AssetDeclarationCatalog {
         }
         String directory = AssetPathHeuristics.parentPath(declaration.relativePath());
         byDirectory.computeIfAbsent(directory, ignored -> new ArrayList<>()).add(declaration);
-        if (!declaration.owner().isBlank()) {
-          String voteDirectory = directory;
-          while (!voteDirectory.isBlank()
-              && AssetPathHeuristics.pathParts(voteDirectory).size() >= 3) {
-            ownerVotes.computeIfAbsent(voteDirectory, ignored -> new HashMap<>())
-                .merge(declaration.owner(), 1, Integer::sum);
-            voteDirectory = AssetPathHeuristics.parentPath(voteDirectory);
-          }
-        }
+      }
+    }
+    for (Declaration declaration : byPath.values()) {
+      if (declaration.owner().isBlank() || conflictingPaths.contains(declaration.relativePath())
+          || !Files.isRegularFile(root.resolve(declaration.relativePath()))) continue;
+      String directory = AssetPathHeuristics.parentPath(declaration.relativePath());
+      while (AssetPathHeuristics.pathParts(directory).size() >= 3) {
+        ownerVotes.computeIfAbsent(directory, ignored -> new HashMap<>())
+            .merge(declaration.owner(), 1, Integer::sum);
+        directory = AssetPathHeuristics.parentPath(directory);
       }
     }
     Map<String, String> ownerByDirectory = new HashMap<>();
@@ -95,7 +101,7 @@ final class AssetDeclarationCatalog {
     return new Index(
         Map.copyOf(byPath), Map.copyOf(immutableDirectories), Map.copyOf(ownerByDirectory),
         Set.copyOf(characterIds), Set.copyOf(conflictingPaths), Map.copyOf(aliasCounts),
-        Map.copyOf(byScopedLabel));
+        Map.copyOf(byScopedLabel), usage, new AssetContentIndex(root, immutableDirectories.values(), conflictingPaths));
   }
 
   boolean containsCharacter(String source, String owner) {
@@ -108,23 +114,23 @@ final class AssetDeclarationCatalog {
     return false;
   }
 
-  private Declaration declaration(Path sourceFile, int lineNumber, String line) {
+  private Declaration declaration(Path sourceFile, int lineNumber, String line, AssetUsageIndex usage) {
     Matcher background = BACKGROUND.matcher(line);
     if (background.matches()) {
       return new Declaration(
-          declarationPath(background.group(2)), AssetKind.BACKGROUND, "",
+          declarationPath(background.group(2), usage), AssetKind.BACKGROUND, "",
           AssetPathHeuristics.sanitizeId(background.group(1)), sourceFile, lineNumber, line.strip());
     }
     Matcher image = CHAR_IMAGE.matcher(line);
     if (image.matches()) {
       return new Declaration(
-          declarationPath(image.group(3)), AssetKind.CHARACTER_SPRITE,
+          declarationPath(image.group(3), usage), AssetKind.CHARACTER_SPRITE,
           AssetPathHeuristics.sanitizeId(image.group(1)),
           AssetPathHeuristics.sanitizeId(image.group(2)), sourceFile, lineNumber, line.strip());
     }
     Matcher layer = CHAR_LAYER.matcher(line);
     if (layer.matches()) {
-      String path = declarationPath(layer.group(3));
+      String path = declarationPath(layer.group(3), usage);
       AssetKind kind = AssetPathHeuristics.kindFromPath(Path.of(path.isBlank() ? "unknown" : path));
       if (!kind.usesCharacterDeclaration() || kind == AssetKind.CHARACTER_SPRITE) {
         kind = AssetKind.CHARACTER_LAYER;
@@ -136,14 +142,15 @@ final class AssetDeclarationCatalog {
     return null;
   }
 
-  private String declarationPath(String raw) {
+  private String declarationPath(String raw, AssetUsageIndex usage) {
     if (raw == null) return "";
     String value = stripInlineComment(raw.strip());
     if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
       value = value.substring(1, value.length() - 1)
           .replace("\\\"", "\"").replace("\\\\", "\\");
     }
-    return AssetPathHeuristics.normalizeRelative(value);
+    String resolved = usage.resolve(value, com.jvn.core.assets.AssetType.IMAGE);
+    return resolved.isEmpty() ? AssetPathHeuristics.normalizeRelative(value) : resolved;
   }
 
   private String stripInlineComment(String value) {
@@ -172,9 +179,5 @@ final class AssetDeclarationCatalog {
       Map<String, Declaration> byPath, Map<String, List<Declaration>> byDirectory,
       Map<String, String> ownerByDirectory, Set<String> characterIds,
       Set<String> conflictingPaths, Map<String, Integer> aliasCounts,
-      Map<String, Declaration> byScopedLabel) {
-    static Index empty() {
-      return new Index(Map.of(), Map.of(), Map.of(), Set.of(), Set.of(), Map.of(), Map.of());
-    }
-  }
+      Map<String, Declaration> byScopedLabel, AssetUsageIndex usage, AssetContentIndex content) {}
 }

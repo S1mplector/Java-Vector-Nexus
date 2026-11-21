@@ -8,9 +8,19 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide shy]
-ginger: Your turn to direct. Give me a choice, remember my answer, and let that answer change the light on stage.
-ginger: Write the scene, export it, and play both branches from a fresh start.
+[show ginger beside_code shy]
+[set tutorial_source scripts/tutorial/30_java_extensions_and_capstone.vns]
+[set tutorial_excerpt presets]
+[set ui.dialogueFacet tutorial_code]
+ginger: Combine three features in one test: a choice, a stored variable and a lighting preset. The output will show which configuration actually ran.
+ginger: Choose {b}Compare lighting presets{/b}. Select Default or Dusk. Check the image and the printed value, then repeat with the other option.
+ginger: Look for {b}example_default{/b} in this script. Each choice sets the flag. A shared if block reads it and applies the corresponding lighting.
+ginger: Change the visible label of an option while keeping its target. Test both branches again in an exported copy. The results should still match the selected configurations.
+ginger: Write down one row per choice before changing the script. Record the displayed label, the destination, the value written, the lighting applied and the result printed.
+ginger: The two paths meet at one conditional. A wrong image can originate at the menu target, the assignment, the conditional or the stage command. The printed state helps you narrow it down.
+[clear ui.dialogueFacet]
+> Compare lighting presets -> compare_presets
+> Verify the full decision table -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
@@ -20,17 +30,72 @@ ginger: Which test checks both branches in the finished build?
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: Testing both branches checks the exported scene and its assets. Give it another try.
+ginger: Reaching the title screen only verifies startup. The relevant commands run after a player selects a preset.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: Testing both branches checks the exported scene and its assets.
+ginger: Test both choices in the exported project and check the state and appearance for each.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_30]
 [flag tutorial_done_30]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_5]
+[end]
+
+@label compare_presets
+ginger: Select a configuration to test.
+> Apply Default -> use_default
+> Apply Dusk -> use_dusk
+# region presets
+@label use_default
+[set example_default true]
+[jump apply_preset]
+@label use_dusk
+[set example_default false]
+@label apply_preset
+# endregion
+[if example_default]
+[stage clear]
+[sfx assets/tutorial/welcome.wav]
+ginger: The flag is true. This branch clears the stage preset and plays the confirmation sound.
+narrator: {b}Selected configuration: Default.{/b}
+[else]
+[stage dusk]
+[show ginger guide shy]
+ginger: The flag is false. This branch applies the dusk preset.
+narrator: {b}Selected configuration: Dusk.{/b}
+[endif]
+[stage clear]
+> Compare again -> compare_presets
+> Verify the full decision table -> practice
+> Review question -> check
+> Back to topics -> return_hub
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/30_java_extensions_and_capstone.vns]
+[set tutorial_excerpt presets]
+[set ui.dialogueFacet tutorial_code]
+ginger: Trace Default first. Its branch writes true, jumps to the shared test and clears the stage. Dusk writes false, reaches that same test and applies the dusk preset.
+ginger: Change only the displayed option text. Keep the target names fixed and run both choices. The recorded variable and stage should still match their original rows.
+ginger: Next deliberately exchange only the two menu targets. Predict the printed value and lighting for each label, run both, then restore the targets. If value and image agree with each other but disagree with the label, inspect the route first.
+ginger: Run the repaired table once from a fresh project and once in the extracted build. Include a return to the menu and a second selection in each run to expose state that leaked from the first choice.
+@label practice_question
+ginger: Selecting Default prints Dusk and applies dusk lighting. Both outputs agree. What is the earliest link to check?
+> The exposure value in the dusk preset. -> practice_hint
+> The destination attached to the Default choice. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Editing exposure changes the look of dusk. It cannot explain why selecting Default also produced the Dusk readout.
+[jump practice_question]
+@label practice_result
+ginger: Follow the target to its assignment, then into the shared conditional. Check the preset only after the route and stored value agree with the selected label.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

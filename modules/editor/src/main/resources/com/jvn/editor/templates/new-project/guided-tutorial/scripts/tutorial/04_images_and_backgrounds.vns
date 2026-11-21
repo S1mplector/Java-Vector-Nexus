@@ -8,29 +8,65 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide normal]
-ginger: See the white wall behind me? I call it room in the script. Let's find the picture that name points to.
-ginger: Open scripts/definitions/characters.vns to see the image path. The bg command in this lesson selects it.
+[show ginger beside_code normal]
+[set tutorial_source scripts/definitions/characters.vns]
+[set tutorial_excerpt background]
+[set ui.dialogueFacet tutorial_code]
+ginger: The white background is a project asset. This lesson refers to it by the ID {b}room{/b}.
+ginger: Open scripts/definitions/characters.vns. The declaration pairs room with assets/tutorial/white.png. The lesson selects that image with [bg room].
+narrator: {i}Example declaration: @background alternate assets/tutorial/white.png{/i}
+ginger: Add that declaration and change [bg room] to [bg alternate]. The first run should look identical because both IDs point to the same PNG.
+ginger: Now change only the path on the alternate declaration to another image in your project. Check that the background changes and the sprite stays in position.
+ginger: Follow room through the two files. The declaration supplies a path. The background command supplies the ID. A file rename affects the path even if every command still uses the same ID.
+ginger: Two IDs can point to one PNG. That gives you a way to test a second reference before adding any new artwork to the project.
+[clear ui.dialogueFacet]
+> Trace a background reference -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: What belongs after bg?
+ginger: What goes after bg?
 > The name of the current speaker. -> retry
 > The ID declared for the backdrop. -> correct
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: The declaration maps an ID to an image. The scene command selects it. Give it another try.
+ginger: The speaker ID is used on dialogue lines. Look up the ID on the background declaration.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: The declaration maps an ID to an image. The scene command selects it.
+ginger: Use the declared background ID. Editing its asset path updates every place that selects that ID.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_04]
 [flag tutorial_done_04]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_2]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/definitions/characters.vns]
+[set tutorial_excerpt background]
+[set ui.dialogueFacet tutorial_code]
+ginger: Add alternate beside room in the definitions and point it at the same white image. Change this lesson's background command to alternate and start from the beginning.
+ginger: At this point an unchanged picture is the expected result. Point alternate at a visibly different project image and replay exactly the same line. Now the reference should be distinguishable.
+ginger: Switch the command back to room. If your alternate artwork still appears, inspect both declarations. You may have edited the original mapping while adding the second one.
+ginger: For a packaged project, check the path from the asset root and the filename's case. An absolute path to an image on your own desktop cannot travel with the project.
+@label practice_question
+ginger: Two lessons use room. Only this one should get the alternate backdrop. Which edit has the right scope?
+> Replace the file mapped to room. -> practice_hint
+> Add a second ID and use it in this lesson. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Both lessons resolve room through the same declaration. Replacing its image changes the result for both callers.
+[jump practice_question]
+@label practice_result
+ginger: The new ID makes the choice local to the lesson. Run the other lesson as a control and check that room still resolves to the white PNG.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

@@ -32,7 +32,7 @@ Primary classes:
 Save slots are stored as JSON files:
 
 - `<slot>.json`
-- temp write path: `<slot>.json.tmp`
+- in-progress writes use a unique sibling temporary file
 
 Legacy `.sav` files are still readable and are migrated forward to JSON on load.
 
@@ -123,7 +123,7 @@ If load-time migration changes the payload, manager writes migrated JSON back to
 
 `VnSaveManager` uses failure-safe writes:
 
-1. write JSON to `<slot>.json.tmp`
+1. write the complete JSON payload to a unique temporary file beside the slot
 2. move temp -> final with `ATOMIC_MOVE` when available
 3. fallback to replace move when atomic move is unsupported
 4. cleanup temp residue

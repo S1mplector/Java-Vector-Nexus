@@ -118,7 +118,7 @@ final class AssetLabelRegistry {
       String reason, String updated) {
     Entry {
       kind = kind == null ? AssetKind.UNKNOWN : kind;
-      owner = kind.usesCharacterDeclaration() ? AssetPathHeuristics.sanitizeId(owner) : "";
+      owner = kind.acceptsOwner() ? AssetPathHeuristics.sanitizeId(owner) : "";
       label = AssetPathHeuristics.sanitizeId(label);
       status = status == null ? LabelStatus.SUGGESTED : status;
       reason = Objects.requireNonNullElse(reason, "");

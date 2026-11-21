@@ -1,0 +1,119 @@
+/* Both inventory tabs use the paints supplied by the active editor theme. */
+.asset-workspace {
+  -fx-background-color: -jvn-aero-field;
+  -fx-text-fill: -jvn-aero-text;
+}
+.asset-workspace .asset-toolbar {
+  -fx-padding: 12 13 10 13;
+  -fx-background-color: -jvn-aero-surface;
+  -fx-border-color: transparent transparent -jvn-aero-edge transparent;
+  -fx-border-width: 0 0 1 0;
+}
+.asset-workspace .asset-heading {
+  -fx-font-size: 17px;
+  -fx-font-weight: bold;
+  -fx-text-fill: -jvn-aero-text;
+}
+.asset-workspace .asset-name, .asset-workspace .asset-inspector-title {
+  -fx-text-fill: -jvn-aero-text;
+  -fx-font-weight: bold;
+}
+.asset-workspace .asset-name { -fx-font-size: 13px; }
+.asset-workspace .asset-inspector-title { -fx-font-size: 15px; }
+.asset-workspace .asset-secondary, .asset-workspace .asset-field-caption,
+.asset-workspace .asset-row-state, .asset-workspace .sidebar-tool-subtitle,
+.asset-workspace .sidebar-tool-summary, .asset-workspace .sidebar-tool-status {
+  -fx-text-fill: -jvn-aero-muted;
+  -fx-font-size: 11px;
+}
+.asset-workspace .asset-field-caption { -fx-font-weight: bold; }
+.asset-workspace .asset-evidence {
+  -fx-text-fill: -jvn-aero-text;
+  -fx-font-size: 12px;
+}
+.asset-workspace .asset-label-details {
+  -fx-background-color: -jvn-aero-surface;
+  -fx-padding: 14;
+}
+.asset-workspace .asset-inspector-scroll, .asset-workspace .asset-inspector-scroll > .viewport {
+  -fx-background-color: -jvn-aero-surface;
+  -fx-padding: 0;
+}
+.asset-workspace .split-pane { -fx-padding: 0; -fx-background-color: -jvn-aero-field; }
+.asset-workspace .split-pane > .split-pane-divider {
+  -fx-padding: 1;
+  -fx-background-color: -jvn-aero-edge;
+  -fx-border-width: 0;
+}
+.asset-workspace .asset-inventory-list, .asset-workspace .asset-label-queue {
+  -fx-background-color: -jvn-aero-field;
+  -fx-control-inner-background: -jvn-aero-field;
+  -fx-padding: 0;
+  -fx-border-width: 0;
+}
+.asset-workspace .list-view .list-cell {
+  -fx-background-color: -jvn-aero-field;
+  -fx-padding: 4 9;
+  -fx-border-width: 0 0 1 0;
+  -fx-border-color: transparent transparent derive(-jvn-aero-field, 10%) transparent;
+  -fx-pref-width: 0;
+}
+.asset-workspace .list-view .list-cell:empty { -fx-border-color: transparent; }
+.asset-workspace .list-view .list-cell:filled:hover { -fx-background-color: -jvn-aero-surface; }
+.asset-workspace .list-view .list-cell:filled:selected {
+  -fx-background-color: -jvn-aero-selected;
+  -fx-border-width: 0 0 1 3;
+  -fx-border-color: transparent transparent -jvn-aero-edge -jvn-aero-focus;
+  -fx-padding: 4 9 4 6;
+}
+.asset-workspace .asset-thumbnail { -fx-background-color: -jvn-aero-surface; -fx-background-radius: 2; }
+.asset-workspace .button {
+  -fx-background-color: -jvn-aero-surface;
+  -fx-text-fill: -jvn-aero-text;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-background-radius: 3;
+  -fx-border-radius: 3;
+  -fx-padding: 4 9;
+  -fx-font-size: 12px;
+}
+.asset-workspace .button:hover { -fx-background-color: -jvn-aero-hover; }
+.asset-workspace .button.asset-label-primary, .asset-workspace .button.asset-action {
+  -fx-background-color: -jvn-aero-text;
+  -fx-text-fill: -jvn-aero-field;
+  -fx-border-color: -jvn-aero-text;
+  -fx-font-weight: bold;
+}
+.asset-workspace .button:focused, .asset-workspace .combo-box:focused,
+.asset-workspace .text-field:focused { -fx-border-color: -jvn-aero-focus; }
+.asset-workspace .text-field, .asset-workspace .combo-box {
+  -fx-background-color: -jvn-aero-field;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-background-radius: 3;
+  -fx-border-radius: 3;
+  -fx-font-size: 12px;
+}
+.asset-workspace .combo-box > .arrow-button { -fx-background-color: transparent; -fx-border-width: 0; }
+.asset-workspace .titled-pane > .title { -fx-background-color: -jvn-aero-surface; -fx-padding: 5 1; }
+.asset-workspace .titled-pane > .content { -fx-background-color: -jvn-aero-field; -fx-border-color: -jvn-aero-edge; }
+.asset-workspace .tab-pane > .tab-header-area { -fx-padding: 0 8; }
+.asset-workspace .tab-pane > .tab-header-area .tab {
+  -fx-background-color: -jvn-aero-surface;
+  -fx-background-radius: 0;
+  -fx-border-color: transparent;
+  -fx-border-width: 0 0 2 0;
+  -fx-padding: 5 11;
+}
+.asset-workspace .tab-pane > .tab-header-area .tab:selected { -fx-border-color: transparent transparent -jvn-aero-text transparent; }
+.asset-workspace .tab-pane > .tab-header-area .tab .tab-label { -fx-text-fill: -jvn-aero-muted; }
+.asset-workspace .tab-pane > .tab-header-area .tab:selected .tab-label { -fx-text-fill: -jvn-aero-text; }
+
+.asset-workspace .asset-media-preview {
+  -fx-background-color: -jvn-aero-field;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-border-width: 1;
+  -fx-padding: 8;
+  -fx-min-width: 0;
+}
+.asset-workspace .asset-media-preview .label { -fx-text-fill: -jvn-aero-text; }
+.asset-workspace .asset-label-notice { -fx-background-color: -jvn-aero-surface; -fx-border-color: -jvn-aero-edge; }
+.asset-workspace .asset-label-notice .label { -fx-text-fill: -jvn-aero-text; }

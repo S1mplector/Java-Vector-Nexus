@@ -101,7 +101,8 @@ source of truth for docs changes.
 - [Editor](editor/core/editor.md) - main editor layout, editing modes, run/build flow, and shortcuts
 - [Editor And Launcher Settings](editor/core/settings.md) - preferences, launcher handoff, run defaults, and sidebar defaults
 - [Welcome Center](editor/core/welcome-center.md) - startup dashboard, recent projects, environment health
-- [Run Console](editor/core/run-console.md) - Gradle/runtime output, counters, filtering, diagnostics
+- [Build workspace](editor/core/build-workspace.md) — format, checks, release plan and artifacts
+- [Run workspace](editor/core/run-console.md) - Gradle/runtime output, counters, filtering, diagnostics
 - [Scene Graph View](editor/core/scene-graph.md) - entity tree, selection, rename/delete, fit-to-selection
 - [Tilemap Editor](editor/core/tilemap-editor.md) - tile painting, layers, and tileset preview
 - [Puppeteer Design Notes](editor/core/action-editor-design.md) - current animation editor architecture and data flow
@@ -124,6 +125,7 @@ source of truth for docs changes.
 - [Puppeteer Launcher](editor/sidebars/right/sidebar-puppeteer-launcher.md) - VNS scene snapshot and animation launch/reopen
 - [VNS Diagnostics](editor/sidebars/right/sidebar-vns-diagnostics.md) - live script problems and click-to-jump
 - [Label Flow Map](editor/sidebars/right/sidebar-label-flow-map.md) - visual VNS label graph
+- [Review asset labels](editor/tools/asset-label-review.md) — recognition, ownership and declarations
 - [Asset Browser](editor/sidebars/right/sidebar-asset-browser.md) - asset discovery, preview, auto-label review, and VNS generation
 - [Layout Launcher](editor/sidebars/right/sidebar-layout-launcher.md) - entrypoint for menu/layout/style editors
 - [Storyboard Overlay](editor/sidebars/right/sidebar-storyboard-overlay.md) - reference overlays for staging previews
@@ -380,6 +382,30 @@ source of truth for docs changes.
 - [What's New in JVN 0.9.0](project-setup/release/whats-new-0.9.0.md) — desktop installers, Run workspace, and scene lighting
 - [What's New in JVN 0.8.0](project-setup/release/whats-new-0.8.0.md) — authoring, asset loading, persistence, and live-reload reliability
 
+- [Show a source excerpt in dialogue](guides/show-source-in-dialogue.md) — live code panels for VNS, JES and configuration
 - [JVN Tutorial](guides/jvn-tutorial.md) — the built-in course across JVN systems
 
 - [Reading annotated examples and diagrams](guides/reading-the-docs.md)
+
+### Historical plans
+
+- [Editor icon inventory](plans/editor-icon-inventory-2026-07.md)
+
+### Plugin references
+
+- [Plugin API reference](plugins/api-reference.md)
+- [Authoring your first plugin](plugins/authoring.md)
+- [Compatibility and security](plugins/compatibility-security.md)
+- [Packaging and distribution](plugins/distribution.md)
+- [Extension-point reference](plugins/extension-points.md)
+- [Plugin host and lifecycle](plugins/host-reference.md)
+- [Image Effects and Pikupiku](plugins/image-effects.md)
+- [Plugin manifest reference](plugins/manifest.md)
+
+### Additional scripting references
+
+- [In-Game UI and Menu Authoring](scripting/ui/layout/README.md)
+- [Common Layout Recipes](scripting/ui/layout/reference/common-recipes.md)
+- [Layout Authoring Model](scripting/ui/layout/workflow/authoring-model.md)
+- [Build a Complete Menu System](scripting/ui/layout/workflow/complete-menu-tutorial.md)
+- [Migrating from the Former Visual Layout Editors](scripting/ui/layout/workflow/migrating-from-visual-editors.md)

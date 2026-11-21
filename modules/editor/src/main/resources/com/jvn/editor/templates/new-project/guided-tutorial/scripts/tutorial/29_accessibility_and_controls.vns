@@ -8,43 +8,80 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide normal]
-ginger: If you'd rather I stood still, that's fine. Let's play the same scene both ways and keep every choice within reach.
-ginger: Change the motion setting in the topic menu, then replay Character movement or Camera movement.
-> Compare reduced motion -> preview_still
+[show ginger beside_code normal]
+[set tutorial_source scripts/tutorial/29_accessibility_and_controls.vns]
+[set tutorial_excerpt motion]
+[set ui.dialogueFacet tutorial_code]
+ginger: Reduced motion gives you a still version of the movement example. Both versions lead to the same review question and return to the same topic menu.
+ginger: Run the comparison once, change the preference under {b}Progress and motion{/b}, then repeat it. Check which commands the script skips.
+ginger: Test keyboard access in both modes. You should be able to select an answer and leave the lesson without waiting for an animation.
+ginger: The preference selects between two paths through the lesson. Inspect which movement and wait instructions belong to the animated path, then follow both paths to the same review point.
+ginger: A still route also needs equivalent information. If movement signals that a sprite arrived, the stationary version needs text or another static cue that communicates the same result.
+[clear ui.dialogueFacet]
+> Compare movement settings -> preview_still
+> Test the still route from the keyboard -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label preview_still
+[show ginger guide normal]
 [if tutorial_still]
-ginger: With reduced motion on, I stay where I am.
+ginger: Reduced motion is on. The position stays fixed and the next input advances to the question.
 [else]
+# region motion
 [move ginger rightmark ease_in_out_cubic 620]
 [wait 620]
 [move ginger rightmark thoughtful exprdur=90]
-ginger: With motion on, I'll cross the stage and come back.
+# endregion
+ginger: Motion is on. The sprite has reached the right mark and will return to its starting position.
 [move ginger guide ease_out_cubic 500]
 [wait 500]
 [move ginger guide normal exprdur=90]
 [endif]
 [jump check]
 @label check
-ginger: What must remain available in still mode?
+ginger: What must remain available with reduced motion enabled?
 > The same story and navigation. -> correct
 > Only the title screen. -> retry
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: Optional motion should never gate information or progress. Give it another try.
+ginger: Removing movement should not remove a choice or require a different answer. Check what each version lets you do.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: Optional motion should never gate information or progress.
+ginger: Both modes should expose the same information, choices and completion path.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_29]
 [flag tutorial_done_29]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_6]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/29_accessibility_and_controls.vns]
+[set tutorial_excerpt motion]
+[set ui.dialogueFacet tutorial_code]
+ginger: Run the movement comparison with animation enabled. Use the keyboard throughout. Record the selected option, where you regain control and which review choices are available.
+ginger: Choose reduced motion in Progress and motion. Repeat the same route and compare those observations. The sprite can remain still while the logical outcome and usable controls stay the same.
+ginger: Check timing as well as space. If the visual motion disappears but the player must still sit through the travel delay, inspect whether its matching wait was left outside the conditional.
+ginger: Finally replay after changing the preference back. Test both directions so an earlier still or animated setting cannot mask a missing initialization.
+@label practice_question
+ginger: The still path has no motion but pauses for the travel duration. Which command do you inspect?
+> The wait associated with the skipped move. -> practice_result
+> The colour of the destination label. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: A label colour cannot introduce that delay. Trace the instructions that still run when the move is skipped.
+[jump practice_question]
+@label practice_result
+ginger: Move and wait are separate instructions. Keep a purely visual travel wait on the same conditional path as the motion it accompanies.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

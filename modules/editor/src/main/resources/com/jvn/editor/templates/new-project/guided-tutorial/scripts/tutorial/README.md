@@ -1,7 +1,15 @@
 # JVN Tutorial
 
-Choose **Start tutorial** and select a topic. Each example explains one feature, shows the relevant commands, and suggests an edit to try. Choose **Back to topics** to finish, or take the optional review question. Replaying a topic counts once.
+Choose **Start tutorial**, then select a topic and a lesson. Lessons can be opened in any order. **Back to topics** records completion and returns to the same category. Replaying a lesson counts once. **Progress and motion** shows your total and the motion options.
 
-Use **Progress and motion** to check completion or toggle movement. Try **Character movement** to see Ginger walk, **Puppeteer timelines** to edit Ginger’s movement, or **Stage lighting** to compare the stage before and after applying a preset.
+Each lesson includes a worked example and a practice exercise. The exercise asks you to predict or diagnose a specific result. A wrong answer gives you a hint and lets you try again.
 
-The topic menu is in `scripts/story/tutorial_hub.vns`. The examples are in `scripts/tutorial/` and the background and character poses are in `assets/tutorial/`.
+The code panel shows numbered lines from the project file named in its header. Save your edit and reopen the lesson to see the updated source. The panel reads the lines between the region comments, so you can add or remove lines without renumbering anything.
+
+To edit an example, open its numbered file in `scripts/tutorial/`, change one value, save, and replay. Three starting points:
+
+- **Writing and branching → Dialogue** demonstrates speaker IDs, emphasis and inline effects. Move the bold tags and compare the rendered line.
+- **Text and interfaces → Reactive UI** opens the same panel at 25% and 75%. Check the bar and the Continue button in each case.
+- **Game systems → Saving and rollback** lets you save before a choice, set a value, then reload and test the other branch.
+
+The topic menu is in `scripts/story/tutorial_hub.vns`. Sprite and backdrop declarations are in `scripts/definitions/characters.vns`. Their image files are in `assets/tutorial/`.

@@ -9,22 +9,30 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide thoughtful]
-ginger: The wall hasn't moved and the light hasn't changed. Why shade the same picture again? Look at the cache on the second frame.
-ginger: Run scripts/examples/window-light/scene.vns from the engine repository. Compare its first frame with repeated renders.
+ginger: Use the {b}Render inspector{/b} in the Run workspace to compare cache entries, hits and misses. Make a note of the values while this pose is displayed.
+ginger: Advance to change the pose, then advance again to return to the original one. Compare the counters after each change.
+[show ginger guide normal]
+ginger: The sprite now uses another expression. It may already be resident if you opened another lesson earlier.
+[show ginger guide thoughtful]
+ginger: The first pose is back. A hit means a lookup reused an entry. A miss means the requested entry was unavailable. Other assets can affect the totals too.
+ginger: For a lighting example in the engine checkout, run scripts/examples/window-light/scene.vns. Observe repeated frames with the same rig before changing a light.
+ginger: An entry count describes what is resident. Hit and miss counts describe lookup events. Several requests can hit one resident entry, so those numbers measure different things.
+ginger: Take a counter reading before and after a defined sequence of poses. Use the difference between readings. A total accumulated since startup also includes earlier lessons.
+> Read the cache counters -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: What makes a lighting cache safe to reuse?
+ginger: When is a cached lighting result safe to reuse?
 > The previous image has the same filename alone. -> retry
 > The source, rig and relevant dimensions still match. -> correct
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: The key has to represent the inputs that can change pixels. Give it another try.
+ginger: Moving a light changes the image even if the source filename stays the same. Include the inputs that affect the rendered result.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: The key has to represent the inputs that can change pixels.
+ginger: Reuse the result when the relevant source, lighting rig and dimensions still match.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
@@ -34,3 +42,24 @@ ginger: The key has to represent the inputs that can change pixels.
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_6]
+[end]
+
+@label practice
+[show ginger guide thoughtful]
+ginger: Start from a fresh runtime and record counters after the first pose settles. Advance to the second pose, record again, then return to the first pose and take a third reading.
+ginger: A new pose may trigger a miss and create an entry. Revisiting it can hit if the relevant entry remains resident. Backgrounds, composites and stage passes can produce other lookups at the same time.
+ginger: Repeat the sequence in the same window at the same size. Then run a separate comparison that changes one lighting input. Keep the pose sequence identical between the two measurements.
+ginger: A higher hit count does not by itself establish a higher frame rate. Record frame timing over the same interval if performance is the question. Inspect the actual image if correctness is the question.
+@label practice_question
+ginger: Hits rise from 120 to 138 during the measured section. How many hits belong to that interval?
+> 138 distinct assets. -> practice_hint
+> 18 lookups. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: 138 is the accumulated total. It includes earlier activity and does not tell you how many distinct assets were requested.
+[jump practice_question]
+@label practice_result
+ginger: Subtract the starting counter from the ending counter. The result counts lookup events, and several can refer to a single resident asset.
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

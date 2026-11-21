@@ -18,6 +18,8 @@ flowchart TD
 
 Use this hub when the question is "how do we ship this game?"
 
+For a guided desktop build, follow the [Build workspace walkthrough](../../editor/core/build-workspace.md).
+
 ## Pick The Output First
 
 | Output | Best For | Player Needs Java? | Built From One Machine For Multiple Targets? |

@@ -23,8 +23,6 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
@@ -37,7 +35,7 @@ import javafx.scene.layout.VBox;
 
 /** Focused VN asset browser for quick discovery and reuse of project assets. */
 public class AssetBrowserView extends BorderPane {
-  private final Label titleLabel = new Label("Asset Browser");
+  private final Label titleLabel = new Label("Project assets");
   private final Label rootLabel = new Label("No project loaded");
   private final Label summaryLabel = new Label("Open a project to browse assets.");
   private final Label statusLabel = new Label("");
@@ -45,13 +43,15 @@ public class AssetBrowserView extends BorderPane {
   private final ComboBox<String> typeFilter = new ComboBox<>();
   private final ListView<AssetItem> listView = new ListView<>();
 
-  private final ImageView previewImage = new ImageView();
+  private final AssetMediaPreview mediaPreview = new AssetMediaPreview("asset-browser-preview-image");
+  private final Label previewName = new Label();
+  private final java.util.Map<String, AssetAutoLabelService.AssetSuggestion> inventory = new java.util.HashMap<>();
   private final Label previewPath = new Label("Select an asset");
   private final Label previewMeta = new Label("");
   private final Button copyPathButton = new Button("Copy Path");
   private final Button openButton = new Button("Open");
   private final Button useAssetButton = new Button("Use Asset");
-  private final Button refreshButton = new Button("Refresh", SidebarToolIcon.refresh());
+  private final Button refreshButton = new Button("Refresh");
   private final AssetAutoLabelDashboardView autoLabelDashboard =
       new AssetAutoLabelDashboardView();
   private final TabPane workspaceTabs = new TabPane();
@@ -66,16 +66,18 @@ public class AssetBrowserView extends BorderPane {
 
   public AssetBrowserView() {
     getStyleClass().add("sidebar-tool-root");
-    titleLabel.getStyleClass().add("sidebar-tool-title");
+    AssetInventoryRow.style(this);
+    titleLabel.getStyleClass().add("asset-heading");
     rootLabel.getStyleClass().add("sidebar-tool-subtitle");
     summaryLabel.getStyleClass().add("sidebar-tool-summary");
     statusLabel.getStyleClass().add("sidebar-tool-status");
     summaryLabel.setWrapText(true);
     statusLabel.setWrapText(true);
 
-    filterField.setPromptText("Filter assets...");
+    filterField.setId("asset-browser-search");
+    filterField.setPromptText("Search names, paths or owners");
     filterField.getStyleClass().add("sidebar-tool-search-field");
-    filterField.setTooltip(new Tooltip("Filter assets by filename or path"));
+    filterField.setTooltip(new Tooltip("Search by filename, path, role, owner or label"));
     filterField.textProperty().addListener((obs, oldValue, newValue) -> applyFilter());
     filterField.setOnKeyPressed(event -> {
       if (event.getCode() == KeyCode.ESCAPE && !filterField.getText().isEmpty()) {
@@ -85,12 +87,17 @@ public class AssetBrowserView extends BorderPane {
     });
 
     typeFilter.getItems().addAll("All Types", "Image", "Audio", "Video", "Font", "Data", "File");
+    for (var kind : AssetAutoLabelService.AssetKind.values()) {
+      if (!typeFilter.getItems().contains(kind.displayName())) typeFilter.getItems().add(kind.displayName());
+    }
     typeFilter.setValue("All Types");
     typeFilter.setMaxWidth(Double.MAX_VALUE);
     typeFilter.setTooltip(new Tooltip("Limit asset results to one file type"));
     typeFilter.valueProperty().addListener((obs, oldValue, newValue) -> applyFilter());
 
     listView.setId("asset-browser-list-view");
+    listView.getStyleClass().add("asset-inventory-list");
+    listView.setFixedCellSize(55);
     listView.setCellFactory(lv -> new AssetCell());
     listView.setPlaceholder(new Label("No assets found"));
     listView.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) -> {
@@ -125,12 +132,6 @@ public class AssetBrowserView extends BorderPane {
       e.consume();
     });
 
-    previewImage.setId("asset-browser-preview-image");
-    previewImage.setPreserveRatio(true);
-    previewImage.setFitHeight(150);
-    previewImage.setFitWidth(260);
-    previewImage.setSmooth(true);
-
     copyPathButton.setOnAction(e -> {
       AssetItem item = listView.getSelectionModel().getSelectedItem();
       if (item != null) copyPath(item);
@@ -154,48 +155,59 @@ public class AssetBrowserView extends BorderPane {
     });
 
     refreshButton.setTooltip(new Tooltip("Rescan project asset folders"));
-    refreshButton.setOnAction(e -> refresh());
+    refreshButton.setOnAction(e -> { refresh(); autoLabelDashboard.refreshUnlessEditing(); });
 
     HBox filterRow = new HBox(8, filterField, typeFilter);
     HBox.setHgrow(filterField, Priority.ALWAYS);
-    typeFilter.setPrefWidth(100);
+    typeFilter.setPrefWidth(144);
+    filterField.setMinWidth(35);
 
     HBox titleRow = new HBox(6, titleLabel, SidebarToolHelp.button(this, "Asset Browser", """
-        The Asset Browser shows all media files (images, audio, fonts, etc.) \
-found inside your project's assets directory.
+        Browse includes the project’s assets folder and standard game media folders.
+        Search for a name, path, role, character or label. The type filter can show a
+        media format such as Audio or a role such as Voice or Background.
 
-Use the filter bar to narrow results by filename. The type dropdown limits \
-results to a specific file extension category.
+        Select a file to see its preview and project-relative path. Copy Path copies
+        that path. Use Asset sends it to the active tool. Open launches the file.
 
-Clicking an asset shows a preview, its relative path, and metadata in the \
-panel below. From there you can:
-  • Copy path — copy the relative path to use in scripts or dialogue
-  • Open      — open the file in the system default application
-  • Use Asset — insert the asset reference at the current editor cursor
-
-Browsing is read-only. Drop supported files anywhere on the editor to import \
-them and review or generate labels in the Auto-label tab."""));
+        Drop files on the editor to import them and review their labels."""));
     titleRow.setAlignment(Pos.CENTER_LEFT);
     javafx.scene.layout.Region titleSpacer = new javafx.scene.layout.Region();
     HBox.setHgrow(titleSpacer, Priority.ALWAYS);
     titleRow.getChildren().addAll(titleSpacer, refreshButton);
-    VBox header = new VBox(6, titleRow, rootLabel, summaryLabel, filterRow);
-    header.getStyleClass().add("sidebar-tool-header");
+    VBox header = new VBox(7, titleRow, new HBox(8, rootLabel, summaryLabel), filterRow);
+    header.getStyleClass().add("asset-toolbar");
 
-    HBox previewActions = new HBox(8, copyPathButton, openButton, useAssetButton);
-    previewActions.setAlignment(Pos.CENTER_LEFT);
+    javafx.scene.layout.FlowPane previewActions = new javafx.scene.layout.FlowPane(6, 6, useAssetButton, copyPathButton, openButton);
+    useAssetButton.getStyleClass().add("asset-action");
 
-    VBox previewBox = new VBox(6, previewImage, previewPath, previewMeta, previewActions, statusLabel);
+    previewName.getStyleClass().add("asset-inspector-title");
+    previewPath.getStyleClass().add("asset-secondary");
+    AssetInventoryRow.hideWhenEmpty(statusLabel);
+    VBox previewBox = new VBox(8, previewName, previewPath, mediaPreview, previewMeta, previewActions, statusLabel);
+    previewBox.setMinWidth(0);
     previewBox.setPadding(new Insets(10));
-    previewBox.getStyleClass().add("sidebar-tool-footer");
+    previewBox.getStyleClass().add("asset-label-details");
     previewPath.setWrapText(true);
     previewMeta.getStyleClass().add("sidebar-tool-subtitle");
 
-    SplitPane center = new SplitPane(listView, previewBox);
+    var inspector = new javafx.scene.control.ScrollPane(previewBox);
+    inspector.getStyleClass().add("asset-inspector-scroll");
+    inspector.setFitToWidth(true);
+    inspector.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
+    inspector.setMinSize(0, 0);
+    SplitPane center = new SplitPane(listView, inspector);
     center.setOrientation(javafx.geometry.Orientation.VERTICAL);
     center.getStyleClass().add("sidebar-tool-split");
     center.setDividerPositions(0.7);
-    SplitPane.setResizableWithParent(previewBox, true);
+    widthProperty().addListener((obs, oldWidth, width) -> {
+      var orientation = width.doubleValue() >= 640 ? javafx.geometry.Orientation.HORIZONTAL : javafx.geometry.Orientation.VERTICAL;
+      mediaPreview.setImageHeight(orientation == javafx.geometry.Orientation.HORIZONTAL ? 192 : 108);
+      if (center.getOrientation() != orientation) {
+        center.setOrientation(orientation);
+        center.setDividerPositions(orientation == javafx.geometry.Orientation.HORIZONTAL ? 0.55 : 0.60);
+      }
+    });
 
     BorderPane browsePane = new BorderPane(center);
     browsePane.setTop(header);
@@ -205,6 +217,7 @@ them and review or generate labels in the Auto-label tab."""));
     autoLabelTab.setClosable(false);
     workspaceTabs.getTabs().addAll(browseTab, autoLabelTab);
     workspaceTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+    autoLabelDashboard.setOnInventory(this::acceptInventory);
     autoLabelDashboard.setOnChanged(this::refresh);
     setCenter(workspaceTabs);
     updateActionState();
@@ -227,6 +240,7 @@ them and review or generate labels in the Auto-label tab."""));
 
   public void setProjectRoot(File root) {
     this.projectRoot = root;
+    inventory.clear();
     autoLabelDashboard.setProjectRoot(root);
     refresh();
   }
@@ -257,7 +271,7 @@ them and review or generate labels in the Auto-label tab."""));
     String selectedPath = getSelectedAssetPath();
     allItems.clear();
     listView.getItems().clear();
-    previewImage.setImage(null);
+    mediaPreview.show(null);
     previewPath.setText("Select an asset");
     previewMeta.setText("");
     scanIssueCount = 0;
@@ -272,21 +286,20 @@ them and review or generate labels in the Auto-label tab."""));
     }
 
     rootLabel.setText(projectRoot.getName());
-    collectAssets(projectRoot.toPath().resolve("assets"));
-    collectAssets(projectRoot.toPath().resolve("game/images"));
+    for (String folder : AssetPathHeuristics.ASSET_ROOTS) collectAssets(projectRoot.toPath().resolve(folder));
 
     allItems.sort(Comparator.comparing(AssetItem::relativePath, String.CASE_INSENSITIVE_ORDER));
     applyFilter();
     restoreSelection(selectedPath);
     status(scanIssueCount == 0
-        ? "Asset scan complete."
+        ? ""
         : "Asset scan completed with " + scanIssueCount + " unreadable path"
             + (scanIssueCount == 1 ? "." : "s."));
   }
 
   private void collectAssets(Path base) {
     if (base == null || !Files.isDirectory(base)) return;
-    try (var stream = Files.walk(base, 8)) {
+    try (var stream = Files.walk(base, 16)) {
       stream
           .filter(Files::isRegularFile)
           .forEach(path -> {
@@ -304,6 +317,24 @@ them and review or generate labels in the Auto-label tab."""));
     }
   }
 
+  private void acceptInventory(AssetAutoLabelService.ScanResult result) {
+    if (projectRoot == null || !projectRoot.toPath().toAbsolutePath().normalize().equals(result.projectRoot())) return;
+    String selected = getSelectedAssetPath();
+    inventory.clear();
+    var listed = new java.util.HashSet<String>();
+    allItems.forEach(item -> listed.add(item.relativePath()));
+    for (var asset : result.assets()) {
+      inventory.put(asset.relativePath(), asset);
+      if (Files.isRegularFile(asset.file()) && listed.add(asset.relativePath())) {
+        allItems.add(new AssetItem(asset.file().toFile(), asset.relativePath(), typeFor(asset.relativePath())));
+      }
+    }
+    allItems.removeIf(item -> !item.file().isFile());
+    allItems.sort(Comparator.comparing(AssetItem::relativePath, String.CASE_INSENSITIVE_ORDER));
+    applyFilter();
+    restoreSelection(selected);
+  }
+
   private void applyFilter() {
     String query = filterField.getText();
     String normalized = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
@@ -318,9 +349,11 @@ them and review or generate labels in the Auto-label tab."""));
 
     List<AssetItem> filtered = new ArrayList<>();
     for (AssetItem item : allItems) {
-      if (filterByType && !selectedType.equals(item.type())) continue;
+      var asset = inventory.get(item.relativePath());
+      if (filterByType && !selectedType.equals(item.type())
+          && (asset == null || !selectedType.equals(asset.kind().displayName()))) continue;
       if (!normalized.isEmpty()) {
-        String haystack = (item.relativePath() + " " + item.type()).toLowerCase(Locale.ROOT);
+        String haystack = (item.relativePath() + " " + item.type() + (asset == null ? "" : " " + AssetInventoryRow.identity(asset) + " " + asset.label())).toLowerCase(Locale.ROOT);
         if (!haystack.contains(normalized)) continue;
       }
       filtered.add(item);
@@ -330,8 +363,9 @@ them and review or generate labels in the Auto-label tab."""));
   }
 
   private void showPreview(AssetItem item) {
+    previewName.setText(item == null ? "" : item.file().getName());
     if (item == null) {
-      previewImage.setImage(null);
+      mediaPreview.show(null);
       previewPath.setText("Select an asset");
       previewMeta.setText("");
       updateActionState();
@@ -340,18 +374,10 @@ them and review or generate labels in the Auto-label tab."""));
 
     previewPath.setText(item.relativePath());
     long size = item.file().length();
-    previewMeta.setText(item.type() + "  •  " + humanFileSize(size));
-
-    if (isPreviewableImage(item.file().getName())) {
-      try {
-        Image image = new Image(item.file().toURI().toString(), 260, 150, true, true, true);
-        previewImage.setImage(image);
-      } catch (Exception ex) {
-        previewImage.setImage(null);
-      }
-    } else {
-      previewImage.setImage(null);
-    }
+    var asset = inventory.get(item.relativePath());
+    String role = asset == null ? item.type() : AssetInventoryRow.identity(asset);
+    previewMeta.setText(role + "  ·  " + AssetInventoryRow.format(item.file().toPath()) + "  ·  " + humanFileSize(size));
+    mediaPreview.show(item.file().toPath());
   }
 
   private void copyPath(AssetItem item) {
@@ -378,19 +404,7 @@ them and review or generate labels in the Auto-label tab."""));
   }
 
   static String typeFor(String fileName) {
-    String lower = fileName == null ? "" : fileName.toLowerCase(Locale.ROOT);
-    if (lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg")
-        || lower.endsWith(".gif") || lower.endsWith(".bmp") || lower.endsWith(".webp")
-        || lower.endsWith(".svg") || lower.endsWith(".tif") || lower.endsWith(".tiff")) return "Image";
-    if (lower.endsWith(".ogg") || lower.endsWith(".wav") || lower.endsWith(".mp3")
-        || lower.endsWith(".flac") || lower.endsWith(".aac") || lower.endsWith(".m4a")) return "Audio";
-    if (lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mov")
-        || lower.endsWith(".avi") || lower.endsWith(".mkv")) return "Video";
-    if (lower.endsWith(".ttf") || lower.endsWith(".otf")) return "Font";
-    if (lower.endsWith(".json") || lower.endsWith(".yaml") || lower.endsWith(".yml")
-        || lower.endsWith(".toml") || lower.endsWith(".xml") || lower.endsWith(".properties")
-        || lower.endsWith(".csv") || lower.endsWith(".tsv")) return "Data";
-    return "File";
+    return AssetPathHeuristics.mediaType(fileName);
   }
 
   static boolean isPreviewableImage(String fileName) {
@@ -432,7 +446,7 @@ them and review or generate labels in the Auto-label tab."""));
         : visible + " of " + total + " assets");
     boolean filtered = !filterField.getText().trim().isEmpty() || !"All Types".equals(typeFilter.getValue());
     listView.setPlaceholder(new Label(total == 0
-        ? "No assets found in assets/ or game/images/"
+        ? "No files in the project’s asset folders"
         : filtered ? "No assets match the current filters" : "No assets found"));
     updateActionState();
   }
@@ -464,17 +478,24 @@ them and review or generate labels in the Auto-label tab."""));
   private record AssetItem(File file, String relativePath, String type) {
   }
 
-  private static final class AssetCell extends ListCell<AssetItem> {
+  private final class AssetCell extends ListCell<AssetItem> {
+    private final AssetInventoryRow row = new AssetInventoryRow();
+    { row.prefWidthProperty().bind(widthProperty().subtract(20)); }
     @Override
     protected void updateItem(AssetItem item, boolean empty) {
       super.updateItem(item, empty);
       if (empty || item == null) {
-        setText(null);
-        setStyle("");
+        setGraphic(null);
+        setTooltip(null);
+        setAccessibleText("");
         return;
       }
-      setText(item.relativePath() + "  [" + item.type() + "]");
-      setStyle("");
+      var asset = inventory.get(item.relativePath());
+      String role = asset == null ? item.type() : AssetInventoryRow.identity(asset);
+      row.show(item.file().toPath(), role, AssetInventoryRow.format(item.file().toPath()));
+      setGraphic(row);
+      setAccessibleText(item.relativePath() + ", " + role);
+      setTooltip(new Tooltip(item.relativePath()));
     }
   }
 }

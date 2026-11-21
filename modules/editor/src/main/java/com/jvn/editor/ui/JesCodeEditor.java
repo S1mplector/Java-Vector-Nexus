@@ -1,18 +1,17 @@
 package com.jvn.editor.ui;
 
+import com.jvn.core.script.SyntaxRules;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.model.StyleSpans;
-import org.fxmisc.richtext.model.StyleSpansBuilder;
 
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -51,51 +50,6 @@ public class JesCodeEditor extends BorderPane {
     "true","false","rgb","rgba","shape","circle","box",
     "static","sensor","text","image","align","additive"
   };
-
-  // ── Structural keywords (purple bold) ──
-  private static final String STRUCT_PATTERN = "\\b(?:scene|entity|component|tileset|map|layer|item|on|timeline)\\b";
-
-  // ── Component types (gold) ──
-  private static final String COMPTYPE_PATTERN = "\\b(?:Panel2D|Sprite2D|Label2D|ParticleEmitter2D|PhysicsBody2D"
-    + "|Character2D|Stats|Inventory|Equipment|Ai2D|Button2D|Slider2D)\\b";
-
-  // ── Timeline actions (blue) ──
-  private static final String ACTION_PATTERN = "\\b(?:move|depth|pivot|rotate|scale|fade|visible|expression|show|hide|replace|event|property|walkToTile|wait|call"
-    + "|cameraMove|cameraZoom|cameraShake|cameraFollow|damage|heal|waitForCall"
-    + "|playAudio|stopAudio|emitParticles|setParallax|loop|parallel|label|jump)\\b";
-
-  // ── Built-in functions (cyan) ──
-  private static final String BUILTIN_PATTERN = "\\b(?:rgb|rgba)\\b";
-
-  // ── Boolean literals (orange) ──
-  private static final String BOOL_PATTERN = "\\b(?:true|false)\\b";
-
-  // ── Binding sub-keywords ──
-  private static final String SUBKW_PATTERN = "\\b(?:key|do)\\b";
-
-  // ── Common value keywords ──
-  private static final String VALUEKW_PATTERN = "\\b(?:shape|circle|box|static|sensor|additive|left|center|right)\\b";
-
-  private static final String PAREN_PATTERN = "[(){}]";
-  private static final String COLON_COMMA_PATTERN = "[:,]";
-  private static final String STRING_PATTERN = "\"([^\\\\\"]|\\\\.)*\"";
-  private static final String NUMBER_PATTERN = "-?\\b\\d+(?:\\.\\d+)?\\b";
-  private static final String COMMENT_PATTERN = "//[^\\n]*";
-
-  private static final Pattern PATTERN = Pattern.compile(
-      "(?<COMMENT>"  + COMMENT_PATTERN  + ")"
-    + "|(?<STRING>"  + STRING_PATTERN   + ")"
-    + "|(?<BUILTIN>" + BUILTIN_PATTERN  + ")"
-    + "|(?<STRUCT>"  + STRUCT_PATTERN   + ")"
-    + "|(?<COMPTYPE>"+ COMPTYPE_PATTERN + ")"
-    + "|(?<ACTION>"  + ACTION_PATTERN   + ")"
-    + "|(?<BOOL>"    + BOOL_PATTERN     + ")"
-    + "|(?<SUBKW>"   + SUBKW_PATTERN   + ")"
-    + "|(?<VALUEKW>" + VALUEKW_PATTERN  + ")"
-    + "|(?<NUMBER>"  + NUMBER_PATTERN   + ")"
-    + "|(?<PAREN>"   + PAREN_PATTERN    + ")"
-    + "|(?<PUNCT>"   + COLON_COMMA_PATTERN + ")"
-  );
 
   public JesCodeEditor() {
     getStyleClass().add("text-editor-root");
@@ -223,30 +177,7 @@ public class JesCodeEditor extends BorderPane {
   }
 
   private static StyleSpans<Collection<String>> computeHighlighting(String text) {
-    Matcher matcher = PATTERN.matcher(text);
-    int lastKwEnd = 0;
-    StyleSpansBuilder<Collection<String>> spansBuilder = new StyleSpansBuilder<>();
-    while (matcher.find()) {
-      String styleClass =
-        matcher.group("COMMENT")  != null ? "comment"      :
-        matcher.group("STRING")   != null ? "string"       :
-        matcher.group("BUILTIN")  != null ? "jes-builtin"  :
-        matcher.group("STRUCT")   != null ? "jes-struct"   :
-        matcher.group("COMPTYPE") != null ? "jes-comptype" :
-        matcher.group("ACTION")   != null ? "jes-action"   :
-        matcher.group("BOOL")     != null ? "jes-bool"     :
-        matcher.group("SUBKW")    != null ? "keyword"      :
-        matcher.group("VALUEKW")  != null ? "jes-bool"     :
-        matcher.group("NUMBER")   != null ? "number"       :
-        matcher.group("PAREN")    != null ? "punct"        :
-        matcher.group("PUNCT")    != null ? "punct"        : null;
-      assert styleClass != null;
-      spansBuilder.add(Collections.emptyList(), matcher.start() - lastKwEnd);
-      spansBuilder.add(Collections.singleton(styleClass), matcher.end() - matcher.start());
-      lastKwEnd = matcher.end();
-    }
-    spansBuilder.add(Collections.emptyList(), text.length() - lastKwEnd);
-    return spansBuilder.create();
+    return DslSyntaxHighlighter.spans(SyntaxRules.JES, text);
   }
 
   private List<CodeAutoCompleter.Suggestion> provideSuggestions(CodeAutoCompleter.Context ctx) {

@@ -8,9 +8,40 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide normal]
-ginger: Can you give me a different opening line? In the script, find my name followed by a colon. The words after it are mine.
-ginger: Try giving me a secret to tell. Save the script and play this scene again to hear it.
+[show ginger beside_code normal]
+[set tutorial_source scripts/tutorial/01_dialogue_basics.vns]
+[set tutorial_excerpt emphasis]
+[set ui.dialogueFacet tutorial_code]
+ginger: Look at the two lines that start with {b}ginger:{/b}. The colon separates my speaker ID from the words in the dialogue box. Advance once to see the first line.
+# region emphasis
+ginger: Click {b}Apply{/b} to save the value.
+[show ginger beside_code embarrassed]
+ginger: Click Apply to save the {b}value{/b}.
+# endregion
+ginger: The text is identical. In the first line, the bold tags identify a control. In the second, they emphasize what gets saved. Move the tags and replay the example.
+[set tutorial_excerpt speaker]
+# region speaker
+narrator: {i}This line uses the narrator ID and italic text.{/i}
+# endregion
+ginger: The speaker and formatting are independent. Change narrator to ginger on the previous line. The name changes while the italic formatting stays in place.
+[show ginger beside_code thoughtful]
+[if !tutorial_still]
+[set tutorial_excerpt motion]
+# region motion
+ginger: Here is a {color=#FFD7A3}{wave}moving highlight{/wave}{/color}.
+# endregion
+[else]
+[set tutorial_excerpt still]
+# region still
+ginger: Here is a {color=#FFD7A3}{b}static highlight{/b}{/color}.
+# endregion
+[endif]
+ginger: The outer tags set the colour. The inner tags apply the effect. Remove the inner pair and replay. Which part of the highlight stays?
+[set tutorial_excerpt emphasis]
+ginger: Read the first line from left to right. The speaker ID ends at the colon. Everything after it belongs to the dialogue, including the tags that tell the renderer which words to format.
+ginger: Placement matters. In the second example the opening tag moves past “Apply”, so the control name loses its emphasis even though the player reads exactly the same sentence.
+[clear ui.dialogueFacet]
+> Read a formatted line -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
@@ -20,17 +51,43 @@ ginger: Which line displays dialogue?
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: A speaker ID before a colon makes a dialogue line. A label names a place to jump. Give it another try.
+ginger: A label marks a destination. Look for the line that pairs a speaker ID with text to display.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: A speaker ID before a colon makes a dialogue line. A label names a place to jump.
+ginger: The colon separates the speaker ID from the text. You can edit either side independently.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_01]
 [flag tutorial_done_01]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_1]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/01_dialogue_basics.vns]
+[set tutorial_excerpt emphasis]
+[set ui.dialogueFacet tutorial_code]
+ginger: Take the first Apply line and duplicate it immediately below the original. You now have a control and an edit that you can compare with one click. Keep both on the same speaker.
+ginger: Move the closing bold tag in the duplicate to the end of the sentence. Predict the first and last bold words before you run it. If the period is inside the pair, it receives the style too.
+ginger: Now change just the speaker ID on the duplicate to narrator. Look at the name above the box and at the bold words separately. Only one of those observations should change.
+ginger: With nested effects, work from the inside out. Remove the wave pair but keep the colour pair around the same words. Run it once with movement enabled, then with reduced motion.
+@label practice_question
+ginger: A word has the right colour, but the next three words also wave. Which edit isolates the problem?
+> Move the closing wave tag to the intended boundary. -> practice_result
+> Change the speaker ID. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: A speaker ID selects the name. Trace the opening and closing wave tags around the four words and find where the affected span actually ends.
+[jump practice_question]
+@label practice_result
+ginger: The closing tag sets the last affected character. Put it straight after the intended word and compare the duplicate with the original once more.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

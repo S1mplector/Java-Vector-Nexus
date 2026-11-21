@@ -9,44 +9,80 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide thoughtful]
-ginger: A move command changes a character's position over time. Watch me cross to the other side.
+ginger: Watch my position relative to the background. This example moves the sprite from {b}guide{/b} to {b}rightmark{/b} and back.
 [if !tutorial_still]
+# region move
 [move ginger rightmark ease_in_out_cubic 740]
 [wait 740]
 [move ginger rightmark normal exprdur=90]
+# endregion
 [endif]
 [if tutorial_still]
-[show ginger guide thoughtful]
-ginger: In reduced motion, I stay here. The next line is the same either way.
+ginger: Reduced motion is enabled. The example leaves the sprite at guide and skips the timed movement.
 [else]
-ginger: Here I am on the right. The background stayed still.
+ginger: The sprite is at rightmark. The easing curve slows its movement near the end.
 [endif]
 [if !tutorial_still]
 [move ginger guide ease_out_cubic 560]
 [wait 560]
 [move ginger guide thoughtful exprdur=90]
 [endif]
-ginger: Change the duration of the first move, then replay it.
+[set tutorial_source scripts/tutorial/08_character_movement.vns]
+[set tutorial_excerpt move]
+[set ui.dialogueFacet tutorial_code]
+[show ginger beside_code thoughtful]
+ginger: The first move takes 740 milliseconds. The return takes 560. Both use the same pair of positions, so you can compare their speeds directly.
+ginger: Change the first move and its following wait to 1000. Replay and check that the next expression appears after the sprite arrives.
+ginger: The move names a destination and a duration. The following wait controls when the script continues. Read the two numbers independently, even when the author gave them the same value.
+ginger: At 740 ms the outward move and its wait end together. The next expression can mark arrival. If those numbers diverge, the expression can change during travel or after a pause.
+[clear ui.dialogueFacet]
+> Match a move with its wait -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: What lets an actor move without replacing the set?
+ginger: What lets you move the sprite while keeping the background fixed?
 > A new stage preset. -> retry
 > A character position. -> correct
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: Character positions belong to the actor. Give it another try.
+ginger: A stage preset controls lighting. Look at the destination passed to move.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: Character positions belong to the actor.
+ginger: A named character position defines the destination. The background has its own placement.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_08]
 [flag tutorial_done_08]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_2]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/08_character_movement.vns]
+[set tutorial_excerpt move]
+[set ui.dialogueFacet tutorial_code]
+ginger: Set the first move to 1,000 ms and leave its wait at 740 ms. Watch the cue at the end of the wait. The script can reach that cue about 260 ms before the requested travel time is over.
+ginger: Then set the wait to 1,250 ms. The nominal travel time is still one second. The extra quarter second now sits between arrival and the next instruction.
+ginger: Keep duration and wait fixed and compare two easing curves. Watch the sprite at the beginning, midpoint and end. The endpoints can match while the distribution of speed changes.
+ginger: For a reduced-motion check, follow the still route and count advances. The player should reach the same exercise without a wait intended only to cover motion.
+@label practice_question
+ginger: A move takes 900 ms and its wait takes 1,100 ms. How much extra time follows the requested move?
+> 1,100 ms. -> practice_hint
+> 200 ms. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: The wait overlaps the travel. Start both at zero and mark 900 and 1,100 on the same time axis.
+[jump practice_question]
+@label practice_result
+ginger: Subtract the travel duration from the wait. Both clocks start at the move, so only their difference remains after arrival.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

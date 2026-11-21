@@ -260,8 +260,8 @@ Older saves using Java serialization (`.sav` extension) are read and automatical
 
 All saves use atomic write-and-rename:
 
-1. Write data to `<slot>.json.tmp`
-2. Atomic rename `<slot>.json.tmp` → `<slot>.json`
+1. Write the complete JSON payload to a unique temporary file beside the slot.
+2. Replace `<slot>.json` with the completed file, using an atomic move when the filesystem supports it.
 3. If atomic rename is not supported, fall back to `REPLACE_EXISTING` move
 
 This prevents corruption from crashes or power loss during write.

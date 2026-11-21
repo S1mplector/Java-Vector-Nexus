@@ -1,0 +1,12 @@
+x=0.36
+y=0.055
+width=0.60
+height=0.57
+modal=false
+dim=false
+dismiss=false
+nodes=source
+node.source.type=code
+node.source.source=${tutorial_source}
+node.source.region=${tutorial_excerpt}
+node.source.height=1

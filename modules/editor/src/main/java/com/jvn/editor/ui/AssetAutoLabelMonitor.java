@@ -61,12 +61,14 @@ public final class AssetAutoLabelMonitor implements AutoCloseable {
 
   static Map<Path, Stamp> fingerprint(Path project) throws IOException {
     Map<Path, Stamp> result = new LinkedHashMap<>();
-    for (String directory : new String[]{"assets", "game/images", "scripts"}) {
+    var folders = new java.util.ArrayList<>(AssetPathHeuristics.ASSET_ROOTS);
+    folders.addAll(java.util.List.of("scripts", "game/scripts", "config", "game/config"));
+    for (String directory : folders) {
       Path base = project.resolve(directory);
       if (!Files.isDirectory(base)) continue;
       try (var paths = Files.walk(base, 16)) {
         for (Path file : paths.filter(Files::isRegularFile).toList()) {
-          if (AssetAutoLabelService.isSupportedAsset(file) || file.toString().endsWith(".vns")) {
+          if (AssetAutoLabelService.isSupportedAsset(file) || file.toString().toLowerCase(java.util.Locale.ROOT).endsWith(".vns") || AssetUsageIndex.isConfiguration(file)) {
             addStamp(result, file);
           }
         }

@@ -79,30 +79,91 @@ class TutorialChoiceRoutingTest {
           assertEquals(id, lesson.getScenario().getId(), choice.getTargetLabel());
           assertTrue(visited.add(id));
           if (expected[page][index] == 7) {
+            choose(lesson, "practice");
             var saves = new com.jvn.core.vn.save.VnSaveManager();
-            saves.save(lesson.getState(), "Rehearsal");
+            saves.save(lesson.getState(), "Threshold");
             var loadEngine = new Engine(ApplicationConfig.builder().build());
+            loadEngine.setVnInteropFactory(RuntimeVnInterop::new);
             var load = new com.jvn.core.menu.LoadMenuScene(loadEngine, saves, "story/tutorial_hub.vns", new VnSettings(), null);
-            assertTrue(load.getSaves().contains("Rehearsal"));
-            load.setSelected(load.getSaves().indexOf("Rehearsal"));
+            load.setSelected(load.getSaves().indexOf("Threshold"));
+            load.loadSelected();
+            var restored = assertInstanceOf(VnScene.class, loadEngine.scenes().peek());
+            assertEquals("tutorial_code", restored.getState().getVariable("ui.dialogueFacet"));
+            assertEquals("threshold", restored.getState().getVariable("tutorial_excerpt"));
+            assertEquals(lesson.getState().getCurrentNodeIndex(), restored.getState().getCurrentNodeIndex());
+            choose(lesson, "practice_result");
+            for (int score = 0; score <= 2; score++) {
+              choose(lesson, "pick_score");
+              choose(lesson, java.util.List.of("score_zero", "score_one", "score_two").get(score));
+              assertEquals(score + 1, ((Number) lesson.getState().getVariable("lab_score")).intValue());
+              assertTrue(lesson.getState().getCurrentNode().getDialogue().getText()
+                  .contains(score == 0 ? "failed" : "passed"));
+            }
+          }
+          if (expected[page][index] == 26) {
+            int[] squared = {4050, 2500, 2561};
+            var points = java.util.List.of("point_corner", "point_boundary", "point_outside");
+            for (int i = 0; i < points.size(); i++) {
+              choose(lesson, "pick_point");
+              choose(lesson, points.get(i));
+              assertEquals(squared[i], ((Number) lesson.getState().getVariable("squared")).intValue());
+              assertEquals(i == 1, lesson.getState().getVariable("inside"));
+            }
+          }
+          if (expected[page][index] == 19) {
+            choices(lesson);
+            var saves = new com.jvn.core.vn.save.VnSaveManager();
+            saves.save(lesson.getState(), "Tutorial");
+            choose(lesson, "select_a");
+            assertEquals("A", lesson.getState().getVariable("example_value"));
+            var loadEngine = new Engine(ApplicationConfig.builder().build());
+            loadEngine.setVnInteropFactory(RuntimeVnInterop::new);
+            var load = new com.jvn.core.menu.LoadMenuScene(loadEngine, saves, "story/tutorial_hub.vns", new VnSettings(), null);
+            assertTrue(load.getSaves().contains("Tutorial"));
+            load.setSelected(load.getSaves().indexOf("Tutorial"));
             load.loadSelected();
             var resumed = assertInstanceOf(VnScene.class, loadEngine.scenes().peek());
             assertEquals(id, resumed.getScenario().getId());
+            choose(resumed, "select_b");
+            assertEquals("B", resumed.getState().getVariable("example_value"));
             assertEquals(((Number) lesson.getState().getVariable("tutorial_count")).intValue(),
                 ((Number) resumed.getState().getVariable("tutorial_count")).intValue());
           }
-          if (expected[page][index] == 10) choose(lesson, "read_note");
+          if (expected[page][index] == 10) choose(lesson, "branch_a");
+          if (expected[page][index] == 21) {
+            for (var take : java.util.List.of("quarter", "half", "checklist")) {
+              choose(lesson, take);
+              var panel = lesson.getState().getTopOverlayScreen();
+              assertNotNull(panel, take);
+              assertEquals("tutorial_card", panel.getId());
+              var next = panel.getButtons().stream().filter(b -> "continue".equals(b.id())).findFirst().orElseThrow();
+              assertEquals(!"quarter".equals(take), next.enabled());
+              lesson.getState().returnOverlayScreen(panel.getId(), next.enabled() ? "continue" : "close");
+              lesson.update(16);
+            }
+          }
+          if (expected[page][index] == 30) {
+            choose(lesson, "compare_presets");
+            choose(lesson, "use_dusk");
+            assertEquals(false, lesson.getState().getVariable("example_default"));
+            assertEquals("dusk", lesson.getState().getActiveStagePresetId());
+            choose(lesson, "compare_presets");
+            choose(lesson, "use_default");
+            assertEquals(true, lesson.getState().getVariable("example_default"));
+            assertNotEquals("dusk", lesson.getState().getActiveStagePresetId());
+          }
           choose(lesson, "return_hub");
           hub = assertInstanceOf(VnScene.class, engine.scenes().peek());
           assertEquals("tutorial_topics", hub.getScenario().getId());
           assertEquals(visited.size(), ((Number) hub.getState().getVariable("tutorial_count")).intValue());
           assertEquals(choice.getTargetLabel(), choices(hub).get(index).getTargetLabel());
+          assertNull(hub.getState().getCharacterPosition("ginger"));
+          assertNull(hub.getState().getVariable("ui.dialogueFacet"));
         }
         choose(hub, "topics");
       }
       assertEquals(30, visited.size());
       choose(hub, "goodbye");
-      hub.advance();
       assertInstanceOf(com.jvn.core.menu.MainMenuScene.class, engine.scenes().peek());
     } finally {
       AssetCatalog.setDefaultManager(new ClasspathAssetManager());

@@ -125,7 +125,7 @@ The editor opens with a Welcome dashboard showing:
 
 1. Click **New Project** in the Welcome dashboard.
 2. Fill in project basics (name, author, location).
-3. Choose engine profile (resolution, menu theme).
+3. Choose **Starter Story** for the Lavender prologue, **Tutorial Workspace with Ginger** for the [30 lessons](jvn-tutorial.md), or the blank template to create your own scene. Set resolution and menu theme.
 4. Select feature modules (sample script, menu profiles, save/load).
 5. Optionally enable Git version control.
 6. Review the generated layout preview.

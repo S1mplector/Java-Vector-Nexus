@@ -8,19 +8,30 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide normal]
-ginger: I found an envelope wedged under the studio door. Shall we open it?
-> Open the envelope -> read_note
-> Hold it up to the light -> look_inside
-@label read_note
-[show ginger guide embarrassed]
-ginger: It's my own handwriting. “Remember to write an example about choices.” Well, that's one thing done!
+[show ginger beside_code normal]
+[set tutorial_source scripts/tutorial/10_choices_and_menus.vns]
+[set tutorial_excerpt routes]
+[set ui.dialogueFacet tutorial_code]
+ginger: Each choice has a display label and a destination. Pick a branch. Both branches print their own result and then return to the same line.
+# region routes
+> Run branch A -> branch_a
+> Run branch B -> branch_b
+@label branch_a
+# endregion
+[show ginger beside_code embarrassed]
+ginger: {b}Branch A{/b} ran. Its final jump skips branch B and goes straight to the shared result.
 [jump compare]
-@label look_inside
-[show ginger guide confused]
-ginger: There's a folded page inside. I can just make out the word “choices” through the paper.
+@label branch_b
+[show ginger beside_code confused]
+ginger: {b}Branch B{/b} ran. The shared result follows immediately after this line.
 @label compare
-ginger: We ended up here together, but you decided which line I said. Follow the arrows in this script to see where the paths meet.
+narrator: {i}Shared result. Both routes have reached the same label.{/i}
+ginger: Find the arrows after the two choices. Follow each destination down the file. Only branch A needs an explicit jump to avoid displaying the other branch.
+ginger: Change the visible text of branch A and leave its target alone. Run both options. Then swap the targets and compare the results again.
+ginger: On a choice line, the text before the arrow is what the player reads. The identifier after it is the destination. Changing the wording leaves the destination intact.
+ginger: After a branch has run, execution continues down the file unless a command redirects it. Branch A needs its jump because branch B sits between A and the shared result.
+[clear ui.dialogueFacet]
+> Trace a branching script -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
@@ -30,17 +41,43 @@ ginger: What does the arrow after a choice point to?
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: Each branch can perform different work before both paths meet. Give it another try.
+ginger: An expression selects artwork. Look for the named label further down the script.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: Each branch can perform different work before both paths meet.
+ginger: The arrow points to a label. The text the player sees can change without renaming that label.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_10]
 [flag tutorial_done_10]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_1]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/10_choices_and_menus.vns]
+[set tutorial_excerpt routes]
+[set ui.dialogueFacet tutorial_code]
+ginger: On paper, trace the labels from choosing A to the shared result. Repeat for B. Give each route a different mark so you can see where they first meet.
+ginger: Change the visible wording of A but leave its target alone. Replay both routes and compare the result messages with your trace.
+ginger: Now exchange only the two destinations. The menu wording stays familiar, but each choice runs the other branch. Restore the arrows before the next edit.
+ginger: Temporarily remove A's jump to compare. Select A and count the branch messages. Selecting B is your control because B never relied on that jump.
+@label practice_question
+ginger: After removing A's jump, which selection can display both branch messages?
+> Selecting B. -> practice_hint
+> Selecting A. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: B starts below A in the file. Follow the route that begins above both messages and look for the missing redirect.
+[jump practice_question]
+@label practice_result
+ginger: A now falls through into the B block before reaching compare. Restoring the jump makes A bypass B again.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

@@ -8,29 +8,68 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide shy]
-ginger: The little light on this panel is an entity of its own. Shall we change its color without repainting the panel?
-ginger: Open scripts/scenes/panel.jes in the JES editor. Select the indicator and change its fill color.
+[show ginger beside_code shy]
+[set tutorial_source scripts/scenes/panel.jes]
+[set tutorial_excerpt indicator]
+[set ui.dialogueFacet tutorial_code]
+ginger: The JES panel contains separate entities for its background, indicator and title. This lets you resize one element without moving the others.
+ginger: Open {b}scripts/scenes/panel.jes{/b}. In the indicator entity, change the Panel2D width and height from 28 to 42.
+ginger: Open the example panel. The indicator should grow in place. If the background grew instead, check the entity name above the edited component.
+ginger: Next change only its fill. Compare the colour and size independently. Press Enter or Esc to return.
+ginger: Read the braces as ownership. The indicator entity contains a Panel2D component. Its x and y locate the panel, w and h size it, and fill supplies its colour.
+ginger: Changing 28 to 42 adds 14 units per side. The area changes from 784 to 1,764 square units, so a 50 percent increase in each dimension produces 2.25 times the area.
+[clear ui.dialogueFacet]
+> Open the example panel -> visit_panel
+> Work out the indicator's new area -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: Which change should affect only the indicator?
+ginger: Which edit affects only the indicator?
 > Edit the named indicator entity. -> correct
 > Tint the entire stage. -> retry
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: Separate entities give the editor independent targets. Give it another try.
+ginger: A stage tint applies more widely. Find the entity that owns the indicator's dimensions and fill.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: Separate entities give the editor independent targets.
+ginger: Change the component inside the named indicator entity. The panel background and title keep their own settings.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_25]
 [flag tutorial_done_25]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_5]
+[end]
+
+@label visit_panel
+[jes push scripts/scenes/panel.jes label check]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/scenes/panel.jes]
+[set tutorial_excerpt indicator]
+[set ui.dialogueFacet tutorial_code]
+ginger: Change only w from 28 to 42 in the indicator component. Leave h at 28. Predict a wider rectangle and verify it in the running JES panel.
+ginger: Then change h to 42 as well. Compare the square with the original using its upper-left edge as a reference. Keeping x and y fixed anchors that edge while the opposite edges move.
+ginger: If the square needs to keep its original centre, compensate for the 14-unit growth. Subtract seven from x and seven from y, then compare the centre before and after the edit.
+ginger: Undo the size changes and alter a single fill channel. If the entire background changes, check the enclosing entity name before changing the numeric values again.
+@label practice_question
+ginger: With size changing from 28 to 42, what keeps the same centre for a top-left anchored panel?
+> Subtract 7 from x and y. -> practice_result
+> Subtract 14 from x and y. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Subtracting the full growth moves the centre seven units too far. Compare the old and new half-sizes.
+[jump practice_question]
+@label practice_result
+ginger: The centre sits half a width and half a height from the origin. The half-size grew by seven, so the origin moves back by seven.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

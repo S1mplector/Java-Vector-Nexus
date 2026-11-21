@@ -8,33 +8,71 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide shy]
-ginger: Keep an eye on the edges of the stage. I'll fade the scene and bring the lights back up.
+[show ginger beside_code shy]
+[set tutorial_source scripts/tutorial/05_transitions_and_effects.vns]
+[set tutorial_excerpt fade]
+[set ui.dialogueFacet tutorial_code]
+ginger: This example combines a fade with a change to the {b}dusk{/b} lighting preset. Watch the transition as you advance.
+# region fade
 [if !tutorial_still]
 [transition fade 380]
 [endif]
 [stage dusk]
-ginger: Change the fade duration and replay the transition.
+# endregion
+ginger: The fade takes 380 milliseconds with motion enabled. After it finishes, the dusk preset determines the lighting.
+ginger: Compare [transition fade 100] with [transition fade 900]. Keep the preset the same and observe when the new lighting becomes visible.
+ginger: For a second comparison, leave the duration at 380 and change the preset. This time, check the final image.
+ginger: Read the conditional around the fade. With movement enabled the script requests a 380 ms transition. The lighting command sits after the conditional, so the dusk preset is applied on either route.
+ginger: Compare the frame during the fade with the frame after it settles. The first shows a change over time. The second shows the stage settings you will keep until another command changes them.
+[stage clear]
+[clear ui.dialogueFacet]
+> Separate timing from lighting -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: Which value changes how long the fade lasts?
+ginger: Which value sets the fade time?
 > The duration in milliseconds. -> correct
 > The number of dialogue lines. -> retry
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: Timing belongs to the transition, so the script can keep its pacing. Give it another try.
+ginger: Adding dialogue adds another input step. The transition command has a numeric duration.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: Timing belongs to the transition, so the script can keep its pacing.
+ginger: The duration is in milliseconds. A value of 1000 gives a one-second fade.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_05]
 [flag tutorial_done_05]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_2]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/05_transitions_and_effects.vns]
+[set tutorial_excerpt fade]
+[set ui.dialogueFacet tutorial_code]
+ginger: Use two runs with the same background, pose and dusk preset. Set the fade to 100 ms for one and 900 ms for the other. Start from the same line both times.
+ginger: Capture the settled image in each run. The longer duration changes how long you see the transition. It should still arrive at the same lighting configuration.
+ginger: Now keep 380 ms in both versions. Run one with dusk and one with a cleared stage. Compare the settled frames again, especially the face and sleeve.
+ginger: Repeat the longer transition in reduced motion. Follow the closing endif in the source to see which instruction still executes when the fade is skipped.
+@label practice_question
+ginger: Reduced motion skips the fade. What lighting should the following line use?
+> Dusk, because the stage command follows the conditional. -> practice_result
+> Default, because skipping a fade skips the preset. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Read down to the closing endif. The stage command comes after that boundary, where the two routes meet again.
+[jump practice_question]
+@label practice_result
+ginger: The branch controls the transition. The following stage instruction executes on both routes, so the settled result still uses dusk.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

@@ -9,41 +9,76 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide normal]
-ginger: Imagine the same conversation just before sunset. I'll bring up the dusk preset. Watch where the shadows settle.
+ginger: Compare the sprite and background under the default lighting and the {b}dusk{/b} preset. Start by looking at the face and the edge of the sleeve.
 [stage dusk]
 [if !tutorial_still]
 [move ginger rightmark ease_in_out_cubic 640]
 [wait 640]
 [move ginger rightmark thoughtful exprdur=90]
 [endif]
-ginger: The dusk preset is active. Notice the cooler stage and warm key light.
+ginger: The dusk preset is active. Check which parts of the sprite are lit and how well its outline separates from the background.
 [stage clear]
 [if !tutorial_still]
 [move ginger guide ease_out_cubic 510]
 [wait 510]
 [move ginger guide normal exprdur=90]
 [endif]
-ginger: Open dusk.stagepreset in Lighting Studio, adjust exposure, and compare the result in Puppeteer.
+[set tutorial_source scripts/definitions/dusk.stagepreset]
+[set tutorial_excerpt exposure]
+[set ui.dialogueFacet tutorial_code]
+[show ginger beside_code thoughtful]
+ginger: The script has now run [stage clear]. The original lighting is visible again. The sprite image is the same in both views.
+ginger: Open scripts/definitions/dusk.stagepreset in Lighting Studio. Adjust exposure, save and replay. Compare the two lighting states again at the same window size.
+ginger: A stage preset has several independent settings. Exposure changes the background's overall brightness. Tint also has a colour, a strength and a blend mode. The preset file records those separately.
+ginger: Pick a neutral part of the background and an edge of the character. Use the same two points in both captures so your comparison is repeatable.
+[clear ui.dialogueFacet]
+> Compare the preset with a control -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: How do you restore the original lighting in VNS?
+ginger: Which command restores the default lighting?
 > Hide Ginger. -> retry
 > Use the stage clear command. -> correct
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: Clearing the active stage restores the ungraded background. Give it another try.
+ginger: Hiding the character would remove the sprite while leaving the preset active on the stage.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: Clearing the active stage restores the ungraded background.
+ginger: Use [stage clear]. The next line then renders without the dusk preset.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_24]
 [flag tutorial_done_24]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_3]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/definitions/dusk.stagepreset]
+[set tutorial_excerpt exposure]
+[set ui.dialogueFacet tutorial_code]
+ginger: Start with the cleared stage and capture the room. Apply dusk and capture the same settled pose. Keep the change of pose or position out of your brightness comparison.
+ginger: In Lighting Studio change only background exposure. Replay dusk and compare the neutral patch with your first dusk capture. Keep the tint settings at their original values.
+ginger: Restore exposure, then change tint strength with the same tint colour and blend mode. Inspect the background and the outline separately before deciding which setting caused a difference.
+ginger: Finally return to the default state. If later dialogue still uses dusk, trace the path to the stage clear command, including any jump that can bypass it.
+@label practice_question
+ginger: You want to measure just the contribution of tint strength. Which pair of captures does that?
+> Default and dusk with several settings changed. -> practice_hint
+> Two dusk captures with only tint strength changed. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Changing several inputs at once shows the combined result. Keep exposure, colour, blend mode and framing fixed for this comparison.
+[jump practice_question]
+@label practice_result
+ginger: The first pair holds the other preset inputs fixed. Check the same background patch in both images and record the original and changed strength.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

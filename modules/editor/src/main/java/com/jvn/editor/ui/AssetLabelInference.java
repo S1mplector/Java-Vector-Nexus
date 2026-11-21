@@ -13,7 +13,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 /** Infers reviewable labels from VNS-declared siblings and the project's asset taxonomy. */
@@ -21,8 +20,7 @@ import java.util.stream.Stream;
 final class AssetLabelInference {
   List<Path> collectAssets(Path root) throws IOException {
     Set<Path> files = new LinkedHashSet<>();
-    collectAssetsUnder(root.resolve("assets"), files);
-    collectAssetsUnder(root.resolve("game/images"), files);
+    for (String folder : AssetPathHeuristics.ASSET_ROOTS) collectAssetsUnder(root.resolve(folder), files);
     return files.stream().sorted(Comparator.comparing(Path::toString)).toList();
   }
 
@@ -67,56 +65,131 @@ final class AssetLabelInference {
       Path root, Path file, String relativePath, AssetDeclarationCatalog.Index catalog,
       Set<String> usedScopedLabels, boolean isNew) {
     AssetKind pathKind = AssetPathHeuristics.kindFromPath(Path.of(relativePath));
+    Map<AssetKind, String> uses = file.startsWith(root) ? catalog.usage().uses(relativePath) : Map.of();
+    AssetKind kind = uses.size() == 1 ? uses.keySet().iterator().next() : pathKind;
+    String stem = AssetPathHeuristics.nameTokens(AssetPathHeuristics.stem(file.getFileName().toString()));
+    String namedOwner = knownCharacter(stem, catalog.characterIds());
     String directory = AssetPathHeuristics.parentPath(relativePath);
-    List<AssetDeclarationCatalog.Declaration> siblings =
-        catalog.byDirectory().getOrDefault(directory, List.of()).stream()
-            .filter(value -> pathKind.isVnsDeclarable() || pathKind == AssetKind.UNKNOWN)
-            .filter(value -> !catalog.conflictingPaths().contains(value.relativePath()))
-            .filter(value -> Files.isRegularFile(root.resolve(value.relativePath())))
-            .toList();
-    List<AssetDeclarationCatalog.Declaration> nearest = nearestSiblings(relativePath, siblings);
-    if (!nearest.isEmpty()) siblings = nearest;
-    boolean ambiguous = siblings.stream().map(value -> value.kind() + "/" + value.owner())
-        .distinct().count() > 1;
-    AssetKind kind = siblings.isEmpty()
-        ? pathKind : majority(siblings, AssetDeclarationCatalog.Declaration::kind, pathKind);
-    String owner = kind.usesCharacterDeclaration()
-        ? !siblings.isEmpty() && !ambiguous ? siblings.getFirst().owner()
-            : ownerForDirectory(directory, catalog.ownerByDirectory()) : "";
-    if (owner.isBlank() && kind.usesCharacterDeclaration()) {
-      owner = AssetPathHeuristics.inferOwner(relativePath, kind);
+    String folderOwner = AssetPathHeuristics.inferOwner(relativePath, kind);
+    String owner = "";
+    List<String> reasons = new ArrayList<>();
+    List<AssetDeclarationCatalog.Declaration> siblings = List.of();
+    double confidence;
+    if (!uses.isEmpty()) {
+      reasons.addAll(uses.values());
+      confidence = uses.size() == 1 ? 0.98 : 0.65;
+      if (uses.size() > 1) {
+        kind = "Audio".equals(AssetPathHeuristics.mediaType(relativePath)) ? AssetKind.AUDIO : AssetKind.UNKNOWN;
+        reasons.add("Used in several roles");
+      }
+      if (kind.acceptsOwner()) owner = AssetPathHeuristics.inferOwner(relativePath, kind);
+    } else if (!"Image".equals(AssetPathHeuristics.mediaType(relativePath)) || kind == AssetKind.PROJECT_ICON) {
+      confidence = switch (kind) {
+        case FONT, VIDEO -> 0.98;
+        case PROJECT_ICON, MUSIC, SOUND_EFFECT, VOICE -> 0.90;
+        default -> 0.62;
+      };
+      if (kind == AssetKind.VOICE) owner = folderOwner;
+      reasons.add(switch (kind) {
+        case PROJECT_ICON -> "Project icon filename";
+        case MUSIC, SOUND_EFFECT, VOICE -> "Audio format and " + kind.displayName().toLowerCase(java.util.Locale.ROOT) + " naming convention";
+        default -> file.getFileName().toString().replaceFirst("^.*\\.", "").toUpperCase(java.util.Locale.ROOT) + " file format";
+      });
+    } else {
+      String poseOwner = poseOwner(stem);
+      if (kind == AssetKind.UNKNOWN && (!namedOwner.isEmpty() || !poseOwner.isEmpty())) {
+        kind = AssetPathHeuristics.isLayer(relativePath) ? AssetKind.CHARACTER_LAYER : AssetKind.CHARACTER_SPRITE;
+      }
+      boolean character = AssetPathHeuristics.characterArt(kind);
+      String knownFolder = AssetPathHeuristics.characterFolder(relativePath);
+      String folderId = knownCharacter(knownFolder, catalog.characterIds());
+      String ownerHint = !character ? "" : !namedOwner.isEmpty() ? namedOwner : !folderId.isEmpty() ? folderId : poseOwner;
+      String authoredOwner = ownerForDirectory(directory, catalog.ownerByDirectory());
+      boolean explicitArtRole = AssetPathHeuristics.isLayer(relativePath) || !poseOwner.isBlank() || POSES.contains(stem);
+      AssetKind requested = kind;
+      List<AssetDeclarationCatalog.Declaration> compatible = catalog.byDirectory().getOrDefault(directory, List.of())
+          .stream().filter(value -> !catalog.conflictingPaths().contains(value.relativePath()))
+          .filter(value -> requested == AssetKind.UNKNOWN || value.kind() == requested
+              || character && !explicitArtRole && AssetPathHeuristics.characterArt(value.kind()))
+          .filter(value -> ownerHint.isEmpty() || ownerHint.equals(value.owner())
+              || ownerHint.equals(knownFolder) && ownerHint.startsWith(value.owner() + "_"))
+          .filter(value -> Files.isRegularFile(root.resolve(value.relativePath()))).toList();
+      siblings = nearestSiblings(relativePath, compatible);
+      if (siblings.isEmpty() && (pathKind != AssetKind.UNKNOWN || !ownerHint.isEmpty())) siblings = compatible;
+      boolean mixed = siblings.stream().map(value -> value.kind() + "/" + value.owner()).distinct().count() > 1;
+      confidence = kind == AssetKind.BACKGROUND ? 0.87 : 0.62;
+      if (pathKind != AssetKind.UNKNOWN) reasons.add("Path identifies " + pathKind.displayName().toLowerCase(java.util.Locale.ROOT));
+      if (!mixed && !siblings.isEmpty()) {
+        kind = siblings.getFirst().kind();
+        owner = siblings.getFirst().owner();
+        confidence = 0.90;
+        reasons.add(siblings.size() + " declared sibling" + (siblings.size() == 1 ? "" : "s") + " in " + directory);
+      } else if (kind.usesCharacterDeclaration()) {
+        owner = ownerHint;
+        if (owner.isBlank()) owner = authoredOwner;
+        if (owner.isBlank()) owner = AssetPathHeuristics.inferOwner(relativePath, kind);
+        if (!namedOwner.isBlank() && character) {
+          confidence = AssetPathHeuristics.isLayer(relativePath) || !poseOwner.isBlank() || pathKind != AssetKind.UNKNOWN ? 0.92 : 0.76;
+          reasons.add("Filename matches declared character " + namedOwner);
+        } else if (character && catalog.characterIds().contains(owner)) {
+          confidence = 0.88;
+          reasons.add(owner.equals(authoredOwner) ? "Nearby declarations use character " + owner : "Character folder matches " + owner);
+        } else if (!poseOwner.isEmpty() && character) {
+          reasons.add("Pose name follows " + poseOwner + " in the filename");
+        }
+      }
+      if (mixed) {
+        confidence = Math.min(confidence, 0.72);
+        reasons.add("Nearby declarations have different owners or roles");
+      }
+      if (character && !namedOwner.isBlank() && catalog.characterIds().contains(folderOwner)
+          && !folderOwner.equals(namedOwner)) {
+        confidence = Math.min(confidence, 0.70);
+        reasons.add("Folder names " + folderOwner + " while filename names " + namedOwner);
+      }
+      List<AssetDeclarationCatalog.Declaration> copies = catalog.content().copiesOf(file);
+      if (!copies.isEmpty()) {
+        var copy = copies.getFirst();
+        boolean sameIdentity = copies.stream().allMatch(other -> other.kind() == copy.kind() && other.owner().equals(copy.owner()));
+        if (sameIdentity && (kind == AssetKind.UNKNOWN || kind == copy.kind())
+            && (ownerHint.isEmpty() || ownerHint.equals(copy.owner()))) {
+          kind = copy.kind();
+          owner = copy.owner();
+          confidence = 0.98;
+          reasons.add("Identical file declared in " + copy.sourceFile().getFileName() + ":" + copy.line()
+              + " as " + (owner.isEmpty() ? "" : owner + "/") + copy.label());
+        } else {
+          confidence = Math.min(confidence, 0.72);
+          reasons.add("Identical artwork has a different owner or role in the declarations");
+        }
+      }
+      if (reasons.isEmpty()) reasons.add("No matching declaration, character name or role in the path");
     }
     String label = AssetPathHeuristics.inferLabel(relativePath, kind, owner);
-    String learnedLabel = labelFromSiblings(relativePath, owner, siblings);
-    if (!learnedLabel.isBlank()) label = learnedLabel;
+    String learned = labelFromSiblings(relativePath, owner, siblings);
+    if (!learned.isBlank()) {
+      label = learned;
+      reasons.add("label pattern learned from declared siblings");
+    }
     label = AssetPathHeuristics.uniqueLabel(owner, label, usedScopedLabels);
     usedScopedLabels.add(AssetPathHeuristics.scopeKey(owner, label));
-
-    double confidence = 0.52;
-    List<String> reasons = new ArrayList<>();
-    if (!siblings.isEmpty()) {
-      confidence += 0.32;
-      reasons.add(siblings.size() + " declared sibling" + (siblings.size() == 1 ? "" : "s")
-          + " in the same directory");
-    }
-    if (!owner.isBlank()) {
-      confidence += ownerForDirectory(directory, catalog.ownerByDirectory()).isBlank() ? 0.05 : 0.10;
-      reasons.add("owner " + owner + " inferred from the asset tree");
-    }
-    if (pathKind != AssetKind.UNKNOWN) {
-      confidence += 0.05;
-      reasons.add("type inferred from path and extension");
-    }
-    if (!learnedLabel.isBlank()) reasons.add("label pattern learned from declared siblings");
-    if (ambiguous) {
-      confidence = Math.min(confidence, 0.79);
-      reasons.add("multiple owners or types in this directory; review required");
-    }
-    if (reasons.isEmpty()) reasons.add("filename-only suggestion; review recommended");
-    return new AssetSuggestion(
-        file, relativePath, kind, owner, label, LabelStatus.SUGGESTED,
-        Math.min(0.99, confidence), String.join("; ", reasons), null, -1, isNew);
+    return new AssetSuggestion(file, relativePath, kind, owner, label, LabelStatus.SUGGESTED,
+        confidence, String.join(" · ", reasons), null, -1, isNew);
   }
+
+  private static String knownCharacter(String stem, Set<String> ids) {
+    return ids.stream().filter(id -> stem.equals(id) || stem.startsWith(id + "_"))
+        .max(Comparator.comparingInt(String::length)).orElse("");
+  }
+
+  private static String poseOwner(String stem) {
+    int split = stem.lastIndexOf('_');
+    if (split < 1) return "";
+    return POSES.contains(stem.substring(split + 1)) ? stem.substring(0, split) : "";
+  }
+
+  private static final Set<String> POSES = Set.of("happy", "sad", "neutral", "normal", "angry", "shy",
+      "confused", "embarrassed", "annoyed", "thoughtful", "surprised", "smiling", "idle", "laughing");
 
   private List<AssetDeclarationCatalog.Declaration> nearestSiblings(
       String path, List<AssetDeclarationCatalog.Declaration> siblings) {
@@ -191,14 +264,4 @@ final class AssetLabelInference {
     return "";
   }
 
-  private static <T> T majority(
-      List<AssetDeclarationCatalog.Declaration> declarations,
-      Function<AssetDeclarationCatalog.Declaration, T> mapper, T fallback) {
-    Map<T, Integer> counts = new LinkedHashMap<>();
-    for (AssetDeclarationCatalog.Declaration declaration : declarations) {
-      counts.merge(mapper.apply(declaration), 1, Integer::sum);
-    }
-    return counts.entrySet().stream().max(Map.Entry.comparingByValue())
-        .map(Map.Entry::getKey).orElse(fallback);
-  }
 }

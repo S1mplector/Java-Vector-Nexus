@@ -8,30 +8,69 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide normal]
-ginger: How would you greet someone in your language? I'll look up my next line by its key, tutorial.greeting.
+[show ginger beside_code normal]
+[set tutorial_source scripts/tutorial/14_localization_and_textkeys.vns]
+[set tutorial_excerpt key]
+[set ui.dialogueFacet tutorial_code]
+ginger: The next line is loaded from an English locale file. Its VNS text contains the lookup key {b}i18n:tutorial.greeting{/b}.
+# region key
 ginger: i18n:tutorial.greeting
-ginger: That line uses tutorial.greeting in config/locales/en.properties. Edit its value and replay.
+# endregion
+[set tutorial_source config/locales/en.properties]
+[set tutorial_excerpt greeting]
+ginger: Open config/locales/en.properties and find tutorial.greeting. The value after the equals sign supplies the displayed text.
+ginger: Edit that value, save and replay. Leave the key unchanged so the same script line continues to resolve it.
+ginger: Try a longer translation as well. Check whether it wraps cleanly at your smallest supported window size.
+ginger: Start at the VNS line. The speaker comes from the character ID. The i18n key identifies the text entry. In the locale file, the value after the equals sign supplies the words to display.
+ginger: Reusing a key makes a wording change appear wherever that key is used. Give lines different keys when translators need to edit them independently.
+[clear ui.dialogueFacet]
+> Trace a lookup across files -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: What should stay the same when you rewrite a translation?
+ginger: What stays the same between translations?
 > Every character of the translated sentence. -> retry
 > Its lookup key. -> correct
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: Stable keys let the same scene select a different localized line. Give it another try.
+ginger: The translated sentence may need more or fewer words. The script still looks up the same identifier.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: Stable keys let the same scene select a different localized line.
+ginger: Keep the lookup key stable. Each locale can supply a different value for it.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_14]
 [flag tutorial_done_14]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_4]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source config/locales/en.properties]
+[set tutorial_excerpt greeting]
+[set ui.dialogueFacet tutorial_code]
+ginger: Copy the greeting line so two consecutive lines reference the same key. Change the English value once and run both lines. They should now show the same edited wording.
+ginger: Give the second line its own key and add a second entry to the locale file. Change only that entry. Run the two lines again and check which one changed.
+ginger: To diagnose an unexpected translation, compare the requested locale, the exact key and its entry in that locale. A correctly spelled key in the wrong file is still the wrong test.
+ginger: Try a longer value with the same meaning. Check the last word and the advance indicator at the narrowest window you ship. Sentence length can change even when the lookup is correct.
+@label practice_question
+ginger: Two lines share a key but need different English wording. Which change lets you edit them independently?
+> Put a second value under the same key. -> practice_hint
+> Assign one line a new key and add its translation. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: A key identifies one value in a loaded table. Give the second line a distinct lookup before changing its wording.
+[jump practice_question]
+@label practice_result
+ginger: Each lookup now selects its own entry. Edit the second value and verify that the first line keeps its original wording.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

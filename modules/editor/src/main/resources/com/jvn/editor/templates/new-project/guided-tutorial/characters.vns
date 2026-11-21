@@ -1,15 +1,19 @@
 @character ginger "Ginger"
 @character narrator "Narrator"
+# region background
 @background room assets/tutorial/white.png
+# endregion
 @stagepreset dusk /definitions/dusk.stagepreset
+# region poses
 @charimg ginger angry assets/tutorial/ginger_angry.png
 @charimg ginger annoyed assets/tutorial/ginger_annoyed.png
 @charimg ginger confused assets/tutorial/ginger_confused.png
+# endregion
 @charimg ginger embarrassed assets/tutorial/ginger_embarrassed.png
 @charimg ginger normal assets/tutorial/ginger_normal.png
 @charimg ginger sad assets/tutorial/ginger_sad.png
 @charimg ginger shy assets/tutorial/ginger_shy.png
 @charimg ginger thoughtful assets/tutorial/ginger_thoughtful.png
-@position guide 0.50 0.99
-@position topics 0.26 0.99
-@position rightmark 0.78 0.99
+@position guide 0.50 1.03
+@position rightmark 0.78 1.03
+@position beside_code 0.19 1.03

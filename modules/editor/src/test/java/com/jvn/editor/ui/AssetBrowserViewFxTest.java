@@ -140,6 +140,35 @@ class AssetBrowserViewFxTest {
     org.junit.jupiter.api.Assertions.fail("Refresh must retain the generation result");
   }
 
+  @Test
+  void ownerSearchUsesTheVnsDeclarationEvenWhenTheFilenameOmitsTheCharacter(@TempDir Path project) throws Exception {
+    Files.createDirectories(project.resolve("assets/art"));
+    Files.createDirectories(project.resolve("scripts"));
+    Files.write(project.resolve("assets/art/face.png"), ONE_PIXEL_PNG);
+    var background = new java.awt.image.BufferedImage(3, 2, java.awt.image.BufferedImage.TYPE_INT_RGB);
+    javax.imageio.ImageIO.write(background, "png", project.resolve("assets/art/room.png").toFile());
+    Files.writeString(project.resolve("scripts/cast.vns"), "@charimg ginger idle assets/art/face.png");
+    AssetBrowserView view = runFx(() -> {
+      var browser = new AssetBrowserView();
+      browser.setProjectRoot(project.toFile());
+      new Scene(browser, 800, 600);
+      browser.applyCss();
+      browser.layout();
+      ((javafx.scene.control.TextField) browser.lookup("#asset-browser-search")).setText("ginger");
+      return browser;
+    });
+    for (int i = 0; i < 80; i++) {
+      if (runFx(() -> {
+        var list = (ListView<?>) view.lookup("#asset-browser-list-view");
+        if (list.getItems().size() != 1) return false;
+        list.getSelectionModel().select(0);
+        return "assets/art/face.png".equals(view.getSelectedAssetPath());
+      })) return;
+      Thread.sleep(50);
+    }
+    org.junit.jupiter.api.Assertions.fail("Browse should find the same character ownership as Auto-label");
+  }
+
   private static <T> T runFx(Callable<T> callable) throws Exception {
     return FxToolkit.runFx(callable);
   }

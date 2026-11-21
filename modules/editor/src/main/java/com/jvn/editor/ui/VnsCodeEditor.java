@@ -1,5 +1,7 @@
 package com.jvn.editor.ui;
 
+import com.jvn.core.script.SyntaxRules;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -144,50 +146,7 @@ public class VnsCodeEditor extends BorderPane {
   private TranslateTransition timelineNavSlide;
   private boolean timelineNavShowing = false;
 
-  private static final String COMMENT_PATTERN = "(?m)#.*$";
-  private static final String STRING_PATTERN = "\"([^\\\\\"]|\\\\.)*\"";
-  private static final String FORMAT_PATTERN = "\\{/?[bius]\\}|\\{color=[^}]*\\}|\\{/color\\}";
-  private static final String DIRECTIVE_PATTERN = "@(?:scenario|character|background|charimg|charlayer|chargroup|charpreset|displaypreset|stagepreset|position|label|define|include|var|bind|jimport|external)\\b";
-  private static final String CMD_OPEN_PATTERN =
-      "\\[(?:showpreset|movepreset|hidepreset|show|move|hide|jump|end|wait|bg|background"
-    + "|plugin|bgm_crossfade|bgm_fadeout|bgm_resume|bgm_pause|bgm_seek|bgm_stop|bgm"
-    + "|particles|particle|weather|pfx|fx"
-    + "|audio_resume_all|audio_pause_all|audio_stop_all|audio|sfx_stop|sfx|voice_stop|voice|volume|textspeed|autodelay"
-    + "|hud|save|quickload|skip|auto|mode|ui|visualizer|viz|history|screen|phone"
-    + "|jes_push|jes_replace|jes_pop|jes_call|jes|java"
-    + "|transition|stage|menu|settings|mainmenu|load|goto"
-    + "|set|inc|dec|mul|div|toggle|flag|unflag|clear|persistent"
-    + "|if|elif|else|endif|/if"
-    + "|call|gosub|return|character|char|choice)\\b";
-  private static final String ARROW_PATTERN = "->";
-  private static final String SPEAKER_PATTERN = "(?m)^(?:[^\\s#:][^:]{0,30}):";
   private static final Pattern DIALOGUE_LINE_PATTERN = Pattern.compile("^(?:[^\\s#:][^:]{0,30}):");
-  private static final String CHOICE_MARK_PATTERN = "(?m)^\\s*>";
-  private static final String TIMELINE_PATTERN = "(?m)^\\s*timeline\\b";
-  private static final String VALUE_PATTERN =
-      "\\b(?:left|right|center|far_left|far_right"
-    + "|fade|dissolve|crossfade|slide_left|slide_right|wipe"
-    + "|snow|rain|sakura|fireflies|dust|leaves"
-    + "|true|false|on|off|yes|no"
-    + "|goto|loop|neutral)\\b";
-  private static final String NUMBER_PATTERN = "-?\\b\\d+(?:\\.\\d+)?\\b";
-  private static final String PUNCT_PATTERN = "[\\[\\]()>:,=]";
-
-  private static final Pattern TOKEN_PATTERN = Pattern.compile(
-      "(?<COMMENT>"    + COMMENT_PATTERN    + ")"
-    + "|(?<STRING>"    + STRING_PATTERN     + ")"
-    + "|(?<FORMAT>"    + FORMAT_PATTERN     + ")"
-    + "|(?<DIRECTIVE>" + DIRECTIVE_PATTERN  + ")"
-    + "|(?<CMDOPEN>"   + CMD_OPEN_PATTERN   + ")"
-    + "|(?<ARROW>"     + ARROW_PATTERN      + ")"
-    + "|(?<SPEAKER>"   + SPEAKER_PATTERN    + ")"
-    + "|(?<CHOICEMK>"  + CHOICE_MARK_PATTERN + ")"
-    + "|(?<TIMELINE>"  + TIMELINE_PATTERN   + ")"
-    + "|(?<VALUEKW>"   + VALUE_PATTERN      + ")"
-    + "|(?<NUMBER>"    + NUMBER_PATTERN     + ")"
-    + "|(?<PUNCT>"     + PUNCT_PATTERN      + ")"
-  );
-
   private static final Pattern LABEL_PATTERN = Pattern.compile("^\\s*(?:@label|label)\\s+(\\S+)\\s*$", Pattern.CASE_INSENSITIVE);
   private static final Pattern TIMELINE_SCAN_PATTERN = Pattern.compile(
       "^\\s*timeline(?:\\s*\\{|\\s*(?:#.*|//.*)?$)", Pattern.CASE_INSENSITIVE);
@@ -1080,29 +1039,15 @@ public class VnsCodeEditor extends BorderPane {
     analysisDebounce.playFromStart();
   }
 
-  private StyleSpans<Collection<String>> computeHighlightingWithIssues(String text, List<Issue> currentIssues) {
+  private static List<Span> syntaxSpans(String text) {
     List<Span> spans = new ArrayList<>();
-    Matcher matcher = TOKEN_PATTERN.matcher(text);
-    int last = 0;
-    while (matcher.find()) {
-      String styleClass =
-          matcher.group("COMMENT")   != null ? "comment"       :
-          matcher.group("STRING")    != null ? "string"        :
-          matcher.group("FORMAT")    != null ? "vns-format"    :
-          matcher.group("DIRECTIVE") != null ? "vns-directive" :
-          matcher.group("CMDOPEN")   != null ? "vns-command"   :
-          matcher.group("ARROW")     != null ? "vns-arrow"     :
-          matcher.group("SPEAKER")   != null ? "vns-speaker"   :
-          matcher.group("CHOICEMK")  != null ? "vns-choice"    :
-          matcher.group("TIMELINE")  != null ? "vns-command"   :
-          matcher.group("VALUEKW")   != null ? "vns-value"     :
-          matcher.group("NUMBER")    != null ? "number"        :
-          matcher.group("PUNCT")     != null ? "punct"         : null;
-      spans.add(new Span(last, matcher.start(), Collections.emptyList()));
-      spans.add(new Span(matcher.start(), matcher.end(), Collections.singletonList(styleClass)));
-      last = matcher.end();
-    }
-    spans.add(new Span(last, text.length(), Collections.emptyList()));
+    SyntaxRules.VNS.scan(text, (start, end, style) ->
+        spans.add(new Span(start, end, style.isEmpty() ? List.of() : List.of(style))));
+    return spans;
+  }
+
+  private StyleSpans<Collection<String>> computeHighlightingWithIssues(String text, List<Issue> currentIssues) {
+    List<Span> spans = syntaxSpans(text);
 
     if (currentIssues != null) {
       for (Issue issue : currentIssues) {
@@ -2092,28 +2037,7 @@ public class VnsCodeEditor extends BorderPane {
     String text = codeArea.getText();
     if (text == null) return;
     List<Issue> currentIssues = issues;
-    List<Span> spans = new ArrayList<>();
-    Matcher matcher = TOKEN_PATTERN.matcher(text);
-    int last = 0;
-    while (matcher.find()) {
-      String styleClass =
-          matcher.group("COMMENT")   != null ? "comment"       :
-          matcher.group("STRING")    != null ? "string"        :
-          matcher.group("FORMAT")    != null ? "vns-format"    :
-          matcher.group("DIRECTIVE") != null ? "vns-directive" :
-          matcher.group("CMDOPEN")   != null ? "vns-command"   :
-          matcher.group("ARROW")     != null ? "vns-arrow"     :
-          matcher.group("SPEAKER")   != null ? "vns-speaker"   :
-          matcher.group("CHOICEMK")  != null ? "vns-choice"    :
-          matcher.group("TIMELINE")  != null ? "vns-command"   :
-          matcher.group("VALUEKW")   != null ? "vns-value"     :
-          matcher.group("NUMBER")    != null ? "number"        :
-          matcher.group("PUNCT")     != null ? "punct"         : null;
-      spans.add(new Span(last, matcher.start(), Collections.emptyList()));
-      spans.add(new Span(matcher.start(), matcher.end(), Collections.singletonList(styleClass)));
-      last = matcher.end();
-    }
-    spans.add(new Span(last, text.length(), Collections.emptyList()));
+    List<Span> spans = syntaxSpans(text);
     if (currentIssues != null) {
       for (Issue issue : currentIssues) {
         String cls = switch (issue.severity) {

@@ -8,32 +8,71 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide normal]
-ginger: I left a little panel in another scene. Open it, then come back here. I'll keep our place.
-ginger: Open the example below. Press Enter or Esc to return. Its source is scripts/scenes/panel.jes.
+[show ginger beside_code normal]
+[set tutorial_source scripts/tutorial/17_vns_jes_integration.vns]
+[set tutorial_excerpt open_scene]
+[set ui.dialogueFacet tutorial_code]
+ginger: A VNS script can open a JES scene, then resume at a specified label. The example below opens a panel with two keyboard handlers.
+ginger: Choose {b}Open the example scene{/b}. Press Enter there. Try it again with Esc. Both inputs should return to the review question.
+[set tutorial_source scripts/scenes/panel.jes]
+[set tutorial_excerpt input]
+ginger: These two handlers live in {b}scripts/scenes/panel.jes{/b}. Either key returns to the label supplied by the VNS command.
+ginger: Edit the panel's title in the JES file, then reopen it. The title should change while the return destination stays the same.
+ginger: There are two files and two entry points to track. The VNS command chooses a JES file and a VNS return label. The JES file owns the scene entities and the inputs that leave it.
+ginger: Trace Enter and Esc separately. Both handlers request a return, so either input should take you back to check in the originating lesson.
+[clear ui.dialogueFacet]
 > Open the example scene -> visit
+> Trace the VNS to JES return -> practice
 > Review question -> check
 > Back to topics -> return_hub
+# region open_scene
 @label visit
 [jes push scripts/scenes/panel.jes label check]
+# endregion
 @label check
-ginger: Where would you edit a JES panel?
+ginger: Where do you edit the example panel?
 > In the .jes scene that owns it. -> correct
 > In the speaker declaration. -> retry
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: VNS controls story flow. JES owns the entities in its scene. Give it another try.
+ginger: A speaker declaration names a dialogue participant. The panel is made of entities in a separate scene.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: VNS controls story flow. JES owns the entities in its scene.
+ginger: Edit the .jes scene that owns the entities. Test the visual change and the return input separately.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_17]
 [flag tutorial_done_17]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_5]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/scenes/panel.jes]
+[set tutorial_excerpt input]
+[set ui.dialogueFacet tutorial_code]
+ginger: Start at the VNS line that pushes the panel. Underline the script path and the word after label. A valid scene path can open the right panel even when the return target is wrong.
+ginger: In the JES file, find the title entity and the two input handlers. Edit its title, open the panel and return with Enter. Repeat the trip and use Esc.
+ginger: If the panel title changed but the return destination did not, that is the expected split of responsibility. To change where VNS resumes, edit the label on the push command.
+ginger: If one key returns and the other does nothing, keep the VNS target fixed and compare the two JES bindings. One successful return is evidence that the caller's target can work.
+@label practice_question
+ginger: Enter returns correctly and Esc does nothing on the same panel. Which file do you inspect first?
+> The JES file that binds the two keys. -> practice_result
+> The VNS file that names their common return target. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Both inputs share the VNS destination. A difference between the keys points first to how the scene binds them.
+[jump practice_question]
+@label practice_result
+ginger: One handler already reaches the right destination. Check the other key name and action in the scene before changing the caller.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

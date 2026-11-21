@@ -1,8 +1,10 @@
 jvn.stagePreset.useSceneBackground=true
+# region exposure
 bgExposure=-0.75
 bgTintColor=#427886
 bgTintStrength=0.32
 bgTintBlend=Multiply
+# endregion
 lights=1
 light.0.name=Key light
 light.0.layer=background

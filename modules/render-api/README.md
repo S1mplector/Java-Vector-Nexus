@@ -5,9 +5,9 @@ Platform-agnostic rendering abstraction layer for Java Vector Nexus.
 ## Overview
 
 The `render-api` module defines the core interfaces and service patterns for rendering across multiple platforms:
-- **Desktop:** JavaFX
-- **Web:** HTML5 Canvas 2D (TeaVM)
-- **Mobile:** Android Canvas, iOS CoreGraphics
+- **Desktop:** JavaFX and Swing
+- **Web:** executable Canvas 2D bootstrap (TeaVM)
+- **Mobile:** Android and iOS JVM scaffolds
 
 ## Core Interfaces
 
@@ -28,8 +28,8 @@ public interface RenderSurface {
 **Implementations:**
 - `FxRenderSurface` (fx module): JavaFX Canvas wrapper
 - `WebCanvasRenderSurface` (web-runtime): HTML5 canvas element
-- `AndroidRenderSurface` (android-runtime): Android SurfaceView
-- `IosRenderSurface` (ios-runtime): iOS UIView
+- `AndroidRenderSurface` (android-runtime): Android surface scaffold
+- `IosRenderSurface` (ios-runtime): iOS surface scaffold
 
 ### Blitter2D
 2D drawing API supporting shapes, text, images, and transformations.

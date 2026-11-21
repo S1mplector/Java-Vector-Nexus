@@ -3,6 +3,11 @@ package com.jvn.editor.ui;
 import com.jvn.core.assets.*;
 import com.jvn.core.menu.MainMenuScene;
 import com.jvn.core.vn.*;
+import com.jvn.core.vn.ui.FacetCodeExcerpt;
+import com.jvn.core.vn.ui.VnFacetSpec;
+import com.jvn.core.vn.ui.VnReactiveScreenLoader;
+import com.jvn.core.vn.text.TextEffect;
+import com.jvn.core.vn.text.TextParser;
 import com.jvn.fx.menu.MenuRenderer;
 import com.jvn.fx.menu.MenuTheme;
 import com.jvn.fx.testkit.FxToolkit;
@@ -43,7 +48,7 @@ class GuidedTutorialIntegrationTest {
         assertTrue(((CheckBox) field(wizard, "chkTutorialPack")).isSelected());
         ((CheckBox) field(wizard, "chkGitInit")).setSelected(false);
         ((javafx.scene.control.TextField) field(wizard, "txtLocation")).setText(parent.toString());
-        ((javafx.scene.control.TextField) field(wizard, "txtProjectName")).setText("GingerStudio");
+        ((javafx.scene.control.TextField) field(wizard, "txtProjectName")).setText("JVNTutorial");
         var create = (javafx.scene.control.Button) field(wizard, "btnCreate");
         assertTrue(tutorial.isSelected());
         assertEquals("Create Ginger Tutorial", create.getText());
@@ -51,7 +56,7 @@ class GuidedTutorialIntegrationTest {
         create.fire();
         assertNotNull(wizard.getCreatedProjectDir());
         project = wizard.getCreatedProjectDir().toPath();
-        assertEquals(parent.resolve("GingerStudio"), project);
+        assertEquals(parent.resolve("JVNTutorial"), project);
       } finally { wizard.close(); owner.close(); }
       return null;
     });
@@ -71,9 +76,12 @@ class GuidedTutorialIntegrationTest {
       assertEquals(1280, bitmap.getHeight(), pose);
       assertTrue(bitmap.getColorModel().hasAlpha(), pose);
     }
-    assertDoesNotThrow(() -> JesLoader.load(Files.readString(project.resolve("scripts/scenes/panel.jes"))));
+    for (String jes : List.of("panel", "collider")) {
+      assertDoesNotThrow(() -> JesLoader.load(Files.readString(project.resolve("scripts/scenes/" + jes + ".jes"))));
+    }
     AssetCatalog.setDefaultManager(new FilesystemAssetManager(project));
     try {
+      verifySourcePanels();
       VnScenarioLoader loader = new VnScenarioLoader();
       String map = Files.readString(project.resolve("config/story/story.storymap"));
       var manifest = new Properties();
@@ -101,6 +109,29 @@ class GuidedTutorialIntegrationTest {
           goToChoice(scene, "check", lesson.path());
           assertTrue(scene.getState().getCurrentNode().getChoices().stream()
               .anyMatch(c -> "return_hub".equals(c.getTargetLabel())), "Review must be optional: " + lesson.path());
+          pick(scene, "practice");
+          if (!still && lesson.path().contains("07_variables") && System.getenv("JVN_TUTORIAL_QA_DIR") != null) {
+            capture(scene, "practice-threshold");
+            var screenshot = ImageIO.read(Path.of(System.getenv("JVN_TUTORIAL_QA_DIR"), "practice-threshold.png").toFile());
+            // The code body contains graphite editor colors for commands, numbers and speakers.
+            var pixels = new HashSet<Integer>();
+            for (int y = 55; y < 445; y++) {
+              for (int x = 475; x < 1220; x++) pixels.add(screenshot.getRGB(x, y) & 0xffffff);
+            }
+            assertTrue(pixels.containsAll(List.of(0xb5d3ec, 0xf5ab91, 0xffcc77)), "Syntax colors in the rendered lesson");
+          }
+          goToChoice(scene, "practice_hint", lesson.path());
+          pick(scene, "practice_hint");
+          goToChoice(scene, "practice_result", lesson.path());
+          pick(scene, "practice_result");
+          goToChoice(scene, "check", lesson.path());
+          assertNull(scene.getState().getVariable("ui.dialogueFacet"), lesson.path());
+          if (lesson.path().contains("07_variables")) {
+            assertEquals(2, ((Number) scene.getState().getVariable("lab_score")).intValue());
+          }
+          if (lesson.path().contains("11_subroutines")) {
+            assertEquals(11, ((Number) scene.getState().getVariable("lab_calls")).intValue());
+          }
           pick(scene, "check");
           goToChoice(scene, "retry", lesson.path());
           pick(scene, "retry");
@@ -122,6 +153,22 @@ class GuidedTutorialIntegrationTest {
       assertEquals(true, savedBoard.getState().getVariables().get("tutorial_still"));
       assertEquals(7, savedBoard.getState().getVariables().get("tutorial_count"));
       for (boolean still : List.of(false, true)) {
+        var dialogue = open(loader, "tutorial/01_dialogue_basics.vns", Map.of("tutorial_still", still));
+        boolean foundHighlight = false;
+        while (dialogue.getState().getCurrentNode().getType() == VnNodeType.DIALOGUE) {
+          var line = dialogue.getState().getCurrentNode().getDialogue();
+          for (var span : TextParser.parse(line.getText())) {
+            if (!span.hasColor()) continue;
+            assertEquals(still ? TextEffect.BOLD : TextEffect.WAVE, span.getEffect());
+            if (System.getenv("JVN_TUTORIAL_QA_DIR") != null) {
+              dialogue.update(800);
+              capture(dialogue, still ? "highlight-still" : "highlight-wave");
+            }
+            foundHighlight = true;
+          }
+          dialogue.advance();
+        }
+        assertTrue(foundHighlight, "The highlighted example must be readable in both motion modes");
         var movement = open(loader, "tutorial/08_character_movement.vns", Map.of("tutorial_still", still));
         movement.update(800);
         var state = movement.getState();
@@ -152,7 +199,8 @@ class GuidedTutorialIntegrationTest {
         }
       }
       var hub = open(loader, "story/tutorial_hub.vns", Map.of());
-      assertEquals(VnNodeType.DIALOGUE, hub.getState().getCurrentNode().getType());
+      assertEquals(VnNodeType.CHOICE, hub.getState().getCurrentNode().getType());
+      assertNull(hub.getState().getCharacterPosition("ginger"));
       goToChoice(hub, "goodbye", "greeting");
       assertEquals(8, hub.getState().getCurrentNode().getChoices().size());
       hub.update(700);
@@ -178,7 +226,9 @@ class GuidedTutorialIntegrationTest {
       FxToolkit.runFx(() -> {
         var menu = new MainMenuScene(null, new VnSettings(), null, "story/tutorial_hub.vns", null);
         assertEquals("JVN Tutorial", menu.getDisplayTitle());
-        assertEquals("30 lessons with Ginger", menu.getDisplaySubtitle());
+        assertEquals("", menu.getDisplaySubtitle());
+        assertEquals("", menu.getDisplayHints());
+        assertNull(MenuTheme.fromAssets().getSecondaryMenuPortrait());
         assertEquals("Start tutorial", menu.getDisplayItems()[0]);
         menu.setSelected(0);
         Canvas canvas = new Canvas(1280, 720);
@@ -246,6 +296,34 @@ class GuidedTutorialIntegrationTest {
     }
   }
 
+  private void verifySourcePanels() throws Exception {
+    var assets = new AssetCatalog();
+    var result = VnReactiveScreenLoader.load(assets, "tutorial_code");
+    assertTrue(result.diagnostics().isEmpty());
+    var node = result.screen().facet().nodes().getFirst();
+    assertEquals(VnFacetSpec.Type.CODE, node.type());
+    assertEquals("${tutorial_source}", node.source());
+    assertEquals("${tutorial_excerpt}", node.region());
+    var languages = new HashSet<com.jvn.core.script.SyntaxRules>();
+    for (var lesson : TutorialCatalog.LESSONS) {
+      String source = null;
+      for (String line : Files.readAllLines(project.resolve(lesson.path()))) {
+        if (line.startsWith("[set tutorial_source ")) source = line.substring(21, line.length() - 1);
+        if (!line.startsWith("[set tutorial_excerpt ")) continue;
+        String region = line.substring(22, line.length() - 1);
+        var excerpt = FacetCodeExcerpt.load(assets, source, region);
+        assertFalse(excerpt.lines().isEmpty(), lesson.path() + " " + region);
+        var file = Files.readAllLines(project.resolve(source));
+        assertEquals(file.subList(excerpt.firstLine() - 1, excerpt.firstLine() - 1 + excerpt.lines().size()),
+            excerpt.lines(), lesson.path());
+        languages.add(excerpt.syntax());
+      }
+    }
+    assertEquals(Set.of(com.jvn.core.script.SyntaxRules.values()), languages);
+    var binding = FacetCodeExcerpt.load(assets, "config/facets/tutorial_card.facet", "bar");
+    assertTrue(binding.lines().contains("node.energy.value=${example_progress}"));
+  }
+
   private static VnScene open(VnScenarioLoader loader, String path, Map<String, Object> variables) throws Exception {
     var scene = new VnScene(loader.load(path));
     scene.getState().setSourceScriptName(path);
@@ -261,7 +339,7 @@ class GuidedTutorialIntegrationTest {
       assertNotNull(node, description + " ended before " + target);
       if (node.getType() == VnNodeType.CHOICE) {
         if (node.getChoices().stream().anyMatch(c -> target.equals(c.getTargetLabel()))) return;
-        pick(scene, node.getChoices().stream().anyMatch(c -> "read_note".equals(c.getTargetLabel())) ? "read_note" : "check");
+        pick(scene, node.getChoices().stream().anyMatch(c -> "branch_a".equals(c.getTargetLabel())) ? "branch_a" : "check");
       } else if (node.getType() == VnNodeType.DIALOGUE) {
         scene.advance();
       } else {

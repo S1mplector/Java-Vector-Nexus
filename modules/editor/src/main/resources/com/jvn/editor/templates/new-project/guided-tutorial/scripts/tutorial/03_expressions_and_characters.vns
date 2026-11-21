@@ -8,34 +8,79 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide thoughtful]
-ginger: Imagine I just read a note that was meant for somebody else. How would you read this next line?
-[show ginger guide embarrassed]
-ginger: Oh!
-[show ginger guide annoyed]
-ginger: Oh!
-[show ginger guide thoughtful]
-ginger: Same word. A rather different reply, isn't it? Replace embarrassed with confused in the second show command. Run the same line again.
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/03_expressions_and_characters.vns]
+[set tutorial_excerpt expressions]
+[set ui.dialogueFacet tutorial_code]
+ginger: The next two lines have identical text. Look at the sprite each time you advance. The show commands change only its expression.
+# region expressions
+[show ginger beside_code embarrassed]
+ginger: Expression sample.
+[show ginger beside_code annoyed]
+ginger: Expression sample.
+# endregion
+ginger: The first expression sample used {b}embarrassed{/b}. The second used {b}annoyed{/b}. Both images belong to the character ID ginger.
+[show ginger beside_code confused]
+ginger: Expression sample.
+[set tutorial_source scripts/definitions/characters.vns]
+[set tutorial_excerpt poses]
+ginger: This time the script selected {b}confused{/b}. Open scripts/definitions/characters.vns to see which PNG that name loads.
+ginger: Try replacing confused with normal in the last show command. Leave the ID and position alone so you can compare the poses in place.
+ginger: A show command answers three questions in order. Which character owns the art? Where should the engine draw it? Which expression should it take from that character's declarations?
+ginger: Compare the two identical “Expression sample” lines. Look at the eyes and mouth on each advance. A different expression can change the drawing without changing the speaker name or stage position.
+[clear ui.dialogueFacet]
+> Trace a pose to its PNG -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: How do you change my reaction in place?
+ginger: How do you change the expression in place?
 > Show ginger in the same slot with another expression. -> correct
 > Declare a new background named curious. -> retry
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: The slot stays occupied while its expression changes. Give it another try.
+ginger: A background declaration identifies a backdrop. Expression names are declared against a character.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: The slot stays occupied while its expression changes.
+ginger: Use the same character and position in the next show command, then supply the new expression.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_03]
 [flag tutorial_done_03]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_2]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/definitions/characters.vns]
+[set tutorial_excerpt poses]
+[set ui.dialogueFacet tutorial_code]
+ginger: Open the character definitions and find the declaration for confused. Read its character ID, expression key and image path. Then find the command in this lesson that requests that same key.
+ginger: Temporarily point confused at the normal PNG. Leave the show command alone. The running line still asks for confused, but the picture should now match normal.
+ginger: Restore the original path. This time change the show command to normal. The visible result may look the same as the previous test, but the scope of the edit is different.
+ginger: Find every use of confused before changing its declaration in a larger project. An edit at one call site changes one use. An edit to the shared mapping can change every use.
+@label practice_question
+ginger: One line needs the normal pose. Other uses of confused should keep their artwork. Where do you edit?
+> The expression argument on that line. -> practice_result
+> The shared confused image path. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Changing the path changes the meaning of confused for every caller. Locate the one command whose output should differ.
+[jump practice_question]
+@label practice_result
+ginger: The local command can request normal directly. Replay both the edited line and a second use of confused to check the scope.
+ginger: Advance twice and compare the actual expressions against the keys in the definitions.
+[show ginger beside_code confused]
+ginger: Confused.
+[show ginger beside_code normal]
+ginger: Normal. Both commands used the same position. If you remapped confused to the normal PNG, the two images should match.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

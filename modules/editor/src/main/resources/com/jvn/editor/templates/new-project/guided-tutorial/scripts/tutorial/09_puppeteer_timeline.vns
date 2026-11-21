@@ -8,37 +8,74 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide normal]
-ginger: Watch my feet and my shoulders. One mark on the timeline can change where I stand and how close I look.
+[show ginger beside_code normal]
+[set tutorial_source scripts/tutorial/09_puppeteer_timeline.vns]
+[set tutorial_excerpt timeline]
+[set ui.dialogueFacet tutorial_code]
+ginger: A Puppeteer timeline can change position and scale together. Watch the sprite during the next block, then open that block in Puppeteer.
 [if !tutorial_still]
+# region timeline
 timeline {
   parallel {
     move "ginger" { x:96 y:-12 dur:640 easing:ease_out }
     scale "ginger" { sx:1.08 sy:1.08 dur:640 easing:ease_out }
   }
 }
+# endregion
 [endif]
-ginger: Open this timeline in Puppeteer. Change the final X position or duration, apply it, and replay.
+ginger: The {b}parallel{/b} block starts both tracks together. The move changes X and Y. The scale ends at 1.08 on both axes. Both durations are 640 milliseconds.
+ginger: Set sx and sy to 1.0 and replay. The sprite should still move by the same offset, with no change in apparent size.
+ginger: Restore 1.08 and shorten only the scale duration. The scale now finishes while the position is still changing.
+ginger: Read the timeline from its braces inward. The parallel block contains two tracks on ginger. One changes position, the other scale. Both begin when the block begins.
+ginger: With two 640 ms tracks, their shared interval lasts about 640 ms. Adding the durations would describe two sequential tracks, which would give a different result.
+[clear ui.dialogueFacet]
+> Read parallel tracks -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: Which target moves this character?
+ginger: Which target do these two tracks transform?
 > ginger -> correct
 > bg_current -> retry
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: Use the character ID to animate Ginger. Give it another try.
+ginger: The target is the ID in quotes after move and scale. Both tracks name the same sprite.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: Use the character ID to animate Ginger.
+ginger: Both tracks target ginger. Each track can have its own duration and easing.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_09]
 [flag tutorial_done_09]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_3]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/09_puppeteer_timeline.vns]
+[set tutorial_excerpt timeline]
+[set ui.dialogueFacet tutorial_code]
+ginger: Shorten only scale to 320 ms. At 320 ms the scale has reached its target while the move still has about half its duration left. The easing curve determines where the moving sprite is at that time.
+ginger: Change the scale target to 1.0 on both axes. Leave its duration and the move unchanged. This gives you a position-only visual comparison without rearranging the timeline.
+ginger: Next change only sx. Watch a feature with a familiar shape, such as an eye. Unequal horizontal and vertical scale changes its proportions.
+ginger: Return both axes to 1.08. Compare the final frame with your original and the intermediate frames with the shortened-scale version.
+@label practice_question
+ginger: The move lasts 640 ms and the parallel scale lasts 320 ms. When do both tracks finish?
+> At about 640 ms. -> practice_result
+> At about 960 ms. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: 960 ms adds the durations. Follow the braces and check whether the second track waits for the first to finish.
+[jump practice_question]
+@label practice_result
+ginger: Both tracks start together. The longer move determines when the pair has finished. At 320 ms there is still movement to see.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

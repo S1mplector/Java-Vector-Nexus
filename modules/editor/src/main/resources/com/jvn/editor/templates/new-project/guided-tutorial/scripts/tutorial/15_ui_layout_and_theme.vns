@@ -8,29 +8,65 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide thoughtful]
-ginger: See the space between my words and the edge of this box? Try making that margin a little wider.
-ginger: Increase dialogueTextHorizontalPadding in config/ui/dialogue.layout. Compare two window sizes.
+[show ginger beside_code thoughtful]
+[set tutorial_source config/ui/dialogue.layout]
+[set tutorial_excerpt padding]
+[set ui.dialogueFacet tutorial_code]
+ginger: To check dialogue padding, compare a short string and a long string with the same font and window size.
+narrator: {i}Short sample.{/i}
+narrator: {i}Long sample. This sentence gives you enough text to see where a line wraps when the available width inside the dialogue box changes.{/i}
+ginger: Open {b}config/ui/dialogue.layout{/b}. Increase dialogueTextHorizontalPadding, replay the long sample and compare the first and last words on each line.
+ginger: Repeat at a narrower window size. Check both the space at the left edge and whether the final line still fits vertically.
+ginger: The box width is the outer allocation. Horizontal padding and the right inset reduce the span available for glyphs. A short sample can fit both before and after an edit, hiding a real change.
+ginger: Use the long sample to find a word near the end of a line. Replay at the same window size and track that word. It gives you a precise wrapping checkpoint.
+[clear ui.dialogueFacet]
+> Diagnose a wrapping change -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: Which setting changes text inset inside the panel?
+ginger: Which setting changes the horizontal inset of the dialogue text?
 > dialogueTextHorizontalPadding -> correct
 > characterBaselineY -> retry
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: Padding changes the inner margin. Character framing is independent. Give it another try.
+ginger: The character baseline controls the sprite's vertical placement. Look for the padding field in the dialogue layout.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: Padding changes the inner margin. Character framing is independent.
+ginger: Edit {b}dialogueTextHorizontalPadding{/b} to move the text away from the edge. The box itself stays in place.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_15]
 [flag tutorial_done_15]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_4]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source config/ui/dialogue.layout]
+[set tutorial_excerpt padding]
+[set ui.dialogueFacet tutorial_code]
+ginger: Record the first and last word on every line of the long sample. Increase the horizontal padding, leave the font alone, and compare the new breaks with your record.
+ginger: Now restore padding and enlarge the font. Both edits can produce an extra line, but the letters themselves grow only in the font test.
+ginger: If the last line disappears, separate horizontal and vertical causes. Reduce the string temporarily. Then check the text box height, top padding and bottom clearance with the longer version back in place.
+ginger: Finish with three cases at two widths: a short response, this long response and a long translation. Inspect both the left edge and the lowest baseline.
+@label practice_question
+ginger: After editing padding the long sample wraps earlier, but the letters look the same size. What changed?
+> The width available to the text. -> practice_result
+> The glyph size. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Compare the height of the same capital letter in each capture. Equal glyph heights point you toward the space allocated around the text.
+[jump practice_question]
+@label practice_result
+ginger: The inset reduced usable line width. Track the same word across the two versions to verify the new break.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

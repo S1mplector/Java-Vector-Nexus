@@ -16,38 +16,72 @@ final class AssetPathHeuristics {
   private static final Set<String> IMAGE_EXTENSIONS = Set.of(
       "png", "jpg", "jpeg", "gif", "bmp", "webp", "svg", "tif", "tiff");
   private static final Set<String> AUDIO_EXTENSIONS = Set.of(
-      "ogg", "wav", "mp3", "flac", "aac", "m4a");
+      "ogg", "wav", "mp3", "flac", "aac", "m4a", "aif", "aiff", "opus");
   private static final Set<String> VIDEO_EXTENSIONS = Set.of(
       "mp4", "webm", "mov", "avi", "mkv");
-  private static final Set<String> FONT_EXTENSIONS = Set.of("ttf", "otf", "woff", "woff2");
+  private static final Set<String> FONT_EXTENSIONS = Set.of("ttf", "otf", "ttc", "woff", "woff2");
   private static final Set<String> DATA_EXTENSIONS = Set.of(
       "json", "yaml", "yml", "toml", "xml", "properties", "csv", "tsv");
 
   private AssetPathHeuristics() {}
 
   static boolean isSupportedAsset(Path path) {
-    if (path == null || !Files.isRegularFile(path)) return false;
-    String extension = extension(path.getFileName().toString());
-    return IMAGE_EXTENSIONS.contains(extension)
-        || AUDIO_EXTENSIONS.contains(extension)
-        || VIDEO_EXTENSIONS.contains(extension)
-        || FONT_EXTENSIONS.contains(extension)
-        || DATA_EXTENSIONS.contains(extension);
+    return path != null && Files.isRegularFile(path) && !"File".equals(mediaType(path.getFileName().toString()));
+  }
+
+  static final List<String> ASSET_ROOTS = List.of("assets", "game/images", "game/audio", "game/fonts", "game/video", "game/ui");
+
+  static String mediaType(String filename) {
+    String ext = extension(filename);
+    if (IMAGE_EXTENSIONS.contains(ext) || Set.of("ico", "icns").contains(ext)) return "Image";
+    if (AUDIO_EXTENSIONS.contains(ext)) return "Audio";
+    if (VIDEO_EXTENSIONS.contains(ext)) return "Video";
+    if (FONT_EXTENSIONS.contains(ext)) return "Font";
+    if (DATA_EXTENSIONS.contains(ext)) return "Data";
+    return "File";
+  }
+
+  static String nameTokens(String value) {
+    return sanitizeId(value.replaceAll("([a-z0-9])([A-Z])", "$1_$2"));
+  }
+
+  private static final Set<String> LAYER_PARTS = Set.of("layer", "layers", "eyes", "eye", "mouth",
+      "brow", "brows", "eyebrows", "snoot", "snoots", "hair", "body", "bodies", "outfit", "outfits", "additions",
+      "arm", "arms", "leg", "legs", "hand", "hands", "tail", "head", "torso", "accessories");
+
+  static boolean isLayer(String path) {
+    for (String part : pathParts(path)) {
+      for (String token : nameTokens(stem(part)).split("_")) if (LAYER_PARTS.contains(token)) return true;
+    }
+    return false;
+  }
+
+  static boolean characterArt(AssetKind kind) {
+    return kind == AssetKind.CHARACTER_LAYER || kind == AssetKind.CHARACTER_SPRITE;
   }
 
   static AssetKind kindFromPath(Path path) {
     if (path == null) return AssetKind.UNKNOWN;
     String normalized = path.toString().replace('\\', '/').toLowerCase(Locale.ROOT);
     String ext = extension(path.getFileName() == null ? "" : path.getFileName().toString());
-    if (AUDIO_EXTENSIONS.contains(ext)) return AssetKind.AUDIO;
+    String name = nameTokens(stem(path.getFileName().toString()));
+    if (AUDIO_EXTENSIONS.contains(ext)) {
+      if (containsSegment(normalized, "voices") || containsSegment(normalized, "voice")
+          || name.startsWith("voice_") || name.startsWith("vo_")) return AssetKind.VOICE;
+      if (containsSegment(normalized, "music") || containsSegment(normalized, "bgm")
+          || name.startsWith("bgm_") || name.startsWith("music_")) return AssetKind.MUSIC;
+      if (containsSegment(normalized, "sfx") || containsSegment(normalized, "sounds")
+          || name.startsWith("sfx_")) return AssetKind.SOUND_EFFECT;
+      return AssetKind.AUDIO;
+    }
+    if (Set.of("ico", "icns").contains(ext) || normalized.endsWith("/assets/icon.png")
+        || normalized.equals("assets/icon.png")) return AssetKind.PROJECT_ICON;
     if (VIDEO_EXTENSIONS.contains(ext)) return AssetKind.VIDEO;
     if (FONT_EXTENSIONS.contains(ext)) return AssetKind.FONT;
     if (DATA_EXTENSIONS.contains(ext)) return AssetKind.DATA;
     if (!IMAGE_EXTENSIONS.contains(ext)) return AssetKind.UNKNOWN;
     if (containsSegment(normalized, "background") || containsSegment(normalized, "backgrounds")
         || containsSegment(normalized, "bg")) return AssetKind.BACKGROUND;
-    if (containsSegment(normalized, "characters") || containsSegment(normalized, "character")
-        || containsSegment(normalized, "lunch_table")) return AssetKind.CHARACTER_LAYER;
     if (containsSegment(normalized, "panels") || containsSegment(normalized, "panel")
         || normalized.contains("comic")) return AssetKind.PANEL;
     if (containsSegment(normalized, "ui") || containsSegment(normalized, "phone")
@@ -68,25 +102,42 @@ final class AssetPathHeuristics {
     if (containsSegment(normalized, "props") || containsSegment(normalized, "prop")
         || containsSegment(normalized, "miscs") || containsSegment(normalized, "misc")
         || containsSegment(normalized, "items")) return AssetKind.PROP;
-    String fileStem = sanitizeId(stem(path.getFileName() == null ? "" : path.getFileName().toString()));
+    String fileStem = name;
     if (fileStem.matches("(?:bg|background)(?:_.*)?")
         || fileStem.matches(".*_(?:bg|background)")) return AssetKind.BACKGROUND;
     if (fileStem.matches("(?:panel|comic)(?:_.*)?")) return AssetKind.PANEL;
     if (fileStem.matches(".*(?:button|icon|menu|textbox|text_box|hud).*")
         || fileStem.startsWith("ui_")) return AssetKind.UI;
     if (fileStem.matches("(?:fx|effect|particle)(?:_.*)?")) return AssetKind.EFFECT;
-    if (containsSegment(normalized, "sprites") || containsSegment(normalized, "portraits")) {
-      return AssetKind.CHARACTER_SPRITE;
+    if (containsSegment(normalized, "lunch_table")) return AssetKind.CHARACTER_LAYER;
+    if (containsSegment(normalized, "sprites") || containsSegment(normalized, "portraits")
+        || containsSegment(normalized, "characters") || containsSegment(normalized, "character")) {
+      return isLayer(path.toString()) ? AssetKind.CHARACTER_LAYER : AssetKind.CHARACTER_SPRITE;
     }
     return AssetKind.UNKNOWN;
   }
 
+  static String characterFolder(String path) {
+    List<String> parts = pathParts(path);
+    for (int i = 0; i < parts.size() - 1; i++) {
+      if (!CHARACTER_ROOTS.contains(parts.get(i).toLowerCase(Locale.ROOT))) continue;
+      for (int j = i + 1; j < parts.size() - 1; j++) {
+        String id = sanitizeId(parts.get(j));
+        if (id.isEmpty() || CHARACTER_ROOTS.contains(id) || LAYER_PARTS.contains(id)
+            || Set.of("imported", "poses", "expressions", "images").contains(id)) continue;
+        return id;
+      }
+    }
+    return "";
+  }
+
+  private static final Set<String> CHARACTER_ROOTS = Set.of("characters", "character", "portraits",
+      "sprites", "voices", "voice");
+
   static String inferOwner(String relativePath, AssetKind kind) {
     List<String> parts = pathParts(relativePath);
-    int characters = indexOf(parts, "characters", "character");
-    if (characters >= 0 && characters + 1 < parts.size() - 1) {
-      return sanitizeId(parts.get(characters + 1));
-    }
+    String folderOwner = characterFolder(relativePath);
+    if (kind.acceptsOwner() && !folderOwner.isBlank() && (characterArt(kind) || kind == AssetKind.VOICE)) return folderOwner;
     int lunch = indexOf(parts, "lunch_table");
     if (lunch >= 0 && lunch + 1 < parts.size() - 1) {
       return sanitizeId(parts.get(lunch + 1) + "_lunch");
@@ -101,7 +152,7 @@ final class AssetPathHeuristics {
       return inferEntityId(relativePath, kind);
     }
     if (kind == AssetKind.CHARACTER_SPRITE || kind == AssetKind.CHARACTER_LAYER) {
-      return sanitizeId(stem(Path.of(relativePath).getFileName().toString()));
+      return nameTokens(stem(Path.of(relativePath).getFileName().toString()));
     }
     return "";
   }
@@ -122,7 +173,7 @@ final class AssetPathHeuristics {
   static String inferLabel(String relativePath, AssetKind kind, String owner) {
     Path path = Path.of(relativePath);
     String originalStem = stem(path.getFileName().toString());
-    String normalized = sanitizeId(originalStem);
+    String normalized = nameTokens(originalStem);
     String ownerNormalized = sanitizeId(owner);
     normalized = stripApproximatePrefix(normalized, ownerNormalized);
     List<String> parts = pathParts(relativePath);
@@ -198,6 +249,10 @@ final class AssetPathHeuristics {
       case UI -> "ui";
       case EFFECT -> "effects";
       case AUDIO -> "audio";
+      case VOICE -> owner == null || owner.isBlank() ? "audio/voice" : "audio/voice/" + sanitizeId(owner);
+      case MUSIC -> "audio/music";
+      case SOUND_EFFECT -> "audio/sfx";
+      case PROJECT_ICON -> "ui";
       case VIDEO -> "video";
       case FONT -> "fonts";
       case DATA -> "data";
@@ -280,7 +335,7 @@ final class AssetPathHeuristics {
     return ("/" + path + "/").contains("/" + segment.toLowerCase(Locale.ROOT) + "/");
   }
 
-  private static String stem(String fileName) {
+  static String stem(String fileName) {
     int dot = fileName == null ? -1 : fileName.lastIndexOf('.');
     return dot > 0 ? fileName.substring(0, dot) : fileName == null ? "" : fileName;
   }

@@ -8,34 +8,90 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide thoughtful]
-ginger: Let's make a progress bar listen to a number. When you change example_progress, watch what happens to its fill.
-ginger: Open the example below. Then change example_progress in the script and open it again.
-> Open the sample panel -> checklist
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/21_reactive_ui_and_facets.vns]
+[set tutorial_excerpt quarter]
+[set ui.dialogueFacet tutorial_code]
+ginger: This panel binds a progress bar and a button to {b}example_progress{/b}. Try the two values below and compare the results.
+[set tutorial_source config/facets/tutorial_card.facet]
+[set tutorial_excerpt threshold]
+ginger: At 0.25, the bar is one quarter full and Continue is disabled. Use Close to return. At 0.75, the bar is three quarters full and Continue is enabled.
+[set tutorial_excerpt bar]
+ginger: Open config/facets/tutorial_card.facet. The bar reads the fraction directly. The button checks whether it is at least 0.50. Try testing exactly 0.50.
+ginger: The bar consumes a fraction. At 0.25 it uses a quarter of its width. The button evaluates a comparison instead, so it has two possible states even though the bar can show many widths.
+ginger: Three inputs distinguish the boundary precisely. Try 0.25, 0.50 and 0.75. Look at the fill and try Continue each time. Close gives you a way out at every value.
+@label panel_lab
+[clear ui.dialogueFacet]
+> Test 25% progress -> quarter
+> Test 50% progress -> half
+> Test 75% progress -> checklist
+> Test the button at exactly half -> practice
 > Review question -> check
 > Back to topics -> return_hub
+@label quarter
+# region quarter
+[set example_name Progress]
+[set example_progress 0.25]
+[screen call tutorial_card]
+# endregion
+[jump panel_lab]
 @label checklist
 [set example_name Progress]
 [set example_progress 0.75]
 [screen call tutorial_card]
+[jump panel_lab]
 @label check
-ginger: What should drive a progress bar?
+ginger: What should drive the progress bar?
 > The state value that changes. -> correct
 > A copied screenshot of the readout. -> retry
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: A binding reads the current value whenever the UI updates. Give it another try.
+ginger: An image shows one fixed value. The example needs to respond whenever example_progress changes.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: A binding reads the current value whenever the UI updates.
+ginger: Bind the bar to the current value. Read the same variable in the button condition so both controls agree.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_21]
 [flag tutorial_done_21]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_4]
+[end]
+
+@label half
+[set example_name Progress]
+[set example_progress 0.50]
+[screen call tutorial_card]
+[jump panel_lab]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source config/facets/tutorial_card.facet]
+[set tutorial_excerpt bar]
+[set ui.dialogueFacet tutorial_code]
+ginger: Read the line that binds the bar. The dollar sign and braces refer to the live variable. They appear literally in the source panel while the actual bar reads their current value.
+[set tutorial_excerpt threshold]
+ginger: Read the button rule separately. Greater-than-or-equal includes the exact threshold. Switch the rule to greater-than and run the half-full case again.
+ginger: At 0.50 the bar should look identical before and after the edit. Only the enabled state changes. That is how to tell a condition bug from a drawing bug.
+ginger: If neither control responds, inspect the variable name where VNS writes it and where each Facet reads it. If only one control fails, start with that node or button's binding.
+@label practice_question
+ginger: With a threshold of >= 0.50, which result should you get at exactly half?
+> A half-full bar and an enabled Continue button. -> practice_result
+> A half-full bar and a disabled Continue button. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: 0.50 equals the threshold. The extra equals sign changes this one boundary case even though the bar geometry is identical.
+[jump practice_question]
+@label practice_result
+ginger: Equality passes. Use Test 50% progress to check the boundary, then try the same input with a strict greater-than comparison.
+[clear ui.dialogueFacet]
+> Test the progress panel -> panel_lab
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

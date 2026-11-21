@@ -68,7 +68,7 @@ public class RendererRegistry {
 RendererRegistry registry = new RendererRegistry();
 RendererFactory factory = registry.get("JavaFX");
 if (factory != null) {
-  Renderer renderer = factory.createRenderer(config);
+  Blitter2D blitter = factory.createBlitter2D(surface);
 }
 ```
 
@@ -83,7 +83,7 @@ if (factory != null) {
 
 **Location:** `modules/render-api/src/main/java/com/jvn/render/RendererFactory.java`
 
-Abstract factory for creating platform-specific Renderer instances.
+Creates a backend-specific blitter for a compatible surface.
 
 Factories also expose `getCapabilities()` so launchers and project validators can
 negotiate optional features before a renderer is created. The same immutable
@@ -132,7 +132,7 @@ public interface RendererFactory {
 **Implementation Examples:**
 - `modules/fx/...` — supported JavaFX desktop backend
 - `modules/swing/...` — supported secondary Swing desktop backend
-- `modules/web-runtime/...` — Canvas-shaped scaffold; no web build
+- `modules/web-runtime/...` — TeaVM/Canvas bootstrap built with `:web-runtime:webDist`
 - `modules/android-runtime/...` — Android-shaped scaffold; no Android build
 - `modules/ios-runtime/...` — CoreGraphics-shaped scaffold; no iOS build
 
@@ -158,8 +158,8 @@ public interface RenderSurface {
 ```
 
 **Platform Examples:**
-- **Web/Android/iOS:** corresponding surface classes exist as scaffolds, but
-  their native target calls and deployment toolchains are not implemented
+- **Browser:** a Canvas 2D surface drives the TeaVM bootstrap.
+- **Android/iOS:** surface classes describe planned integrations.
 
 ---
 
@@ -167,196 +167,40 @@ public interface RenderSurface {
 
 **Location:** `modules/render-api/src/main/java/com/jvn/render/InputSource.java`
 
-Provides raw input events from keyboard, mouse, gamepad.
+The host can implement `onKeyEvent(int, char, boolean)`, `onMouseEvent(double, double, int, boolean)`, `onTouchEvent(double[][])` and `onScrollEvent(double, double, double, double)`. These are default callbacks. Override the events the host handles.
+
+## How rendering flows
+
+The host creates a surface for its backend. `RendererRegistry` discovers `RendererFactory` providers on the runtime classpath. A factory creates a `Blitter2D` for a compatible surface. The scene draws through that blitter and the host presents the frame.
 
 ```java
-public interface InputSource {
-  void addKeyListener(KeyListener listener);
-  void addMouseListener(MouseListener listener);
-  void addGamepadListener(GamepadListener listener);
-  
-  void removeKeyListener(KeyListener listener);
-  // ... remove methods for other listeners
+import com.jvn.core.scene2d.Blitter2D;
+import com.jvn.render.RenderSurface;
+import com.jvn.render.RendererFactory;
+import com.jvn.render.RendererRegistry;
+
+class SceneOutput {
+  static Blitter2D attach(RenderSurface surface, String backend) {
+    RendererRegistry registry = new RendererRegistry();
+    RendererFactory factory = registry.get(backend);
+    if (factory == null) {
+      throw new IllegalStateException("Available renderers: " + registry.getAvailableRenderers());
+    }
+    return factory.createBlitter2D(surface);
+  }
 }
 ```
 
-Gets set on RenderSurface; the runtime's Input system polls it for events.
+For example, provide an `FxRenderSurface` when selecting `"JavaFX"`. The JavaFX factory uses its graphics context and initial viewport size. Ask the factory for `getCapabilities()` before selecting optional rendering features. The order of discovered providers is unsuitable as a persisted backend preference. Store the backend name and check that it is available on startup.
 
----
+## Add a backend
 
-## How Rendering Flows
+1. Implement `RenderSurface` for the drawing target and `Blitter2D` for its drawing operations.
+2. Implement `RendererFactory`. Give the backend a distinct name, report supported capabilities and validate the surface type when creating a blitter.
+3. Add the factory’s fully qualified class name to `META-INF/services/com.jvn.render.RendererFactory` in the backend module.
+4. Put that module on the host’s runtime classpath. Verify that `getAvailableRenderers()` lists its name and that a frame rendered through its surface is visible.
 
-### 1. Backend Selection
-
-At application startup:
-```java
-RendererRegistry registry = new RendererRegistry();
-RendererFactory factory = registry.get(selectedBackend);
-RenderConfig config = new RenderConfig(800, 600, title);
-Renderer renderer = factory.createRenderer(config);
-RenderSurface surface = renderer.getSurface();
-```
-
-### 2. Frame Loop
-
-Main thread per-frame:
-```java
-// Update scene
-scene.update(deltaMs);
-
-// Get drawing interface for this frame
-Blitter2D blitter = renderer.getBlitter2D();
-
-// Scene renders itself
-scene.render(blitter, camera);
-
-// Wait for input
-InputSource input = surface.getInputSource();
-// (engine processes input events)
-
-// Present to screen
-surface.present();
-
-// Request next frame
-surface.requestFrame();
-```
-
-### 3. Drawing Primitives
-
-The scene doesn't care which backend it's using; it just calls Blitter2D methods:
-
-```java
-// Core always uses Blitter2D interface
-blitter.drawRect(x, y, w, h, color);      // rectangle
-blitter.drawCircle(cx, cy, r, color);     // circle
-blitter.drawImage(image, x, y, w, h);     // sprite
-blitter.drawText(text, x, y, font, size); // text
-blitter.pushTransform();                   // save state
-blitter.translate(x, y);
-blitter.rotate(angleDeg);
-blitter.scale(sx, sy);
-// ... draw child entities ...
-blitter.popTransform();                    // restore
-```
-
-Supported desktop backends map these calls to JavaFX or AWT. The mobile/web
-modules contain proposed mappings with unresolved platform stubs.
-
----
-
-## Multi-Platform Deployment
-
-### Adding a New Platform
-
-To support a new platform (e.g., Switch, PS5):
-
-1. **Create a new platform module:**
-   ```
-   modules/switch-runtime/
-   ├── src/main/java/com/jvn/switch/
-   │   ├── SwitchRendererFactory.java (implements RendererFactory)
-   │   ├── SwitchRenderer.java (implements Renderer)
-   │   ├── SwitchRenderSurface.java (implements RenderSurface)
-   │   └── ...
-   └── src/main/resources/META-INF/services/
-       └── com.jvn.render.RendererFactory
-   ```
-
-2. **Implement RendererFactory:**
-   ```java
-   public class SwitchRendererFactory implements RendererFactory {
-     @Override public String getRendererName() { return "Switch"; }
-     @Override public Renderer createRenderer(RenderConfig cfg) { ... }
-   }
-   ```
-
-3. **Register with ServiceLoader:**
-   Create file `src/main/resources/META-INF/services/com.jvn.render.RendererFactory`:
-   ```
-   com.jvn.switch.SwitchRendererFactory
-   ```
-
-4. **Add to build:**
-   Include the module in `settings.gradle.kts` and runtime classpath.
-
-5. **Use at runtime:**
-   ```java
-   RendererRegistry registry = new RendererRegistry();
-   Renderer renderer = registry.get("Switch").createRenderer(config);
-   ```
-
----
-
-## Integration Points
-
-### From Engine (core)
-
-The Engine creates a RendererRegistry during init:
-```java
-// Engine.java (core)
-public Engine(ApplicationConfig config) {
-  RendererRegistry registry = new RendererRegistry();
-  RendererFactory factory = registry.get(config.getRendererName());
-  this.renderer = factory.createRenderer(config.getRenderConfig());
-  this.surface = renderer.getSurface();
-}
-```
-
-### From JES Scenes
-
-JES scenes receive a Blitter2D and render via the abstraction:
-```java
-// JesScene2D (scripting)
-@Override
-public void render(Blitter2D blitter, Camera2D camera) {
-  // z-sort entities
-  // for each entity:
-  //   entity.render(blitter);  // entity calls blitter methods
-}
-```
-
-No knowledge of which backend is active; Blitter2D hides implementation.
-
----
-
-## Performance Considerations
-
-### Blitter2D Batching
-
-Some backends (especially Web/Canvas) benefit from batching draw calls. Consider:
-- Grouping shapes by color/texture to minimize state changes
-- Using viewport/scissor tests to cull off-screen entities
-- Rendering to intermediate textures for effects
-
-### Platform-Specific Considerations
-
-- **JavaFX:** Uses double-buffering internally; avoid excessive `Canvas.getGraphicsContext2D()` calls
-- **Web/Android/iOS:** performance decisions remain unverified until their
-  deployable backends and integration benchmarks exist
-
----
-
-## Testing
-
-### Integration Tests
-
-See `modules/render-api/src/test/java/com/jvn/render/`:
-- `RendererRegistryTest.java` — registry auto-discovery
-- `RenderSurfaceIntegrationTest.java` — surface + input flow
-- `Blitter2DIntegrationTest.java` — drawing command execution
-
-Example:
-```java
-@Test
-void testRegistryFindsAllBackends() {
-  RendererRegistry registry = new RendererRegistry();
-  List<String> renderers = registry.getAvailableRenderers();
-  assertTrue(renderers.contains("JavaFX"));
-  // (other platforms if on classpath)
-}
-```
-
----
+Desktop JavaFX and Swing have working launch paths. The browser module produces an executable Canvas bootstrap. Android and iOS remain scaffolds. See [platform runtimes](../../runtime/platforms/README.md) before planning an export.
 
 ## Related Documentation
 

@@ -8,12 +8,27 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide shy]
-ginger: Right now my words sit under my name. For the next line I'll give the whole page to the narrator.
+[show ginger beside_code shy]
+[set tutorial_source scripts/tutorial/20_dialogue_presentation.vns]
+[set tutorial_excerpt mode]
+[set ui.dialogueFacet tutorial_code]
+ginger: JVN supports standard dialogue and NVL presentation. The next two lines use NVL so you can compare a page of text with a single dialogue box.
+[clear ui.dialogueFacet]
+# region mode
 [mode dialogue nvl]
-narrator: This line is narration. It appears in the NVL layout.
+narrator: {i}NVL, paragraph one.{/i} Advance once and watch where the following paragraph appears.
+narrator: {i}NVL, paragraph two.{/i} Check how much of the previous text remains visible.
 [mode dialogue standard]
-ginger: This line uses standard dialogue again. Find both mode commands in the script.
+# endregion
+[set ui.dialogueFacet tutorial_code]
+[show ginger beside_code thoughtful]
+ginger: The script has switched back to {b}standard{/b}. This line uses the regular dialogue box and speaker name again.
+ginger: Find [mode dialogue nvl] and [mode dialogue standard]. Add another short paragraph between them and replay the sequence.
+ginger: Move the same paragraph below the second command. Its text stays the same, but it now uses the standard layout.
+ginger: A dialogue mode affects subsequent lines. Locate the instruction that switches to NVL, read the paragraphs it encloses, then locate the switch back to standard.
+ginger: Use identical wording in both modes when testing layout. This makes it easier to separate presentation behaviour from differences in the amount of text.
+[clear ui.dialogueFacet]
+> Trace a mode boundary -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
@@ -23,17 +38,49 @@ ginger: Why restore the dialogue mode at the boundary?
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: Presentation can persist across scene boundaries. Give it another try.
+ginger: The mode controls text presentation. Consider which layout the first line of the next section should use.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: Presentation can persist across scene boundaries.
+ginger: Set the intended mode explicitly so the following section opens in the correct layout.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_20]
 [flag tutorial_done_20]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_4]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/20_dialogue_presentation.vns]
+[set tutorial_excerpt mode]
+[set ui.dialogueFacet tutorial_code]
+ginger: Add a short third paragraph just before the switch back to standard. Advance through all three paragraphs and note how much of the sequence remains on screen.
+ginger: Move that same paragraph below the switch to standard. Its speaker and content are unchanged. Compare the surrounding UI, speaker label and earlier visible text.
+ginger: Follow each route that can leave an NVL section. If one branch jumps over the reset, the next line can inherit a mode you never intended for that branch.
+ginger: When a later scene looks wrong, find the last executed mode command on that particular route. Its location in the file alone does not tell you whether the player reached it.
+@label practice_question
+ginger: One branch jumps past the switch back to standard. Which state should you inspect on the following line?
+> The locale table. -> practice_hint
+> The active dialogue presentation mode. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: The same text can display in either layout. Trace the last mode instruction actually reached on that branch.
+[jump practice_question]
+@label practice_result
+ginger: The branch skipped the command that restored the layout. Put the common reset where every outgoing route reaches it and retest both branches.
+ginger: Compare this exact sentence in both modes. Advance after each copy.
+[clear ui.dialogueFacet]
+[mode dialogue nvl]
+narrator: The last line is visible.
+[mode dialogue standard]
+narrator: The last line is visible.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

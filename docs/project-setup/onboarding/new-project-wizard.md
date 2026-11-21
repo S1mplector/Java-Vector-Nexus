@@ -29,7 +29,7 @@ Wizard class:
 
 3. **Feature Modules**
    - playable Lavender starter story
-   - optional 30-lesson tutorial workspace
+   - Tutorial Workspace with Ginger, a separate template with 30 lessons
    - VNS/JES integration scene
    - main menu profile pack
    - save/load profile files
@@ -265,13 +265,7 @@ Default main-menu style points to the bundled background asset so new projects d
 
 ### Tutorial workspace
 
-The Tutorial Workspace adds 30 VNS lessons and authoring workshops under `scripts/tutorial/`. Each generated lesson
-is rendered from the same templates tested in the editor build, then parsed by the runtime VNS parser.
-Lesson 17 opens the interactive JES panel in `scripts/scenes/panel.jes`. The final lesson asks you to build and package a three-beat scene.
-
-Tutorials are working scripts, but they are also source examples: keep the editor and running game
-side by side, change one command, and rerun. Start at `scripts/story/tutorial_hub.vns`, or run an
-individual lesson directly while focusing on one subsystem.
+Select **Tutorial Workspace with Ginger** in the template chooser. It generates 30 independently playable lessons, the topic picker and source-backed code panels. The Starter Story uses Lavender and its own prologue. Follow the [tutorial guide](../../guides/jvn-tutorial.md) to edit a lesson and replay it.
 
 ### Timeline starter
 
@@ -320,7 +314,3 @@ When enabled, creates:
 - Use module toggles consistently across team templates to avoid layout drift.
 - If Git is enabled, the wizard writes managed blocks into `.gitignore` and `.gitattributes`.
 - Re-running Git setup from editor is safe; managed blocks are replaced in place.
-
-## JVN Tutorial
-
-Choose **Tutorial Workspace** and **Start tutorial** to open the topic menu. Select any of the 30 examples, try an edit, and return to the topic list. Review questions are optional. See the [tutorial guide](../../guides/jvn-tutorial.md).

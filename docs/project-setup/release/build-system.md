@@ -10,6 +10,8 @@ Portable packaging supports `type=vn` and `type=jes` game manifests. It rejects 
 
 Need the shipping-oriented overview first? Start at [JVN Build And Release Docs](README.md).
 
+The [Build workspace](../../editor/core/build-workspace.md) exposes these tasks in the editor.
+
 ## Choosing A Format
 
 | Format | Use It When | Player Needs Java? | Cross-Target From One Machine? |

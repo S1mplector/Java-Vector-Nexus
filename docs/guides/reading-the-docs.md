@@ -55,7 +55,7 @@ Arrows represent the relationship described by the caption; they do not automati
 
 Use **On this page** for long references, the heading’s `#` link for a precise citation, **View source** for the canonical Markdown, and **Improve this page** for the engine repository. Code blocks have a language label and a Copy button. Search works across the synchronized documentation tree.
 
-Every tutorial should tell you its prerequisites, what to edit, what you should observe, and how to recover if it does not work. Compare examples with the current engine version and your chosen runtime backend. The generated Lavender workshop README links its 30 lessons to the reference pages that explain them in depth.
+Every tutorial should tell you its prerequisites, what to edit, what you should observe, and how to recover if it does not work. Compare examples with the current engine version and your chosen runtime backend. Use the [JVN Tutorial guide](jvn-tutorial.md) to find the script and reference for each of Ginger’s 30 lessons.
 
 ## Continue by task
 

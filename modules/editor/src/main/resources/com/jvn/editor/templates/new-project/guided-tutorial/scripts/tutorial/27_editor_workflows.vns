@@ -8,29 +8,67 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide thoughtful]
-ginger: Let's change my expression without replaying the whole scene. Put the cursor on the line you want to see.
-ginger: Place the cursor on this line, open Puppeteer, then return to the source and change the pose.
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/27_editor_workflows.vns]
+[set tutorial_excerpt target]
+[set ui.dialogueFacet tutorial_code]
+ginger: Preview lets you inspect an individual script edit. A full run also checks the commands that execute before that point.
+# region target
+[show ginger beside_code embarrassed]
+ginger: {b}Preview target.{/b} Check the expression shown on this line.
+# endregion
+ginger: In the show command just above this line, change embarrassed to annoyed. Place the cursor on the dialogue and compare the result in Puppeteer.
+ginger: Now run the lesson from the beginning. Check that the sprite starts with the earlier pose and changes on the expected line.
+ginger: Cursor preview is useful for a precise edit. A run from the beginning supplies all the instructions preceding that edit. Write down which setup each test actually exercises.
+ginger: For this pose test, use the dialogue line as a checkpoint. Record the current speaker, expression and position so a change in one is easy to identify.
+[clear ui.dialogueFacet]
+> Compare two preview entry points -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: What should you keep aligned while checking an edit?
+ginger: What should you compare when checking an edit?
 > The cursor beat in the editor and the runtime scene state. -> correct
 > Only the file modification time. -> retry
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: A different scene state can make an unchanged edit look wrong. Give it another try.
+ginger: The modification time confirms that the file was saved. It doesn't identify which line or visual state was displayed.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: A different scene state can make an unchanged edit look wrong.
+ginger: Compare the same script line and the state that led to it. Preview checks the frame; a full run checks the transition into it.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_27]
 [flag tutorial_done_27]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_6]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/27_editor_workflows.vns]
+[set tutorial_excerpt target]
+[set ui.dialogueFacet tutorial_code]
+ginger: Change embarrassed to annoyed in the command above Preview target. Start the preview before the command, advance to the line, and note the expression.
+ginger: Repeat from the topic menu and stop at the same text. Matching text identifies the checkpoint. Compare the pose as a separate observation.
+ginger: If the previews disagree, move the starting point backwards one setup command at a time. The first position that restores the expected result tells you which prerequisite to inspect.
+ginger: After a successful cursor test, make one full run through the preceding choice or setup and out through the following choice. This also checks how the edited line behaves in context.
+@label practice_question
+ginger: The edited pose appears when starting before show but not when starting after it. What does that tell you?
+> That checkpoint depends on the show command. -> practice_result
+> The speaker text needs rewriting. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: The words at the checkpoint were the same in both runs. The difference is whether the pose assignment executed.
+[jump practice_question]
+@label practice_result
+ginger: Starting before the command exercises the assignment. Record that prerequisite so the preview route and full run can be compared fairly.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

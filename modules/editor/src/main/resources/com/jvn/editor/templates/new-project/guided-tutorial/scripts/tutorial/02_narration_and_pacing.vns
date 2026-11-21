@@ -8,31 +8,82 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide confused]
-ginger: Wait for the chime. I'll leave a little silence before it rings. Does that make you listen more closely?
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/02_narration_and_pacing.vns]
+[set tutorial_excerpt short_wait]
+[set ui.dialogueFacet tutorial_code]
+ginger: This example plays one sound after two different waits. Advance past the next line and listen for the first chime.
+# region short_wait
+narrator: {i}First interval: 320 milliseconds.{/i}
 [wait 320]
 [sfx assets/tutorial/welcome.wav]
-ginger: Change the wait from 320 to 800 milliseconds, then listen again.
+# endregion
+[set tutorial_excerpt long_wait]
+ginger: Now compare that with 800 milliseconds. Advance at your own pace. The wait begins after you leave the interval label.
+# region long_wait
+narrator: {i}Second interval: 800 milliseconds.{/i}
+[wait 800]
+[sfx assets/tutorial/welcome.wav]
+# endregion
+ginger: Both commands play the same WAV file. The extra 480 milliseconds come from the second {b}wait{/b} command.
+ginger: Change [wait 800] to [wait 100], save the script, and replay. The second chime should now start sooner than the first.
+ginger: Use the click that leaves the interval label as time zero. Reading that label for three seconds adds three seconds to your session, but the following wait still starts at the click.
+ginger: Write down the command order for each interval. Both end with the same sound, so the difference between 320 and 800 is 480 milliseconds of scripted delay.
+[clear ui.dialogueFacet]
+> Measure the two waits -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: Which change delays the chime without slowing the words?
+ginger: Which edit changes the silence before the chime?
 > Lower the text speed. -> retry
 > Increase the wait before the sound. -> correct
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: A wait holds the scene. Text speed controls how the current line appears. Give it another try.
+ginger: Text speed controls how quickly letters appear. The pause between the label and sfx has its own duration.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: A wait holds the scene. Text speed controls how the current line appears.
+ginger: A wait takes milliseconds. Use 1000 for one second.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_02]
 [flag tutorial_done_02]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_1]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/02_narration_and_pacing.vns]
+[set tutorial_excerpt paired_waits]
+[set ui.dialogueFacet tutorial_code]
+ginger: Make a copy of the short interval. Put two waits of 160 milliseconds back to back before its sound. Their combined delay targets the same 320 milliseconds as the original.
+ginger: Insert a dialogue line between the two waits. Run it again and leave the new line on screen. The second wait cannot start until you advance past that line.
+ginger: For a timing check, use the same short sound on both paths. A file with silence at its beginning adds an audible delay after the sound command has already run.
+ginger: If a comparison feels inconsistent, take the player's reading time out of it. Measure from the final advance to the start of the sound on each path.
+@label practice_question
+ginger: A 160 ms wait runs, you read an inserted line for 2 seconds, then another 160 ms wait runs. Roughly when does the sound start?
+> After 0.32 seconds. -> practice_hint
+> After 2.32 seconds. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: The waits add to 320 ms. Now add the time spent on the dialogue between them. That line interrupts automatic execution.
+[jump practice_question]
+@label practice_result
+ginger: The two waits account for 320 ms. The dialogue contributes another 2,000 ms because you chose when to advance.
+ginger: Advance to run the pair of waits and play the chime.
+# region paired_waits
+[wait 160]
+[wait 160]
+[sfx assets/tutorial/welcome.wav]
+# endregion
+ginger: The chime followed two consecutive waits. Insert a dialogue line between them in the file and time the second version from its last advance.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

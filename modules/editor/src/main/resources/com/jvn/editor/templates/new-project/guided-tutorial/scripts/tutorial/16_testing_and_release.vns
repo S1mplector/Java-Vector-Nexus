@@ -9,22 +9,27 @@
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [show ginger guide normal]
-ginger: Let's send this scene to a friend. Will the chime still play when my project folder is nowhere nearby?
-ginger: Export the project. Launch the build outside the project folder and play the sound effects example.
+ginger: An export needs to work outside the original project directory. This check uses a script, an image and a sound from the tutorial as test inputs.
+ginger: In {b}Build & Publish → Checks{/b}, run the content scan. Resolve any missing references. Build a portable ZIP and extract it into a new folder.
+ginger: Launch the extracted copy. Open Sound effects and verify that the sprite appears and both sounds play. Then open Choices and labels and test each route.
+ginger: If a sound works only in the Editor, compare its VNS path with the files inside the package. Check spelling, case and folder structure.
+ginger: A successful export tells you the package was written. A cold run checks whether the runtime can resolve the entry script and its dependencies from the extracted files.
+ginger: Choose a short route that exercises different asset types. The sound lesson covers a script, a sprite and a WAV. The branching lesson checks that both label targets survive the export.
+> Check the extracted build -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: Which check exercises the files your audience receives?
+ginger: Which check exercises the files a player receives?
 > Play only from the editor. -> retry
 > Run the exported package. -> correct
 > Back to topics -> return_hub
 @label retry
 [show ginger guide sad]
-ginger: A packaged run resolves assets through the shipped project. Give it another try.
+ginger: The Editor can load assets straight from the source directory. Test a copy that only has the exported files.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: A packaged run resolves assets through the shipped project.
+ginger: Run the extracted package. Getting to the title screen verifies startup; playing the example also tests the assets used by that lesson.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
@@ -34,3 +39,24 @@ ginger: A packaged run resolves assets through the shipped project.
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_6]
+[end]
+
+@label practice
+[show ginger guide thoughtful]
+ginger: Build into an empty destination. Extract the result into another directory and launch that copy. Record the build or package filename so another tester can repeat the same run.
+ginger: Open the sound lesson from its topic menu. Confirm the expected pose, then listen for each sound on its intended advance. A visible first frame covers only part of this test.
+ginger: If the sound is missing, find the exact path in the packaged script and compare it with the archive entry, including case and extension. Confirm the archive contains the edit you think you built.
+ginger: Run branch A from a fresh entry, then replay and run B. Record each result and the category you return to. A package can start correctly and still have one broken route.
+@label practice_question
+ginger: The editor plays a changed clip but the extracted build plays the old one. What should you compare first?
+> The speaker's text colour. -> practice_hint
+> Compare the packaged script and WAV. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: The clip selection comes from a path and a packaged asset. Establish which bytes and which reference the extracted runtime is using.
+[jump practice_question]
+@label practice_result
+ginger: Check which version of each dependency actually shipped. Rebuild into a fresh destination and repeat the same route after correcting the mismatch.
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

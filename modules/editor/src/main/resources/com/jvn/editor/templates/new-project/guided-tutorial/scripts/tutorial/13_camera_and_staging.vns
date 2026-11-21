@@ -8,37 +8,74 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide thoughtful]
-ginger: Stay where you are. I'll bring the camera closer so you can see my expression.
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/13_camera_and_staging.vns]
+[set tutorial_excerpt framing]
+[set ui.dialogueFacet tutorial_code]
+ginger: This is a close-up made with a sprite transform. Watch the size of the face and its position against the edge of the frame.
 [if !tutorial_still]
+# region framing
 timeline {
   parallel {
     move "ginger" { x:-48 y:24 dur:640 easing:ease_out }
     scale "ginger" { sx:1.16 sy:1.16 dur:640 easing:ease_out }
   }
 }
+# endregion
 [endif]
-ginger: Compare the two keyframes in Puppeteer. Watch my face as the shot gets tighter.
+ginger: The target in both tracks is {b}ginger{/b}. Scale makes the sprite larger. The X and Y offsets adjust where the enlarged sprite lands.
+ginger: Keep the scale at 1.16. In Puppeteer, change only the horizontal offset and check where the eyes land relative to the centre.
+ginger: Now set the offset to zero. Compare the space above the head and the overlap with the dialogue box at the same window size.
+ginger: Scaling changes the distance between features on the sprite. Moving shifts those features together. Pick two landmarks, such as the eyes and collar, and track both against the frame.
+ginger: The example pairs a 1.16 scale with an offset. The scale enlarges the face. The offset brings the enlarged drawing into the intended part of the frame.
+[clear ui.dialogueFacet]
+> Frame the eyes at two scales -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: Why pair a small pan with a zoom?
+ginger: Why pair an offset with a scale change?
 > To adjust the subject’s framing as it grows. -> correct
 > To change the speaker name. -> retry
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: Position and scale together control where the subject lands in the frame. Give it another try.
+ginger: Scaling changes how much of the frame the sprite occupies. Consider where the important detail will land.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: Position and scale together control where the subject lands in the frame.
+ginger: The offset adjusts the framing as the sprite grows. You can change the composition without replacing the image.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_13]
 [flag tutorial_done_13]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_2]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/13_camera_and_staging.vns]
+[set tutorial_excerpt framing]
+[set ui.dialogueFacet tutorial_code]
+ginger: Take a screenshot before the timeline and mark the eye line and the top of the dialogue box. Those references make small position changes easier to compare.
+ginger: Set sx and sy to 1.0 while keeping the offset. Look for a translation with no change in the distance between the eyes and collar.
+ginger: Restore 1.16 on both axes and zero the offset. The distance between those landmarks should grow. Check whether the eyes still land at the height you wanted.
+ginger: Finally restore the offset and compare all three versions at the same window size. If a face is framed well but the name tag covers the hands, inspect the lower part of the shot too.
+@label practice_question
+ginger: The face is the right size, but the eyes sit too far left. Which parameter should you change first?
+> The horizontal position offset. -> practice_result
+> Both scale targets. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Scaling changes the size you already approved. First move the existing framing horizontally.
+[jump practice_question]
+@label practice_result
+ginger: A horizontal shift moves both landmarks together and preserves their separation. Check the eye line again after the change.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

@@ -20,6 +20,7 @@ import com.jvn.core.accessibility.AccessibilityThemeLoader;
 import com.jvn.core.accessibility.NoopTextToSpeechService;
 import com.jvn.core.accessibility.TextToSpeechService;
 import com.jvn.core.assets.AssetCatalog;
+import com.jvn.core.assets.FilesystemAssetManager;
 import com.jvn.core.assets.AssetType;
 import com.jvn.core.assets.BoundedImageCache;
 import com.jvn.core.animation.TimelineDrivenEntity;
@@ -61,6 +62,7 @@ import com.jvn.core.vn.ui.VnOverlayButtonSpec;
 import com.jvn.core.vn.ui.VnOverlayScreenSpec;
 import com.jvn.core.vn.ui.VnFacetSpec;
 import com.jvn.core.vn.ui.VnReactiveOverlayScreenSpec;
+import com.jvn.core.vn.ui.VnReactiveScreenLoader;
 import com.jvn.core.vn.ui.VnUiActionButtonSpec;
 import com.jvn.core.vn.ui.VnUiLayoutLoader;
 import com.jvn.core.vn.ui.VnUiLayoutSpec;
@@ -96,6 +98,11 @@ public class VnRenderer {
   static final long STAGE_CHARACTER_CACHE_BUDGET_BYTES = 64L * MIB;
 
   private final GraphicsContext gc;
+  private AssetCatalog facetAssets = new AssetCatalog();
+  private final Map<VnFacetSpec.Node, FacetCodeBlock> facetCode = new java.util.WeakHashMap<>();
+  private VnState dialogueFacetState;
+  private String dialogueFacetId;
+  private VnReactiveOverlayScreenSpec dialogueFacet;
   private final BoundedImageCache<Image> imageCache = new BoundedImageCache<>(
       VnConfig.defaults().getImageCacheMaxEntries(), SOURCE_IMAGE_CACHE_BUDGET_BYTES, FxImageMemory::estimatedBytes);
   // Layer sources are transient working data while a composite is assembled. Keeping completed
@@ -308,6 +315,10 @@ public class VnRenderer {
   public void setProjectRoot(File root) {
     if (java.util.Objects.equals(this.projectRoot, root)) return;
     this.projectRoot = root;
+    facetAssets = root == null ? new AssetCatalog() : new AssetCatalog(new FilesystemAssetManager(root.toPath()));
+    facetCode.clear();
+    dialogueFacetState = null;
+    dialogueFacet = null;
     this.eyeFocusProfiles = null;
     imageCache.clear();
     imageEffects.clear();
@@ -512,6 +523,9 @@ public class VnRenderer {
           tts.speak(spokenText, Locale.getDefault());
         }
       }
+      boolean showingDialogue = displayedDialogue != null && currentNode.getType() != VnNodeType.CHOICE
+          && currentNode.getType() != VnNodeType.END;
+      renderDialogueFacet(state, width, height, showingDialogue);
       switch (currentNode.getType()) {
         case DIALOGUE:
           renderDialogueWithFade(displayedDialogue, state, scenario, width, height,
@@ -4193,6 +4207,25 @@ public class VnRenderer {
     }
   }
 
+  // Dialogue facets are passive decorations. Their ID and bindings follow saved/rolled-back story variables.
+  private void renderDialogueFacet(VnState state, double width, double height, boolean showingDialogue) {
+    Object setting = showingDialogue ? state.getVariable("ui.dialogueFacet") : null;
+    String id = setting instanceof String name && !name.isBlank() ? name : null;
+    if (state != dialogueFacetState || !java.util.Objects.equals(id, dialogueFacetId)) {
+      facetCode.clear();
+      dialogueFacetState = state;
+      dialogueFacetId = id;
+      dialogueFacet = null;
+      if (id != null && id.matches("[A-Za-z0-9_-]+")) {
+        var definition = VnReactiveScreenLoader.load(facetAssets, id).screen();
+        if (definition != null) dialogueFacet = new VnReactiveOverlayScreenSpec(definition, state, false);
+      }
+    }
+    if (dialogueFacet != null && dialogueFacet.isVisibleNow()) {
+      renderFacet(dialogueFacet, computeOverlayScreenGeometry(dialogueFacet, width, height));
+    }
+  }
+
   private void renderFacet(VnReactiveOverlayScreenSpec screen, ScreenGeometry root) {
     VnFacetSpec facet = screen.getFacet();
     if (facet == null) return;
@@ -4211,6 +4244,9 @@ public class VnRenderer {
       geometryById.put(node.id(), box);
       switch (node.type()) {
         case GROUP -> { }
+        case CODE -> facetCode.computeIfAbsent(node, ignored -> new FacetCodeBlock()).draw(
+            gc, facetAssets, screen.resolveFacetText(node.source()), screen.resolveFacetText(node.region()),
+            box.x(), box.y(), box.width(), box.height());
         case TEXT -> {
           String value = screen.resolveFacetText(node.text());
           if (!value.isBlank()) {

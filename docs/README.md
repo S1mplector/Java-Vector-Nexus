@@ -7,7 +7,7 @@
 flowchart LR
   accTitle: Find the right JVN documentation
   accDescr: New authors follow the workshop, project work uses editor and scripting guides, and reusable features use the plugin API. All paths lead to runtime testing and release.
-  Start["What are you making?"] --> Learn["Learn: Lavender workshop"]
+  Start["What are you making?"] --> Learn["Learn: Ginger tutorial"]
   Start --> Story["Story: VNS and presentation"]
   Start --> World["Interactive scene: JES"]
   Start --> Tool["Reusable feature: plugins"]
@@ -35,6 +35,7 @@ when editing docs in this repository. It is organized by task first, then by sub
 | Use or install the Engine Hub | [JVN Engine Hub](editor/core/engine-hub.md) |
 | Decide which layer to use | [Choose Your Path in JVN](guides/choose-your-path.md) |
 | Identify project file types | [Common JVN File Types](guides/common-file-types.md) |
+| Identify art, sound and character owners | [Review asset labels](editor/tools/asset-label-review.md) |
 | Work inside the editor | [JVN Editor Docs](editor/README.md) |
 | Animate shots | [Puppeteer Editor Guide](editor/puppeteer/puppeteer-editor-guide.md) |
 | Export lighting/stage presets | [Scene Lighting Studio](editor/sidebars/right/sidebar-image-tint-tool.md) |
@@ -42,7 +43,7 @@ when editing docs in this repository. It is organized by task first, then by sub
 | Write gameplay scenes | [JES Overview](scripting/jes/overview/jes-scripting.md) |
 | Check portable VNS/JES syntax | [Scripting Language Contract](scripting/spec/README.md) |
 | Build menus and layouts | [Menu Profiles Overview](scripting/ui/menus/menu-profiles.md) |
-| Deploy to mobile/web | [Platform Runtimes](runtime/platforms/README.md) |
+| Check browser and mobile support | [Platform Runtimes](runtime/platforms/README.md) |
 | Package a game | [Build And Release Docs](project-setup/release/README.md) |
 | Build a JVN plugin | [Plugin Authoring](plugins/authoring.md) |
 

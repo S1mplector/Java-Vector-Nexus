@@ -68,6 +68,8 @@ This is the **development/iteration mode** used by the editor's Run button.
 
 ---
 
+For editor discovery, character ownership and VNS declarations, see [Review asset labels](../../editor/tools/asset-label-review.md). Runtime lookup resolves a file path when the game requests media.
+
 ## Path Conventions
 
 ### Project-Relative Paths

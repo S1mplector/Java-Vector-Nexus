@@ -8,33 +8,104 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide thoughtful]
-ginger: Let's give the scene a memory. I'll set a flag when we find the letter, then ask the script whether we've seen it.
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/07_variables_and_conditions.vns]
+[set tutorial_excerpt unset]
+[set ui.dialogueFacet tutorial_code]
+ginger: A flag is useful when a later line depends on something that already happened. This example resets {b}example_ready{/b} to false each time you start it.
+# region unset
+[set example_ready false]
+[if !example_ready]
+ginger: First check. The flag is false.
+[endif]
+# endregion
+[set tutorial_excerpt flag]
+# region flag
 [flag example_ready]
 [if example_ready]
-ginger: This line appears because the flag is true.
+ginger: Second check. The flag is true.
 [endif]
-ginger: Change the condition to its opposite and replay the example.
+# endregion
+ginger: Open this script and compare the two if blocks. The exclamation mark reverses the result of the check.
+ginger: Remove the flag command and replay. You should still see the first check. The second message should disappear. Restore the command and test again.
+ginger: Read each condition with the value it sees at that instant. The first check runs after setting false. The second runs after flag changes the stored value to true.
+ginger: A comparison can also depend on a number. At a threshold of two, the difference between greater-than and greater-than-or-equal is visible at exactly one boundary value.
+[clear ui.dialogueFacet]
+> Test a threshold -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: What keeps a flag value between dialogue lines?
+ginger: What stores the value between the two checks?
 > A story variable. -> correct
 > A label name. -> retry
 > Back to topics -> return_hub
 @label retry
 [show ginger guide sad]
-ginger: The flag writes state and the condition reads it. Give it another try.
+ginger: A label names a location in the script. The if blocks read a value from the current VN state.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: The flag writes state and the condition reads it.
+ginger: The story variable holds the value until a later command changes it.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_07]
 [flag tutorial_done_07]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_1]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/07_variables_and_conditions.vns]
+[set tutorial_excerpt threshold]
+[set ui.dialogueFacet tutorial_code]
+ginger: Try a numeric condition in the live example. It assigns a score, then adds one before evaluating a threshold. Read those instructions in execution order.
+ginger: Write down three cases for a threshold of two. A score of one should miss, two should pass and three should pass. The middle case distinguishes the two comparison operators.
+ginger: Start each run from a known score. If a second replay starts one point higher than the first, you are testing leftover state as well as the condition.
+ginger: Change the operator from >= to > in the exercise and replay. Watch the value printed by the script alongside the branch it takes.
+@label practice_question
+ginger: The score starts at one, increases once, and the test is score >= 2. Which path should run?
+> The passing path at exactly two. -> practice_result
+> The failing path until three. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Trace the increment before evaluating the condition. Then check whether the comparison includes equality.
+[jump practice_question]
+@label practice_result
+ginger: After the increment, the score is two. Equality satisfies the original comparison. Repeat with the stricter operator and the same initial value.
+# region threshold
+[set lab_score 1]
+@label apply_threshold
+[inc lab_score]
+[if lab_score >= 2]
+ginger: Score ${lab_score}. The comparison passed.
+[else]
+ginger: Score ${lab_score}. The comparison failed.
+[endif]
+# endregion
+[clear ui.dialogueFacet]
+> Test another starting score -> pick_score
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub
+
+@label pick_score
+> Start at zero -> score_zero
+> Start at one -> score_one
+> Start at two -> score_two
+> Back to topics -> return_hub
+@label score_zero
+[set lab_score 0]
+[jump show_threshold]
+@label score_one
+[set lab_score 1]
+[jump show_threshold]
+@label score_two
+[set lab_score 2]
+@label show_threshold
+[set ui.dialogueFacet tutorial_code]
+[jump apply_threshold]

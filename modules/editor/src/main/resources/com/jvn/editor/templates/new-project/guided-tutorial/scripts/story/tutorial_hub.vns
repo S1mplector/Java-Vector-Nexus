@@ -4,16 +4,13 @@
 [mode dialogue standard]
 [set ui.dialogueUi project]
 [bg room]
-[char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
 [if !tutorial_count]
 [set tutorial_count 0]
 [endif]
-[show ginger topics shy]
-ginger: I'm Ginger. This little studio is yours to experiment in. Pick something you'd like to try and I'll show you how it works.
 @label topics
-[show ginger topics normal]
+[hide ginger]
 > Writing and branching -> topics_page_1
 > Characters and backgrounds -> topics_page_2
 > Animation, audio and lighting -> topics_page_3
@@ -21,14 +18,12 @@ ginger: I'm Ginger. This little studio is yours to experiment in. Pick something
 > Game systems -> topics_page_5
 > Testing and editor tools -> topics_page_6
 > Progress and motion -> options
-> Finish for now -> goodbye
+> Return to title -> goodbye
 @label goodbye
-[show ginger guide shy]
-ginger: Thanks for keeping me company. When you have a scene of your own, try changing just one line and see what happens.
 [mainmenu story/tutorial_hub.vns]
 [end]
 @label options
-ginger: You have completed ${tutorial_count} of 30 topics. You can replay any example.
+narrator: Completed lessons: {b}${tutorial_count} / 30{/b}.
 > Use reduced motion -> still
 > Enable movement -> motion
 > All topics -> topics
@@ -41,8 +36,8 @@ ginger: You have completed ${tutorial_count} of 30 topics. You can replay any ex
 [set ui.reduceMotion false]
 [jump topics]
 @label topics_page_1
+[hide ginger]
 [bg room]
-[show ginger topics thoughtful]
 > Dialogue -> open_dialogue
 > Pauses and timing -> open_narration
 > Variables and conditions -> open_variables
@@ -50,8 +45,8 @@ ginger: You have completed ${tutorial_count} of 30 topics. You can replay any ex
 > Subroutines -> open_subroutines
 > All topics -> topics
 @label topics_page_2
+[hide ginger]
 [bg room]
-[show ginger topics thoughtful]
 > Expressions -> open_expressions
 > Backgrounds -> open_images
 > Transitions -> open_transitions
@@ -59,8 +54,8 @@ ginger: You have completed ${tutorial_count} of 30 topics. You can replay any ex
 > Camera movement -> open_camera
 > All topics -> topics
 @label topics_page_3
+[hide ginger]
 [bg room]
-[show ginger topics thoughtful]
 > Sound effects -> open_audio
 > Puppeteer timelines -> open_puppeteer
 > Sprite effects -> open_plugins_and_line_boil
@@ -68,8 +63,8 @@ ginger: You have completed ${tutorial_count} of 30 topics. You can replay any ex
 > Stage lighting -> open_layer_groups_and_lighting
 > All topics -> topics
 @label topics_page_4
+[hide ginger]
 [bg room]
-[show ginger topics thoughtful]
 > Localization -> open_localization
 > Dialogue layout -> open_ui_layout
 > Dialogue and narration -> open_dialogue_presentation
@@ -77,8 +72,8 @@ ginger: You have completed ${tutorial_count} of 30 topics. You can replay any ex
 > Phone messages -> open_phone_storytelling
 > All topics -> topics
 @label topics_page_5
+[hide ginger]
 [bg room]
-[show ginger topics thoughtful]
 > Opening a JES scene -> open_vns_jes
 > Saving and rollback -> open_saves_rollback_persistence
 > Editing JES entities -> open_jes_entities_input_widgets
@@ -86,8 +81,8 @@ ginger: You have completed ${tutorial_count} of 30 topics. You can replay any ex
 > Combining systems -> open_java_extensions_and_capstone
 > All topics -> topics
 @label topics_page_6
+[hide ginger]
 [bg room]
-[show ginger topics thoughtful]
 > Debugging a scene -> open_best_practices
 > Testing a build -> open_testing_release
 > Previewing an edit -> open_editor_workflows

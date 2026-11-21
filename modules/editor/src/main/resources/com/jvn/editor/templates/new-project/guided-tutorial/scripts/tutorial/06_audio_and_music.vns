@@ -8,30 +8,73 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide normal]
-ginger: That envelope could use a doorbell. Listen to this sound and imagine it just before the letter arrives.
+[show ginger beside_code normal]
+[set tutorial_source scripts/tutorial/06_audio_and_music.vns]
+[set tutorial_excerpt before]
+[set ui.dialogueFacet tutorial_code]
+ginger: This lesson plays {b}assets/tutorial/welcome.wav{/b} twice. Watch where each sfx command sits relative to the text.
+# region before
 [sfx assets/tutorial/welcome.wav]
-ginger: Find welcome.wav in assets/tutorial. Replay the example to hear it again.
+ginger: The first sound was triggered before this line appeared.
+# endregion
+[show ginger beside_code thoughtful]
+[set tutorial_excerpt after]
+# region after
+ginger: The second sound will be triggered when you advance past this line.
+[sfx assets/tutorial/welcome.wav]
+# endregion
+ginger: A dialogue line waits for input. Moving an sfx command across that line changes which click triggers the sound.
+ginger: Try using another short WAV in the second sfx command. Keep the first one as a reference. If only one plays, check the new path and filename.
+ginger: Trace the order in the source panel. A sound placed above a dialogue line can start as that line opens. A sound below it waits for the player to finish that line and advance.
+ginger: You can use the same WAV for both tests. This isolates the effect of moving the command from changes in volume, duration or leading silence in the file.
+[clear ui.dialogueFacet]
+> Put sound on the correct click -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: Which command fits a short sound effect?
+ginger: Which command plays a short sound effect?
 > bgm -> retry
 > sfx -> correct
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: A one-shot sound can finish while the scene continues. Give it another try.
+ginger: Bgm selects background music. Look at the command used for the two one-shot sounds.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: A one-shot sound can finish while the scene continues.
+ginger: Use sfx with the path to the audio file.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_06]
 [flag tutorial_done_06]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_3]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/06_audio_and_music.vns]
+[set tutorial_excerpt after]
+[set ui.dialogueFacet tutorial_code]
+ginger: Suppose a confirmation sound should play when an instruction appears. Put the sound immediately above the instruction. Start one line earlier and advance into it.
+ginger: Move the command immediately below that instruction and repeat. Leave the instruction open for a moment. The sound should now occur when you leave it.
+ginger: If neither version plays, try the known welcome WAV at the same command. A working reference clip points you toward the replacement file or its path.
+ginger: If both play at an unexpected time, trace the preceding line that waits for input. A preview that begins directly on the dialogue can skip a sound command above the cursor.
+@label practice_question
+ginger: The sound should mark dismissal of an instruction. Where does the command go?
+> Immediately before the instruction. -> practice_hint
+> Immediately after the instruction. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: A command above the text can run before the player has read it. Follow the order from the advance that dismisses the line.
+[jump practice_question]
+@label practice_result
+ginger: The instruction holds execution until advance. The sound is the next instruction reached once that hold ends.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

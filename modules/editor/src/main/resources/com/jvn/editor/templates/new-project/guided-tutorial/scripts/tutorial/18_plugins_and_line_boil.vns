@@ -8,34 +8,75 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide thoughtful]
-ginger: Look at the edge of my sleeve. I'll switch the effect on and off so you can spot what changed.
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/18_plugins_and_line_boil.vns]
+[set tutorial_excerpt on_effect]
+[set ui.dialogueFacet tutorial_code]
+ginger: A sprite effect can change the rendered outline without requiring another pose. Compare the same image with the line-boil effect enabled and disabled.
 [if !tutorial_still]
+# region on_effect
 [set character.ginger.imageEffect pikupiku.lineboil]
+# endregion
+ginger: The active effect is {b}pikupiku.lineboil{/b}. Look at the sleeve outline for a moment before advancing.
+[else]
+ginger: Reduced motion is enabled, so the example skips the animated effect. The same sprite stays visible.
 [endif]
-ginger: Look at the sprite outline.
+[set tutorial_excerpt off_effect]
+# region off_effect
 [set character.ginger.imageEffect none]
-ginger: Find the image-effect ID in this script. Set it to none to restore the original sprite.
+# endregion
+ginger: The script sets character.ginger.imageEffect to {b}none{/b} here. Compare the outline with the preceding line.
+ginger: If both look the same with motion enabled, check that the Pikupiku plugin is available. Keep the pose and lighting fixed while testing.
+ginger: An expression selects the source drawing. An image effect changes how that drawing is rendered. Compare the sleeve against the plain background so small outline changes are easy to see.
+ginger: The effect setting belongs to the character and lasts until another command changes it. Clearing it explicitly gives the following section a known baseline.
+[clear ui.dialogueFacet]
+> Isolate a sprite effect -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
-ginger: What is the clean baseline for judging a sprite effect?
+ginger: What makes a useful baseline for judging this effect?
 > A different pose and new lighting. -> retry
 > The same pose with its effect off. -> correct
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: Keeping the input fixed isolates the change the effect makes. Give it another try.
+ginger: Changing the pose or lighting also changes the outline. Isolate the image effect for this comparison.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: Keeping the input fixed isolates the change the effect makes.
+ginger: Use the same sprite, pose and lighting with the effect disabled, then enable it and compare.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_18]
 [flag tutorial_done_18]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_3]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/18_plugins_and_line_boil.vns]
+[set tutorial_excerpt off_effect]
+[set ui.dialogueFacet tutorial_code]
+ginger: Capture the same expression with the effect off and on. Keep the character position, lighting, scale and window size fixed so the outline is the only moving part.
+ginger: Look at several frames with movement enabled. A single frame can look ordinary even while a sequence shows an irregular outline. Then compare that sequence with the still route.
+ginger: If the outline never changes, check the effect identifier, the targeted character and whether the plugin is available in the actual runtime you launched.
+ginger: Leave the effect enabled across an extra line, then move the reset above that line. Watch which line loses the effect. That shows the lifetime of the setting.
+@label practice_question
+ginger: The following lesson should start clean. Where should the example reset the effect?
+> Only before the first time it is enabled. -> practice_hint
+> On every exit route that could leave it enabled. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: A reset at the beginning cannot undo a setting applied later. Follow the state along the route out of the example.
+[jump practice_question]
+@label practice_result
+ginger: A reset at the exit restores a predictable state for the next section. Try leaving immediately after the effect line as well as finishing normally.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

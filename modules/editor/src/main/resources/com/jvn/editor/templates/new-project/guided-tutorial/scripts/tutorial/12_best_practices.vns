@@ -8,9 +8,25 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide angry]
-ginger: Suppose my face changes one line too soon. Could you give me a route back to the exact moment you saw it?
-ginger: Change one pose. Compare starting at that line with playing through it from the beginning.
+[set tutorial_source scripts/tutorial/12_best_practices.vns]
+[set tutorial_excerpt opening_pose]
+[set ui.dialogueFacet tutorial_code]
+# region opening_pose
+[show ginger beside_code angry]
+# endregion
+ginger: To report an incorrect expression, record the script, the line, the route you followed and what you expected to see.
+narrator: {i}Example: in 12_best_practices.vns, the opening line shows angry. I expected the normal pose. I entered from Testing and editor tools.{/i}
+ginger: That gives another person a repeatable starting point. They can compare the observed pose with the show command above the line.
+[set tutorial_excerpt next_pose]
+# region next_pose
+[show ginger beside_code embarrassed]
+# endregion
+ginger: Try changing the second show command to annoyed. Run from the beginning and note the first line where the change becomes visible.
+ginger: Now preview directly at that line. If the results differ, include the preceding commands or choices in your report.
+ginger: Separate what you intended to see from what the run actually showed. “The second line shows annoyed after entering through Testing” gives someone a route, a checkpoint and an observable result.
+ginger: If a direct preview and a full run disagree, walk backwards from the first different frame. A preceding show command or branch can supply state that the preview did not reach.
+[clear ui.dialogueFacet]
+> Narrow down a wrong expression -> practice
 > Review question -> check
 > Back to topics -> return_hub
 @label check
@@ -20,17 +36,43 @@ ginger: Which report makes a scene bug reproducible?
 > Back to topics -> return_hub
 @label retry
 [show ginger guide confused]
-ginger: The same state and cursor give the reviewer a repeatable starting point. Give it another try.
+ginger: A screenshot of the folder identifies the project but doesn't say how to get to the affected line.
 [jump check]
 @label correct
 [show ginger guide normal]
-ginger: The same state and cursor give the reviewer a repeatable starting point.
+ginger: Include the script, source line and preceding choice. Add the expected and actual result so the fix can be checked.
 > Back to topics -> return_hub
 > Replay example -> start
 @label return_hub
+[clear ui.dialogueFacet]
 [if !tutorial_done_12]
 [flag tutorial_done_12]
 [inc tutorial_count]
 [endif]
 [stage clear]
 [goto TutorialHub:topics_page_6]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/12_best_practices.vns]
+[set tutorial_excerpt next_pose]
+[set ui.dialogueFacet tutorial_code]
+ginger: Use a two-run comparison. In the first run enter from the topic menu. In the second preview the same dialogue line directly. Record the displayed expression and which instructions you know ran.
+ginger: Find the last show command before that line in the full route. Compare its character ID, position and expression with the declarations. Check one field at a time.
+ginger: Change just the requested expression and repeat both runs. A fix that works at the cursor still needs to survive entry from the menu.
+ginger: Write the report so another person can reproduce it from a fresh project open. Include the file, the route, the first wrong line, the observed pose and the expected pose.
+@label practice_question
+ginger: A bug occurs from the menu but the cursor preview looks right. What is the next comparison?
+> Replace every pose image together. -> practice_hint
+> Trace the setup on both routes. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Replacing every image removes the ability to identify which earlier instruction caused the difference. Preserve the working preview as a control.
+[jump practice_question]
+@label practice_result
+ginger: That comparison narrows the difference to setup or control flow. Once both routes reach the same state, compare the drawing itself.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the exercise again -> practice
+> Back to topics -> return_hub

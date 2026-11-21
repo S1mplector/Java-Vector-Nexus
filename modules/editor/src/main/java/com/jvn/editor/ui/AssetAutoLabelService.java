@@ -149,7 +149,7 @@ public final class AssetAutoLabelService {
       }
       String relativePath = file.startsWith(root)
           ? AssetPathHeuristics.relative(root, file)
-          : "assets/" + AssetPathHeuristics.recommendedDirectory(kindFromPath(file), "")
+          : "assets/" + AssetPathHeuristics.recommendedDirectory(kindFromPath(file), AssetPathHeuristics.characterFolder(file.toString()))
               + "/" + file.getFileName();
       AssetDeclarationCatalog.Declaration declared = catalog.byPath().get(relativePath);
       AssetLabelRegistry.Entry decision = saved.entries().get(relativePath);
@@ -274,9 +274,11 @@ public final class AssetAutoLabelService {
     BACKGROUND("Background", true, false), CHARACTER_LAYER("Character layer", true, true),
     CHARACTER_SPRITE("Character sprite", true, true), PROP("Prop / scene object", true, true),
     PANEL("Comic panel", true, true), UI("UI art", true, true),
-    EFFECT("Visual effect", true, true), AUDIO("Audio", false, false),
+    EFFECT("Visual effect", true, true), PROJECT_ICON("Project icon", false, false),
+    MUSIC("Music", false, false), SOUND_EFFECT("Sound effect", false, false), VOICE("Voice", false, false),
+    AUDIO("Audio", false, false),
     VIDEO("Video", false, false), FONT("Font", false, false),
-    DATA("Data", false, false), UNKNOWN("Unknown", false, false);
+    DATA("Data", false, false), UNKNOWN("Unclassified", false, false);
 
     private final String displayName;
     private final boolean vnsDeclarable;
@@ -290,6 +292,7 @@ public final class AssetAutoLabelService {
 
     public String displayName() { return displayName; }
     public boolean isVnsDeclarable() { return vnsDeclarable; }
+    public boolean acceptsOwner() { return characterDeclaration || this == VOICE; }
     public boolean usesCharacterDeclaration() { return characterDeclaration; }
 
     public static AssetKind parse(String value) {
@@ -335,7 +338,7 @@ public final class AssetAutoLabelService {
     public AssetSuggestion {
       relativePath = AssetPathHeuristics.normalizeRelative(relativePath);
       kind = kind == null ? AssetKind.UNKNOWN : kind;
-      owner = kind.usesCharacterDeclaration() ? sanitizeId(owner) : "";
+      owner = kind.acceptsOwner() ? sanitizeId(owner) : "";
       label = sanitizeId(label);
       status = status == null ? LabelStatus.SUGGESTED : status;
       confidence = Double.isFinite(confidence) ? Math.max(0.0, Math.min(1.0, confidence)) : 0.0;

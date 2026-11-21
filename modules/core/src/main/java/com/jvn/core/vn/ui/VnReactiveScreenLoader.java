@@ -104,7 +104,8 @@ public final class VnReactiveScreenLoader {
           parseDouble(p, prefix + "x", 0.0, diagnostics, sourcePath),
           parseDouble(p, prefix + "y", 0.0, diagnostics, sourcePath),
           parseDouble(p, prefix + "width", 1.0, diagnostics, sourcePath),
-          parseDouble(p, prefix + "height", 0.1, diagnostics, sourcePath)
+          parseDouble(p, prefix + "height", 0.1, diagnostics, sourcePath),
+          text(p, prefix + "source", ""), text(p, prefix + "region", "")
       ));
     }
     return new VnFacetSpec(text(p, "root", "root"), nodes);

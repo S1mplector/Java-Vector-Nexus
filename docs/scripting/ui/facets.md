@@ -106,6 +106,29 @@ The runtime discovers `status.facet`, creates the normal reactive overlay, and r
 
 ---
 
+## Showing source beside dialogue
+
+A `code` node displays a project file with its filename, source line numbers and the editor's syntax highlighting. It accepts VNS, JES and JVN properties-based configuration files. The displayed lines are literal, including dialogue formatting tags and variable placeholders.
+
+```properties
+# config/facets/example_code.facet
+x=0.36
+y=0.055
+width=0.60
+height=0.57
+nodes=sample
+node.sample.type=code
+node.sample.source=scripts/tutorial/example.vns
+node.sample.region=threshold
+node.sample.height=1
+```
+
+Surround the example with `# region threshold` and `# endregion` comments. JES uses `// region threshold` and `// endregion`. Omitting the region selects the entire file. A short region keeps the example visible at smaller viewport sizes. Both fields accept variable bindings.
+
+Set `[set ui.dialogueFacet example_code]` to display the facet's visual nodes behind the dialogue box. The player advances normally. The binding follows save, load and rollback and is hidden during choices. Use `[clear ui.dialogueFacet]` when the explanation ends. Interactive panels use `[screen call]`.
+
+For a complete editable scene, see [Show a source excerpt in dialogue](../../guides/show-source-in-dialogue.md).
+
 ## Full Example
 
 This example demonstrates nested groups, a variable-backed image, localized text, conditional content, a bar, a modal call, and a returned button value.
@@ -312,7 +335,9 @@ node.hero_name.text=${player_name}
 
 | Field | Default | Meaning |
 |---|---:|---|
-| `type` | `text` | `group`, `text`, `image`, or `bar` |
+| `type` | `text` | `group`, `text`, `image`, `bar`, or `code` |
+| `source` | empty | Project-relative file for a code node |
+| `region` | empty | Named source region for a code node |
 | `parent` | `root` | Parent group ID |
 | `text` | empty | Text-node content |
 | `value` | empty | Image asset path or bar numeric value |
