@@ -76,6 +76,9 @@ jobs:
             --tests com.jvn.editor.ui.NewProjectScaffoldTemplateWiringTest \
             --tests com.jvn.editor.ui.GameBuildPublisherViewTest \
             --tests com.jvn.editor.ui.GameBuildPublisherViewFxTest --no-daemon
+          unzip -q "$JVN_TUTORIAL_QA_DIR/Ginger-Tutorial.zip" -d "$RUNNER_TEMP/tutorial-routing"
+          export JVN_GENERATED_TUTORIAL="$RUNNER_TEMP/tutorial-routing/GingerTutorial"
+          ./gradlew :runtime:test --tests com.jvn.runtime.TutorialChoiceRoutingTest --no-daemon
       - name: Build packages and test the installed Hub
         shell: bash
         run: python scripts/package-native-hub.py "$VERSION" "build/distributions/jvn-engine-hub-lite-$VERSION.jar" build/native-hub --test-install
