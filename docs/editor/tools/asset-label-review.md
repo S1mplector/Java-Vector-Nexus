@@ -6,7 +6,7 @@ Use **Assets → Auto-label Assets...** or the **Auto-label** tab in the Asset B
 
 ## Work through a mixed folder
 
-In GingerTutorial, select `welcome.wav`. Its extension establishes that it is audio. The `[sfx]` command that references it establishes its role as a sound effect. The font inspector can identify `CaveatBrush-Regular.ttf` from the menu’s `titleFontFamily` setting. The game icon has its own role too. These three labels are editor metadata.
+In the Tutorial project, select `welcome.wav`. Its extension establishes that it is audio. The `[sfx]` command that references it establishes its role as a sound effect. The font inspector can identify `CaveatBrush-Regular.ttf` from the menu’s `titleFontFamily` setting. The game icon has its own role too. These three labels are editor metadata.
 
 For character art, compare these declarations with the files beside them.
 

@@ -8,6 +8,7 @@ import java.util.Map;
 import javafx.geometry.VPos;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
+import com.jvn.fx.ui.RenderedBoundsListener;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
@@ -37,16 +38,21 @@ final class DockMenuPresentation implements AutoCloseable {
     return new Bounds((w - total) / 2 + index * (width + gap), h * .68, width, Math.min(112, h * .17));
   }
 
+  private static Bounds itemBounds(MainMenuScene scene, int index, double w, double h) {
+    MenuRenderer.Rect rect = MenuRenderer.explicitItemRect(scene.getItem(index), 0, w, h);
+    return rect == null ? bounds(index, scene.getItemCount(), w, h) : new Bounds(rect.x(), rect.y(), rect.w(), rect.h());
+  }
+
   int hover(MainMenuScene scene, double w, double h, double x, double y) {
     for (int i = 0; i < scene.getItemCount(); i++) {
-      Bounds b = bounds(i, scene.getItemCount(), w, h);
+      Bounds b = itemBounds(scene, i, w, h);
       // Include the whole lift envelope, so a rising button cannot lose its hover.
       if (scene.isItemEnabled(i) && new Bounds(b.x(), b.y() - 16, b.width(), b.height() + 16).contains(x, y)) return i;
     }
     return -1;
   }
 
-  void render(GraphicsContext gc, MainMenuScene scene, MenuTheme theme, File root, double w, double h, double fontScale) {
+  void render(GraphicsContext gc, MainMenuScene scene, MenuTheme theme, File root, double w, double h, double fontScale, RenderedBoundsListener boundsListener) {
     long now = System.nanoTime();
     double dt = previousTime == 0 ? 1.0 / 60 : Math.min(.05, (now - previousTime) / 1e9);
     previousTime = now;
@@ -95,8 +101,10 @@ final class DockMenuPresentation implements AutoCloseable {
       boolean selected = scene.getSelected() == i && scene.isItemEnabled(i);
       double target = selected ? 1 : 0;
       focus[i] = theme.isMenuMotion() ? focus[i] + (target - focus[i]) * (1 - Math.exp(-dt * 16)) : target;
-      Bounds b = bounds(i, count, w, h);
+      Bounds b = itemBounds(scene, i, w, h);
       double y = b.y() - (theme.isMenuMotion() ? focus[i] * 14 : 0);
+      if (boundsListener != null)
+        boundsListener.accept(scene.getItem(i).id(), b.x(), y, b.width(), b.height(), 0, 0, w, h);
       gc.setGlobalAlpha(scene.isItemEnabled(i) ? 1 : .4);
       gc.setFill(Color.WHITE.interpolate(theme.getAccentColor(), .20));
       gc.fillRoundRect(b.x(), y + 5, b.width(), b.height(), 20, 20);

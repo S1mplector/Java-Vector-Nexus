@@ -109,6 +109,33 @@
   -fx-background-color: -jvn-aero-menubar;
 }
 
+.main-editor-command-bar .editor-menu-strip,
+.main-editor-command-bar .editor-menu-strip > .viewport,
+.main-editor-command-bar .editor-menu-strip > .corner {
+  -fx-background: transparent;
+  -fx-background-color: transparent;
+  -fx-background-insets: 0;
+  -fx-padding: 0;
+  -fx-border-width: 0;
+}
+
+.main-editor-command-bar .menu-bar > .container > .menu-button {
+  -fx-padding: 3 5;
+}
+.main-editor-command-bar .menu-bar > .container > .menu-button > .label {
+  -fx-graphic-text-gap: 4;
+  -fx-content-display: left;
+  -fx-padding: 0;
+}
+
+.editor-menu-strip:stacked .menu-bar > .container > .menu-button {
+  -fx-padding: 2 4;
+}
+.editor-menu-strip:stacked .menu-bar > .container > .menu-button > .label {
+  -fx-content-display: top;
+  -fx-graphic-text-gap: 2;
+}
+
 .main-editor-command-bar .menu-bar > .container > .menu-button > .label,
 .jvn-launcher-menubar > .container > .menu-button > .label {
   -fx-text-fill: -jvn-aero-text;

@@ -43,20 +43,20 @@ class GuidedTutorialIntegrationTest {
         wizard.show();
         RadioButton tutorial = wizard.getScene().getRoot().lookupAll(".radio-button").stream()
             .filter(RadioButton.class::isInstance).map(RadioButton.class::cast)
-            .filter(choice -> choice.getText().equals("Tutorial Workspace with Ginger")).findFirst().orElseThrow();
+            .filter(choice -> choice.getText().equals("Tutorial")).findFirst().orElseThrow();
         tutorial.fire();
         assertTrue(((CheckBox) field(wizard, "chkTutorialPack")).isSelected());
         ((CheckBox) field(wizard, "chkGitInit")).setSelected(false);
         ((javafx.scene.control.TextField) field(wizard, "txtLocation")).setText(parent.toString());
-        ((javafx.scene.control.TextField) field(wizard, "txtProjectName")).setText("JVNTutorial");
+        assertEquals("Tutorial", ((javafx.scene.control.TextField) field(wizard, "txtProjectName")).getText());
         var create = (javafx.scene.control.Button) field(wizard, "btnCreate");
         assertTrue(tutorial.isSelected());
-        assertEquals("Create Ginger Tutorial", create.getText());
+        assertEquals("Create Tutorial", create.getText());
         assertFalse(create.isDisabled());
         create.fire();
         assertNotNull(wizard.getCreatedProjectDir());
         project = wizard.getCreatedProjectDir().toPath();
-        assertEquals(parent.resolve("JVNTutorial"), project);
+        assertEquals(parent.resolve("Tutorial"), project);
       } finally { wizard.close(); owner.close(); }
       return null;
     });
@@ -225,7 +225,7 @@ class GuidedTutorialIntegrationTest {
       assertEquals(TutorialCatalog.LESSONS.size(), visitedTopics.size());
       FxToolkit.runFx(() -> {
         var menu = new MainMenuScene(null, new VnSettings(), null, "story/tutorial_hub.vns", null);
-        assertEquals("JVN Tutorial", menu.getDisplayTitle());
+        assertEquals("Tutorial", menu.getDisplayTitle());
         assertEquals("", menu.getDisplaySubtitle());
         assertEquals("", menu.getDisplayHints());
         assertNull(MenuTheme.fromAssets().getSecondaryMenuPortrait());
@@ -268,10 +268,10 @@ class GuidedTutorialIntegrationTest {
       String export = System.getenv("JVN_TUTORIAL_QA_DIR");
       if (export != null && !export.isBlank()) {
         Path output = Path.of(export);
-        try (var zip = new java.util.zip.ZipOutputStream(Files.newOutputStream(output.resolve("Ginger-Tutorial.zip")));
+        try (var zip = new java.util.zip.ZipOutputStream(Files.newOutputStream(output.resolve("Tutorial.zip")));
              var files = Files.walk(project)) {
           for (Path file : files.filter(Files::isRegularFile).sorted().toList()) {
-            String name = "GingerTutorial/" + project.relativize(file).toString().replace('\\', '/');
+            String name = project.getFileName() + "/" + project.relativize(file).toString().replace('\\', '/');
             zip.putNextEntry(new java.util.zip.ZipEntry(name));
             Files.copy(file, zip);
             zip.closeEntry();
@@ -288,7 +288,7 @@ class GuidedTutorialIntegrationTest {
             graphics.drawImage(screen, i % 2 * 640, i / 2 * 360, 640, 360, null);
           }
         } finally { graphics.dispose(); }
-        ImageIO.write(sheet, "png", output.resolve("Ginger-menus.png").toFile());
+        ImageIO.write(sheet, "png", output.resolve("Tutorial-menus.png").toFile());
       }
     } finally {
       AssetCatalog.setDefaultManager(new ClasspathAssetManager());

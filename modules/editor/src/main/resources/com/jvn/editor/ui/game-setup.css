@@ -1,0 +1,130 @@
+.game-setup {
+  -fx-background-color: -jvn-aero-background;
+}
+.game-setup .setup-header {
+  -fx-padding: 12 20;
+  -fx-background-color: -jvn-aero-chrome;
+  -fx-border-color: transparent transparent -jvn-aero-edge transparent;
+}
+.game-setup .setup-title {
+  -fx-font-size: 21px;
+  -fx-font-weight: bold;
+  -fx-text-fill: -jvn-aero-text;
+}
+.game-setup .setup-secondary, .game-setup .welcome-section-meta,
+.game-setup .new-project-wizard-path, .game-setup .new-project-wizard-summary {
+  -fx-font-size: 12px;
+  -fx-text-fill: -jvn-aero-muted;
+}
+.game-setup .tab-pane > .tab-header-area { -fx-padding: 0 12; }
+.game-setup .tab-pane > .tab-header-area > .tab-header-background { -fx-background-color: -jvn-aero-surface; }
+.game-setup .tab-pane > .tab-header-area > .headers-region > .tab {
+  -fx-background-color: transparent;
+  -fx-background-insets: 0;
+  -fx-background-radius: 0;
+  -fx-border-width: 0 0 2 0;
+  -fx-border-color: transparent;
+  -fx-padding: 6 12;
+}
+.game-setup .tab-pane > .tab-header-area > .headers-region > .tab:selected {
+  -fx-background-color: -jvn-aero-field;
+  -fx-border-color: -jvn-aero-tab-focus-edge;
+}
+.game-setup .tab .tab-label { -fx-text-fill: -jvn-aero-muted; -fx-graphic-text-gap: 6; }
+.game-setup .tab:selected .tab-label { -fx-text-fill: -jvn-aero-text; }
+.game-setup .scroll-pane, .game-setup .scroll-pane > .viewport, .game-setup .setup-page {
+  -fx-background: -jvn-aero-background;
+  -fx-background-color: -jvn-aero-background;
+  -fx-background-insets: 0;
+  -fx-border-width: 0;
+}
+.game-setup .setup-page { -fx-padding: 16 22 20 22; }
+.game-setup .setup-section-title {
+  -fx-font-size: 15px;
+  -fx-font-weight: bold;
+  -fx-text-fill: -jvn-aero-text;
+  -fx-padding: 0 0 7 0;
+  -fx-border-color: transparent transparent -jvn-aero-edge transparent;
+  -fx-border-width: 0 0 1 0;
+}
+.game-setup .setup-template {
+  -fx-background-color: -jvn-aero-field;
+  -fx-background-insets: 0;
+  -fx-background-radius: 1;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-border-width: 1;
+  -fx-alignment: center;
+  -fx-padding: 6 3 7 3;
+  -fx-text-fill: -jvn-aero-text;
+  -fx-font-weight: bold;
+  -fx-font-size: 13px;
+  -fx-cursor: hand;
+}
+.game-setup .setup-template > .radio, .game-setup .setup-template > .radio > .dot {
+  -fx-background-color: transparent;
+  -fx-background-insets: 0;
+  -fx-padding: 0;
+}
+.game-setup .setup-template:hover { -fx-background-color: -jvn-aero-hover; }
+.game-setup .setup-template:selected {
+  -fx-background-color: -jvn-aero-selected;
+  -fx-border-color: -jvn-aero-edge -jvn-aero-edge -jvn-aero-tab-focus-edge -jvn-aero-edge;
+  -fx-border-width: 1 1 3 1;
+  -fx-padding: 6 3 5 3;
+}
+.game-setup .setup-template:focused { -fx-border-color: -jvn-aero-focus; }
+.game-setup .new-project-wizard-form-label { -fx-text-fill: -jvn-aero-text; -fx-font-size: 12px; }
+.game-setup .text-field, .game-setup .combo-box-base, .game-setup .spinner,
+.game-setup .new-project-wizard-description {
+  -fx-background-radius: 2;
+  -fx-border-radius: 2;
+  -fx-background-insets: 0;
+  -fx-border-width: 1;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-background-color: -jvn-aero-field;
+  -fx-text-fill: -jvn-aero-text;
+}
+.game-setup .text-field { -fx-padding: 5 8; }
+.game-setup .combo-box-base > .arrow-button, .game-setup .spinner .increment-arrow-button,
+.game-setup .spinner .decrement-arrow-button { -fx-background-color: -jvn-aero-button; -fx-background-insets: 0; -fx-background-radius: 0; }
+.game-setup .spinner .text-field, .game-setup .combo-box .text-field { -fx-border-width: 0; }
+.game-setup .text-field:focused, .game-setup .combo-box-base:focused, .game-setup .spinner:focused,
+.game-setup .new-project-wizard-description:focused { -fx-border-color: -jvn-aero-focus; }
+.game-setup .new-project-wizard-description .content { -fx-background-color: -jvn-aero-field; }
+.game-setup .new-project-wizard-checkbox { -fx-text-fill: -jvn-aero-text; }
+.game-setup .new-project-wizard-checkbox > .box {
+  -fx-background-color: -jvn-aero-button;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-border-radius: 2;
+  -fx-background-radius: 2;
+}
+.game-setup .new-project-wizard-checkbox:selected > .box > .mark { -fx-background-color: -jvn-aero-text; }
+.game-setup .text-field.new-project-wizard-field-error { -fx-border-color: -jvn-aero-warning; }
+.game-setup .new-project-wizard-footer {
+  -fx-background-color: -jvn-aero-surface;
+  -fx-border-color: -jvn-aero-edge transparent transparent transparent;
+  -fx-border-width: 1 0 0 0;
+}
+.game-setup .new-project-wizard-validation-ready { -fx-text-fill: -jvn-aero-text; }
+.game-setup .new-project-wizard-validation-error { -fx-text-fill: -jvn-aero-warning; }
+.root.game-setup .button.setup-primary, .root.game-setup .button.setup-button {
+  -fx-background-color: -jvn-aero-button;
+  -fx-text-fill: -jvn-aero-text;
+  -fx-background-insets: 0;
+  -fx-background-radius: 3;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-border-radius: 3;
+  -fx-padding: 5 12;
+}
+.root.game-setup .button.setup-primary { -fx-border-color: -jvn-aero-tab-focus-edge; -fx-font-weight: bold; }
+.root.game-setup .button.setup-button:hover, .root.game-setup .button.setup-primary:hover { -fx-background-color: -jvn-aero-hover; }
+.root.game-setup .button.setup-button:focused, .root.game-setup .button.setup-primary:focused { -fx-border-color: -jvn-aero-focus; }
+.root.game-setup .button.setup-button:pressed, .root.game-setup .button.setup-primary:pressed { -fx-background-color: -jvn-aero-pressed; }
+.game-setup .new-project-wizard-warning-card {
+  -fx-background-color: transparent;
+  -fx-background-radius: 0;
+  -fx-border-radius: 0;
+  -fx-border-width: 0 0 0 2;
+  -fx-border-color: -jvn-aero-warning;
+  -fx-text-fill: -jvn-aero-warning;
+}

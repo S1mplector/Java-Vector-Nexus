@@ -130,7 +130,7 @@ public class FileEditorTab extends BorderPane {
     this.kind = detected != null ? detected : Kind.OTHER;
 
     this.jesEditor = (kind == Kind.JES) ? new JesCodeEditor() : null;
-    this.vnsEditor = (kind == Kind.VNS) ? new VnsCodeEditor() : null;
+    this.vnsEditor = (kind == Kind.VNS) ? new VnsCodeEditor(file) : null;
     this.javaEditor = (kind == Kind.JAVA) ? new JavaCodeEditor() : null;
     this.textEditor = (kind == Kind.OTHER) ? new JavaCodeEditor() : null;
     this.timelineEditor = (kind == Kind.TIMELINE) ? new TimelineCodeEditor() : null;
@@ -172,8 +172,12 @@ public class FileEditorTab extends BorderPane {
 
     setupLayout();
 
-    if (file != null && file.exists()) reloadFromDisk();
-    else savedSnapshot = getCurrentText();
+    if (file != null && file.exists()) {
+      reloadFromDisk();
+      navigateToLine(1);
+    } else {
+      savedSnapshot = getCurrentText();
+    }
 
     // Key forwarding for JES viewport camera controls
     addEventFilter(KeyEvent.KEY_PRESSED, e -> {
@@ -781,6 +785,10 @@ public class FileEditorTab extends BorderPane {
   public void stopPreviewAudio() {
     if (vnPreview != null) vnPreview.stopAudio();
   }
+  public boolean hasPreviewMemoryCaches() {
+    return vnPreview != null || viewport != null;
+  }
+
   public void trimPreviewMemoryCaches() {
     if (vnPreview != null) vnPreview.trimMemoryCaches();
     if (viewport != null) viewport.trimMemoryCaches();

@@ -1,316 +1,43 @@
-# New Project Wizard
+# New Game Workspace
 
-The editor's new project wizard scaffolds a VN-ready project with layered config, scripts, assets, and manifest metadata.
+Choose **New Project** in the editor’s Welcome dashboard to open the workspace. You can create a project directly from the **Project** tab or adjust the other tabs first.
 
-Wizard class:
-- `modules/editor/src/main/java/com/jvn/editor/ui/NewProjectWizard.java`
+## Choose a template
 
-## Goals of Current Wizard
+| Template | First playable scene | Menus and assets |
+| --- | --- | --- |
+| **Writing Project** (default) | One line of dialogue in `scripts/story/prologue.vns`, ready to replace | Title, save, load and settings screens. Bring your own art and music. |
+| **Tutorial** | A topic picker leading to 30 independent lessons | Ginger, lesson examples, source panels and a dedicated interface. [Tutorial guide](../../guides/jvn-tutorial.md) |
+| **Blank Sandbox** | The same editable prologue | An empty menu registry for designing your own interface. |
 
-- produce clean, engine-aligned directory layout
-- generate editable starter files (not opaque binary state)
-- support immediate run from editor project tree
-- include menu/dialogue/timeline config that the editor and runtime can open directly
+The display name appears in the game. **Auto** derives a folder name from it. If the destination already exists, **Use available folder name** picks the next free numbered folder and keeps your game title.
 
-## Wizard Sections
+## Configure the project
 
-1. **Project Basics**
-   - project name
-   - author
-   - location
-   - output path preview (sanitized folder name)
+| Tab | What you can set |
+| --- | --- |
+| **Project** | Starting template, display name, author and destination. The output path shows the exact folder the editor will create. |
+| **Content** | Optional artwork and music, tutorial content, menu profiles, history defaults and Git initialization. Enable the initial commit separately if wanted. |
+| **Runtime** | Game canvas, menu theme, renderer, audio backend and locale. Choose a resolution preset, including handheld and portrait, or enter custom dimensions. |
+| **Playback** | Dialogue delay in milliseconds per character, auto-advance delay, music, effects and voice volumes, skip behavior, physics settings and input profile path. |
+| **Review** | Release version, save ID, project notes and a tree of generated files. |
 
-2. **Engine Profile**
-   - resolution preset
-   - high-resolution presets up to 4K (`3840x2160`)
-   - custom width/height override for non-standard targets (ultrawide, handheld, kiosk)
-   - menu theme preset
-   - entry script/story map/dialogue layout preview
+**Game canvas** shows the dimensions that will be written to the manifest. For example, on a display with 2× scaling, a 1920×1080 preset produces a 960×540 canvas with **Adjust for this display’s pixel density** enabled. Clear the option for an exact 1920×1080 canvas.
 
-3. **Feature Modules**
-   - playable Lavender starter story
-   - Tutorial Workspace with Ginger, a separate template with 30 lessons
-   - VNS/JES integration scene
-   - main menu profile pack
-   - save/load profile files
-   - settings profile
-   - history/backlog defaults
+The **Release version** supplies the starting value in Build & Publish. The **Save ID** identifies the game’s saves and preferences. Leave it empty to use the suggested ID derived from the author and game title. Set a fixed ID if those names may change between releases.
 
-4. **Version Control**
-   - initialize Git repository
-   - optional initial commit
+## Open the generated files
 
-5. **Generated Layout Preview**
-   - live tree preview before create
+| File | Use |
+| --- | --- |
+| `jvn.project` | Project identity, release version, dimensions, entry script and runtime configuration. |
+| `scripts/story/prologue.vns` | Opening scene for Writing Project and Blank Sandbox. Edit the line after `@label start`, then use **Run** in the editor. |
+| `scripts/definitions/characters.vns` | Shared character declarations for the opening script. |
+| `scripts/story/tutorial_hub.vns` | Entry point when the tutorial pack is selected. Lessons live in `scripts/tutorial/`. |
+| `config/story/story.storymap` | The opening arc, or the lesson routes in Tutorial. |
+| `config/settings/vn.settings` | Generated project settings. |
+| `config/ui/dialogue.layout` | Dialogue and choice layout, scaled to the selected canvas. |
+| `config/locales/<locale>.properties` | Strings for the selected locale. |
+| `config/menu/` | Registry, screens, layouts and styles for the menu options you selected. |
 
-6. **Project Notes**
-   - optional description for manifest + README
-
----
-
-### Inline Validation
-
-The wizard provides real-time validation feedback on critical fields:
-
-| Field | Validation Rules | Visual Feedback |
-|-------|-----------------|----------------|
-| **Project name** | Non-empty, alphanumeric with underscores/hyphens | Green border = valid, Red border = error |
-| **Location** | Non-empty, path exists | Green border = valid, Red border = error |
-| **Output path** | Auto-generated from sanitized name | Gray display (read-only) |
-
-A validation label at the bottom of the wizard shows the current status:
-- "Ready to create" — all fields valid, Create button enabled
-- "Project name cannot be empty" — specific error message
-- "Location must be an existing directory" — specific error message
-- "Project name must be alphanumeric" — specific error message
-
-The Create button is disabled when validation fails.
-
-### Tooltips
-
-Comprehensive tooltips guide users through wizard options:
-
-| Control | Tooltip Content |
-|---------|-----------------|
-| **txtProjectName** | "Enter a name for your project (alphanumeric, underscores, hyphens allowed)" |
-| **txtAuthor** | "Your name or team name for project metadata" |
-| **txtLocation** | "Parent directory where the project folder will be created" |
-| **cmbResolution** | "Target game resolution (affects layout scaling)" |
-| **cmbTheme** | "Menu theme preset for generated UI assets" |
-| **cmbRuntimeUi** | "Runtime UI style (standard, minimal, or custom)" |
-| **cmbAudioBackend** | "Audio system for playback (JavaFX Sound, LWJGL OpenAL, etc.)" |
-| **cmbLocale** | "Primary language/locale for the game (editable for custom codes)" |
-| **Playback spinners** | "Default player preferences for text speed, auto-advance, and volumes" |
-| **Skip checkboxes** | "Enable skip modes for read text and unvisited text" |
-| **txtInputProfilePath** | "Optional path to a custom input profile configuration" |
-
-Tooltips appear on hover and provide context for each option.
-
-### Editable Locale ComboBox
-
-The locale ComboBox is editable to support custom locale codes beyond the preset list:
-
-1. Click the locale dropdown to see common presets (en, ja, zh, ko, es, fr, de, etc.)
-2. Type a custom locale code (e.g., `pt-BR`, `ru-RU`, `ar-SA`) if your language isn't listed
-3. The wizard accepts any valid locale code format
-
-### Unicode Box-Drawing
-
-The structure preview tree uses proper Unicode box-drawing characters for a polished appearance:
-
-```
-├── config/
-│   ├── settings/
-│   │   └── vn.settings
-│   ├── ui/
-│   │   └── dialogue.layout
-│   └── menu/
-│       ├── registry/
-│       │   └── menu.registry
-│       ├── menus/
-│       │   ├── main.menu
-│       │   ├── load.menu
-│       │   └── settings.menu
-│       ├── layouts/
-│       │   └── default.layout
-│       └── styles/
-│           └── default.style
-```
-
-Conditional entries (like save/load/settings menus) use dynamic connectors to show they're optional based on feature selections.
-
-### Fullscreen Toggle
-
-When the settings menu pack is enabled, the generated `settings.menu` includes a fullscreen toggle item:
-
-```properties
-item.fullscreen.label={fullscreen}
-item.fullscreen.action=toggle_fullscreen
-```
-
-The `{fullscreen}` placeholder is resolved from the locale file, allowing for localized labels.
-
-### Theme Font Weight
-
-Menu theme creation now includes the `hintsFontWeight` property:
-
-```properties
-hintsFontWeight=NORMAL
-```
-
-This controls the font weight for hint text in menu screens (e.g., "Enter: Confirm" navigation hints).
-
-### Resolution-Aware Dialogue Layout
-
-When creating the dialogue layout, the wizard scales pixel-based values proportionally if the target resolution differs from the 1080p baseline:
-
-| Resolution | Scaling Factor |
-|------------|----------------|
-| 720p (1280×720) | 0.67× |
-| 1080p (1920×1080) | 1.0× (baseline) |
-| 1440p (2560×1440) | 1.33× |
-| 4K (3840×2160) | 2.0× |
-
-Scaled values include:
-- Textbox padding
-- Name box dimensions and offsets
-- Font sizes (name, dialogue, choice)
-- Choice button dimensions and gaps
-
-The generated `dialogue.layout` includes a comment header:
-```properties
-# Target resolution: 1920x1080
-```
-
-### Active Locale Entries
-
-The generated locale stub (`config/locales/<locale>.properties`) now includes active entries based on enabled features:
-
-```properties
-# Menu labels (if menu pack enabled)
-menu.new_game=New Game
-menu.continue=Continue
-menu.settings=Settings
-menu.quit=Quit
-
-# Settings entries (if settings pack enabled)
-settings.fullscreen=Fullscreen
-settings.text_speed=Text Speed
-settings.auto_delay=Auto Delay
-
-# Dialogue text keys (if sample content enabled)
-intro.welcome=Welcome to your new visual novel project!
-intro.instructions=Edit scripts/story/prologue.vns to begin your story.
-```
-
-Entries are uncommented only for the features you enable, keeping the locale file clean.
-
-## Generated Directory Structure
-
-```text
-<project>/
-|-- config/
-|   |-- settings/vn.settings
-|   |-- story/story.storymap
-|   |-- ui/dialogue.layout
-|   `-- menu/
-|       |-- theme/menu.theme
-|       |-- registry/menu.registry
-|       |-- menus/
-|       |   |-- main.menu
-|       |   |-- load.menu      (optional)
-|       |   |-- save.menu      (optional)
-|       |   `-- settings.menu  (optional)
-|       |-- layouts/default.layout
-|       |-- styles/default.style
-|       `-- assets/{buttons,icons}
-|-- scripts/
-|   |-- story/prologue.vns
-|   |-- story/{tutorial_hub,branch_demo,epilogue}.vns
-|   |-- scenes/studio_tour.jes
-|   |-- tutorial/*.vns       (tutorial workspace)
-|   |-- definitions/characters.vns
-|   |-- common/
-|   `-- system/
-|-- assets/
-|   `-- demo/
-|       |-- backgrounds/{game,menu}.png
-|       |-- characters/lavender/*
-|       `-- audio/*
-|-- save/
-|-- .gitignore      (if Git init is enabled)
-|-- .gitattributes  (if Git is enabled)
-|-- README.md
-`-- jvn.project
-```
-
-## Manifest (`jvn.project`)
-
-Wizard writes key runtime/editor metadata such as:
-- project identity (`name`, `author`, `type`)
-- entry points (`entryVns`, `entryLabel`, `timeline`)
-- config references (`settingsFile`, `dialogueLayout`, menu paths)
-- resolution (`width`, `height`)
-- selected module booleans
-- VCS toggles (`vcs.git.*`)
-
-This manifest is used by editor project-run workflow.
-
-## Generated Starter Content
-
-### Prologue script
-
-The Starter Story opens with **The First Page**, a short scene with Lavender in a sketchbook studio.
-It is designed to be played once and then edited immediately. It demonstrates:
-
-- a shared character definition file with layered `@charpreset` expressions;
-- named `@position` staging, dialogue modes, pacing, and transitions;
-- choices, labels, variables, and local jumps;
-- cross-file `[goto Scenario:label]` routing;
-- a real `[jes push ... label ... with ...]` round trip.
-
-Path:
-- `scripts/story/prologue.vns`
-
-### Bundled demo assets
-
-Wizard packages and copies demo-ready starter assets so installed-editor builds and source checkouts
-produce the same playable result:
-
-- layered character sprites: `assets/demo/characters/lavender/*`
-- procedurally generated plain-white backgrounds: `assets/demo/backgrounds/game.png` and `menu.png`
-- sample BGM plus its license document under `assets/demo/audio/`
-
-Default main-menu style points to the bundled background asset so new projects do not boot into an empty-color title screen.
-
-### Tutorial workspace
-
-Select **Tutorial Workspace with Ginger** in the template chooser. It generates 30 independently playable lessons, the topic picker and source-backed code panels. The Starter Story uses Lavender and its own prologue. Follow the [tutorial guide](../../guides/jvn-tutorial.md) to edit a lesson and replay it.
-
-### Timeline starter
-
-Creates initial arc:
-
-```text
-arc "Prologue" script "scripts/story/prologue.vns" entry "start" at 40,40
-```
-
-### Dialogue layout starter
-
-Creates baseline `config/ui/dialogue.layout` values compatible with Layout Studio diagnostics and the runtime loader.
-
-The default **Monochrome Sketch** theme ships a dedicated minimal variant. Its compact white
-choice rows are aligned to the right of the viewport, leaving the left staging area clear for
-Lavender. Thin black borders and restrained hover and selection colors replace the generic blue
-full-width presentation. Selecting another theme retains the general-purpose dialogue preset.
-
-The same theme also writes a coordinated minimal menu layout and style: the menu list occupies a
-compact right-side column, typography uses neutral black and gray states, and button chrome is
-removed. These presets remain available from the dialogue, menu-layout, and menu-style visual
-editors and can be applied or undone while authoring.
-
-### Menu profile starter
-
-When enabled, creates:
-- registry
-- default layout/style
-- main menu
-- optional load/save/settings menu files
-
-## Recommended First Steps After Creation
-
-1. Open project in editor.
-2. Edit `scripts/story/prologue.vns`.
-3. Tune `config/ui/dialogue.layout` in visual dialogue editor.
-4. Customize `config/menu/menus/*.menu` and `config/menu/layouts/*.layout`.
-5. Open `scripts/scenes/studio_tour.jes`, change its label or timeline duration, and launch it from the prologue.
-6. Add or replace assets under `assets/` (you can keep or remove `assets/demo`).
-7. Run from the project explorer root **Run** button.
-
-## Team Usage Notes
-
-- Wizard output is intentionally plain text and source-control friendly.
-- Keep `jvn.project` committed; it defines entry/config linkage.
-- Use module toggles consistently across team templates to avoid layout drift.
-- If Git is enabled, the wizard writes managed blocks into `.gitignore` and `.gitattributes`.
-- Re-running Git setup from editor is safe; managed blocks are replaced in place.
+To build your own menus in Blank Sandbox, create a screen in the Layout Launcher and register it in `config/menu/registry/menu.registry`. For a writing project, open the existing `config/menu/menus/main.menu` to change the title screen or its actions.

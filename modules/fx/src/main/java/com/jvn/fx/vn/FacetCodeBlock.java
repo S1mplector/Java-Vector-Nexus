@@ -149,10 +149,10 @@ final class FacetCodeBlock {
   private static Color ink(String style) {
     return switch (style) {
       case "keyword", "vns-directive", "vns-command", "prop-key", "dsl-action",
-          "jes-struct", "jes-action", "jes-prop" -> COMMAND;
+          "jes-struct", "jes-action" -> COMMAND;
       case "string", "vns-choice" -> STRING;
       case "number", "vns-arrow", "vns-value", "dsl-bool", "jes-bool" -> NUMBER;
-      case "vns-speaker", "dsl-section", "jes-comptype" -> NAME;
+      case "vns-format", "vns-variable", "vns-option", "jes-prop", "vns-speaker", "dsl-section", "jes-comptype" -> NAME;
       case "comment" -> MUTED;
       default -> TEXT;
     };

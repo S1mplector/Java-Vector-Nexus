@@ -1,0 +1,88 @@
+.tm-root {
+  -fx-background-color: -jvn-aero-background;
+  -tm-used: -jvn-aero-warning;
+  -tm-committed: -jvn-aero-muted;
+}
+.tm-root .tm-header {
+  -fx-background-color: -jvn-aero-surface;
+  -fx-padding: 9 12;
+}
+.tm-root .tm-title { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: -jvn-aero-text; }
+.tm-root .tm-heading, .tm-root .tm-row-name {
+  -fx-font-weight: bold; -fx-text-fill: -jvn-aero-text;
+}
+.tm-root .tm-heading { -fx-font-size: 14px; }
+.tm-root .tm-muted, .tm-root .tm-axis { -fx-text-fill: -jvn-aero-muted; -fx-font-size: 11px; }
+.tm-root .tm-axis { -fx-font-size: 10px; }
+.tm-root .tab-pane > .tab-header-area { -fx-padding: 0 10; }
+.tm-root .tab-pane > .tab-header-area > .tab-header-background { -fx-background-color: -jvn-aero-surface; }
+.tm-root .tab-pane > .tab-header-area > .headers-region > .tab {
+  -fx-background-color: transparent; -fx-background-insets: 0; -fx-background-radius: 0;
+  -fx-border-width: 0 0 2 0; -fx-border-color: transparent; -fx-padding: 5 10;
+}
+.tm-root .tab-pane > .tab-header-area > .headers-region > .tab:selected {
+  -fx-border-color: -tm-used; -fx-background-color: -jvn-aero-field;
+}
+.tm-root .tab-pane > .tab-header-area > .headers-region > .tab > .tab-container > .tab-label {
+  -fx-text-fill: -jvn-aero-muted; -fx-font-weight: bold;
+}
+.tm-root .tab-pane > .tab-header-area > .headers-region > .tab:selected > .tab-container > .tab-label {
+  -fx-text-fill: -jvn-aero-text;
+}
+.tm-root .scroll-pane, .tm-root .scroll-pane > .viewport, .tm-root .tm-body {
+  -fx-background: -jvn-aero-background; -fx-background-color: -jvn-aero-background;
+  -fx-background-insets: 0; -fx-border-width: 0;
+}
+.tm-root .tm-body { -fx-padding: 16; }
+.tm-root .tm-hero { -fx-text-fill: -jvn-aero-text; -fx-font-size: 33px; -fx-font-weight: bold; }
+.tm-root .tm-number { -fx-text-fill: -jvn-aero-text; -fx-font-size: 15px; -fx-font-weight: bold; }
+.tm-root .tm-pressure { -fx-pref-height: 4; -fx-max-height: 4; -fx-padding: 0; }
+.tm-root .tm-pressure .track, .tm-root .tm-pressure .bar {
+  -fx-background-insets: 0; -fx-background-radius: 0; -fx-padding: 2 0;
+}
+.tm-root .tm-pressure .track { -fx-background-color: -jvn-aero-surface; }
+.tm-root .tm-pressure .bar, .tm-root .tm-used-key { -fx-background-color: -tm-used; }
+.tm-root .tm-committed-key { -fx-background-color: -tm-committed; }
+.tm-root .tm-chart { -fx-background-color: -jvn-aero-field; }
+.tm-root .tm-grid { -fx-stroke: -jvn-aero-muted; -fx-opacity: 0.18; -fx-fill: transparent; }
+.tm-root .tm-used-line { -fx-stroke: -tm-used; -fx-stroke-width: 2; -fx-fill: transparent; }
+.tm-root .tm-committed-line { -fx-stroke: -tm-committed; -fx-stroke-dash-array: 5 3; -fx-fill: transparent; }
+.tm-root .tm-fill { -fx-fill: -tm-used; -fx-opacity: 0.12; -fx-stroke: transparent; }
+.tm-root .tm-metrics { -fx-hgap: 20; }
+.tm-root .tm-section {
+  -fx-border-color: -jvn-aero-edge transparent transparent transparent;
+  -fx-border-width: 1 0 0 0; -fx-padding: 11 0 0 0;
+}
+.tm-root .tm-body > .tm-first { -fx-border-width: 0; -fx-padding: 0; }
+.tm-root .tm-row { -fx-padding: 6 0; }
+.tm-root .tm-row-value { -fx-text-fill: -jvn-aero-text; -fx-font-weight: bold; }
+.tm-root .tm-status {
+  -fx-background-color: -jvn-aero-surface; -fx-padding: 6 12;
+  -fx-text-fill: -jvn-aero-muted; -fx-font-size: 11px;
+}
+.tm-root .tm-output { -fx-font-family: monospace; -fx-font-size: 11px; }
+
+.tm-root .tm-chart-axis { -fx-padding: 0 72 0 6; }
+.tm-root .tm-body .button {
+  -fx-background-color: -jvn-aero-button; -fx-background-insets: 0; -fx-background-radius: 3;
+  -fx-border-color: -jvn-aero-edge; -fx-border-width: 1; -fx-border-radius: 3;
+  -fx-text-fill: -jvn-aero-text; -fx-padding: 5 9;
+}
+.tm-root .tm-body .button:hover { -fx-background-color: -jvn-aero-hover; }
+.tm-root .tm-body .button:focused { -fx-border-color: -jvn-aero-focus; }
+.tm-root .tm-body .button:pressed { -fx-background-color: -jvn-aero-pressed; }
+.tm-root .spinner {
+  -fx-background-color: -jvn-aero-field; -fx-background-insets: 0; -fx-background-radius: 3;
+  -fx-border-color: -jvn-aero-edge; -fx-border-radius: 3; -fx-padding: 0;
+}
+.tm-root .spinner:focused { -fx-border-color: -jvn-aero-focus; }
+.tm-root .spinner .text-field {
+  -fx-background-color: transparent; -fx-border-color: transparent; -fx-text-fill: -jvn-aero-text;
+}
+.tm-root .spinner .increment-arrow-button, .tm-root .spinner .decrement-arrow-button {
+  -fx-background-color: -jvn-aero-button; -fx-background-insets: 0; -fx-background-radius: 0;
+}
+.tm-root .spinner .increment-arrow-button:hover, .tm-root .spinner .decrement-arrow-button:hover {
+  -fx-background-color: -jvn-aero-hover;
+}
+.tm-root .spinner .increment-arrow, .tm-root .spinner .decrement-arrow { -fx-background-color: -jvn-aero-text; }

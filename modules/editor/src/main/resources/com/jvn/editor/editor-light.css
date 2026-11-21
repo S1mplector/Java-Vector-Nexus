@@ -2,6 +2,7 @@
 @import "editor-aero.css";
 @import "editor-aero-controls.css";
 @import "editor-code.css";
+@import "editor-notices.css";
 
 /* JVN editor light theme. Set -Djvn.editor.theme=light (or JVN_EDITOR_THEME=light) to use. */
 /* Icon base */
@@ -1222,7 +1223,8 @@
 
  /* Line numbers (RichTextFX LineNumberFactory) */
  .lineno {
-   -fx-background-insets: -2 -24 -2 0;
+   -fx-background-insets: -1 0 -1 0;
+   -fx-pref-width: 68;
    -fx-view-order: -1;
    -fx-border-width: 0 1 0 0;
    -fx-padding: 0 10 0 8;
@@ -1257,11 +1259,6 @@
 .code-editor-diagnostics-list .list-cell {
   -fx-background-color: transparent;
   -fx-padding: 5 10 5 10;
-}
-
-.code-editor-minimap {
-  -fx-border-width: 0 0 0 1;
-  -fx-cursor: hand;
 }
 
 /* Ensure virtualized scroll pane and content are transparent to show editor bg */
@@ -1317,6 +1314,9 @@
   -jvn-status-icon-normal: #3e77a4;
   -jvn-status-icon-red: #a63f50;
 
+  -jvn-code-map-glass: linear-gradient(to bottom, #f5fcffad, #d3eafaad 48%, #a4c9e4ad 51%, #c7e1f4ad);
+  -jvn-code-map-rim: #7da0be;
+  -jvn-code-map-hover-rim: #5087b1;
   -jvn-code-command: #254f74;
   -jvn-code-string: #366b30;
   -jvn-code-number: #974528;
@@ -3020,31 +3020,10 @@
   -fx-spacing: 12;
 }
 
-.editor-dialog-error-badge {
-  -fx-background-color: #fde1e7;
-  -fx-background-radius: 6;
-  -fx-border-color: #ba6475;
-  -fx-border-radius: 6;
-  -fx-text-fill: #6b2735;
-  -fx-font-size: 10px;
-  -fx-font-weight: 900;
-  -fx-padding: 3 7 3 7;
-}
-
-.editor-dialog-error-context {
-  -fx-text-fill: #171717;
-  -fx-font-size: 12px;
-  -fx-font-weight: 800;
-}
-
 .editor-dialog-section-title {
   -fx-text-fill: #272727;
   -fx-font-size: 11px;
   -fx-font-weight: 900;
-}
-
-.editor-dialog-error-hint {
-  -fx-text-fill: #515151;
 }
 
 .editor-dialog-error-details {
@@ -3863,23 +3842,6 @@
   -fx-padding: 0;
 }
 
-.main-editor-command-bar .jvn-application-menu {
-  -fx-padding: 2 7 2 6;
-}
-
-.main-editor-command-bar .jvn-application-menu > .label {
-  -fx-content-display: graphic-only;
-  -fx-padding: 0;
-}
-
-.main-editor-command-bar .jvn-application-menu > .arrow-button {
-  -fx-padding: 0 0 0 4;
-}
-
-.main-editor-command-bar .jvn-application-menu > .arrow-button > .arrow {
-  -fx-background-color: #555b62;
-  -fx-padding: 2.5;
-}
 
 .toolbar-status-panel {
   -fx-background-color: #e8edf3;
@@ -6604,155 +6566,6 @@
   -fx-cursor: default;
 }
 
-.trashman-actions {
-  -fx-alignment: center-left;
-}
-
-.trashman-options {
-  -fx-padding: 3 0 0 0;
-}
-
-.trashman-body {
-  -fx-padding: 10;
-}
-
-.trashman-card {
-  -fx-padding: 10;
-  -fx-background-color: #ffffff;
-  -fx-background-radius: 8;
-  -fx-border-color: #d8dde3;
-  -fx-border-radius: 8;
-}
-
-.trashman-card-title {
-  -fx-text-fill: #665f57;
-  -fx-font-size: 10px;
-  -fx-font-weight: 800;
-}
-
-.trashman-card-value {
-  -fx-text-fill: #202326;
-  -fx-font-size: 13px;
-  -fx-font-weight: 800;
-}
-
-.trashman-card-detail {
-  -fx-text-fill: #5f6872;
-  -fx-font-size: 10px;
-}
-
-.trashman-graph-grid {
-  -fx-alignment: center-left;
-}
-
-.trashman-graph-card {
-  -fx-padding: 10;
-  -fx-background-color: #ffffff;
-  -fx-background-radius: 8;
-  -fx-border-color: #d8dde3;
-  -fx-border-radius: 8;
-}
-
-.trashman-live-graph {
-  -fx-effect: innershadow(gaussian, rgba(0,0,0,0.10), 4, 0.4, 0, 1);
-}
-
-.trashman-section-title {
-  -fx-text-fill: #24282c;
-  -fx-font-size: 13px;
-  -fx-font-weight: 800;
-}
-
-.trashman-row {
-  -fx-padding: 9;
-  -fx-background-color: #f7f8fa;
-  -fx-background-radius: 7;
-  -fx-border-color: #dde2e8;
-  -fx-border-radius: 7;
-}
-
-.trashman-row-warn {
-  -fx-border-color: rgba(197, 136, 25, 0.36);
-}
-
-.trashman-row-title {
-  -fx-text-fill: #202326;
-  -fx-font-size: 12px;
-  -fx-font-weight: 800;
-}
-
-.trashman-row-detail {
-  -fx-text-fill: #4e5862;
-  -fx-font-size: 10px;
-}
-
-.trashman-chip {
-  -fx-text-fill: #8a5d12;
-  -fx-font-size: 9px;
-  -fx-font-weight: 800;
-  -fx-padding: 2 7 2 7;
-  -fx-background-color: rgba(197, 136, 25, 0.13);
-  -fx-background-radius: 999;
-  -fx-border-color: rgba(197, 136, 25, 0.30);
-  -fx-border-radius: 999;
-}
-
-.trashman-option-label {
-  -fx-text-fill: #635c55;
-  -fx-font-size: 11px;
-  -fx-font-weight: 800;
-}
-
-.trashman-spinner {
-  -fx-pref-width: 84px;
-  -fx-background-color: #dfe4ea;
-  -fx-border-color: #c4c9cf;
-  -fx-border-radius: 6;
-  -fx-background-radius: 6;
-}
-
-.trashman-spinner .text-field {
-  -fx-background-color: #dfe4ea;
-  -fx-text-fill: #0d0d0d;
-  -fx-prompt-text-fill: #838383;
-  -fx-background-radius: 6 0 0 6;
-}
-
-.trashman-spinner .increment-arrow-button,
-.trashman-spinner .decrement-arrow-button {
-  -fx-background-color: #d3d8de;
-  -fx-background-radius: 0;
-  -fx-border-color: transparent;
-}
-
-.trashman-spinner .increment-arrow-button:hover,
-.trashman-spinner .decrement-arrow-button:hover {
-  -fx-background-color: #c8cdd3;
-}
-
-.trashman-spinner .increment-arrow,
-.trashman-spinner .decrement-arrow {
-  -fx-background-color: #1d1d1d;
-}
-
-.trashman-action-button {
-  -fx-font-size: 11px;
-  -fx-padding: 6 9 6 9;
-}
-
-.trashman-progress > .bar {
-  -fx-background-color: #a36f22;
-}
-
-.trashman-progress > .track {
-  -fx-background-color: #dfe4ea;
-}
-
-.trashman-report {
-  -fx-font-family: "JetBrains Mono", "Consolas", monospace;
-  -fx-font-size: 10px;
-  -fx-pref-row-count: 8;
-}
 
 /* Diagnostics severity chips */
 .vns-diagnostics-root .vns-diagnostics-chip.vns-diagnostics-chip-all {

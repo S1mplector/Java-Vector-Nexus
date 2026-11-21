@@ -1,0 +1,123 @@
+/* Shared severity dialogs for the graphite and light editor themes. */
+.editor-notice-overlay {
+  -fx-padding: 22;
+}
+
+.editor-dialog-card.editor-notice {
+  -fx-background-color: -jvn-aero-background;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-background-radius: 6;
+  -fx-border-radius: 6;
+  -fx-padding: 0;
+  -fx-spacing: 0;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.40), 16, 0.15, 0, 5);
+}
+
+.editor-notice .editor-notice-header {
+  -fx-background-color: -jvn-aero-chrome;
+  -fx-background-radius: 5 5 0 0;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-border-width: 0 0 1 0;
+  -fx-padding: 15 19;
+}
+.editor-notice .editor-dialog-title {
+  -fx-text-fill: -jvn-aero-text;
+  -fx-font-size: 16px;
+}
+.editor-notice .editor-dialog-message {
+  -fx-text-fill: -jvn-aero-text;
+  -fx-font-size: 12px;
+  -fx-font-weight: normal;
+}
+.editor-notice .editor-notice-scroll,
+.editor-notice .editor-notice-scroll > .viewport {
+  -fx-background: -jvn-aero-background;
+  -fx-background-color: -jvn-aero-background;
+  -fx-background-insets: 0;
+  -fx-padding: 0;
+}
+.editor-notice .editor-dialog-body {
+  -fx-padding: 15 19;
+}
+.editor-notice .editor-dialog-section-title {
+  -fx-text-fill: -jvn-aero-text;
+  -fx-font-size: 12px;
+  -fx-font-weight: bold;
+}
+.editor-error-diagnostics {
+  -fx-padding: 8 10;
+  -fx-background-color: -jvn-aero-field;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-border-width: 1 0;
+}
+.editor-notice .editor-error-cause {
+  -fx-font-family: monospace;
+  -fx-text-fill: -jvn-aero-muted;
+}
+.editor-error-bullet {
+  -fx-text-fill: -jvn-aero-muted;
+}
+.editor-notice .editor-dialog-error-details > .title {
+  -fx-background-color: -jvn-aero-button;
+  -fx-background-radius: 4;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-border-radius: 4;
+}
+.editor-notice .editor-dialog-error-details > .title:hover {
+  -fx-background-color: -jvn-aero-hover;
+}
+.editor-notice .editor-dialog-error-details > .title > .text {
+  -fx-fill: -jvn-aero-text;
+  -fx-font-size: 12px;
+}
+.editor-notice .editor-dialog-error-details .editor-dialog-text-area {
+  -fx-background-color: -jvn-aero-field;
+  -fx-control-inner-background: -jvn-aero-field;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-border-radius: 3;
+  -fx-background-radius: 3;
+  -fx-font-family: monospace;
+  -fx-text-fill: -jvn-aero-text;
+}
+.editor-notice .editor-notice-actions {
+  -fx-background-color: -jvn-aero-surface;
+  -fx-background-radius: 0 0 5 5;
+  -fx-border-color: -jvn-aero-edge;
+  -fx-border-width: 1 0 0 0;
+  -fx-padding: 11 19;
+}
+.editor-notice .editor-dialog-button {
+  -fx-padding: 6 11;
+  -fx-border-radius: 4;
+  -fx-background-radius: 4;
+  -fx-font-size: 12px;
+}
+
+.editor-notice-icon-artboard {
+  -fx-fill: transparent;
+}
+.editor-notice-icon-plate {
+  -fx-fill: linear-gradient(to bottom, #8aa8bd, #3a5b74 46%, #253c53 51%, #3a5f81);
+  -fx-stroke: #c4deee;
+  -fx-stroke-width: 1.15;
+  -fx-stroke-line-join: round;
+}
+.editor-notice-icon-mark {
+  -fx-fill: transparent;
+  -fx-stroke: #f2f8fd;
+  -fx-stroke-width: 1.75;
+  -fx-stroke-line-cap: round;
+  -fx-stroke-line-join: round;
+}
+.editor-notice-icon-error .editor-notice-icon-plate {
+  -fx-fill: linear-gradient(to bottom, #e3888c, #aa454c 46%, #802a35 51%, #a23f49);
+  -fx-stroke: #ffbabe;
+}
+.editor-notice-icon-warning .editor-notice-icon-plate {
+  -fx-fill: linear-gradient(to bottom, #ecb950, #b77928 46%, #805316 51%, #a36a22);
+  -fx-stroke: #ffe1a2;
+}
+.editor-notice-icon-close .editor-notice-icon-plate {
+  -fx-fill: linear-gradient(to bottom, #8898a4, #58626e 46%, #3d4752 51%, #566575);
+  -fx-stroke: #d5dfe7;
+}

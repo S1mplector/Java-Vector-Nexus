@@ -105,7 +105,6 @@ public class VnsCodeEditor extends BorderPane {
       EditorPreferences.DEFAULT_LARGE_TIMELINE_BLOCK_ACTION_THRESHOLD;
   // Minimap
   private VnsCodeMinimap minimap;
-  private javafx.scene.layout.Region minimapSeparator;
   private VirtualizedScrollPane<CodeArea> mainScrollPane;
   // Breadcrumb
   private final Label breadcrumbLabel = new Label("");
@@ -164,12 +163,17 @@ public class VnsCodeEditor extends BorderPane {
   private static final String RTFX_COLLAPSE_STYLE_CLASS = "collapse";
   private static final String LEGACY_FOLDED_STYLE_CLASS = "folded";
 
-  public VnsCodeEditor() {
+  private final File sourceFile;
+  private List<CompletionDeclaration> includedSymbols = List.of();
+
+  public VnsCodeEditor() { this(null); }
+
+  VnsCodeEditor(File sourceFile) {
+    this.sourceFile = sourceFile;
     getStyleClass().add("text-editor-root");
     if (!codeArea.getStyleClass().contains("code-area")) {
       codeArea.getStyleClass().add("code-area");
     }
-    CodeEditorGutterGuard.install(codeArea);
     codeArea.setParagraphGraphicFactory(this::makeLineNumberLabel);
     codeArea.textProperty().addListener((obs, oldText, newText) -> {
       String value = newText == null ? "" : newText;
@@ -201,12 +205,7 @@ public class VnsCodeEditor extends BorderPane {
     StackPane.setAlignment(timelineNavOverlay, Pos.BOTTOM_RIGHT);
     StackPane.setMargin(timelineNavOverlay, new Insets(0, 10, 14, 0));
 
-    // Separator line between editor and minimap
-    minimapSeparator = new javafx.scene.layout.Region();
-    minimapSeparator.setMinWidth(1); minimapSeparator.setMaxWidth(1);
-    minimapSeparator.getStyleClass().add("code-editor-minimap-separator");
-
-    HBox codeAndMinimap = new HBox(codeWithOverlay, minimapSeparator, minimap);
+    HBox codeAndMinimap = new HBox(codeWithOverlay, minimap);
     HBox.setHgrow(codeWithOverlay, Priority.ALWAYS);
     codeAndMinimap.heightProperty().addListener((obs, o, n) -> {
       minimap.setPrefHeight(n.doubleValue());
@@ -226,7 +225,7 @@ public class VnsCodeEditor extends BorderPane {
       codeArea.getStylesheets().add(css);
     }
 
-    completer = new CodeAutoCompleter(codeArea, this::provideSuggestions);
+    completer = new CodeAutoCompleter(codeArea, ctx -> provideSuggestions(ctx, includedSymbols));
 
     setupSearchBar();
     setupStatusBar();
@@ -300,7 +299,7 @@ public class VnsCodeEditor extends BorderPane {
     addEventFilter(javafx.scene.input.MouseEvent.MOUSE_RELEASED, e -> storyboardDragActive = false);
 
     setupIdeKeyBindings();
-    setupAutoPairing();
+    CodeEditingKeys.install(codeArea, "[]\"\"", false);
 
     applyAnalysis("");
   }
@@ -454,46 +453,6 @@ public class VnsCodeEditor extends BorderPane {
         int preOffset = codeArea.getCaretPosition();
         Platform.runLater(() -> autoFoldPastedTimelines(preOffset));
         // Don't consume — let normal paste proceed
-      }
-    });
-  }
-
-  private void setupAutoPairing() {
-    codeArea.addEventFilter(KeyEvent.KEY_TYPED, e -> {
-      String ch = e.getCharacter();
-      if (ch == null || ch.isEmpty()) return;
-      char c = ch.charAt(0);
-      if (c == '[') {
-        int pos = codeArea.getCaretPosition();
-        String text = codeArea.getText();
-        // Don't auto-pair if next char is already ]
-        if (pos < text.length() && text.charAt(pos) == ']') return;
-        Platform.runLater(() -> {
-          int p = codeArea.getCaretPosition();
-          codeArea.insertText(p, "]");
-          codeArea.moveTo(p);
-        });
-      } else if (c == ']') {
-        int pos = codeArea.getCaretPosition();
-        String text = codeArea.getText();
-        // Skip over existing closing bracket
-        if (pos < text.length() && text.charAt(pos) == ']') {
-          e.consume();
-          Platform.runLater(() -> codeArea.moveTo(codeArea.getCaretPosition() + 1));
-        }
-      } else if (c == '"') {
-        int pos = codeArea.getCaretPosition();
-        String text = codeArea.getText();
-        if (pos < text.length() && text.charAt(pos) == '"') {
-          e.consume();
-          Platform.runLater(() -> codeArea.moveTo(codeArea.getCaretPosition() + 1));
-        } else {
-          Platform.runLater(() -> {
-            int p = codeArea.getCaretPosition();
-            codeArea.insertText(p, "\"");
-            codeArea.moveTo(p);
-          });
-        }
       }
     });
   }
@@ -883,6 +842,7 @@ public class VnsCodeEditor extends BorderPane {
 
   public void setProjectRoot(File root) {
     this.projectRoot = root;
+    includedSymbols = List.of();
     if (completer != null) completer.setProjectRoot(root);
     applyAnalysis(getText());
   }
@@ -919,7 +879,7 @@ public class VnsCodeEditor extends BorderPane {
     FoldRegion foldRegion = findFoldRegionStartingAtLine(line);
     boolean isFoldable = foldRegion != null;
 
-    if (!isFoldable && !isBookmarked && !storyboardModeActive) return ln;
+    if (!isFoldable && !isBookmarked && !storyboardModeActive) return CodeEditorGutter.wrap(ln);
 
     HBox gutter = new HBox(2);
     gutter.setAlignment(Pos.CENTER_LEFT);
@@ -990,7 +950,7 @@ public class VnsCodeEditor extends BorderPane {
     number.getStyleClass().add("lineno-text");
     gutter.getChildren().add(number);
 
-    return gutter;
+    return CodeEditorGutter.wrap(gutter);
   }
 
   void insertSnippet(String s) {
@@ -1024,11 +984,14 @@ public class VnsCodeEditor extends BorderPane {
       String snapshot = pendingAnalysisText;
       long generation = parseGeneration.incrementAndGet();
       AsyncAssetLoader.getExecutor().execute(() -> {
-        List<Issue> computed = computeIssues(snapshot);
+        List<CompletionDeclaration> symbols = new ArrayList<>();
+        List<Issue> computed = computeIssues(snapshot, source -> readDeclarations(source, symbols));
         if (parseGeneration.get() != generation) return;
         StyleSpans<Collection<String>> spans = computeHighlightingWithIssues(snapshot, computed);
         if (parseGeneration.get() == generation) {
           Platform.runLater(() -> {
+            if (parseGeneration.get() != generation || !snapshot.equals(pendingAnalysisText)) return;
+            includedSymbols = List.copyOf(symbols);
             issues = computed;
             try { codeArea.setStyleSpans(0, spans); } catch (Exception ignored) {}
             refreshIssuePresentation();
@@ -1138,9 +1101,9 @@ public class VnsCodeEditor extends BorderPane {
    * Delegates to VnsScriptAnalyzer.analyze() to avoid duplicated lint logic.
    * Converts VnsScriptAnalyzer.Diagnostic to local Issue type for UI integration.
    */
-  private List<Issue> computeIssues(String text) {
+  private List<Issue> computeIssues(String text, Consumer<String> onIncludedSource) {
     VnsScriptAnalyzer.Analysis analysis = VnsScriptAnalyzer.analyze(
-        text, projectRoot, null, largeTimelineBlockActionThreshold);
+        text, projectRoot, sourceFile, largeTimelineBlockActionThreshold, onIncludedSource);
     List<Issue> out = new ArrayList<>();
 
     for (VnsScriptAnalyzer.Diagnostic diag : analysis.diagnostics()) {
@@ -1447,95 +1410,76 @@ public class VnsCodeEditor extends BorderPane {
     return null;
   }
 
-  private List<CodeAutoCompleter.Suggestion> provideSuggestions(CodeAutoCompleter.Context ctx) {
-    String p = ctx.prefix == null ? "" : ctx.prefix;
-    String pl = p.toLowerCase(Locale.ROOT);
+  private static final Pattern COMPLETION_DECLARATION = Pattern.compile(
+      "(?im)^[ \\t]*(@character|@charimg|@charpreset|@position|@var|@background|@?label)[ \\t]+([^\\s=]+)(?:[ \\t]+([^\\s=]+))?");
+  private static final Set<String> CLOSED_COMMANDS = Set.of("end", "return", "else", "endif", "/if", "save", "quickload", "jes_pop", "settings",
+      "bgm_pause", "bgm_resume", "bgm_stop", "sfx_stop", "voice_stop", "audio_stop_all", "audio_pause_all", "audio_resume_all");
+
+  record CompletionDeclaration(String type, String id, String detail) {}
+
+  static void readDeclarations(String text, List<CompletionDeclaration> out) {
+    Matcher declarations = COMPLETION_DECLARATION.matcher(text);
+    while (declarations.find()) {
+      out.add(new CompletionDeclaration(declarations.group(1).toLowerCase(Locale.ROOT),
+          declarations.group(2), declarations.group(3)));
+    }
+  }
+
+  static List<CodeAutoCompleter.Suggestion> provideSuggestions(CodeAutoCompleter.Context ctx,
+                                                               List<CompletionDeclaration> included) {
+    int start = ctx.text.lastIndexOf('\n', ctx.caret - 1) + 1;
+    String line = ctx.text.substring(start, ctx.caret).stripLeading();
+    String prefix = ctx.prefix;
     List<CodeAutoCompleter.Suggestion> out = new ArrayList<>();
-    out.addAll(contextualCommandSuggestions(ctx.text, ctx.caret, p));
-
-    if (pl.startsWith("@")) {
-      out.add(new CodeAutoCompleter.Suggestion("@scenario "));
-      out.add(new CodeAutoCompleter.Suggestion("@character "));
-      out.add(new CodeAutoCompleter.Suggestion("@background "));
-      out.add(new CodeAutoCompleter.Suggestion("@charimg "));
-      out.add(new CodeAutoCompleter.Suggestion("@charlayer "));
-      out.add(new CodeAutoCompleter.Suggestion("@charpreset "));
-      out.add(new CodeAutoCompleter.Suggestion("@displaypreset "));
-      out.add(new CodeAutoCompleter.Suggestion("@label "));
-      out.add(new CodeAutoCompleter.Suggestion("@var "));
-      out.add(new CodeAutoCompleter.Suggestion("@define "));
-      out.add(new CodeAutoCompleter.Suggestion("@include "));
+    if (line.startsWith("@") && line.equals(prefix)) {
+      for (String directive : SyntaxRules.vnsDirectives()) addMatchingSuggestion(out, prefix, "@" + directive + " ");
+      return out;
     }
-
-    if (pl.startsWith("[")) {
-      out.add(new CodeAutoCompleter.Suggestion("[background "));
-      out.add(new CodeAutoCompleter.Suggestion("[show "));
-      out.add(new CodeAutoCompleter.Suggestion("[move "));
-      out.add(new CodeAutoCompleter.Suggestion("[hide "));
-      out.add(new CodeAutoCompleter.Suggestion("[showpreset "));
-      out.add(new CodeAutoCompleter.Suggestion("[movepreset "));
-      out.add(new CodeAutoCompleter.Suggestion("[hidepreset "));
-      out.add(new CodeAutoCompleter.Suggestion("[transition "));
-      out.add(new CodeAutoCompleter.Suggestion("[particles "));
-      out.add(new CodeAutoCompleter.Suggestion("[weather "));
-      out.add(new CodeAutoCompleter.Suggestion("[jump "));
-      out.add(new CodeAutoCompleter.Suggestion("[bgm "));
-      out.add(new CodeAutoCompleter.Suggestion("[bgm_crossfade "));
-      out.add(new CodeAutoCompleter.Suggestion("[bgm_pause]"));
-      out.add(new CodeAutoCompleter.Suggestion("[bgm_resume]"));
-      out.add(new CodeAutoCompleter.Suggestion("[bgm_seek "));
-      out.add(new CodeAutoCompleter.Suggestion("[bgm_stop]"));
-      out.add(new CodeAutoCompleter.Suggestion("[sfx "));
-      out.add(new CodeAutoCompleter.Suggestion("[sfx_stop]"));
-      out.add(new CodeAutoCompleter.Suggestion("[voice "));
-      out.add(new CodeAutoCompleter.Suggestion("[voice_stop]"));
-      out.add(new CodeAutoCompleter.Suggestion("[audio_stop_all]"));
-      out.add(new CodeAutoCompleter.Suggestion("[audio_pause_all]"));
-      out.add(new CodeAutoCompleter.Suggestion("[audio_resume_all]"));
-      out.add(new CodeAutoCompleter.Suggestion("[audio "));
-      out.add(new CodeAutoCompleter.Suggestion("[mode "));
-      out.add(new CodeAutoCompleter.Suggestion("[visualizer "));
-      out.add(new CodeAutoCompleter.Suggestion("[set "));
-      out.add(new CodeAutoCompleter.Suggestion("[inc "));
-      out.add(new CodeAutoCompleter.Suggestion("[dec "));
-      out.add(new CodeAutoCompleter.Suggestion("[mul "));
-      out.add(new CodeAutoCompleter.Suggestion("[div "));
-      out.add(new CodeAutoCompleter.Suggestion("[toggle "));
-      out.add(new CodeAutoCompleter.Suggestion("[clear "));
-      out.add(new CodeAutoCompleter.Suggestion("[persistent "));
-      out.add(new CodeAutoCompleter.Suggestion("[if "));
-      out.add(new CodeAutoCompleter.Suggestion("[elif "));
-      out.add(new CodeAutoCompleter.Suggestion("[else]"));
-      out.add(new CodeAutoCompleter.Suggestion("[endif]"));
-      out.add(new CodeAutoCompleter.Suggestion("[call "));
-      out.add(new CodeAutoCompleter.Suggestion("[gosub "));
-      out.add(new CodeAutoCompleter.Suggestion("[return]"));
-      out.add(new CodeAutoCompleter.Suggestion("[call hud "));
-      out.add(new CodeAutoCompleter.Suggestion("[call jes_timeline "));
-      out.add(new CodeAutoCompleter.Suggestion("[java "));
-      out.add(new CodeAutoCompleter.Suggestion("[mainmenu "));
-      out.add(new CodeAutoCompleter.Suggestion("[load "));
-      out.add(new CodeAutoCompleter.Suggestion("[goto "));
-      out.add(new CodeAutoCompleter.Suggestion("[jes call "));
-    }
-
-    for (String lab : extractLabels(ctx.text)) {
-      if (lab.toLowerCase(Locale.ROOT).startsWith(pl)) {
-        out.add(new CodeAutoCompleter.Suggestion(lab));
+    if (line.startsWith("[") && line.equals(prefix)) {
+      for (String cmd : SyntaxRules.vnsCommands()) {
+        addMatchingSuggestion(out, prefix, "[" + cmd + (CLOSED_COMMANDS.contains(cmd) ? "]" : " "));
       }
+      for (String snippet : List.of("[call hud ", "[call jes_timeline ", "[jes call ")) addMatchingSuggestion(out, prefix, snippet);
+      return out;
     }
+    boolean choiceTarget = line.startsWith(">") && line.contains("->")
+        && line.substring(line.lastIndexOf("->") + 2).stripLeading().equals(prefix);
+    if (!choiceTarget && (!line.startsWith("[") || line.contains("]") || CodeAutoCompleter.openQuote(line, line.length()) >= 0)) {
+      return out;
+    }
+    String before = line.substring(0, line.length() - prefix.length()).stripTrailing();
+    String[] words = before.substring(1).split("\\s+");
+    String command = words[0].toLowerCase(Locale.ROOT);
+    boolean first = words.length == 1;
+    boolean actor = command.equals("show") || command.equals("move") || command.equals("hide");
+    String kind = "";
+    String valuePrefix = "";
+    if (choiceTarget || first && Set.of("jump", "goto", "call", "gosub").contains(command)) kind = "label";
+    else if (first && actor) kind = "@character";
+    else if (first && Set.of("bg", "background").contains(command)) kind = "@background";
+    else if (first && Set.of("set", "inc", "dec", "toggle", "mul", "div", "clear").contains(command)) kind = "@var";
+    else if (actor && !first && prefix.startsWith("expr=")) { kind = "expression"; valuePrefix = "expr="; }
+    else if (actor && !first && prefix.startsWith("pos=")) { kind = "@position"; valuePrefix = "pos="; }
+    else if (command.equals("transition") && prefix.startsWith("bg=")) { kind = "@background"; valuePrefix = "bg="; }
 
-    for (String id : CodeAutoCompleter.listAssetIds(projectRoot, "assets/backgrounds", ".png", ".jpg", ".jpeg", ".webp")) {
-      String nm = id.contains("/") ? id.substring(id.lastIndexOf('/') + 1) : id;
-      if (nm.toLowerCase(Locale.ROOT).startsWith(pl) || id.toLowerCase(Locale.ROOT).startsWith(pl)) {
-        out.add(new CodeAutoCompleter.Suggestion(id));
+    if (!kind.isEmpty()) {
+      List<CompletionDeclaration> declarations = new ArrayList<>();
+      readDeclarations(ctx.text, declarations);
+      declarations.addAll(included);
+      Set<String> names = new LinkedHashSet<>();
+      for (CompletionDeclaration declaration : declarations) {
+        String type = declaration.type();
+        String id = declaration.id();
+        if (kind.equals(type) || kind.equals("label") && type.equals("@label")) names.add(id);
+        if (kind.equals("expression") && (type.equals("@charimg") || type.equals("@charpreset"))
+            && id.equals(words[1]) && declaration.detail() != null) names.add(declaration.detail());
       }
+      for (String name : names) addMatchingSuggestion(out, prefix, valuePrefix + name);
     }
-
-    if (out.size() > 1) {
-      Set<String> seen = new HashSet<>();
-      out.removeIf(sug -> !seen.add(sug.insert));
-    }
+    if (choiceTarget || first && actor || kind.equals("expression") && !out.isEmpty()) return out;
+    out.addAll(contextualCommandSuggestions(ctx.text, ctx.caret, prefix));
+    Set<String> seen = new HashSet<>();
+    out.removeIf(suggestion -> !seen.add(suggestion.insert));
     return out;
   }
 
@@ -1544,7 +1488,6 @@ public class VnsCodeEditor extends BorderPane {
     if (command == null) return List.of();
 
     String normalizedPrefix = prefix == null ? "" : prefix.trim();
-    String prefixLower = normalizedPrefix.toLowerCase(Locale.ROOT);
     List<CodeAutoCompleter.Suggestion> out = new ArrayList<>();
 
     switch (command) {
@@ -1559,9 +1502,6 @@ public class VnsCodeEditor extends BorderPane {
         addMatchingSuggestion(out, normalizedPrefix, "pos=right");
         addMatchingSuggestion(out, normalizedPrefix, "pos=far_left");
         addMatchingSuggestion(out, normalizedPrefix, "pos=far_right");
-        addMatchingSuggestion(out, normalizedPrefix, "expr=neutral");
-        addMatchingSuggestion(out, normalizedPrefix, "expr=talking");
-        addMatchingSuggestion(out, normalizedPrefix, "expr=happy");
       }
       case "move" -> {
         addMatchingSuggestion(out, normalizedPrefix, "pos=");
@@ -1575,9 +1515,6 @@ public class VnsCodeEditor extends BorderPane {
         addMatchingSuggestion(out, normalizedPrefix, "pos=right");
         addMatchingSuggestion(out, normalizedPrefix, "pos=far_left");
         addMatchingSuggestion(out, normalizedPrefix, "pos=far_right");
-        addMatchingSuggestion(out, normalizedPrefix, "expr=neutral");
-        addMatchingSuggestion(out, normalizedPrefix, "expr=smile");
-        addMatchingSuggestion(out, normalizedPrefix, "expr=talking");
         addMatchingSuggestion(out, normalizedPrefix, "ease=linear");
         addMatchingSuggestion(out, normalizedPrefix, "ease=easeIn");
         addMatchingSuggestion(out, normalizedPrefix, "ease=easeOut");
@@ -1633,23 +1570,6 @@ public class VnsCodeEditor extends BorderPane {
       }
     }
 
-    if (normalizedPrefix.isEmpty()) {
-      return out;
-    }
-
-    if (out.isEmpty() && !prefixLower.contains("=")) {
-      switch (command) {
-        case "show", "move", "showpreset", "movepreset" -> {
-          addMatchingSuggestion(out, normalizedPrefix, "pos=center");
-          if ("show".equals(command) || "move".equals(command)) {
-            addMatchingSuggestion(out, normalizedPrefix, "expr=neutral");
-          }
-        }
-        case "transition" -> addMatchingSuggestion(out, normalizedPrefix, "type=fade");
-        case "particles", "weather", "pfx", "fx" -> addMatchingSuggestion(out, normalizedPrefix, "preset=rain");
-        default -> {}
-      }
-    }
     return out;
   }
 
@@ -3616,10 +3536,6 @@ public class VnsCodeEditor extends BorderPane {
     if (minimap != null) {
       minimap.setVisible(visible);
       minimap.setManaged(visible);
-    }
-    if (minimapSeparator != null) {
-      minimapSeparator.setVisible(visible);
-      minimapSeparator.setManaged(visible);
     }
   }
 

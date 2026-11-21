@@ -52,7 +52,7 @@ public class SaveMenuScene implements Scene {
     this(engine, saveManager, vnScene, defaultScriptName, null);
   }
 
-  SaveMenuScene(
+  public SaveMenuScene(
       Engine engine,
       VnSaveManager saveManager,
       VnScene vnScene,

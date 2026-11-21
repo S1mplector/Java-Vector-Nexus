@@ -4,6 +4,17 @@ import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Properties
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+import org.gradle.api.artifacts.transform.CacheableTransform
+import org.gradle.api.artifacts.transform.InputArtifact
+import org.gradle.api.artifacts.transform.TransformAction
+import org.gradle.api.artifacts.transform.TransformOutputs
+import org.gradle.api.artifacts.transform.TransformParameters
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE
+import org.gradle.api.file.FileSystemLocation
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.Classpath
@@ -223,9 +234,44 @@ fun JavaExec.forwardHubLaunchSystemProps() {
   }
 }
 
+// A running JVM reads jar entries lazily. Gradle may rewrite a project jar in place
+// when building a game while the editor is open. Pin the editor and its project
+// dependencies in Gradle's immutable transform cache for the lifetime of the JVM.
+@CacheableTransform
+abstract class EditorLaunchJar : TransformAction<TransformParameters.None> {
+  @get:InputArtifact
+  @get:PathSensitive(PathSensitivity.NAME_ONLY)
+  abstract val archive: Provider<FileSystemLocation>
+
+  override fun transform(outputs: TransformOutputs) {
+    val source = archive.get().asFile
+    source.copyTo(outputs.file(source.name))
+  }
+}
+
+dependencies.registerTransform(EditorLaunchJar::class) {
+  from.attribute(ARTIFACT_TYPE_ATTRIBUTE, "jar")
+  to.attribute(ARTIFACT_TYPE_ATTRIBUTE, "jvn-editor-launch-jar")
+}
+
+val editorDependencies = configurations.runtimeClasspath.get().incoming
+val projectJars = editorDependencies.artifactView {
+  componentFilter { it is ProjectComponentIdentifier }
+}.files
+val externalLibraries = editorDependencies.artifactView {
+  componentFilter { it !is ProjectComponentIdentifier }
+}.files
+val editorJars = files(tasks.named("jar"), projectJars)
+val pinnedEditorJars = configurations.detachedConfiguration(dependencies.create(editorJars))
+  .incoming.artifactView {
+    attributes.attribute(ARTIFACT_TYPE_ATTRIBUTE, "jvn-editor-launch-jar")
+  }.files
+val editorLaunchClasspath = pinnedEditorJars + externalLibraries
+
 // Ensure JavaFX modules are available at runtime when launching via :editor:run
 // This avoids the "JavaFX runtime components are missing" error.
 tasks.named<JavaExec>("run") {
+  classpath = editorLaunchClasspath
   if (System.getProperty("os.name").startsWith("Mac")) {
     val icon = layout.projectDirectory.file("src/main/resources/com/jvn/editor/images/jvn_editor_icon.png").asFile
     jvmArgs("-Xdock:name=JVN Editor", "-Xdock:icon=${icon.absolutePath}")
@@ -240,7 +286,7 @@ tasks.named<JavaExec>("run") {
 tasks.register<JavaExec>("runLauncher") {
   group = "application"
   description = "Runs the standalone JVN launcher application."
-  classpath = sourceSets["main"].runtimeClasspath
+  classpath = editorLaunchClasspath
   mainClass.set("com.jvn.editor.JvnLauncherApp")
   workingDir = rootProject.projectDir
   systemProperty("jvn.version", rootProject.version.toString())
@@ -256,7 +302,7 @@ tasks.register("prepareFastLaunch") {
   group = "application"
   description = "Compiles the editor and writes reusable direct-launch classpath metadata."
   dependsOn(tasks.named("classes"))
-  val runtimeClasspath = sourceSets["main"].runtimeClasspath
+  val runtimeClasspath = editorLaunchClasspath
   inputs.property("engineVersion", rootProject.version.toString())
   inputs.property("workspacePath", rootProject.projectDir.absolutePath)
   inputs.files(runtimeClasspath)

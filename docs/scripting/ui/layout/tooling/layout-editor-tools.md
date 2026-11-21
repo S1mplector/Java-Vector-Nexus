@@ -1,117 +1,44 @@
 # Layout Authoring Tools
 
-JVN deliberately uses a text-first layout workflow. The editor improves the source-writing loop;
-it does not maintain a second UI model or a simulated renderer.
+Open a menu or dialogue file from the **Layout Editors** sidebar or the project tree. Layout Studio opens in **Design**. The canvas uses JVN's JavaFX game renderer and reads the project's viewport size, theme, images, fonts, and linked layout and style. **Fit** scales the view to the space on screen. **100%** shows the canvas at its authored size. Turn off **Guides** to see a clean frame.
 
-## Layout Editors sidebar
+## Build a menu
 
-The sidebar is the project-level control surface. It scans the active project and groups dialogue,
-screen, layout, style, and registry files.
+![Visual menu editor with a selected Credits button and its action inspector](../../../../assets/images/layout-studio/layout-studio-menu.png)
 
-Use it to:
+1. Open **Layout Editors** and choose **New Menu**. Give the screen an ID, such as `credits`.
+2. Click an empty part of the canvas to edit the screen title, subtitle, footer, background, layout, or default style.
+3. Use **Add** to insert a button, heading, text block, or note. Select it on the canvas or from **Menu items**. Edit the label and style in the inspector.
+4. For a button that opens another screen, choose `open_menu` and pick the target screen ID. Use `back` for a return button. For a custom action, type its existing action key.
+5. Drag an item to position it. Drag the lower-right handle to resize it. Arrow keys nudge the selected item one game pixel. Hold Shift for ten pixels. **Reset to layout** clears the item's local position overrides so it follows the shared layout again.
+6. Use the outline controls to duplicate, reorder, or remove items. To use this screen at startup, set it as the default in the menu registry.
 
-- create or clone correctly located DSL files;
-- register screens, layouts, and styles;
-- assign a layout or style to a screen;
-- find unresolved navigation targets and missing references;
-- open a source in Layout Studio;
-- inspect and edit `menu.registry` without losing sight of the whole menu graph.
+Reordering changes the order used by the runtime for keyboard navigation and automatic placement. Explicitly positioned items keep their positions. Enable **Show focus** to inspect the selected style on supported screens.
 
-Orange warnings describe cross-file problems. Fix them before tuning appearance: a perfectly valid
-style cannot render when its screen references another ID.
+## Shared menu layouts and styles
 
-## Layout Studio
+Open a menu `.layout` or `.style` file from the sidebar. The preview selector lists the menus that use it. An unassigned file uses a sample menu. Changes to a shared file affect its users when saved.
 
-Layout Studio is a focused source editor for `.menu`, `.layout`, and `.style` files and
-`dialogue.layout`.
+- **Layout** exposes the title and footer positions, list width, start position, spacing, text alignment, and visible row count. Drag the title, footer, or automatic rows when the active presentation exposes them.
+- **Style** exposes the background, text colors, fonts, and button images. Use the color picker for a visual change or enter an exact hex value. An item's style or image override takes precedence over shared values.
 
-### Source editing
+## Dialogue
 
-- properties-aware highlighting;
-- normal editor undo and redo;
-- dirty-state tracking and close confirmation;
-- atomic file replacement on save;
-- `Ctrl/Cmd+S` to save;
-- `Ctrl/Cmd+Enter` to save and run the active project.
+![Dialogue Layout Studio with the dialogue box selected on the runtime canvas](../../../../assets/images/layout-studio/layout-studio-dialogue.png)
 
-The file on disk is always the source of truth. **Reload** discards the editor buffer only after
-confirmation when it is dirty.
+Open `config/ui/dialogue.layout` to position the dialogue box, speaker name, and textbox buttons. Switch the preview to **Choices** to move the sample choice stack or change the row size and gap. **Add → Dialogue button** creates a button you can position relative to the viewport or textbox. Use **Narration**, **NVL**, or **Bubble** to work on the other dialogue presentations. The preview uses a sample scene and a centered speaker anchor for bubbles. Use **Preview background** to check contrast against a project image. Play the actual project to verify script-specific dialogue, characters, backgrounds, and accessibility settings.
 
-### Source templates
+## Source, diagnostics, and testing
 
-The right utility panel offers complete, commented templates appropriate to the open file:
+**Design** and **Source** share one working document and undo history. A complete drag is one undo step. Edits keep unrelated properties and comments in place. **Source** has syntax highlighting, line diagnostics, templates, a key reference, and asset import tools. The sidebar checks screen targets, registry membership, and cross-file references.
 
-| File | Templates |
-|---|---|
-| `dialogue.layout` | Standard dialogue; Minimal monochrome |
-| Menu `.layout` | Standard menu; Minimal right-side menu |
-| Menu `.style` | Standard menu; Minimal monochrome |
-| `.menu` | Standard menu screen |
-
-Applying a template requires confirmation because it replaces the current buffer. For the minimal
-style template, Layout Studio retains the current `backgroundAsset` value when it can parse one.
-Templates do not save automatically; inspect the diff and save deliberately.
-
-### Key reference and guides
-
-The Key Reference list is populated from the runtime menu loader's accepted-key catalog. Choose a
-key and use **Copy Key** to place a `key=` declaration on the clipboard. Screen item fields are
-shown as `item.<id>.<field>` so the required scope is explicit. Dialogue keys come from the
-regression-tested standard template plus textbox-action declarations.
-
-**Copy Template** copies a complete starting source without replacing the buffer. **Open Layout
-Guide** opens the guide for the active file type locally when the JVN repository is available, or
-falls back to the stable documentation on GitHub.
-
-### Diagnostics
-
-Diagnostics appear on the relevant source lines. They cover malformed properties, duplicate and
-unknown keys, invalid numbers, incomplete bounds groups, and values outside supported ranges.
-Dialogue properties are also passed through the runtime's `VnUiLayoutLoader`, preventing a
-separate editor interpretation from drifting away from runtime behavior.
-
-Project-level relationships cannot be proven from one file. Use the sidebar alongside line
-diagnostics for registry membership, referenced layouts/styles, menu targets, and missing assets.
-
-### Asset utilities
-
-The right panel can browse an existing project asset, import an external asset, convert it to a
-project-relative path, reveal it, copy its path, or apply it to a selected DSL key. Screen item keys
-accept an item ID so Layout Studio can write `item.<id>.*` declarations.
-
-Prefer paths such as `assets/ui/button.png`. Avoid absolute paths and backslashes: they make a
-project machine-specific.
-
-## Runtime validation
-
-The removed visual previews were approximations. Save and Run Runtime is now the single validation
-path for rendering and behavior. In the running project, check:
-
-1. the initial menu and every navigation target;
-2. normal, hover, selected, and disabled states;
-3. keyboard, pointer, and controller input used by the project;
-4. bundled fonts and assets on case-sensitive filesystems;
-5. dialogue, choices, NVL, bubble mode, and textbox actions where enabled;
-6. the smallest and largest supported viewport.
-
-Keep source changes small so each runtime pass answers one question. Fractional coordinates are
-viewport-relative; pixel measurements such as font size and line height need explicit resolution
-testing.
-
-## Choosing the right surface
-
-| Question | Surface |
-|---|---|
-| Which key controls this? | [DSL cookbook](../reference/layout-dsl-cookbook.md) |
-| Is this declaration valid? | Layout Studio diagnostics |
-| Is the menu graph connected? | Layout Editors sidebar |
-| Does an asset path resolve? | Asset utilities, then runtime |
-| Does it look and behave correctly? | Runtime |
-| What changed? | Source diff/version control |
+- **Ctrl/Cmd+S** saves the current file. **Reload** rereads the saved copy after confirmation if there are unsaved changes.
+- **Ctrl/Cmd+Enter** saves and runs the project. Use it to exercise actions and input, script-driven UI, saved-game data, animation, and other runtime state.
+- When you return to a Design window, Layout Studio picks up unsaved menu, layout, and style edits from other Studio windows in the same project.
 
 ## Related documentation
 
-- [Text-first workflow](../workflow/text-first-layout-workflow.md)
+- [Layout DSL cookbook](../reference/layout-dsl-cookbook.md)
 - [Validation and diagnostics](validation-diagnostics.md)
 - [Dialogue layout](../components/dialogue-layout.md)
 - [Menu layouts](../structure/menu-layouts.md)

@@ -112,9 +112,9 @@ From this panel you can browse and create files, open Layout Studio, clone
 menu components, edit registry membership, assign layouts and styles to
 screens, and see cross-file warnings for missing references or targets.
 
-Layout Studio edits that runtime DSL directly and provides source templates,
-line diagnostics, asset helpers, and Save + Run Runtime. The running project is
-the authoritative rendering and navigation check."""));
+Design shows the runtime canvas at the project's resolution. Build menus, edit
+properties, and drag supported elements directly on the preview. Source shows
+the same document with templates, line diagnostics, and asset helpers."""));
     titleRow.setAlignment(Pos.CENTER_LEFT);
 
     filterField.setPromptText("Filter layout files...");
@@ -262,7 +262,7 @@ the authoritative rendering and navigation check."""));
 
     Button openButton = new Button("Open Studio");
     openButton.getStyleClass().add("layout-launcher-button");
-    openButton.setTooltip(new Tooltip("Open this source with templates, diagnostics, and runtime launch tools"));
+    openButton.setTooltip(new Tooltip("Open the visual designer and source editor"));
     openButton.setOnAction(e -> openItem(item));
 
     Button cloneButton = new Button("Clone");
@@ -1041,7 +1041,7 @@ the authoritative rendering and navigation check."""));
     }
     header.setPadding(new Insets(4, 0, 4, 0));
 
-    Button newScreen = new Button("New Menu Screen");
+    Button newScreen = new Button("New Menu");
     newScreen.getStyleClass().add("layout-launcher-button");
     newScreen.setGraphic(SidebarToolIcon.list());
     newScreen.setMaxWidth(Double.MAX_VALUE);

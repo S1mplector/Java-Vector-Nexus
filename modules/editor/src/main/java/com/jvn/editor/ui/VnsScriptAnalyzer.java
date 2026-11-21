@@ -56,6 +56,11 @@ public final class VnsScriptAnalyzer {
 
   public static Analysis analyze(
       String text, File projectRoot, File sourceFile, int largeTimelineBlockActionThreshold) {
+    return analyze(text, projectRoot, sourceFile, largeTimelineBlockActionThreshold, null);
+  }
+
+  static Analysis analyze(String text, File projectRoot, File sourceFile, int largeTimelineBlockActionThreshold,
+                          java.util.function.Consumer<String> onIncludedSource) {
     String source = text == null ? "" : text;
     List<Diagnostic> diagnostics = new ArrayList<>();
     File effectiveRoot = resolveProjectRoot(projectRoot, sourceFile);
@@ -66,7 +71,7 @@ public final class VnsScriptAnalyzer {
     // Strict parser diagnostics first.
     VnScenario parsedScenario = null;
     try {
-      parsedScenario = parseWithIncludeResolver(source, projectRoot, sourceFile);
+      parsedScenario = parseWithIncludeResolver(source, projectRoot, sourceFile, onIncludedSource);
     } catch (MultipleParseErrorsException mex) {
       for (VnParseException ex : mex.getErrors()) {
         boolean fromIncludedFile = !sameSource(ex.getSourceName(), analyzedSourceName);
@@ -357,7 +362,8 @@ public final class VnsScriptAnalyzer {
     return new int[] {absoluteStart, Math.max(absoluteStart + 1, absoluteEnd)};
   }
 
-  private static VnScenario parseWithIncludeResolver(String source, File projectRoot, File sourceFile) throws Exception {
+  private static VnScenario parseWithIncludeResolver(String source, File projectRoot, File sourceFile,
+                                                     java.util.function.Consumer<String> onIncludedSource) throws Exception {
     VnScriptParser parser = new VnScriptParser();
     File effectiveRoot = resolveProjectRoot(projectRoot, sourceFile);
     if (effectiveRoot == null || !effectiveRoot.exists()) {
@@ -367,7 +373,15 @@ public final class VnsScriptAnalyzer {
     String sourceName = resolveSourceName(effectiveRoot, sourceFile);
     byte[] bytes = source == null ? new byte[0] : source.getBytes(StandardCharsets.UTF_8);
     try (InputStream in = new ByteArrayInputStream(bytes)) {
-      return parser.parse(in, sourceName, includePath -> openIncludeForDiagnostics(effectiveRoot, sourceName, includePath));
+      return parser.parse(in, sourceName, includePath -> {
+        InputStream included = openIncludeForDiagnostics(effectiveRoot, sourceName, includePath);
+        if (onIncludedSource == null) return included;
+        try (included) {
+          byte[] contents = included.readAllBytes();
+          onIncludedSource.accept(new String(contents, StandardCharsets.UTF_8));
+          return new ByteArrayInputStream(contents);
+        }
+      });
     }
   }
 

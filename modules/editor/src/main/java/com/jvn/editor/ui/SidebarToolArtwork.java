@@ -713,6 +713,44 @@ final class SidebarToolArtwork {
     return finish(art);
   }
 
+  // Menu-sized silhouettes use the same enamel, metal and key light as the command artwork.
+  static Pane type() {
+    Pane art = canvas();
+    SVGPath letter = svg("M2 3 H18 L18.6 8 H17.1 L15.9 5.6 H12 V15.9 L14.4 16.7 V18 H5.6 V16.7 "
+        + "L8 15.9 V5.6 H4.1 L2.9 8 H1.4 Z", glassPanel(Color.web("#c8f6ff"), Color.web("#368ebf")),
+        Color.web("#23495e"), 0.75);
+    Line highlight = line(3.3, 3.9, 16.9, 3.9, Color.web("#f1fcff"), 0.85);
+    Line stem = line(8.9, 6.1, 8.9, 15.5, Color.web("#d5f7ff"), 0.65);
+    art.getChildren().addAll(letter, highlight, stem);
+    return finish(art);
+  }
+
+  static Pane packageBox() {
+    Pane art = canvas();
+    Color edge = Color.web("#764a1e");
+    SVGPath top = svg("M1.5 5.4 L10.8 1.5 L18.7 5.1 L9.4 9.2 Z", enamel(Color.web("#e7b877")), edge, 0.65);
+    SVGPath left = svg("M1.5 5.4 L9.4 9.2 V18.6 L1.5 14.4 Z", enamel(Color.web("#c88c46")), edge, 0.65);
+    SVGPath right = svg("M9.4 9.2 L18.7 5.1 V14.7 L9.4 18.6 Z", enamel(Color.web("#b47839")), edge, 0.65);
+    SVGPath tape = svg("M5.6 3.7 L8.2 2.6 L16.4 6.1 V10 L13.9 11.1 V7.2 Z",
+        glassPanel(Color.web("#fff0be"), Color.web("#dab469")), Color.web("#b68b49"), 0.45);
+    SVGPath label = svg("M3.1 9.6 L6.8 11.3 V13.8 L3.1 12.1 Z", whiteEnamel(), Color.web("#997b53"), 0.4);
+    art.getChildren().addAll(left, right, top, tape, label);
+    return finish(art);
+  }
+
+  static Pane spanner() {
+    Pane art = canvas();
+    SVGPath body = svg("M17.1 1.4 L13.4 5 L14.1 7.1 L16.3 7.7 L19.6 4.3 "
+        + "Q20.4 10.4 14.7 11 L12.7 10.8 L5.7 18.1 Q3.9 20.1 1.9 18.1 Q0.2 16.1 2.1 14.4 "
+        + "L9.6 7.8 Q8.8 4.5 11 2.4 Q13.1 0.3 17.1 1.4 Z", metal(), Color.web("#475a68"), 0.8);
+    SVGPath grip = svg("M2.8 15.2 L7.4 11.1 L9.1 13 L4.8 17.7 Q3.7 18.7 2.7 17.5 Q1.7 16.3 2.8 15.2 Z",
+        enamel(Color.web("#4989b5")), Color.web("#34576c"), 0.45);
+    Circle pin = new Circle(3.8, 16.5, 0.65, Color.web("#d7edf5"));
+    Line glint = line(10.9, 5.1, 12.2, 3.0, Color.WHITE, 0.8);
+    art.getChildren().addAll(body, grip, pin, glint);
+    return finish(art);
+  }
+
   private static Pane canvas() {
     Pane pane = new Pane();
     pane.setMinSize(SIZE, SIZE);

@@ -68,7 +68,7 @@ public class LoadMenuScene implements Scene {
     this(engine, saveManager, defaultScriptName, settingsModel, audio, null);
   }
 
-  LoadMenuScene(
+  public LoadMenuScene(
       Engine engine,
       VnSaveManager saveManager,
       String defaultScriptName,

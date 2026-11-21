@@ -73,6 +73,28 @@ public class JesParser {
   );
   private static final Set<String> TIMELINE_FREE_PROPS = Set.of("call", "event");
 
+  public static Set<String> componentTypes() {
+    Set<String> types = new java.util.TreeSet<>(COMPONENT_PROPS.keySet());
+    types.addAll(COMPONENT_FREE_PROPS);
+    return types;
+  }
+
+  public static Set<String> componentProperties(String type) {
+    return COMPONENT_PROPS.getOrDefault(type, Set.of());
+  }
+
+  public static Set<String> timelineActions() {
+    Set<String> actions = new java.util.TreeSet<>(TIMELINE_PROPS.keySet());
+    actions.addAll(TIMELINE_FREE_PROPS);
+    actions.add("wait");
+    return actions;
+  }
+
+  public static Set<String> timelineProperties(String action) {
+    return TimelineActionSchema.isKnownAction(action)
+        ? TimelineActionSchema.acceptedKeys(action) : TIMELINE_PROPS.getOrDefault(action, Set.of());
+  }
+
   public JesParser(List<JesToken> toks) { this.toks = toks == null ? new ArrayList<>() : toks; }
 
   private JesToken peek() { return i < toks.size() ? toks.get(i) : new JesToken(EOF, "", -1, -1); }

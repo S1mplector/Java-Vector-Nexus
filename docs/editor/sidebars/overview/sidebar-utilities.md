@@ -70,6 +70,18 @@ JVN_SIDEBAR_ICON_CONTACT_SHEET="$PWD/docs/assets/images/sidebars/sidebar-utility
 | 11 | Image Attributes Tool | **[sidebar-image-attributes-tool.md](../right/sidebar-image-attributes-tool.md)** | Right | Attribute-based character image assembly |
 | 12 | Scene Lighting Studio | **[sidebar-image-tint-tool.md](../right/sidebar-image-tint-tool.md)** | Right | Scene lighting, grading, occlusion, and `.stagepreset` export for VNS/Puppeteer |
 | 13 | Version Control | **[sidebar-version-control.md](../right/sidebar-version-control.md)** | Right | Git operations: commit, push, pull, branch, stash |
+| 14 | Trashman | [Editor memory and cleanup](#trashman) | Hidden | Live heap history, preview-cache release, GC measurements, and JVM diagnostics |
+
+### Trashman
+
+Open **Window → Open Tool Window → Trashman** or add it from either sidebar’s **+** tab. The readings belong to the editor process. A separately running game has its own JVM.
+
+- **Monitor** samples every two seconds. The solid line shows heap in use and the dashed line shows memory committed by the JVM. The chart grows to a two-minute window. **Sampled peak** covers the time this panel has been open. Turn off **Live** to pause sampling and use the refresh icon for a single reading.
+- **Pin baseline** before opening a script or running a preview. The comparison tracks heap, non-heap and buffer changes from that sample. **Replace baseline** starts a new comparison.
+- **Cleanup** can release the reloadable caches in open VNS and JES previews. **Run GC** requests one collection. **Run sweep** repeats the request using the selected pass count and delay. **Stop sweep** skips the remaining passes. Legacy finalization is opt-in.
+- **Cleanup history** keeps the last twelve measurements while the panel is open. A negative delta means heap use fell between the two readings. The JVM schedules collection, and editor allocations also affect the result.
+- **Inspect** lists collectors, memory pools, buffers, classes and threads. **Class histogram** uses the JDK’s `jcmd` to count all objects, including unreachable ones. The ranking shows shallow bytes occupied by each class’s instances. Large heaps can pause the editor during the count. **Copy report** includes the current counters, baseline, history and latest histogram.
+
 ### Adding Panels
 
 1. Click the **+** tab on the left or right sidebar

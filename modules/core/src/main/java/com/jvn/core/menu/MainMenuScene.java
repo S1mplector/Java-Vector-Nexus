@@ -50,16 +50,24 @@ public class MainMenuScene implements Scene {
   }
 
   public MainMenuScene(Engine engine, VnSettings settingsModel, VnSaveManager saveManager, String defaultScriptName, AudioFacade audio, String menuId) {
+    this(engine, settingsModel, saveManager, defaultScriptName, audio, menuId, null);
+  }
+
+  public MainMenuScene(Engine engine, VnSettings settingsModel, VnSaveManager saveManager, String defaultScriptName, AudioFacade audio, String menuId, MenuProfile profile) {
     this.engine = engine;
     this.settingsModel = settingsModel == null ? new VnSettings() : settingsModel;
     this.saveManager = saveManager == null ? new VnSaveManager() : saveManager;
     String resolvedDefault = VnEntryScriptResolver.resolveEntryScript(defaultScriptName, null);
     this.defaultScriptName = resolvedDefault == null ? "story/prologue.vns" : resolvedDefault;
     this.audio = audio;
-    MenuProfileLoader.LoadResult menuLoad = MenuProfileLoader.loadWithDiagnostics();
-    this.menuProfile = menuLoad.profile();
-    for (String warning : menuLoad.diagnostics()) {
-      LOG.warn("Menu profile: {}", warning);
+    if (profile == null) {
+      MenuProfileLoader.LoadResult menuLoad = MenuProfileLoader.loadWithDiagnostics();
+      this.menuProfile = menuLoad.profile();
+      for (String warning : menuLoad.diagnostics()) {
+        LOG.warn("Menu profile: {}", warning);
+      }
+    } else {
+      this.menuProfile = profile;
     }
     this.menuId = normalize(menuId, menuProfile.defaultScreenId());
     this.menuScreen = menuProfile.screen(this.menuId);

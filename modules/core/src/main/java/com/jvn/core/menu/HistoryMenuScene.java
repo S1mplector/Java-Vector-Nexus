@@ -29,7 +29,7 @@ public class HistoryMenuScene implements Scene {
     this(engine, vnScene, null);
   }
 
-  HistoryMenuScene(Engine engine, VnScene vnScene, MenuProfile profile) {
+  public HistoryMenuScene(Engine engine, VnScene vnScene, MenuProfile profile) {
     this.engine = engine;
     this.vnScene = vnScene;
     if (profile == null) {

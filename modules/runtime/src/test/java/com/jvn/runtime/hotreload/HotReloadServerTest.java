@@ -1,6 +1,7 @@
 package com.jvn.runtime.hotreload;
 
 import org.junit.jupiter.api.Test;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
@@ -58,7 +59,7 @@ class HotReloadServerTest {
         System.setProperty("jvn.hotReload.port", value);
         assertNull(HotReloadServer.startIfEnabled(path -> {}));
       }
-      try (ServerSocket occupied = new ServerSocket(0)) {
+      try (ServerSocket occupied = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
         System.setProperty("jvn.hotReload.port", Integer.toString(occupied.getLocalPort()));
         assertNull(HotReloadServer.startIfEnabled(path -> {}));
       }

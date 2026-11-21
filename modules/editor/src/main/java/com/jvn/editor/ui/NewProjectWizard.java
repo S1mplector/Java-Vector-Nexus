@@ -3,6 +3,8 @@ package com.jvn.editor.ui;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -29,7 +31,12 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.Separator;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.layout.StackPane;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextArea;
@@ -53,10 +60,10 @@ import javafx.stage.*;
  */
 public class NewProjectWizard extends Stage {
   private enum ProjectTemplate {
-    STARTER_STORY("Starter Story", "A lean starter project with a playable story flow, menu pack, and demo assets."),
-    TUTORIAL_WORKSPACE("Tutorial Workspace with Ginger", "Ginger’s monochrome tutorial with 30 independently playable topics."),
-    BLANK_SANDBOX("Blank Sandbox", "A stripped-down project for custom pipelines, no demo assets, and blank menu wiring."),
-    CUSTOM("Custom", "A manual combination of modules and starter content.");
+    WRITING_PROJECT("Writing Project", "One editable opening scene with a title screen, save slots, and settings."),
+    TUTORIAL_WORKSPACE("Tutorial", "Learn with Ginger in 30 playable lessons, with examples you can edit."),
+    BLANK_SANDBOX("Blank Sandbox", "One editable opening scene and an empty menu registry for your own interface."),
+    CUSTOM("Custom", "Custom selection. The switches in Content determine the files this project will contain.");
 
     private final String label;
     private final String description;
@@ -104,7 +111,9 @@ public class NewProjectWizard extends Stage {
   private Label lblHeaderSubtitle;
   private final ToggleGroup projectTemplates = new ToggleGroup();
   private Label lblProjectTemplateSummary;
+  private static final String DEFAULT_PROJECT_NAME = "My Visual Novel";
   private TextField txtProjectName;
+  private boolean projectNameEdited;
   private TextField txtFolderName;
   private CheckBox chkAutoFolderName;
   private TextField txtAuthor;
@@ -129,7 +138,6 @@ public class NewProjectWizard extends Stage {
   private Spinner<Integer> spPhysicsMaxSubsteps;
   private Spinner<Double> spPhysicsFriction;
   private TextField txtInputProfilePath;
-  private CheckBox chkStarterStory;
   private CheckBox chkTutorialPack;
   private CheckBox chkBundledDemoAssets;
   private CheckBox chkTitleScreen;
@@ -145,6 +153,13 @@ public class NewProjectWizard extends Stage {
   private Label lblPreview;
   private Label lblTargetPath;
   private Label lblEstimatedSize;
+  private TextField txtReleaseVersion;
+  private TextField txtGameId;
+  private CheckBox scaleToDisplay;
+  private Button availableFolder;
+  private Tab filesPage;
+  private final TabPane pages = new TabPane();
+  private long bundledSizeKb = -1;
   private Label lblValidation;
   private Button btnCreate;
   private static final String STYLE_FIELD_VALID = "new-project-wizard-field-valid";
@@ -155,13 +170,8 @@ public class NewProjectWizard extends Stage {
   // Project paths
   private static final String ENTRY_SCRIPT_PATH = "scripts/story/prologue.vns";
   private static final String STORY_TUTORIAL_SCRIPT_PATH = "scripts/story/tutorial_hub.vns";
-  private static final String STORY_BRANCH_SCRIPT_PATH = "scripts/story/branch_demo.vns";
-  private static final String STORY_EPILOGUE_SCRIPT_PATH = "scripts/story/epilogue.vns";
-  private static final String JES_STUDIO_SCENE_PATH = "scripts/scenes/studio_tour.jes";
   private static final String ARC_PROLOGUE = "Prologue";
   private static final String ARC_TUTORIAL_HUB = "TutorialHub";
-  private static final String ARC_BRANCH_DEMO = "BranchDemo";
-  private static final String ARC_EPILOGUE = "Epilogue";
   private static final String CHARACTERS_SCRIPT_PATH = "scripts/definitions/characters.vns";
   private static final String CHARACTERS_INCLUDE_PATH = "/definitions/characters.vns";
   private static final String STORY_MAP_PATH = StoryMapPaths.DEFAULT_PATH;
@@ -212,107 +222,135 @@ public class NewProjectWizard extends Stage {
     initOwner(owner);
     initModality(Modality.APPLICATION_MODAL);
     initStyle(StageStyle.DECORATED);
-    setTitle("Create New Visual Novel Project");
-    setWidth(920);
-    setHeight(760);
-    setMinWidth(860);
-    setMinHeight(680);
-    setResizable(true);
+    setTitle("New Game Workspace");
+    var screen = owner == null ? Screen.getPrimary() : Screen.getScreensForRectangle(
+        owner.getX(), owner.getY(), owner.getWidth(), owner.getHeight()).stream().findFirst().orElse(Screen.getPrimary());
+    var bounds = screen.getVisualBounds();
+    setWidth(Math.min(924, bounds.getWidth()));
+    setHeight(Math.min(732, bounds.getHeight()));
+    setMinWidth(Math.min(640, bounds.getWidth()));
+    setMinHeight(Math.min(455, bounds.getHeight()));
     gitAvailable = new GitVcsService().isGitAvailable();
 
     BorderPane root = new BorderPane();
-    addStyleClasses(root, "welcome-center-root", "new-project-wizard-root");
-
-    VBox header = createHeader();
-    root.setTop(header);
-
-    ScrollPane scrollPane = new ScrollPane(createMainContent());
-    scrollPane.setFitToWidth(true);
-    addStyleClasses(scrollPane, "new-project-wizard-scroll");
-    root.setCenter(scrollPane);
-
-    HBox footer = createFooter();
-    root.setBottom(footer);
+    root.getStyleClass().add("game-setup");
+    root.getStylesheets().add(NewProjectWizard.class.getResource("game-setup.css").toExternalForm());
+    root.setTop(createHeader());
+    root.setCenter(createMainContent());
+    root.setBottom(createFooter());
 
     Scene scene = new Scene(root);
     EditorTheme.apply(scene);
     setScene(scene);
+    outputScaleXProperty().addListener((o, before, after) -> updateDerivedFields());
 
     applySelectedProjectTemplate();
     updateDerivedFields();
   }
 
-  private VBox createHeader() {
-    VBox header = new VBox(8);
-    header.setPadding(new Insets(20, 28, 14, 28));
-    addStyleClasses(header, "welcome-hero-card", "new-project-wizard-header");
-
-    Label title = new Label("Create New Visual Novel");
-    addStyleClasses(title, "welcome-heading");
-
-    lblHeaderSubtitle = new Label("");
-    addStyleClasses(lblHeaderSubtitle, "new-project-wizard-subtitle");
-
-    Label hint = new Label("All settings can be changed later in the editor.");
-    addStyleClasses(hint, "welcome-section-meta");
-
-    header.getChildren().addAll(title, lblHeaderSubtitle, hint);
-    return header;
+  private HBox createHeader() {
+    Label title = new Label("New Game Workspace");
+    title.getStyleClass().add("setup-title");
+    lblHeaderSubtitle = new Label();
+    lblHeaderSubtitle.getStyleClass().add("setup-secondary");
+    HBox bar = new HBox(12, AeroIcon.of(AeroIcon.Kind.NEW_PROJECT, 36),
+        new VBox(2, title, lblHeaderSubtitle));
+    bar.setAlignment(Pos.CENTER_LEFT);
+    bar.getStyleClass().add("setup-header");
+    return bar;
   }
 
-  private VBox createMainContent() {
-    VBox content = new VBox(16);
-    content.setPadding(new Insets(18, 28, 18, 28));
-    addStyleClasses(content, "new-project-wizard-body");
-
-    content.getChildren().addAll(
-        createSection("Project Template", "Pick a starting point, then tune the scaffold below.", createProjectTemplatePane()),
-        createSection("Project Basics", "Name, author, target directory, and output path.", createProjectBasicsGrid()),
-        createSection("Engine Profile", "Runtime defaults and entry points for this project.", createEngineProfileGrid()),
-        createSection("Playback Defaults", "Initial text/audio/physics/input settings for this project profile.", createPlaybackDefaultsPane()),
-        createSection("Feature Modules", "Choose the base modules to scaffold.", createFeatureModulesPane()),
-        createSection("Version Control", "Initialize Git so multi-person collaboration works from day one.", createVersionControlPane()),
-        createSection("Generated Layout", "Preview the exact folders/files that will be created.", createGeneratedLayoutPane()),
-        createSection("Project Notes", "Optional description saved to the project manifest and README.", createDescriptionArea())
-    );
-
-    return content;
+  private TabPane createMainContent() {
+    pages.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+    Tab project = page("Project", AeroIcon.Kind.PROJECT,
+        section("Starting template", createProjectTemplatePane()),
+        section("Project details", createProjectBasicsGrid()));
+    Tab content = page("Content", AeroIcon.Kind.ASSETS,
+        section("Project content and menus", createFeatureModulesPane()),
+        section("Version control", createVersionControlPane()));
+    Tab runtime = page("Runtime", AeroIcon.Kind.RUN,
+        section("Game display and runtime", createEngineProfileGrid()));
+    Tab playback = page("Playback", AeroIcon.Kind.VNS_PREVIEW,
+        section("Dialogue, audio and input", createPlaybackDefaultsPane()));
+    filesPage = page("Review", AeroIcon.Kind.INSPECTOR,
+        section("Release identity", createReleasePane()), section("Project notes", createDescriptionArea()),
+        section("Generated files", createGeneratedLayoutPane()));
+    pages.getTabs().addAll(project, content, runtime, playback, filesPage);
+    pages.getSelectionModel().selectedItemProperty().addListener((o, before, after) -> {
+      if (after == filesPage) updateStructurePreview();
+    });
+    return pages;
   }
 
-  private VBox createSection(String title, String subtitle, Region content) {
-    VBox section = new VBox(10);
-    section.setPadding(new Insets(14));
-    addStyleClasses(section, "welcome-section-card", "new-project-wizard-section");
+  private static Tab page(String name, AeroIcon.Kind kind, Region... sections) {
+    VBox body = new VBox(20, sections);
+    body.setMinWidth(0);
+    body.getStyleClass().add("setup-page");
+    ScrollPane scroll = new ScrollPane(body);
+    scroll.setFitToWidth(true);
+    scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    Tab tab = new Tab(name, scroll);
+    tab.setGraphic(AeroIcon.of(kind, 19));
+    return tab;
+  }
 
-    Label titleLabel = new Label(title);
-    addStyleClasses(titleLabel, "welcome-section-title");
-
-    Label subtitleLabel = new Label(subtitle);
-    addStyleClasses(subtitleLabel, "welcome-section-meta");
-
-    Separator sep = new Separator();
-
-    section.getChildren().addAll(titleLabel, subtitleLabel, sep, content);
-    return section;
+  private static VBox section(String title, Region content) {
+    Label heading = new Label(title);
+    heading.getStyleClass().add("setup-section-title");
+    heading.setMaxWidth(Double.MAX_VALUE);
+    return new VBox(10, heading, content);
   }
 
   private Region createProjectTemplatePane() {
-    FlowPane choices = new FlowPane(18, 8);
+    HBox choices = new HBox(6);
     for (ProjectTemplate template : ProjectTemplate.values()) {
       if (template == ProjectTemplate.CUSTOM) continue;
       RadioButton choice = new RadioButton(template.label());
       choice.setToggleGroup(projectTemplates);
       choice.setUserData(template);
+      choice.setGraphic(templateArtwork(template));
+      choice.setContentDisplay(ContentDisplay.TOP);
+      choice.setGraphicTextGap(5);
+      choice.setMinWidth(0);
+      choice.setPrefWidth(130);
+      choice.setMaxWidth(Double.MAX_VALUE);
+      HBox.setHgrow(choice, Priority.ALWAYS);
+      choice.getStyleClass().add("setup-template");
       tip(choice, template.description());
-      choice.setSelected(template == ProjectTemplate.STARTER_STORY);
+      choice.setSelected(template == ProjectTemplate.WRITING_PROJECT);
       choice.setOnAction(event -> applySelectedProjectTemplate());
       choices.getChildren().add(choice);
     }
-
     lblProjectTemplateSummary = new Label();
     lblProjectTemplateSummary.setWrapText(true);
-    addStyleClasses(lblProjectTemplateSummary, "new-project-wizard-summary");
-    return new VBox(10, choices, lblProjectTemplateSummary);
+    lblProjectTemplateSummary.getStyleClass().add("setup-secondary");
+    return new VBox(8, choices, lblProjectTemplateSummary);
+  }
+
+  private static Region templateArtwork(ProjectTemplate template) {
+    StackPane art = new StackPane();
+    art.setPrefHeight(66);
+    art.setMinHeight(66);
+    art.setMaxHeight(66);
+    if (template == ProjectTemplate.TUTORIAL_WORKSPACE) {
+      art.getChildren().add(portrait("assets/tutorial/ginger_normal.png"));
+    } else {
+      AeroIcon.Kind icon = template == ProjectTemplate.WRITING_PROJECT ? AeroIcon.Kind.SCRIPT_EDITOR : AeroIcon.Kind.LAYOUT;
+      art.getChildren().add(AeroIcon.of(icon, 46));
+    }
+    art.setMouseTransparent(true);
+    return art;
+  }
+
+  private static ImageView portrait(String path) {
+    var resource = NewProjectWizard.class.getResource("/com/jvn/editor/templates/new-project/" + path);
+    Image image = new Image(resource.toExternalForm(), 220, 0, true, true);
+    double w = image.getWidth();
+    var view = new ImageView(image);
+    view.setViewport(new Rectangle2D(0, 0, w, Math.min(w * 0.87, image.getHeight())));
+    view.setFitHeight(66);
+    view.setPreserveRatio(true);
+    return view;
   }
 
   private Region createProjectBasicsGrid() {
@@ -320,7 +358,7 @@ public class NewProjectWizard extends Stage {
     grid.setHgap(14);
     grid.setVgap(10);
 
-    txtProjectName = createTextField("My Visual Novel");
+    txtProjectName = createTextField(DEFAULT_PROJECT_NAME);
     tip(txtProjectName, "Display name for the project. The folder name syncs automatically until you turn Auto off.");
     txtFolderName = createTextField(sanitizeName(txtProjectName.getText()));
     txtFolderName.setPrefWidth(280);
@@ -333,7 +371,9 @@ public class NewProjectWizard extends Stage {
     txtLocation.setPrefWidth(440);
     tip(txtLocation, "Parent directory where the project folder will be created.");
 
+    txtAuthor.textProperty().addListener((o, before, after) -> updateGameIdHint());
     txtProjectName.textProperty().addListener((o, ov, nv) -> {
+      projectNameEdited = true;
       if (chkAutoFolderName != null && chkAutoFolderName.isSelected()) {
         syncFolderNameToProjectName();
       }
@@ -355,7 +395,7 @@ public class NewProjectWizard extends Stage {
     });
 
     Button btnBrowse = new Button("Browse...");
-    btnBrowse.setGraphic(CssIcon.folder("#d5b36a"));
+    btnBrowse.setGraphic(SidebarToolIcon.folder());
     btnBrowse.setContentDisplay(ContentDisplay.LEFT);
     btnBrowse.setOnAction(e -> browseLocation());
     styleSecondaryButton(btnBrowse);
@@ -371,8 +411,12 @@ public class NewProjectWizard extends Stage {
     lblTargetPath.setWrapText(true);
     addStyleClasses(lblTargetPath, "new-project-wizard-path");
 
-    Label slugHint = new Label("Folder name is sanitized automatically for cross-platform safety.");
-    addStyleClasses(slugHint, "welcome-section-meta");
+    availableFolder = new Button("Use available folder name");
+    availableFolder.setOnAction(e -> selectAvailableFolder());
+    availableFolder.managedProperty().bind(availableFolder.visibleProperty());
+    availableFolder.setVisible(false);
+    styleSecondaryButton(availableFolder);
+    VBox destination = new VBox(5, lblTargetPath, availableFolder);
 
     grid.add(createLabel("Project Name"), 0, 0);
     grid.add(txtProjectName, 1, 0);
@@ -383,8 +427,8 @@ public class NewProjectWizard extends Stage {
     grid.add(createLabel("Location"), 0, 3);
     grid.add(locationRow, 1, 3);
     grid.add(createLabel("Output Path"), 0, 4);
-    grid.add(lblTargetPath, 1, 4);
-    grid.add(slugHint, 1, 5);
+    grid.add(destination, 1, 4);
+    GridPane.setHgrow(destination, Priority.ALWAYS);
 
     GridPane.setHgrow(txtProjectName, Priority.ALWAYS);
     GridPane.setHgrow(folderRow, Priority.ALWAYS);
@@ -411,6 +455,9 @@ public class NewProjectWizard extends Stage {
         "1920x1080 (Full HD)",
         "1600x900 (HD+)",
         "1366x768 (WXGA)",
+        "1280x800 (Handheld)",
+        "1080x1920 (Portrait)",
+        "720x1280 (Portrait HD)",
         "1280x720 (HD)",
         "960x540 (qHD)"
     );
@@ -421,9 +468,9 @@ public class NewProjectWizard extends Stage {
 
     chkCustomResolution = createCheckBox("Custom Resolution", false);
     txtCustomWidth = createTextField("2560");
-    txtCustomWidth.setPrefWidth(90);
+    txtCustomWidth.setPrefWidth(75);
     txtCustomHeight = createTextField("1440");
-    txtCustomHeight.setPrefWidth(90);
+    txtCustomHeight.setPrefWidth(75);
     txtCustomWidth.setDisable(true);
     txtCustomHeight.setDisable(true);
     Label resolutionSeparator = new Label("x");
@@ -488,14 +535,9 @@ public class NewProjectWizard extends Stage {
     lblPreview = new Label();
     addStyleClasses(lblPreview, "new-project-wizard-summary");
 
-    Label entryInfo = new Label(
-        "Starter entry: " + ENTRY_SCRIPT_PATH + "\n" +
-        "Tutorial entry: " + STORY_TUTORIAL_SCRIPT_PATH + "\n" +
-        "Story map: " + STORY_MAP_PATH + "\n" +
-        "Dialogue layout: " + DIALOGUE_LAYOUT_PATH + "\n" +
-        "Menu registry: " + MENU_REGISTRY_PATH
-    );
-    addStyleClasses(entryInfo, "new-project-wizard-path");
+    scaleToDisplay = createCheckBox("Adjust for this display’s pixel density", true);
+    tip(scaleToDisplay, "Divide the target dimensions by the screen scale. Turn off to write the exact preset or custom dimensions.");
+    scaleToDisplay.selectedProperty().addListener((o, before, after) -> updateDerivedFields());
 
     grid.add(createLabel("Resolution"), 0, 0);
     grid.add(cmbResolution, 1, 0);
@@ -511,10 +553,10 @@ public class NewProjectWizard extends Stage {
     grid.add(cmbAudioBackend, 1, 5);
     grid.add(createLabel("Locale"), 0, 6);
     grid.add(cmbLocale, 1, 6);
-    grid.add(createLabel("Preset"), 0, 7);
-    grid.add(lblPreview, 1, 7);
-    grid.add(new Label(""), 0, 8);
-    grid.add(entryInfo, 1, 8);
+    grid.add(scaleToDisplay, 1, 7);
+    grid.add(createLabel("Game canvas"), 0, 8);
+    grid.add(lblPreview, 1, 8);
+    grid.setMaxWidth(Double.MAX_VALUE);
 
     return grid;
   }
@@ -524,8 +566,8 @@ public class NewProjectWizard extends Stage {
     grid.setHgap(14);
     grid.setVgap(10);
 
-    spTextSpeed = createIntSpinner(10, 120, 35, 1);
-    tip(spTextSpeed, "Characters per second for dialogue typewriter effect (10–120).");
+    spTextSpeed = createIntSpinner(0, 200, 35, 1);
+    tip(spTextSpeed, "Milliseconds per character. Set to zero for instant text.");
     spAutoDelay = createIntSpinner(500, 5000, 2000, 100);
     tip(spAutoDelay, "Milliseconds to wait before auto-advancing dialogue (500–5000).");
     spBgmVolume = createDoubleSpinner(0.0, 1.0, 0.70, 0.05);
@@ -554,9 +596,9 @@ public class NewProjectWizard extends Stage {
     note.setWrapText(true);
     addStyleClasses(note, "welcome-section-meta");
 
-    grid.add(createLabel("Text Speed"), 0, 0);
+    grid.add(createLabel("Text delay (ms)"), 0, 0);
     grid.add(spTextSpeed, 1, 0);
-    grid.add(createLabel("Auto Delay"), 0, 1);
+    grid.add(createLabel("Auto delay (ms)"), 0, 1);
     grid.add(spAutoDelay, 1, 1);
     grid.add(createLabel("BGM Volume"), 0, 2);
     grid.add(spBgmVolume, 1, 2);
@@ -566,7 +608,7 @@ public class NewProjectWizard extends Stage {
     grid.add(spVoiceVolume, 1, 4);
     grid.add(createLabel("Skip Defaults"), 0, 5);
     grid.add(new VBox(6, chkSkipUnreadDefault, chkSkipAfterChoicesDefault), 1, 5);
-    grid.add(createLabel("Physics Step"), 0, 6);
+    grid.add(createLabel("Physics step (ms)"), 0, 6);
     grid.add(spPhysicsFixedStep, 1, 6);
     grid.add(createLabel("Physics Substeps"), 0, 7);
     grid.add(spPhysicsMaxSubsteps, 1, 7);
@@ -584,12 +626,8 @@ public class NewProjectWizard extends Stage {
   private Region createFeatureModulesPane() {
     VBox box = new VBox(10);
 
-    Label intro = new Label("These options control both scaffolding and starter content.");
-    addStyleClasses(intro, "new-project-wizard-summary");
-
-    chkStarterStory = createCheckBox("Starter Story Flow", true);
-    chkTutorialPack = createCheckBox("JVN tutorial with Ginger (30 topics)", false);
-    chkBundledDemoAssets = createCheckBox("Starter story artwork and music", true);
+    chkTutorialPack = createCheckBox("Tutorial (30 topics)", false);
+    chkBundledDemoAssets = createCheckBox("Lavender artwork and demo music", false);
     chkTitleScreen = createCheckBox("Main Menu Profile Pack", true);
     chkSaveSystem = createCheckBox("Load/Save Menu Profiles", true);
     chkSettingsMenu = createCheckBox("Settings Menu Profile", true);
@@ -597,28 +635,20 @@ public class NewProjectWizard extends Stage {
     chkBlankMenus = createCheckBox("Start from Zero (Custom Menus)", false);
 
     lblBlankMenuWarning = new Label(
-        "Recommended for projects with extensive custom menu plans or assets.\n"
-        + "Until menu layouts are configured and wired in the registry, the following\n"
-        + "in-game GUI features will be unavailable:\n"
-        + "  \u2022 Save Game / Load Game menus\n"
-        + "  \u2022 Rollback / state restore from menus\n"
-        + "  \u2022 Settings menu\n"
-        + "  \u2022 Main menu / title screen navigation\n"
-        + "  \u2022 In-game pause overlay\n"
-        + "Game progress can only be viewed through VNS file preview until menus are set up."
-    );
+        "The menu registry starts empty. Add a main, pause, save, or settings screen in the Layout Launcher when you need it.");
     lblBlankMenuWarning.setWrapText(true);
     lblBlankMenuWarning.setPadding(new Insets(8, 12, 8, 12));
     addStyleClasses(lblBlankMenuWarning, "new-project-wizard-warning-card");
     lblBlankMenuWarning.setVisible(false);
     lblBlankMenuWarning.setManaged(false);
 
-    chkStarterStory.selectedProperty().addListener((o, ov, nv) -> updateDerivedFields());
-    chkStarterStory.disableProperty().bind(chkTutorialPack.selectedProperty());
     chkBundledDemoAssets.disableProperty().bind(chkTutorialPack.selectedProperty());
     chkTutorialPack.selectedProperty().addListener((o, ov, enabled) -> {
+      if (!projectNameEdited) {
+        txtProjectName.setText(enabled ? "Tutorial" : DEFAULT_PROJECT_NAME);
+        projectNameEdited = false;
+      }
       if (enabled) {
-        chkStarterStory.setSelected(false);
         chkBundledDemoAssets.setSelected(false);
       }
       updateDerivedFields();
@@ -652,40 +682,32 @@ public class NewProjectWizard extends Stage {
     GridPane options = new GridPane();
     options.setHgap(28);
     options.setVgap(8);
-    options.add(chkStarterStory, 0, 0);
-    options.add(chkTutorialPack, 1, 0);
-    options.add(chkBundledDemoAssets, 0, 1);
-    options.add(chkTitleScreen, 1, 1);
-    options.add(chkSaveSystem, 0, 2);
-    options.add(chkSettingsMenu, 1, 2);
-    options.add(chkHistoryBacklog, 0, 3);
-    options.add(chkBlankMenus, 1, 3);
+    options.add(chkTutorialPack, 0, 0);
+    options.add(chkBundledDemoAssets, 1, 0);
+    options.add(chkTitleScreen, 0, 1);
+    options.add(chkSaveSystem, 1, 1);
+    options.add(chkSettingsMenu, 0, 2);
+    options.add(chkHistoryBacklog, 1, 2);
+    options.add(chkBlankMenus, 0, 3);
 
-    tip(chkStarterStory, "Include Lavender’s sample prologue, route split and epilogue.");
     tip(chkTutorialPack, "Start at Ginger’s topic menu and play any of the 30 lessons.");
-    tip(chkBundledDemoAssets, "Include starter artwork and music for Lavender’s story.");
+    tip(chkBundledDemoAssets, "Copy Lavender’s sprites, backgrounds and music into the project assets folder.");
     tip(chkTitleScreen, "Create menu screens, layouts, styles and their registry.");
     tip(chkSaveSystem, "Create the default load and save menus.");
     tip(chkSettingsMenu, "Create the default settings menu.");
     tip(chkHistoryBacklog, "Enable backlog defaults in vn.settings.");
     tip(chkBlankMenus, "Create an empty menu registry for a custom interface.");
-    box.getChildren().addAll(intro, options, lblBlankMenuWarning);
+    box.getChildren().addAll(options, lblBlankMenuWarning);
     return box;
   }
 
   private Region createVersionControlPane() {
     VBox box = new VBox(10);
 
-    Label intro = new Label(
-        "Optional: enable Git initialization for team workflows. " +
-        "If disabled (or unavailable), project creation is unaffected."
-    );
-    intro.setWrapText(true);
-    addStyleClasses(intro, "new-project-wizard-summary");
-
     chkGitInit = createCheckBox("Initialize Git repository", false);
     chkInitialCommit = createCheckBox("Create initial commit", false);
 
+    chkInitialCommit.setDisable(true);
     if (!gitAvailable) {
       chkGitInit.setSelected(false);
       chkInitialCommit.setSelected(false);
@@ -714,7 +736,7 @@ public class NewProjectWizard extends Stage {
     note.setWrapText(true);
     addStyleClasses(note, "welcome-section-meta");
 
-    box.getChildren().addAll(intro, chkGitInit, chkInitialCommit, note);
+    box.getChildren().addAll(chkGitInit, chkInitialCommit, note);
     return box;
   }
 
@@ -748,32 +770,52 @@ public class NewProjectWizard extends Stage {
       }
     });
 
-    Label note = new Label("This preview updates live based on your selected modules.");
-    addStyleClasses(note, "welcome-section-meta");
-
-    box.getChildren().addAll(treeStructurePreview, note);
+    box.getChildren().add(treeStructurePreview);
     return box;
   }
 
+  private Region createReleasePane() {
+    GridPane grid = new GridPane();
+    grid.setHgap(14);
+    grid.setVgap(10);
+    txtReleaseVersion = createTextField("0.1.0");
+    tip(txtReleaseVersion, "Default version shown in Build & Publish.");
+    txtGameId = createTextField("");
+    tip(txtGameId, "Save and settings namespace. Leave empty to derive it from author and project name.");
+    txtGameId.textProperty().addListener((o, before, after) -> validateForm());
+    grid.add(createLabel("Release version"), 0, 0);
+    grid.add(txtReleaseVersion, 1, 0);
+    grid.add(createLabel("Save ID"), 0, 1);
+    grid.add(txtGameId, 1, 1);
+    GridPane.setHgrow(txtGameId, Priority.ALWAYS);
+    GridPane.setHgrow(txtReleaseVersion, Priority.ALWAYS);
+    return grid;
+  }
+
+  private void updateGameIdHint() {
+    if (txtGameId == null) return;
+    txtGameId.setPromptText(VnStoragePaths.resolveGameId(identityProperties(), null));
+  }
+
+  private Properties identityProperties() {
+    Properties identity = new Properties();
+    identity.setProperty("name", txtProjectName.getText().strip());
+    identity.setProperty("author", txtAuthor.getText().strip());
+    return identity;
+  }
+
   private Region createDescriptionArea() {
-    VBox box = new VBox(8);
-
-    Label info = new Label("Optional project description:");
-    addStyleClasses(info, "new-project-wizard-summary");
-
     txtDescription = new TextArea();
-    txtDescription.setPromptText("Example: A sci-fi mystery told across branching routes.");
-    txtDescription.setPrefRowCount(3);
+    txtDescription.setPromptText("Optional project description");
+    txtDescription.setPrefRowCount(2);
     txtDescription.setWrapText(true);
     addStyleClasses(txtDescription, "new-project-wizard-description");
-
-    box.getChildren().addAll(info, txtDescription);
-    return box;
+    return txtDescription;
   }
 
   private HBox createFooter() {
     HBox footer = new HBox(12);
-    footer.setPadding(new Insets(14, 28, 18, 28));
+    footer.setPadding(new Insets(10, 16, 10, 16));
     footer.setAlignment(Pos.CENTER_RIGHT);
     addStyleClasses(footer, "new-project-wizard-footer");
 
@@ -786,17 +828,16 @@ public class NewProjectWizard extends Stage {
     addStyleClasses(lblValidation, "new-project-wizard-validation");
 
     Button btnCancel = new Button("Cancel");
-    btnCancel.setPrefWidth(110);
-    btnCancel.setGraphic(CssIcon.clearX("#f0a1b2"));
+    btnCancel.setCancelButton(true);
     btnCancel.setContentDisplay(ContentDisplay.LEFT);
     styleSecondaryButton(btnCancel);
     btnCancel.setOnAction(e -> close());
 
     btnCreate = new Button("Create Project");
     btnCreate.textProperty().bind(javafx.beans.binding.Bindings.when(chkTutorialPack.selectedProperty())
-        .then("Create Ginger Tutorial").otherwise("Create Project"));
+        .then("Create Tutorial").otherwise("Create Project"));
     btnCreate.setMinWidth(150);
-    btnCreate.setGraphic(CssIcon.plusBold("#8bcf98"));
+    btnCreate.setGraphic(SidebarToolIcon.plus());
     btnCreate.setContentDisplay(ContentDisplay.LEFT);
     stylePrimaryButton(btnCreate);
     btnCreate.setOnAction(e -> createProject());
@@ -804,7 +845,8 @@ public class NewProjectWizard extends Stage {
     Region spacer = new Region();
     HBox.setHgrow(spacer, Priority.ALWAYS);
 
-    footer.getChildren().addAll(lblEstimatedSize, lblValidation, spacer, btnCancel, btnCreate);
+    VBox status = new VBox(2, lblValidation, lblEstimatedSize);
+    footer.getChildren().addAll(status, spacer, btnCancel, btnCreate);
     return footer;
   }
 
@@ -842,10 +884,12 @@ public class NewProjectWizard extends Stage {
   }
 
   private void updateDerivedFields() {
+    if (syncingProjectTemplate) return;
     syncProjectTemplateSelection();
+    updateGameIdHint();
     updatePresetPreview();
     updateTargetPathLabel();
-    updateStructurePreview();
+    if (filesPage != null && pages.getSelectionModel().getSelectedItem() == filesPage) updateStructurePreview();
     updateEstimatedSize();
     validateForm();
   }
@@ -861,9 +905,8 @@ public class NewProjectWizard extends Stage {
     syncingProjectTemplate = true;
     try {
       boolean blank = template == ProjectTemplate.BLANK_SANDBOX;
-      if (chkStarterStory != null) chkStarterStory.setSelected(template == ProjectTemplate.STARTER_STORY);
       if (chkTutorialPack != null) chkTutorialPack.setSelected(template == ProjectTemplate.TUTORIAL_WORKSPACE);
-      if (chkBundledDemoAssets != null) chkBundledDemoAssets.setSelected(template == ProjectTemplate.STARTER_STORY);
+      if (chkBundledDemoAssets != null) chkBundledDemoAssets.setSelected(false);
       if (chkTitleScreen != null) chkTitleScreen.setSelected(!blank);
       if (chkSaveSystem != null) chkSaveSystem.setSelected(!blank);
       if (chkSettingsMenu != null) chkSettingsMenu.setSelected(!blank);
@@ -887,7 +930,6 @@ public class NewProjectWizard extends Stage {
   }
 
   private ProjectTemplate resolveProjectTemplateFromSelections() {
-    boolean starterStory = chkStarterStory != null && chkStarterStory.isSelected();
     boolean tutorialPack = chkTutorialPack != null && chkTutorialPack.isSelected();
     boolean demoAssets = chkBundledDemoAssets != null && chkBundledDemoAssets.isSelected();
     boolean titleScreen = chkTitleScreen != null && chkTitleScreen.isSelected();
@@ -896,13 +938,13 @@ public class NewProjectWizard extends Stage {
     boolean historyBacklog = chkHistoryBacklog != null && chkHistoryBacklog.isSelected();
     boolean blankMenus = chkBlankMenus != null && chkBlankMenus.isSelected();
 
-    if (starterStory && !tutorialPack && demoAssets && titleScreen && saveSystem && settingsMenu && historyBacklog && !blankMenus) {
-      return ProjectTemplate.STARTER_STORY;
+    if (!tutorialPack && !demoAssets && titleScreen && saveSystem && settingsMenu && historyBacklog && !blankMenus) {
+      return ProjectTemplate.WRITING_PROJECT;
     }
     if (tutorialPack && titleScreen && saveSystem && settingsMenu && historyBacklog && !blankMenus) {
       return ProjectTemplate.TUTORIAL_WORKSPACE;
     }
-    if (!starterStory && !tutorialPack && !demoAssets && !titleScreen && !saveSystem && !settingsMenu && !historyBacklog && blankMenus) {
+    if (!tutorialPack && !demoAssets && !titleScreen && !saveSystem && !settingsMenu && !historyBacklog && blankMenus) {
       return ProjectTemplate.BLANK_SANDBOX;
     }
     return ProjectTemplate.CUSTOM;
@@ -911,13 +953,21 @@ public class NewProjectWizard extends Stage {
   private void updateProjectTemplateSummary() {
     if (lblProjectTemplateSummary == null) return;
     ProjectTemplate template = selectedProjectTemplate();
-    String summary = switch (template) {
-      case STARTER_STORY -> "Recommended default. Creates a playable story skeleton, demo assets, and ready-to-run menu profiles without the larger tutorial pack.";
-      case TUTORIAL_WORKSPACE -> "Starts at Ginger’s topic menu. Choose a lesson on writing, animation, lighting, or game UI.";
-      case BLANK_SANDBOX -> "Creates the runtime/config skeleton with blank story scripts, no bundled assets, and blank menu wiring.";
-      case CUSTOM -> "Custom workspace. The selected feature modules determine which files are created.";
-    };
-    lblProjectTemplateSummary.setText(summary);
+    lblProjectTemplateSummary.setText(template.description());
+  }
+
+  private void selectAvailableFolder() {
+    File parent = new File(txtLocation.getText().trim());
+    String base = resolveFolderName();
+    if (!isSafeFolderName(base)) return;
+    int suffix = 2;
+    String next;
+    do {
+      next = base + "_" + suffix++;
+    } while (new File(parent, next).exists());
+    chkAutoFolderName.setSelected(false);
+    txtFolderName.setText(next);
+    txtFolderName.requestFocus();
   }
 
   private void syncFolderNameToProjectName() {
@@ -960,6 +1010,7 @@ public class NewProjectWizard extends Stage {
       }
     }
 
+    availableFolder.setVisible(false);
     if (location.isEmpty()) {
       errors.add("Project location is required.");
       setFieldState(txtLocation, STYLE_FIELD_ERROR);
@@ -977,7 +1028,9 @@ public class NewProjectWizard extends Stage {
         File target = new File(location, folderName);
         if (target.exists()) {
           errors.add("Folder already exists: " + folderName);
-          setFieldState(txtLocation, STYLE_FIELD_ERROR);
+          setFieldState(txtLocation, STYLE_FIELD_VALID);
+          setFieldState(chkAutoFolderName.isSelected() ? txtProjectName : txtFolderName, STYLE_FIELD_ERROR);
+          availableFolder.setVisible(isSafeFolderName(folderName));
         } else {
           setFieldState(txtLocation, STYLE_FIELD_VALID);
         }
@@ -1006,8 +1059,14 @@ public class NewProjectWizard extends Stage {
       }
     }
 
+    if (txtGameId != null) {
+      String id = txtGameId.getText().strip();
+      boolean valid = id.isEmpty() || id.equals(VnStoragePaths.sanitizeGameId(id));
+      setFieldState(txtGameId, valid ? null : STYLE_FIELD_ERROR);
+      if (!valid) errors.add("Review the save ID. Use a short lowercase identifier with letters, digits, or hyphens.");
+    }
     if (errors.isEmpty()) {
-      setValidationMessage(true, "\u2714 Ready to create");
+      setValidationMessage(true, "Ready to create");
     } else {
       setValidationMessage(false, String.join(" ", errors));
     }
@@ -1034,7 +1093,7 @@ public class NewProjectWizard extends Stage {
   }
 
   static boolean isSafeFolderName(String name) {
-    return name != null && !name.isBlank() && name.matches("[A-Za-z0-9._-]+");
+    return name != null && !name.equals(".") && !name.equals("..") && name.matches("[A-Za-z0-9._-]+");
   }
 
   private void updatePresetPreview() {
@@ -1044,20 +1103,15 @@ public class NewProjectWizard extends Stage {
     int[] resolution = getScaledResolution();
     String res = resolution[0] + "x" + resolution[1];
     String ratio = formatAspectRatio(resolution[0], resolution[1]);
-    String theme = cmbTheme.getValue() == null ? "Dark Elegant" : cmbTheme.getValue();
     String runtimeUi = cmbRuntimeUi == null || cmbRuntimeUi.getValue() == null ? "fx" : cmbRuntimeUi.getValue();
-    String audioBackend = cmbAudioBackend == null || cmbAudioBackend.getValue() == null ? "auto" : cmbAudioBackend.getValue();
-    String locale = cmbLocale == null || cmbLocale.getValue() == null ? "en" : cmbLocale.getValue();
     String source = chkCustomResolution != null && chkCustomResolution.isSelected() ? "custom" : "preset";
-    ProjectTemplate template = selectedProjectTemplate();
     if (lblAspectRatio != null) {
       lblAspectRatio.setText(ratio + " (" + source + ")");
     }
     if (lblHeaderSubtitle != null) {
-      lblHeaderSubtitle.setText(template.label() + " • " + resolveFolderName() + " • " + res + " • " + runtimeUi + "/" + audioBackend);
+      lblHeaderSubtitle.setText(name + "   ·   " + res + "   ·   " + runtimeUi.toUpperCase(Locale.ROOT));
     }
-    lblPreview.setText("\"" + name + "\" • " + res + " • " + ratio + " • " + theme
-        + " • " + runtimeUi + "/" + audioBackend + " • " + locale);
+    lblPreview.setText(res + " pixels");
   }
 
   private void updateTargetPathLabel() {
@@ -1084,16 +1138,18 @@ public class NewProjectWizard extends Stage {
 
   private void updateEstimatedSize() {
     if (lblEstimatedSize == null) return;
-    lblEstimatedSize.setText("Estimated scaffold size: ~" + estimateProjectSizeKb() + " KB");
+    long kib = estimateProjectSizeKb();
+    String size = kib < 1024 ? kib + " KiB" : String.format(Locale.ROOT, "%.1f MiB", kib / 1024.0);
+    lblEstimatedSize.setText("Estimated size  " + size);
   }
 
   private long estimateProjectSizeKb() {
     long kb = 36;
     if (chkTutorialPack != null && chkTutorialPack.isSelected()) kb += 3300;
     else if (chkBundledDemoAssets != null && chkBundledDemoAssets.isSelected()) {
-      kb += estimateBundledDemoAssetsKb();
+      if (bundledSizeKb < 0) bundledSizeKb = estimateBundledDemoAssetsKb();
+      kb += bundledSizeKb;
     }
-    if (chkStarterStory != null && chkStarterStory.isSelected()) kb += 4;
     if (shouldCreateMenuPack()) kb += 8;
     if (chkSaveSystem != null && chkSaveSystem.isSelected()) kb += 3;
     if (chkSettingsMenu != null && chkSettingsMenu.isSelected()) kb += 2;
@@ -1107,7 +1163,6 @@ public class NewProjectWizard extends Stage {
     boolean includeSave = chkSaveSystem != null && chkSaveSystem.isSelected();
     boolean includeSettings = chkSettingsMenu != null && chkSettingsMenu.isSelected();
     boolean includeDemoAssets = chkBundledDemoAssets != null && chkBundledDemoAssets.isSelected();
-    boolean includeStarterStory = chkStarterStory != null && chkStarterStory.isSelected();
     boolean includeTutorialPack = chkTutorialPack != null && chkTutorialPack.isSelected();
     String locale = cmbLocale == null || cmbLocale.getValue() == null || cmbLocale.getValue().isBlank() ? "en" : cmbLocale.getValue().trim();
 
@@ -1167,10 +1222,7 @@ public class NewProjectWizard extends Stage {
     if (includeTutorialPack) {
       sb.append("│   │   └── tutorial_hub.vns\n");
     } else {
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 prologue.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 tutorial_hub.vns\n");
-      sb.append("\u2502   \u2502   \u251c\u2500\u2500 branch_demo.vns\n");
-      sb.append("\u2502   \u2502   \u2514\u2500\u2500 epilogue.vns\n");
+      sb.append("│   │   └── prologue.vns\n");
     }
     sb.append("\u2502   \u251c\u2500\u2500 tutorial/\n");
     if (includeTutorialPack) {
@@ -1184,8 +1236,8 @@ public class NewProjectWizard extends Stage {
     }
     sb.append("\u2502   \u251c\u2500\u2500 routes/\n");
     sb.append("\u2502   \u251c\u2500\u2500 scenes/\n");
-    if (includeStarterStory || includeTutorialPack) {
-      sb.append("\u2502   \u2502   \u2514\u2500\u2500 ").append(includeTutorialPack ? "panel.jes\n" : "studio_tour.jes\n");
+    if (includeTutorialPack) {
+      sb.append("\u2502   \u2502   \u2514\u2500\u2500 ").append("panel.jes\n");
     }
     sb.append("\u2502   \u251c\u2500\u2500 definitions/\n");
     sb.append("\u2502   \u2502   \u2514\u2500\u2500 characters.vns\n");
@@ -1367,18 +1419,16 @@ public class NewProjectWizard extends Stage {
     }
 
     File location = new File(locationRaw);
-    boolean createdBaseLocation = false;
-    if (!location.exists()) {
-      if (!location.mkdirs()) {
-        showError("Failed to create base location: " + location.getAbsolutePath());
-        return;
-      }
-      createdBaseLocation = true;
-    }
-
+    boolean createdBaseLocation = !location.exists();
     File projectDir = new File(location, folderName);
-    if (projectDir.exists()) {
-      showError("A project with this name already exists at the selected location.");
+    try {
+      Files.createDirectories(location.toPath());
+      Files.createDirectory(projectDir.toPath());
+    } catch (FileAlreadyExistsException ex) {
+      updateDerivedFields();
+      return;
+    } catch (IOException ex) {
+      showError("Failed to create project directory: " + ex.getMessage());
       return;
     }
 
@@ -1397,32 +1447,27 @@ public class NewProjectWizard extends Stage {
     boolean includeSave = chkSaveSystem.isSelected();
     boolean includeSettings = chkSettingsMenu.isSelected();
     boolean includeDemoAssets = chkBundledDemoAssets != null && chkBundledDemoAssets.isSelected();
-    boolean includeStarterStory = chkStarterStory != null && chkStarterStory.isSelected();
     boolean includeTutorialPack = chkTutorialPack != null && chkTutorialPack.isSelected();
     boolean gitRequested = shouldSetupGit();
     boolean gitCommitRequested = shouldCreateInitialCommit();
     boolean gitEnabled = false;
     boolean gitInitialCommit = false;
 
-    if (!dir.exists() && !dir.mkdirs()) {
-      throw new Exception("Failed to create project directory: " + dir.getAbsolutePath());
-    }
-    if (!dir.isDirectory()) {
-      throw new Exception("Project path is not a directory: " + dir.getAbsolutePath());
-    }
     createDirectories(dir, includeMenuPack);
     if (includeTutorialPack) {
       GuidedTutorial.installContent(dir.toPath());
     } else {
       boolean layered = includeDemoAssets && copyBundledDemoAssets(dir);
       createCharactersScript(dir, includeDemoAssets, layered);
-      createBlankTutorialHubScript(dir, displayName, includeDemoAssets, layered);
-      if (includeStarterStory) {
-        createSampleArcEntryAndBranchScripts(dir, displayName, includeDemoAssets);
-        createJesStudioScene(dir, includeDemoAssets);
-      } else {
-        createBlankArcEntryAndBranchScripts(dir, displayName, includeDemoAssets, layered);
-      }
+      Files.writeString(dir.toPath().resolve(ENTRY_SCRIPT_PATH), """
+          @scenario Prologue
+          @include %s
+
+          @label start
+          # Replace the line below with the first line of your game.
+          narrator: Your opening line goes here.
+          [end]
+          """.formatted(CHARACTERS_INCLUDE_PATH));
     }
     createStoryMap(dir, displayName, includeTutorialPack);
 
@@ -1463,7 +1508,6 @@ public class NewProjectWizard extends Stage {
     int[] resolution = getScaledResolution();
     createManifest(
         dir,
-        displayName,
         resolution[0],
         resolution[1],
         includeMenuPack,
@@ -1716,7 +1760,8 @@ public class NewProjectWizard extends Stage {
 
   private int[] getScaledResolution() {
     int[] resolution = parseResolution();
-    double scaling = Screen.getPrimary().getOutputScaleX();
+    if (scaleToDisplay == null || !scaleToDisplay.isSelected()) return resolution;
+    double scaling = getOutputScaleX();
 
     int width = (int) (resolution[0] / scaling);
     int height = (int) (resolution[1] / scaling);
@@ -1755,7 +1800,6 @@ public class NewProjectWizard extends Stage {
   }
 
   private void createManifest(File dir,
-                              String displayName,
                               int width,
                               int height,
                               boolean includeMenuPack,
@@ -1764,9 +1808,9 @@ public class NewProjectWizard extends Stage {
                               boolean tutorialPack,
                               boolean gitEnabled,
                               boolean gitInitialCommit) throws Exception {
-    Properties manifest = new Properties();
-    manifest.setProperty("name", displayName);
-    manifest.setProperty("author", txtAuthor.getText().trim());
+    Properties manifest = identityProperties();
+    if (!txtGameId.getText().isBlank()) manifest.setProperty("id", txtGameId.getText().strip());
+    if (!txtReleaseVersion.getText().isBlank()) manifest.setProperty("version", txtReleaseVersion.getText().strip());
     manifest.setProperty("id", VnStoragePaths.resolveGameId(manifest, dir.toPath()));
     manifest.setProperty("type", "vn");
     manifest.setProperty("entryVns", tutorialPack ? STORY_TUTORIAL_SCRIPT_PATH : ENTRY_SCRIPT_PATH);
@@ -1791,9 +1835,7 @@ public class NewProjectWizard extends Stage {
     manifest.setProperty("runtime.ui", cmbRuntimeUi == null || cmbRuntimeUi.getValue() == null ? "fx" : cmbRuntimeUi.getValue());
     manifest.setProperty("runtime.audio", cmbAudioBackend == null || cmbAudioBackend.getValue() == null ? "auto" : cmbAudioBackend.getValue());
     manifest.setProperty("runtime.locale", cmbLocale == null || cmbLocale.getValue() == null ? "en" : cmbLocale.getValue());
-    boolean starterStory = !tutorialPack && chkStarterStory != null && chkStarterStory.isSelected();
-    manifest.setProperty("feature.sampleContent", Boolean.toString(starterStory || tutorialPack));
-    manifest.setProperty("feature.starterStory", Boolean.toString(starterStory));
+    manifest.setProperty("feature.sampleContent", Boolean.toString(tutorialPack));
     manifest.setProperty("feature.tutorialPack", Boolean.toString(tutorialPack));
     manifest.setProperty("feature.demoAssets", Boolean.toString(!tutorialPack && chkBundledDemoAssets != null && chkBundledDemoAssets.isSelected()));
     manifest.setProperty("feature.titleScreen", Boolean.toString(chkTitleScreen.isSelected() && includeMenuPack));
@@ -1818,7 +1860,7 @@ public class NewProjectWizard extends Stage {
     StringBuilder sb = new StringBuilder();
     sb.append("# Shared character declarations (import from story files)\n");
     sb.append("# Usage: @include ").append(CHARACTERS_INCLUDE_PATH).append("\n\n");
-    sb.append("@character lavender \"Lavender\"\n");
+    if (includeDemoAssets) sb.append("@character lavender \"Lavender\"\n");
     sb.append("@character narrator \"Narrator\"\n\n");
 
     if (includeDemoAssets && useLayeredLavenderDemo) {
@@ -1835,10 +1877,8 @@ public class NewProjectWizard extends Stage {
       sb.append("@charpreset lavender talking $base | $eyes_half_closed | $mouth_smile\n");
       sb.append("@charpreset lavender happy $base | $eyes_neutral | $mouth_happy\n");
       sb.append("@charpreset lavender emphasis $base | $eyes_angry | $mouth_o\n");
-    } else {
-      String spritePath = includeDemoAssets
-          ? "assets/demo/characters/lavender/lavender_test_sprite.png"
-          : "assets/characters/sprites/lavender.png";
+    } else if (includeDemoAssets) {
+      String spritePath = "assets/demo/characters/lavender/lavender_test_sprite.png";
       sb.append("# Replace sprite paths below with your project sprites if needed.\n");
       sb.append("@charimg lavender neutral ").append(spritePath).append("\n");
       sb.append("@charimg lavender idle ").append(spritePath).append("\n");
@@ -1850,150 +1890,6 @@ public class NewProjectWizard extends Stage {
     try (FileWriter fw = new FileWriter(new File(dir, CHARACTERS_SCRIPT_PATH))) {
       fw.write(sb.toString());
     }
-  }
-
-  private void createBlankTutorialHubScript(
-      File dir,
-      String name,
-      boolean includeDemoAssets,
-      boolean useLayeredLavenderDemo
-  ) throws Exception {
-    java.util.Map<String, String> tokens = new java.util.LinkedHashMap<>();
-    tokens.put("PROJECT_NAME", name);
-    tokens.put("SCENARIO_PREFIX", sanitizeName(name).toLowerCase(Locale.ROOT));
-    tokens.put("CHARACTERS_INCLUDE", CHARACTERS_INCLUDE_PATH);
-    tokens.put("LAVENDER_EXPR", includeDemoAssets && useLayeredLavenderDemo ? "idle" : "neutral");
-    tokens.put("TUTORIAL_TARGET", ARC_TUTORIAL_HUB);
-    tokens.put("BRANCH_TARGET", ARC_BRANCH_DEMO);
-    tokens.put("EPILOGUE_TARGET", ARC_EPILOGUE);
-    tokens.put("STORY_TUTORIAL_SCRIPT_PATH", STORY_TUTORIAL_SCRIPT_PATH);
-    tokens.put("STORY_BRANCH_SCRIPT_PATH", STORY_BRANCH_SCRIPT_PATH);
-    tokens.put("STORY_EPILOGUE_SCRIPT_PATH", STORY_EPILOGUE_SCRIPT_PATH);
-    writeScaffoldTemplateScript(
-        dir,
-        STORY_TUTORIAL_SCRIPT_PATH,
-        "scripts/story/tutorial_hub_blank.vns",
-        tokens
-    );
-  }
-
-  private void createJesStudioScene(File dir, boolean includeDemoAssets) throws Exception {
-    java.util.Map<String, String> tokens = new java.util.LinkedHashMap<>();
-    tokens.put(
-        "JES_BACKGROUND_ENTITY",
-        includeDemoAssets
-            ? "  entity \"background\" {\n"
-                + "    component Sprite2D {\n"
-                + "      image: \"assets/demo/backgrounds/game.png\"\n"
-                + "      x: 0 y: 0 w: 1920 h: 1080\n"
-                + "    }\n"
-                + "  }\n\n"
-            : "  entity \"background\" {\n"
-                + "    component Panel2D { x: 0 y: 0 w: 1920 h: 1080 fill: rgb(1, 1, 1, 1) }\n"
-                + "  }\n\n");
-    writeScaffoldTemplateScript(
-        dir,
-        JES_STUDIO_SCENE_PATH,
-        "scripts/scenes/studio_tour.jes",
-        tokens
-    );
-  }
-
-  private void writeScaffoldScript(File dir, String relativePath, String content) throws Exception {
-    try (FileWriter fw = new FileWriter(new File(dir, relativePath))) {
-      fw.write(content);
-    }
-  }
-
-  private void writeScaffoldTemplateScript(
-      File dir,
-      String relativePath,
-      String templateRelativePath,
-      java.util.Map<String, String> tokens
-  ) throws Exception {
-    String template = loadScaffoldTemplate(templateRelativePath);
-    String rendered = applyTemplateTokens(template, tokens);
-    writeScaffoldScript(dir, relativePath, rendered);
-  }
-
-  private String loadScaffoldTemplate(String templateRelativePath) throws Exception {
-    String normalized = templateRelativePath == null ? "" : templateRelativePath.replace('\\', '/');
-    if (normalized.startsWith("/")) normalized = normalized.substring(1);
-    String resourcePath = "com/jvn/editor/templates/new-project/" + normalized;
-    try (java.io.InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath)) {
-      if (in == null) {
-        throw new IllegalStateException("Missing scaffold template resource: " + resourcePath);
-      }
-      return new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-    }
-  }
-
-  private String applyTemplateTokens(String template, java.util.Map<String, String> tokens) {
-    if (template == null || template.isEmpty() || tokens == null || tokens.isEmpty()) return template;
-    String rendered = template;
-    for (var entry : tokens.entrySet()) {
-      String key = entry.getKey() == null ? "" : entry.getKey();
-      String value = entry.getValue() == null ? "" : entry.getValue();
-      rendered = rendered.replace("{{" + key + "}}", value);
-    }
-    return rendered;
-  }
-
-  private void createBlankArcEntryAndBranchScripts(
-      File dir,
-      String name,
-      boolean includeDemoAssets,
-      boolean useLayeredLavenderDemo
-  ) throws Exception {
-    String lavenderExpr = includeDemoAssets && useLayeredLavenderDemo ? "idle" : "neutral";
-    String scenarioPrefix = sanitizeName(name).toLowerCase(Locale.ROOT);
-    java.util.Map<String, String> tokens = new java.util.LinkedHashMap<>();
-    tokens.put("PROJECT_NAME", name);
-    tokens.put("SCENARIO_PREFIX", scenarioPrefix);
-    tokens.put("CHARACTERS_INCLUDE", CHARACTERS_INCLUDE_PATH);
-    tokens.put("LAVENDER_EXPR", lavenderExpr);
-    tokens.put("TUTORIAL_TARGET", ARC_TUTORIAL_HUB);
-    tokens.put("BRANCH_TARGET", ARC_BRANCH_DEMO);
-    tokens.put("EPILOGUE_TARGET", ARC_EPILOGUE);
-    tokens.put("STORY_TUTORIAL_SCRIPT_PATH", STORY_TUTORIAL_SCRIPT_PATH);
-    tokens.put("STORY_BRANCH_SCRIPT_PATH", STORY_BRANCH_SCRIPT_PATH);
-    tokens.put("STORY_EPILOGUE_SCRIPT_PATH", STORY_EPILOGUE_SCRIPT_PATH);
-
-    writeScaffoldTemplateScript(dir, ENTRY_SCRIPT_PATH, "scripts/story/prologue_blank.vns", tokens);
-    if (!new File(dir, STORY_TUTORIAL_SCRIPT_PATH).isFile())
-      writeScaffoldTemplateScript(dir, STORY_TUTORIAL_SCRIPT_PATH, "scripts/story/tutorial_hub_blank.vns", tokens);
-    writeScaffoldTemplateScript(dir, STORY_BRANCH_SCRIPT_PATH, "scripts/story/branch_demo_blank.vns", tokens);
-    writeScaffoldTemplateScript(dir, STORY_EPILOGUE_SCRIPT_PATH, "scripts/story/epilogue_blank.vns", tokens);
-  }
-
-  private void createSampleArcEntryAndBranchScripts(File dir, String name, boolean includeDemoAssets) throws Exception {
-    String scenarioId = sanitizeName(name).toLowerCase(Locale.ROOT);
-    String tutorialTarget = ARC_TUTORIAL_HUB;
-    String branchTarget = ARC_BRANCH_DEMO;
-    String epilogueTarget = ARC_EPILOGUE;
-    String lavenderExpr = "idle";
-    String backgroundDecl = includeDemoAssets ? "@background white_stage assets/demo/backgrounds/game.png\n\n" : "";
-    String backgroundStart = includeDemoAssets ? "[bg white_stage]\n" : "";
-    String backgroundTransition = includeDemoAssets ? "[transition fade 400]\n" : "";
-    java.util.Map<String, String> tokens = new java.util.LinkedHashMap<>();
-    tokens.put("PROJECT_NAME", name);
-    tokens.put("SCENARIO_PREFIX", scenarioId);
-    tokens.put("CHARACTERS_INCLUDE", CHARACTERS_INCLUDE_PATH);
-    tokens.put("LAVENDER_EXPR", lavenderExpr);
-    tokens.put("TUTORIAL_TARGET", tutorialTarget);
-    tokens.put("BRANCH_TARGET", branchTarget);
-    tokens.put("EPILOGUE_TARGET", epilogueTarget);
-    tokens.put("STORY_BRANCH_SCRIPT_PATH", STORY_BRANCH_SCRIPT_PATH);
-    tokens.put("STORY_EPILOGUE_SCRIPT_PATH", STORY_EPILOGUE_SCRIPT_PATH);
-    tokens.put("STORY_MAP_PATH", STORY_MAP_PATH);
-    tokens.put("BG_DECL", backgroundDecl);
-    tokens.put("BG_START", backgroundStart);
-    tokens.put("BG_TRANSITION", backgroundTransition);
-    tokens.put("JES_SCENE_PATH", JES_STUDIO_SCENE_PATH);
-
-    writeScaffoldTemplateScript(dir, ENTRY_SCRIPT_PATH, "scripts/story/prologue_sample.vns", tokens);
-    writeScaffoldTemplateScript(dir, STORY_BRANCH_SCRIPT_PATH, "scripts/story/branch_demo_sample.vns", tokens);
-    writeScaffoldTemplateScript(dir, STORY_EPILOGUE_SCRIPT_PATH, "scripts/story/epilogue_sample.vns", tokens);
   }
 
   private void createStoryMap(File dir, String displayName, boolean includeTutorialPack) throws Exception {
@@ -2014,16 +1910,7 @@ public class NewProjectWizard extends Stage {
         }
         return;
       }
-      fw.write("# Starter arc workflow: prologue entry + route split + epilogue merge.\n\n");
-
       fw.write("arc \"" + ARC_PROLOGUE + "\" script \"" + ENTRY_SCRIPT_PATH + "\" entry \"start\" cluster \"Main\" priority 10 color \"#84c7ff\" tags \"entry,main\" at 40,120\n");
-      fw.write("arc \"" + ARC_TUTORIAL_HUB + "\" script \"" + STORY_TUTORIAL_SCRIPT_PATH + "\" entry \"start\" cluster \"Main\" priority 8 color \"#93ddaa\" tags \"tutorial,main\" at 380,40\n");
-      fw.write("arc \"" + ARC_BRANCH_DEMO + "\" script \"" + STORY_BRANCH_SCRIPT_PATH + "\" entry \"start\" cluster \"Routes\" priority 7 color \"#f3b27a\" tags \"branch,route\" at 380,220\n");
-      fw.write("arc \"" + ARC_EPILOGUE + "\" script \"" + STORY_EPILOGUE_SCRIPT_PATH + "\" entry \"start\" cluster \"Main\" priority 9 color \"#d6a8ee\" tags \"ending,main\" at 760,120\n\n");
-
-      fw.write("link " + ARC_PROLOGUE + ":route_tutorial -> " + ARC_TUTORIAL_HUB + ":start\n");
-      fw.write("link " + ARC_PROLOGUE + ":route_branch -> " + ARC_BRANCH_DEMO + ":start\n");
-      fw.write("link " + ARC_BRANCH_DEMO + ":end -> " + ARC_EPILOGUE + ":start\n");
     }
   }
 
@@ -2141,9 +2028,8 @@ public class NewProjectWizard extends Stage {
   }
 
   private void createLocaleStub(File dir) throws Exception {
-    String locale = cmbLocale == null || cmbLocale.getValue() == null ? "en" : cmbLocale.getValue();
-    boolean hasSample = (chkStarterStory != null && chkStarterStory.isSelected())
-        || (chkTutorialPack != null && chkTutorialPack.isSelected());
+    String locale = cmbLocale.getValue().trim();
+    boolean hasSample = chkTutorialPack.isSelected();
     boolean hasMenus = shouldCreateMenuPack();
     String fileName = "config/locales/" + locale + ".properties";
     try (FileWriter fw = new FileWriter(new File(dir, fileName))) {
@@ -2246,7 +2132,7 @@ public class NewProjectWizard extends Stage {
     tp.setProperty("itemSelectedPrefix", "▸ ");
     tp.setProperty("hintsText", "Enter/Click: Select    Esc: Back");
     tp.setProperty("titleText", name);
-    tp.setProperty("backgroundImage", DEFAULT_MENU_BG_ASSET_PATH);
+    if (chkBundledDemoAssets.isSelected()) tp.setProperty("backgroundImage", DEFAULT_MENU_BG_ASSET_PATH);
 
     try (FileOutputStream fos = new FileOutputStream(new File(dir, MENU_THEME_PATH))) {
       tp.store(fos, "Menu Theme for " + name + " - " + theme);
@@ -2294,8 +2180,8 @@ public class NewProjectWizard extends Stage {
 
     try (FileWriter fw = new FileWriter(new File(dir, MENU_STYLE_DEFAULT_PATH))) {
       fw.write("Monochrome Sketch".equals(cmbTheme.getValue())
-          ? LayoutDslTemplates.minimalMonochromeMenuStyleTemplate(DEFAULT_MENU_BG_ASSET_PATH)
-          : LayoutDslTemplates.defaultMenuStyleFullTemplate(DEFAULT_MENU_BG_ASSET_PATH));
+          ? LayoutDslTemplates.minimalMonochromeMenuStyleTemplate(chkBundledDemoAssets.isSelected() ? DEFAULT_MENU_BG_ASSET_PATH : "")
+          : LayoutDslTemplates.defaultMenuStyleFullTemplate(chkBundledDemoAssets.isSelected() ? DEFAULT_MENU_BG_ASSET_PATH : ""));
     }
 
     try (FileWriter fw = new FileWriter(new File(dir, MENU_STYLE_SUBMENU_PATH))) {
@@ -2521,7 +2407,6 @@ public class NewProjectWizard extends Stage {
       if (!txtAuthor.getText().isBlank()) fw.write("**Author:** " + txtAuthor.getText().trim() + "\n\n");
       fw.write("**Template:** " + resolveProjectTemplateFromSelections().label() + "\n\n");
       fw.write("## Enabled Modules\n\n");
-      fw.write("- Starter story flow: " + ((chkStarterStory != null && chkStarterStory.isSelected()) ? "yes" : "no") + "\n");
       fw.write("- Guided tutorial pack: " + ((chkTutorialPack != null && chkTutorialPack.isSelected()) ? "yes" : "no") + "\n");
       fw.write("- Bundled demo assets: " + (includeDemoAssets ? "yes (`assets/demo/...`)" : "no") + "\n");
       fw.write("- Menu profile pack: " + (includeMenuPack ? "yes" : "no") + "\n");
@@ -2553,11 +2438,6 @@ public class NewProjectWizard extends Stage {
 
       fw.write("## Entry Points\n\n");
       fw.write("- Script: `" + ENTRY_SCRIPT_PATH + "`\n");
-      fw.write("- Arc scripts: `" + STORY_TUTORIAL_SCRIPT_PATH + "`, `" + STORY_BRANCH_SCRIPT_PATH + "`, `" + STORY_EPILOGUE_SCRIPT_PATH + "`\n");
-      if ((chkStarterStory != null && chkStarterStory.isSelected())
-          || (chkTutorialPack != null && chkTutorialPack.isSelected())) {
-        fw.write("- JES scene: `" + JES_STUDIO_SCENE_PATH + "`\n");
-      }
       fw.write("- Shared character definitions: `" + CHARACTERS_SCRIPT_PATH + "` (included by all story scripts)\n");
       fw.write("- Story map: `" + STORY_MAP_PATH + "`\n");
       fw.write("- Settings: `" + SETTINGS_PATH + "`\n");
@@ -2584,7 +2464,7 @@ public class NewProjectWizard extends Stage {
       fw.write("## First Steps\n\n");
       int step = 1;
       fw.write(step++ + ". Open this folder in the JVN Editor.\n");
-      fw.write(step++ + ". Edit `" + ENTRY_SCRIPT_PATH + "` and the connected arc scripts in `scripts/story/`.\n");
+      fw.write(step++ + ". Edit `" + ENTRY_SCRIPT_PATH + "` to write the opening scene in `scripts/story/`.\n");
       fw.write(step++ + ". Keep shared character declarations in `" + CHARACTERS_SCRIPT_PATH + "` and import with `@include " + CHARACTERS_INCLUDE_PATH + "`.\n");
       fw.write(step++ + ". Open `" + STORY_MAP_PATH + "` and inspect/edit arc links.\n");
       fw.write(step++ + ". Edit `" + DIALOGUE_LAYOUT_PATH + "` in text first, then run runtime to validate.\n");
@@ -2641,15 +2521,15 @@ public class NewProjectWizard extends Stage {
   }
 
   private static void styleField(javafx.scene.control.Control control) {
-    addStyleClasses(control, "layout-launcher-field");
+    addStyleClasses(control, "setup-field");
   }
 
   private static void stylePrimaryButton(Button button) {
-    addStyleClasses(button, "welcome-action-button-primary", "new-project-wizard-action-button");
+    addStyleClasses(button, "setup-primary");
   }
 
   private static void styleSecondaryButton(Button button) {
-    addStyleClasses(button, "layout-launcher-button", "new-project-wizard-action-button");
+    addStyleClasses(button, "setup-button");
   }
 
   private static void setFieldState(javafx.scene.control.Control control, String styleClass) {

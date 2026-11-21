@@ -21,5 +21,7 @@ class NewProjectWizardLogicTest {
     assertFalse(NewProjectWizard.isSafeFolderName("my vn"));
     assertFalse(NewProjectWizard.isSafeFolderName("folder/name"));
     assertFalse(NewProjectWizard.isSafeFolderName(""));
+    assertFalse(NewProjectWizard.isSafeFolderName("."));
+    assertFalse(NewProjectWizard.isSafeFolderName(".."));
   }
 }

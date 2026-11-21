@@ -291,6 +291,11 @@ launch_cache_identity() {
 cache_is_stale() {
   [[ "$FORCE_REBUILD" -eq 1 || ! -s "$CLASSPATH_FILE" || ! -f "$MODULE_PATH_FILE" || ! -s "$VERSION_FILE" || ! -f "$STAMP_FILE" ]] && return 0
   [[ "$(cat "$STAMP_FILE")" = "$(launch_cache_identity)" ]] || return 0
+  # Gradle may have reclaimed a cached artifact since the last launch.
+  local entry
+  while IFS= read -r entry; do
+    [[ -z "$entry" || -e "$entry" ]] || return 0
+  done < <(cat "$CLASSPATH_FILE" "$MODULE_PATH_FILE")
   find "$ROOT_DIR/modules" "$ROOT_DIR/misc/demo-assets" \
     -type d -name build ! -path "*/src/*" -prune -o \( -type f -o -type d \) \
     -newer "$STAMP_FILE" -print -quit 2>/dev/null | grep -q . && return 0

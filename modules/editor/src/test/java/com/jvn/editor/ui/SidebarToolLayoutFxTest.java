@@ -9,9 +9,11 @@ import com.jvn.fx.testkit.FxToolkitExtension;
 import java.util.List;
 import javafx.css.PseudoClass;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBase;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.Region;
 import org.junit.jupiter.api.Test;
@@ -63,9 +65,16 @@ class SidebarToolLayoutFxTest {
         map.layout();
 
         Region header = (Region) map.getTop();
-        List<Button> commands = header.lookupAll(".sidebar-tool-btn").stream().map(Button.class::cast).toList();
-        assertEquals(10, commands.size());
-        for (Button command : commands) {
+        List<ButtonBase> commands = java.util.stream.Stream.concat(
+            header.lookupAll(".sidebar-tool-btn").stream(), header.lookupAll(".menu-button").stream())
+            .map(ButtonBase.class::cast).toList();
+        assertEquals(List.of("Add Arc", "Add Link", "Connections", "Map tools", "Open", "Run entry"),
+            commands.stream().map(ButtonBase::getText).sorted().toList());
+        MenuButton tools = commands.stream().filter(command -> command.getText().equals("Map tools"))
+            .map(MenuButton.class::cast).findFirst().orElseThrow();
+        assertEquals(List.of("Edit", "Copy Goto", "Auto Layout", "Fit", "Validate", "Refresh", "Delete"),
+            tools.getItems().stream().map(MenuItem::getText).toList());
+        for (ButtonBase command : commands) {
           assertEquals(ContentDisplay.LEFT, command.getContentDisplay());
           assertTrue(!command.getText().isBlank(), "Story Map command must have a visible label");
           assertTrue(command.localToScene(command.getLayoutBounds()).getMaxX() <= scene.getWidth(),

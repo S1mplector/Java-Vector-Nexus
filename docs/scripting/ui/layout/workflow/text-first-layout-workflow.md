@@ -6,12 +6,10 @@
 
 ## Purpose
 
-JVN layout editing is **text-first**. You write layout, style, menu, and registry files as
-plain-text properties, then run your project to see the authoritative result. Layout Studio
-supports that loop with source templates, line diagnostics, asset helpers, and Save and Run.
-
-This guide teaches you the complete text-first loop from scratch: where each file lives, what
-keys are available, how to validate changes in runtime, and how to debug problems fast.
+JVN stores layouts, styles, menus, and registries as plain-text properties. Layout Studio lets
+you edit the same working document in **Design** and **Source**. This guide covers the source
+workflow, including where each file lives, what keys are available, and how to debug changes.
+For direct manipulation on the game canvas, see [Layout authoring tools](../tooling/layout-editor-tools.md).
 
 For a worked multi-screen project, continue with the
 [complete menu tutorial](complete-menu-tutorial.md).
@@ -616,37 +614,12 @@ bundle a custom font in your project assets.
 
 ---
 
-## Migration from visual-first habits
+## Move between Design and Source
 
-If you previously used JVN's visual layout editors, translate each operation into a small,
-reviewable property change:
-
-### What changes
-
-| Visual-First Habit | Text-First Equivalent |
-|---|---|
-| Drag a slider to move the text box | Edit `textBoxY=0.72` and re-run |
-| Pick a color from the color wheel | Type `itemColor=#FFE8A3` and re-run |
-| Resize by dragging a handle | Edit `textBoxWidth=0.8` and re-run |
-| Use "Preview" tab to check layout | Run the actual project and observe |
-| Undo in a form panel | Use source-editor undo or revert the source diff |
-
-### Why text-first is better for production
-
-1. **Reproducibility.** Text files are diffable, mergeable, and versionable with Git.
-2. **Precision.** You know the exact value, not "roughly where the slider was."
-3. **Runtime truth.** There is no second renderer to disagree with the runtime.
-4. **Speed at scale.** Once you know the keys, editing text is faster than navigating UI panels.
-5. **Collaboration.** Teammates can review layout changes in pull requests.
-
-### Transition tips
-
-- **Keep the DSL Cookbook open** as a reference while you learn the keys.
-- **Start with one file.** Get comfortable with `dialogue.layout` before tackling menus.
-- **Use Save and Run Runtime** (`Ctrl/Cmd+Enter`) to keep the validation loop short.
-- **Use source templates** for a known-valid baseline rather than assembling every key from memory.
-- **Read console diagnostics.** The engine warns you about invalid keys and clamped values.
-- **Commit working states.** After each successful layout tweak, commit to Git so you can always roll back.
+Drag items or use the inspector in **Design**, then switch to **Source** for exact values, batch
+edits, extensions, or diagnostics. Both tabs share undo and save state. Review the properties diff
+to see which declarations changed. Use **Save and Run Runtime** to verify input, navigation, and
+script-specific behavior.
 
 ---
 

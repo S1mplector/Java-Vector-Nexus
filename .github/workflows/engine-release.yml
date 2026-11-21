@@ -78,8 +78,8 @@ jobs:
             --tests com.jvn.editor.ui.NewProjectScaffoldTemplateWiringTest \
             --tests com.jvn.editor.ui.GameBuildPublisherViewTest \
             --tests com.jvn.editor.ui.GameBuildPublisherViewFxTest --no-daemon
-          unzip -q "$JVN_TUTORIAL_QA_DIR/Ginger-Tutorial.zip" -d "$RUNNER_TEMP/tutorial-routing"
-          export JVN_GENERATED_TUTORIAL="$RUNNER_TEMP/tutorial-routing/GingerTutorial"
+          unzip -q "$JVN_TUTORIAL_QA_DIR/Tutorial.zip" -d "$RUNNER_TEMP/tutorial-routing"
+          export JVN_GENERATED_TUTORIAL="$RUNNER_TEMP/tutorial-routing/Tutorial"
           ./gradlew :runtime:test --tests com.jvn.runtime.TutorialChoiceRoutingTest --no-daemon
       - name: Report failing packaged tests
         if: failure() && runner.os == 'Linux'
@@ -99,7 +99,7 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          cp "$RUNNER_TEMP/jvn-tutorial-preview/Ginger-Tutorial.zip" "$RUNNER_TEMP/jvn-tutorial-preview/Ginger-menus.png" build/native-hub/
+          cp "$RUNNER_TEMP/jvn-tutorial-preview/Tutorial.zip" "$RUNNER_TEMP/jvn-tutorial-preview/Tutorial-menus.png" build/native-hub/
       - uses: actions/upload-artifact@v4
         with:
           name: hub-${{ matrix.runner }}
@@ -138,7 +138,7 @@ jobs:
             sha256sum --check --strict "$file.sha256"
             assets+=("$file" "$file.sha256")
           done
-          for file in Ginger-Tutorial.zip Ginger-menus.png; do
+          for file in Tutorial.zip Tutorial-menus.png; do
             test -s "$file"
             assets+=("$file")
           done

@@ -146,6 +146,19 @@ This matters for workflow-critical utilities such as **Build & Publish...**, **S
 
 ### VNS editor
 
+Type `[bgm_st` to narrow the command list to `[bgm_stop]`. Inside a command,
+completion switches to its arguments. For example, `[show ginger expr=` offers
+expressions declared for `ginger` in the current script or its `@include` files. After a choice arrow,
+it offers local jump labels. Dialogue keeps ordinary words in the text color,
+with separate highlighting for the speaker, formatting tags and substitutions.
+
+![The VNS editor offering normal, thoughtful and confused after typing expr= for Ginger](../../assets/images/core/code-editor/vns-completion.png)
+
+Suggestions open as you type. Press `Ctrl+Space` or `Cmd+Space` to open the
+list manually in either script editor. Use the arrow keys to choose a row,
+`Tab` or `Enter` to insert it and `Esc` to dismiss the list. You can complete
+a word from the middle without duplicating its ending or a closing bracket.
+
 - syntax highlighting
 - strict parser diagnostics (same parser as runtime)
 - compact VNS tool strip with dedicated actions for:
@@ -197,6 +210,18 @@ an icon for its short description or use the `?` control for the complete key
 map.
 
 ### JES editor
+
+After `component`, completion lists component types. Inside a `Sprite2D` block,
+`ori` offers `originX` and `originY`. Accept one and type its numeric value.
+For an `image` value, type inside the quotes to find a project image by its
+filename or its path under `assets/`. In a `timeline` block, type `cameram`
+to complete `cameraMove`. Its property list changes to match that action.
+
+![The JES editor completing originX and originY inside a Sprite2D component](../../assets/images/core/code-editor/jes-completion.png)
+
+Type an opening brace to insert its partner. Press `Enter` between the two
+braces to open an indented line. Selecting text before typing an opening
+delimiter wraps the selection in that pair.
 
 - syntax highlighting
 - parser lint diagnostics

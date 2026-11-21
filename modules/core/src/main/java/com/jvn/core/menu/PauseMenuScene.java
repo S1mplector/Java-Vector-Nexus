@@ -41,16 +41,25 @@ public class PauseMenuScene implements Scene {
 
   public PauseMenuScene(Engine engine, VnScene vnScene, VnSaveManager saveManager,
                         String defaultScriptName, AudioFacade audio) {
+    this(engine, vnScene, saveManager, defaultScriptName, audio, null);
+  }
+
+  public PauseMenuScene(Engine engine, VnScene vnScene, VnSaveManager saveManager,
+                        String defaultScriptName, AudioFacade audio, MenuProfile profile) {
     this.engine = engine;
     this.vnScene = vnScene;
     this.saveManager = saveManager == null ? new VnSaveManager() : saveManager;
     String resolvedDefault = VnEntryScriptResolver.resolveEntryScript(defaultScriptName, null);
     this.defaultScriptName = resolvedDefault == null ? "story/prologue.vns" : resolvedDefault;
     this.audio = audio;
-    MenuProfileLoader.LoadResult menuLoad = MenuProfileLoader.loadWithDiagnostics();
-    this.menuProfile = menuLoad.profile();
-    for (String warning : menuLoad.diagnostics()) {
-      LOG.warn("Menu profile: {}", warning);
+    if (profile == null) {
+      MenuProfileLoader.LoadResult menuLoad = MenuProfileLoader.loadWithDiagnostics();
+      this.menuProfile = menuLoad.profile();
+      for (String warning : menuLoad.diagnostics()) {
+        LOG.warn("Menu profile: {}", warning);
+      }
+    } else {
+      this.menuProfile = profile;
     }
     this.menuScreen = menuProfile.screen("pause");
     this.menuLayout = menuProfile.layout(menuScreen.layoutId());

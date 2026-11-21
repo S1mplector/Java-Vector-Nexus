@@ -147,7 +147,7 @@ public class SettingsScene implements Scene {
     this(engine, saveManager, defaultScriptName, settings, audio, bindings, null, menuId);
   }
 
-  SettingsScene(
+  public SettingsScene(
       Engine engine,
       VnSaveManager saveManager,
       String defaultScriptName,

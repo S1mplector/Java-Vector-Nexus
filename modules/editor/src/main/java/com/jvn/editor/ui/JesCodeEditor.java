@@ -42,27 +42,12 @@ public class JesCodeEditor extends BorderPane {
   private LintMode lintMode = LintMode.JES_DOCUMENT;
   private final Label statusLabel = new Label("Ln 1, Col 1");
 
-  private static final String[] KEYWORDS = new String[] {
-    "scene","entity","component","on","key","do","timeline",
-    "wait","move","depth","pivot","rotate","scale","fade","visible","expression","show","hide",
-    "replace","event","property","cameraMove","cameraZoom","playAudio","call",
-    // common props / literals
-    "true","false","rgb","rgba","shape","circle","box",
-    "static","sensor","text","image","align","additive"
-  };
-
   public JesCodeEditor() {
     getStyleClass().add("text-editor-root");
     if (!codeArea.getStyleClass().contains("code-area")) {
       codeArea.getStyleClass().add("code-area");
     }
-    CodeEditorGutterGuard.install(codeArea);
-    codeArea.setParagraphGraphicFactory(line -> {
-      Label ln = new Label(String.format("%d", line + 1));
-      ln.getStyleClass().add("lineno");
-      if (line == lastErrorLine) ln.getStyleClass().add("lineno-error");
-      return ln;
-    });
+    codeArea.setParagraphGraphicFactory(this::lineNumber);
     codeArea.textProperty().addListener((obs, oldText, newText) -> {
       applyHighlighting(newText);
       applyAnalysis(newText);
@@ -89,7 +74,10 @@ public class JesCodeEditor extends BorderPane {
       codeArea.getStylesheets().add(css);
     }
 
-    completer = new CodeAutoCompleter(codeArea, ctx -> provideSuggestions(ctx));
+    JesCompletion suggestions = new JesCompletion();
+    completer = new CodeAutoCompleter(codeArea, ctx ->
+        suggestions.suggest(ctx, cachedEntities, cachedLabels, lintMode == LintMode.TIMELINE_BLOCK));
+    CodeEditingKeys.install(codeArea, "{}()\"\"", true);
     applyFontSize();
   }
 
@@ -180,43 +168,6 @@ public class JesCodeEditor extends BorderPane {
     return DslSyntaxHighlighter.spans(SyntaxRules.JES, text);
   }
 
-  private List<CodeAutoCompleter.Suggestion> provideSuggestions(CodeAutoCompleter.Context ctx) {
-    String p = ctx.prefix == null ? "" : ctx.prefix;
-    String pl = p.toLowerCase();
-    List<CodeAutoCompleter.Suggestion> out = new ArrayList<>();
-    // keywords
-    for (String kw : KEYWORDS) if (kw.startsWith(pl)) out.add(new CodeAutoCompleter.Suggestion(kw));
-    // components and timeline actions
-    for (String comp : List.of("Panel2D","Sprite2D","Label2D","ParticleEmitter2D","PhysicsBody2D","Character2D","Stats","Inventory","Equipment","Ai2D","Button2D","Slider2D")) {
-      if (comp.toLowerCase().startsWith(pl)) out.add(new CodeAutoCompleter.Suggestion(comp));
-    }
-    for (String act : List.of("move","depth","pivot","rotate","scale","fade","visible","expression","show","hide","replace","event","property","walkToTile","cameraMove","cameraZoom","cameraShake","damage","heal","call","loop","parallel","waitForCall","emitParticles","cameraFollow","setParallax","playAudio","stopAudio","label","jump")) {
-      if (act.startsWith(pl)) out.add(new CodeAutoCompleter.Suggestion(act));
-    }
-    for (String builtAction : List.of("toggleDebug","spawnCircle","spawnBox","moveHero","interact","attack")) {
-      if (builtAction.toLowerCase().startsWith(pl)) out.add(new CodeAutoCompleter.Suggestion(builtAction));
-    }
-    for (String name : cachedEntities) if (name.toLowerCase().startsWith(pl)) out.add(new CodeAutoCompleter.Suggestion(name));
-    for (String lab : cachedLabels) if (lab.toLowerCase().startsWith(pl)) out.add(new CodeAutoCompleter.Suggestion(lab));
-    // if inside quotes and line hints an image value, suggest asset ids
-    String line = currentLine(ctx.text, ctx.caret).toLowerCase();
-    boolean wantsImage = line.contains("image") || line.contains("texture");
-    if (wantsImage) {
-      for (String dir : List.of("assets/ui", "assets/backgrounds", "assets/cg", "assets/characters")) {
-        for (String id : CodeAutoCompleter.listAssetIds(projectRoot, dir, ".png", ".jpg", ".jpeg", ".webp")) {
-          String nm = id.contains("/") ? id.substring(id.lastIndexOf('/')+1) : id;
-          if (nm.toLowerCase().startsWith(pl) || id.toLowerCase().startsWith(pl)) out.add(new CodeAutoCompleter.Suggestion(id));
-        }
-      }
-    }
-    // de-dup
-    if (out.size() > 1) {
-      List<String> seen = new ArrayList<>();
-      out.removeIf(sug -> { String k = sug.insert; if (seen.contains(k)) return true; seen.add(k); return false; });
-    }
-    return out;
-  }
-
   private void applyAnalysis(String text) {
     JesScriptAnalyzer.Analysis analysis =
         JesScriptAnalyzer.analyze(text, projectRoot, null, toAnalyzerMode(lintMode));
@@ -260,27 +211,20 @@ public class JesCodeEditor extends BorderPane {
       } else {
         lastErrorLine = -1;
       }
-      codeArea.setParagraphGraphicFactory(line -> {
-        Label ln = new Label(String.format("%d", line + 1));
-        ln.getStyleClass().add("lineno");
-        if (line == lastErrorLine) ln.getStyleClass().add("lineno-error");
-        return ln;
-      });
+      codeArea.setParagraphGraphicFactory(this::lineNumber);
     });
+  }
+
+  private javafx.scene.Node lineNumber(int line) {
+    Label number = new Label(Integer.toString(line + 1));
+    number.getStyleClass().add("lineno");
+    if (line == lastErrorLine) number.getStyleClass().add("lineno-error");
+    return CodeEditorGutter.wrap(number);
   }
 
   private void clearErrorLine() {
     if (lastErrorLine >= 0 && lastErrorLine < codeArea.getParagraphs().size()) {
       codeArea.setParagraphStyle(lastErrorLine, Collections.emptyList());
     }
-  }
-
-  private static String currentLine(String text, int caret) {
-    if (text == null) return "";
-    int s = text.lastIndexOf('\n', Math.max(0, caret-1));
-    int e = text.indexOf('\n', caret);
-    if (s < 0) s = 0; else s = s + 1;
-    if (e < 0) e = text.length();
-    return text.substring(s, Math.min(e, text.length()));
   }
 }

@@ -88,8 +88,12 @@ public class MenuTheme {
   public static MenuTheme defaults() { return new MenuTheme(); }
 
   public static MenuTheme fromAssets() {
-    MenuTheme t = fromMenuProfile(MenuProfileLoader.loadFromAssets());
     AssetCatalog cat = new AssetCatalog();
+    return fromAssets(cat, MenuProfileLoader.load(cat));
+  }
+
+  public static MenuTheme fromAssets(AssetCatalog cat, MenuProfile profile) {
+    MenuTheme t = fromMenuProfile(profile);
     String[] candidates = new String[] {
         "config/menu/theme/menu.theme",
         "config/menu/menu.theme",

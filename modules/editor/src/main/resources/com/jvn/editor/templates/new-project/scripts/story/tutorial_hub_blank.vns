@@ -3,6 +3,6 @@
 @include {{CHARACTERS_INCLUDE}}
 
 @label start
-narrator: To learn with Ginger, open {b}New Project{/b} in the Editor and choose {b}Tutorial Workspace with Ginger{/b}.
-narrator: Select {b}Create Ginger Tutorial{/b}, run the new project and choose {b}Start tutorial{/b}. Ginger will meet you at the menu for all 30 lessons.
+narrator: To learn with Ginger, open {b}New Project{/b} in the Editor and choose {b}Tutorial{/b}.
+narrator: Select {b}Create Tutorial{/b}, run the new project and choose {b}Start tutorial{/b}. Ginger will meet you at the menu for all 30 lessons.
 [end]

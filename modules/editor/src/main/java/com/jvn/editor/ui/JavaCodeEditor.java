@@ -30,6 +30,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 public class JavaCodeEditor extends BorderPane {
@@ -98,7 +99,6 @@ public class JavaCodeEditor extends BorderPane {
     if (!codeArea.getStyleClass().contains("code-area")) {
       codeArea.getStyleClass().add("code-area");
     }
-    CodeEditorGutterGuard.install(codeArea);
     IntFunction<Node> lineNumberFactory = LineNumberFactory.get(codeArea);
     codeArea.setParagraphGraphicFactory(line -> buildGutterGraphic(line, lineNumberFactory));
     codeArea.textProperty().addListener((obs, oldText, newText) -> {
@@ -127,7 +127,7 @@ public class JavaCodeEditor extends BorderPane {
     int lineNo = paragraphIndex + 1;
     Node lineNum = lineNumberFactory.apply(paragraphIndex);
     Diagnostic diag = diagnosticsByLine.get(lineNo);
-    if (diag == null) return lineNum;
+    if (diag == null) return CodeEditorGutter.wrap(lineNum);
 
     String icon = switch (diag.severity()) {
       case ERROR -> "\u274c";
@@ -161,9 +161,11 @@ public class JavaCodeEditor extends BorderPane {
       }
     });
 
-    HBox box = new HBox(marker, lineNum);
-    box.setAlignment(Pos.CENTER_RIGHT);
-    return box;
+    StackPane numberWithMarker = new StackPane(lineNum, marker);
+    marker.setViewOrder(-2); // Keep the action above the line number’s painted background.
+    StackPane.setAlignment(marker, Pos.CENTER_LEFT);
+    StackPane.setMargin(marker, new Insets(0, 0, 0, 3));
+    return CodeEditorGutter.wrap(numberWithMarker);
   }
 
   private void setupDiagnosticsPanel() {
@@ -263,6 +265,23 @@ public class JavaCodeEditor extends BorderPane {
 
   public String getText() { return codeArea.getText(); }
   public void setText(String s) { codeArea.replaceText(s == null ? "" : s); }
+
+  /** Applies a visual authoring operation as one independent text edit. */
+  void replaceDocumentEdit(String next) {
+    String before = codeArea.getText();
+    int start = 0;
+    int beforeEnd = before.length();
+    int afterEnd = next.length();
+    while (start < Math.min(beforeEnd, afterEnd) && before.charAt(start) == next.charAt(start)) start++;
+    while (beforeEnd > start && afterEnd > start && before.charAt(beforeEnd - 1) == next.charAt(afterEnd - 1)) {
+      beforeEnd--;
+      afterEnd--;
+    }
+    if (start == beforeEnd && start == afterEnd) return;
+    codeArea.getUndoManager().preventMerge();
+    codeArea.replaceText(start, beforeEnd, next.substring(start, afterEnd));
+    codeArea.getUndoManager().preventMerge();
+  }
   public void setTextNoEvent(String s) {
     try {
       suppressEvent = true;

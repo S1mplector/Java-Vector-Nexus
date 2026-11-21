@@ -94,6 +94,8 @@ import com.jvn.editor.ui.StoryboardOverlayState;
 import com.jvn.editor.ui.StoryboardOverlayView;
 import com.jvn.editor.ui.TilemapEditorView;
 import com.jvn.editor.ui.TrashmanView;
+import com.jvn.editor.ui.EditorMenuIcon;
+import com.jvn.editor.ui.EditorMenuStrip;
 import com.jvn.editor.ui.VersionControlView;
 import com.jvn.editor.ui.VnsCodeEditor;
 import com.jvn.editor.ui.VnsDiagnosticsView;
@@ -176,6 +178,7 @@ import javafx.stage.Window;
 import javafx.util.Duration;
 
 public class EditorApp extends Application {
+  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(EditorApp.class);
   // UI
   private AnimationTimer timer;
   private Label status;
@@ -556,6 +559,7 @@ public class EditorApp extends Application {
 
   @Override
   public void stop() {
+    if (trashmanView != null) trashmanView.dispose();
     if (assetLabelMonitor != null) assetLabelMonitor.close();
     if (pluginHost != null) pluginHost.close();
   }
@@ -1519,7 +1523,7 @@ public class EditorApp extends Application {
     MenuBar mb = new MenuBar();
     mb.setUseSystemMenuBar(false);
     mb.setFocusTraversable(false);
-    Menu menuFile = new Menu("File");
+    Menu menuFile = EditorMenuIcon.FILE.menu("File");
     MenuItem miNewProject = new MenuItem("New Project...");
     miNewProject.setOnAction(e -> doNewProject(primaryStage));
     MenuItem miOpenProject = new MenuItem("Open Project...");
@@ -1617,7 +1621,7 @@ public class EditorApp extends Application {
         miExitEditor);
 
     // ── Edit ──
-    Menu menuEdit = new Menu("Edit");
+    Menu menuEdit = EditorMenuIcon.EDIT.menu("Edit");
     MenuItem miUndo = new MenuItem("Undo");
     miUndo.setOnAction(e -> executeUndo());
     miUndo.setAccelerator(new KeyCodeCombination(KeyCode.Z, KeyCombination.SHORTCUT_DOWN));
@@ -1680,7 +1684,7 @@ public class EditorApp extends Application {
         menuEditDocument);
 
     // ── View ──
-    Menu menuView = new Menu("View");
+    Menu menuView = EditorMenuIcon.VIEW.menu("View");
     MenuItem miToggleEditorFullscreen = new MenuItem("Toggle Editor Fullscreen");
     miToggleEditorFullscreen.setOnAction(e -> toggleActiveEditorFullscreen());
     miToggleEditorFullscreen.setAccelerator(new KeyCodeCombination(KeyCode.F11));
@@ -1777,7 +1781,7 @@ public class EditorApp extends Application {
     menuView.getItems().addAll(menuViewport, menuTheme, new SeparatorMenuItem(), menuPanels);
 
     // ── Navigate ──
-    Menu menuNavigate = new Menu("Navigate");
+    Menu menuNavigate = EditorMenuIcon.NAVIGATE.menu("Navigate");
     Menu menuNavigateCore = new Menu("Core Panels");
     MenuItem miNavigateWelcome = new MenuItem("Workspace Hub");
     miNavigateWelcome.setOnAction(e -> selectWorkspaceHubTab());
@@ -1829,7 +1833,7 @@ public class EditorApp extends Application {
 	    menuNavigate.getItems().addAll(menuNavigateCore, menuNavigateEditors, menuNavigateVisual, menuNavigateAnalysis);
 
 	    // ── Project ──
-	    Menu menuProjectTop = new Menu("Project");
+	    Menu menuProjectTop = EditorMenuIcon.PROJECT.menu("Project");
 	    MenuItem miProjectWorkspaceHub = new MenuItem("Workspace Hub");
 	    miProjectWorkspaceHub.setOnAction(e -> selectWorkspaceHubTab());
 	    MenuItem miProjectNew = new MenuItem("New Project...");
@@ -1859,7 +1863,7 @@ public class EditorApp extends Application {
 	    menuProjectTop.getItems().addAll(menuProjectOpenTop, menuProjectActions, menuProjectLocations);
 
 	    // ── Text ──
-	    Menu menuText = new Menu("Text");
+	    Menu menuText = EditorMenuIcon.TEXT.menu("Text");
 	    MenuItem miTextOpen = new MenuItem("Open Text File...");
 	    miTextOpen.setOnAction(e -> doOpenTextFile(primaryStage));
 	    MenuItem miTextSave = new MenuItem("Save Active File");
@@ -1909,7 +1913,7 @@ public class EditorApp extends Application {
 	    menuText.getItems().addAll(menuTextFile, menuTextEdit, menuTextPaths);
 
 	    // ── VNS ──
-	    Menu menuVns = new Menu("VNS");
+	    Menu menuVns = EditorMenuIcon.VNS.menu("VNS");
 	    MenuItem miVnsOpen = new MenuItem("Open VNS...");
 	    miVnsOpen.setOnAction(e -> doOpenVns(primaryStage));
 	    MenuItem miVnsApplyPreview = new MenuItem("Apply to Preview");
@@ -1972,7 +1976,7 @@ public class EditorApp extends Application {
 	    menuVns.getItems().addAll(miVnsOpen, new SeparatorMenuItem(), menuVnsPreview, menuVnsAnalysis, menuVnsAnimation);
 
 	    // ── Assets ──
-	    Menu menuAssetsTop = new Menu("Assets");
+	    Menu menuAssetsTop = EditorMenuIcon.ASSETS.menu("Assets");
 	    MenuItem miAssetsAutoLabel = new MenuItem("Auto-label Assets...");
 	    miAssetsAutoLabel.setOnAction(e -> selectAssetAutoLabelDashboard());
 	    MenuItem miAssetsBrowser = new MenuItem("Asset Browser");
@@ -1995,7 +1999,7 @@ public class EditorApp extends Application {
 	    menuAssetsTop.getItems().addAll(miAssetsAutoLabel, new SeparatorMenuItem(), menuAssetTools, menuAssetLocations);
 
 	    // ── Diagnostics ──
-	    Menu menuDiagnosticsTop = new Menu("Diagnostics");
+	    Menu menuDiagnosticsTop = EditorMenuIcon.DIAGNOSTICS.menu("Diagnostics");
 	    MenuItem miDiagnosticsVns = new MenuItem("VNS Diagnostics");
 	    miDiagnosticsVns.setOnAction(e -> selectVnsDiagnosticsTab());
 	    MenuItem miDiagnosticsFlow = new MenuItem("Label Flow Map");
@@ -2020,7 +2024,7 @@ public class EditorApp extends Application {
 	        miDiagnosticsSettings);
 
 	    // ── Run ──
-	    Menu menuRun = new Menu("Run");
+	    Menu menuRun = EditorMenuIcon.RUN.menu("Run");
     MenuItem miApplyCode = new MenuItem("Apply to Preview");
     miApplyCode.setOnAction(e -> applyCodeFromEditor());
     miApplyCode.setAccelerator(new KeyCodeCombination(KeyCode.ENTER, KeyCombination.SHORTCUT_DOWN));
@@ -2081,13 +2085,13 @@ public class EditorApp extends Application {
         menuRunLaunchVns);
 
     // ── Build ──
-    Menu menuBuild = new Menu("Build");
+    Menu menuBuild = EditorMenuIcon.BUILD.menu("Build");
     MenuItem miBuildPublishMain = new MenuItem("Build & Publish...");
     miBuildPublishMain.setOnAction(e -> showGameBuildPublisherWindow(primaryStage));
     menuBuild.getItems().add(miBuildPublishMain);
 
     // ── Tools ──
-    Menu menuTools = new Menu("Tools");
+    Menu menuTools = EditorMenuIcon.TOOLS.menu("Tools");
     pluginToolsMenu = new Menu("Plugins");
     refreshPluginToolsMenu();
     MenuItem miActionEditor = new MenuItem("Puppeteer (Window)");
@@ -2140,7 +2144,7 @@ public class EditorApp extends Application {
         menuWorkspaceTools, new SeparatorMenuItem(), pluginToolsMenu);
 
     // ── Version Control ──
-    Menu menuVcs = new Menu("Version Control");
+    Menu menuVcs = EditorMenuIcon.VERSION_CONTROL.menu("Version Control");
     MenuItem miOpenVcs = new MenuItem("Open Version Control");
     miOpenVcs.setOnAction(e -> selectVersionControlTab());
     miOpenVcs.setAccelerator(new KeyCodeCombination(KeyCode.G, KeyCombination.SHORTCUT_DOWN, KeyCombination.SHIFT_DOWN));
@@ -2157,7 +2161,7 @@ public class EditorApp extends Application {
     menuVcs.getItems().addAll(miOpenVcs, miRefreshVcs, new SeparatorMenuItem(), miRevealProjectRoot, miCopyProjectRootPath);
 
     // ── Window ──
-    Menu menuWindow = new Menu("Window");
+    Menu menuWindow = EditorMenuIcon.WINDOW.menu("Window");
     MenuItem miBringMainWindowToFront = new MenuItem("Bring Main Window to Front");
     miBringMainWindowToFront.setOnAction(e -> {
       primaryStage.toFront();
@@ -2223,11 +2227,7 @@ public class EditorApp extends Application {
     });
     disableMaintenanceMenuItem(miWindowStoryboard, EditorSidebarPanel.STORYBOARD_OVERLAY);
     MenuItem miWindowLayered = new MenuItem("Layered Image Visualizer");
-    miWindowLayered.setOnAction(e -> {
-      LayeredImageVisualizerView view = ensureLayeredImageVisualizerView();
-      if (view != null) view.refreshCatalog();
-      launchPanelAsWindow("Layered Image Visualizer", view, 900, 700, EditorSidebarPanel.LAYERED_IMAGES);
-    });
+    miWindowLayered.setOnAction(e -> selectLayeredImageVisualizerTab());
     MenuItem miWindowImageAttributes = new MenuItem("Image Attributes Tool");
     miWindowImageAttributes.setOnAction(e -> {
       ImageAttributesToolView view = ensureImageAttributesToolView();
@@ -2267,7 +2267,7 @@ public class EditorApp extends Application {
         miCloseFloatingWindows);
 
     // ── Help ──
-    Menu menuHelp = new Menu("Help");
+    Menu menuHelp = EditorMenuIcon.HELP.menu("Help");
     MenuItem miLicense = new MenuItem("License & Terms");
     miLicense.setOnAction(e -> com.jvn.editor.ui.LicenseAcceptanceView.show(primaryStage, buildInfo.versionLabel()));
     menuHelp.getItems().add(miLicense);
@@ -2296,10 +2296,7 @@ public class EditorApp extends Application {
         miWhatsNew,
         miAbout);
 
-    // Blender-style application menu: the same scalable logo renderer used at top right.
-    Menu menuJvn = new Menu("JVN");
-    menuJvn.setGraphic(new MetallicJvnLogo(36, 18));
-    menuJvn.getStyleClass().add("jvn-application-menu");
+    Menu menuJvn = EditorMenuIcon.APPLICATION.menu("JVN");
     MenuItem miJvnSplash = new MenuItem("Show JVN Splash");
     miJvnSplash.setOnAction(e -> {
       StartupSplashOverlay splash = new StartupSplashOverlay(primaryStage);
@@ -2359,18 +2356,20 @@ public class EditorApp extends Application {
 	        menuVcs,
 	        menuWindow);
     if (DEVELOPER_MODE) {
-      mb.getMenus().add(DeveloperToolsMenu.create(
+      Menu developer = DeveloperToolsMenu.create(
           "JVN Editor",
           this::dialogOwner,
           this::refreshDeveloperLogs,
           this::developerLogRoots,
-          true));
+          true);
+      developer.setGraphic(EditorMenuIcon.DEVELOPER.graphic());
+      mb.getMenus().add(developer);
     }
     mb.getMenus().add(menuHelp);
 
-    mb.setMaxWidth(Double.MAX_VALUE);
-    HBox.setHgrow(mb, Priority.ALWAYS);
-    HBox commandBar = new HBox(mb);
+    EditorMenuStrip menuStrip = new EditorMenuStrip(mb);
+    HBox.setHgrow(menuStrip, Priority.ALWAYS);
+    HBox commandBar = new HBox(menuStrip);
     commandBar.getStyleClass().add("main-editor-command-bar");
     commandBar.setAlignment(Pos.CENTER_LEFT);
 
@@ -3342,20 +3341,25 @@ public class EditorApp extends Application {
   }
 
   private void releasePreviewMemoryCaches() {
-    int trimmed = 0;
-    if (filesTabs != null) {
-      for (Tab tab : filesTabs.getTabs()) {
-        if (tab.getContent() instanceof FileEditorTab fileEditorTab) {
-          fileEditorTab.trimPreviewMemoryCaches();
-          trimmed++;
-        }
-      }
-    }
+    int trimmed = trimPreviewMemoryCaches();
     ManagementFactory.getMemoryMXBean().gc();
     if (status != null) {
       status.setText("Released reloadable preview caches in " + trimmed + " editor tab"
           + (trimmed == 1 ? "" : "s") + "; requested GC");
     }
+  }
+
+  private int trimPreviewMemoryCaches() {
+    int trimmed = 0;
+    if (filesTabs != null) {
+      for (Tab tab : filesTabs.getTabs()) {
+        if (tab.getContent() instanceof FileEditorTab editor && editor.hasPreviewMemoryCaches()) {
+          editor.trimPreviewMemoryCaches();
+          trimmed++;
+        }
+      }
+    }
+    return trimmed;
   }
 
   private void openHubJvmMemorySettings() {
@@ -4552,8 +4556,7 @@ public class EditorApp extends Application {
 
   private TrashmanView ensureTrashmanView() {
     if (trashmanView != null) return trashmanView;
-    trashmanView = new TrashmanView();
-    trashmanView.refreshStatus();
+    trashmanView = new TrashmanView(this::trimPreviewMemoryCaches);
     return trashmanView;
   }
 
@@ -4660,11 +4663,12 @@ public class EditorApp extends Application {
 
   private LayeredImageVisualizerView ensureLayeredImageVisualizerView() {
     if (layeredImageVisualizerView != null) return layeredImageVisualizerView;
-    layeredImageVisualizerView = new LayeredImageVisualizerView();
-    layeredImageVisualizerView.setProjectRoot(projectRoot);
-    layeredImageVisualizerView.setOnToggleFullscreen(() -> toggleImageToolFullscreen(layeredImageVisualizerView));
-    layeredImageVisualizerView.setFullscreenActive(false);
-    return layeredImageVisualizerView;
+    LayeredImageVisualizerView view = new LayeredImageVisualizerView();
+    view.setProjectRoot(projectRoot);
+    view.setOnToggleFullscreen(() -> toggleImageToolFullscreen(view));
+    view.setFullscreenActive(false);
+    layeredImageVisualizerView = view;
+    return view;
   }
 
   private ImageAttributesToolView ensureImageAttributesToolView() {
@@ -6915,19 +6919,8 @@ public class EditorApp extends Application {
       applyDefaultSidebarPreferences();
     });
 
-    addChooserActionRow(pane, actions, EditorSidebarPanel.LAYERED_IMAGES, targetPlacement, "Layered Image Visualizer", null, () -> {
-      rememberPanelPlacement(EditorSidebarPanel.LAYERED_IMAGES, targetPlacement);
-      Tab t = ensureLayeredImageVisualizerTab(pane);
-      if (t != null) pane.getSelectionModel().select(t);
-      if (layeredImageVisualizerView != null) layeredImageVisualizerView.refreshCatalog();
-    }, () -> {
-      LayeredImageVisualizerView view = ensureLayeredImageVisualizerView();
-      if (view != null) view.refreshCatalog();
-      launchPanelAsWindow("Layered Image Visualizer", view, 900, 700, EditorSidebarPanel.LAYERED_IMAGES);
-    }, () -> {
-      rememberPanelPlacement(EditorSidebarPanel.LAYERED_IMAGES, EditorPanelPlacement.HIDDEN);
-      applyDefaultSidebarPreferences();
-    });
+    addChooserActionRow(pane, actions, EditorSidebarPanel.LAYERED_IMAGES, targetPlacement,
+        "Layered Image Visualizer", null, null, this::selectLayeredImageVisualizerTab, null);
 
     addChooserActionRow(pane, actions, EditorSidebarPanel.IMAGE_ATTRIBUTES, targetPlacement, "Image Attributes Tool", null, () -> {
       rememberPanelPlacement(EditorSidebarPanel.IMAGE_ATTRIBUTES, targetPlacement);
@@ -7135,9 +7128,16 @@ public class EditorApp extends Application {
   }
 
   private void selectLayeredImageVisualizerTab() {
+    try {
+      boolean refresh = layeredImageVisualizerView != null;
       LayeredImageVisualizerView view = ensureLayeredImageVisualizerView();
-    if (view != null) view.refreshCatalog();
-    launchPanelAsWindow("Layered Image Visualizer", view, 900, 700, EditorSidebarPanel.LAYERED_IMAGES);
+      if (refresh) view.refreshCatalog();
+      launchPanelAsWindow("Layered Image Visualizer", view, 900, 700, EditorSidebarPanel.LAYERED_IMAGES);
+    } catch (LinkageError failure) {
+      log.error("Could not open Layered Image Visualizer", failure);
+      EditorDialogs.error(dialogOwner(), "Layered Image Visualizer",
+          "The editor could not load a component required by the visualizer.", failure);
+    }
   }
 
   private void selectImageAttributesToolTab() {

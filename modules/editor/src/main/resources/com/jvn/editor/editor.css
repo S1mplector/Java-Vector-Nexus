@@ -3,6 +3,7 @@
 @import "editor-aero-controls.css";
 @import "editor-aero-controls-dark.css";
 @import "editor-code.css";
+@import "editor-notices.css";
 
 /*
 The editor.css file defines the visual styling for the editor module, including icons, runtime console, and version control system (VCS) components. It establishes a cohesive dark theme with specific color schemes for various UI elements, ensuring a consistent and polished user experience across the editor's interface. The styles include base settings for icons, buttons, text fields, lists, and specialized components like the runtime console and VCS panels, with attention to states such as hover, pressed, disabled, and focused.
@@ -1281,7 +1282,8 @@ The editor.css file defines the visual styling for the editor module, including 
 
  /* Line numbers (RichTextFX LineNumberFactory) */
  .lineno {
-   -fx-background-insets: -2 -24 -2 0;
+   -fx-background-insets: -1 0 -1 0;
+   -fx-pref-width: 68;
    -fx-view-order: -1;
    -fx-border-width: 0 1 0 0;
    -fx-padding: 0 8 0 6;
@@ -1392,11 +1394,6 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-padding: 5 10 5 10;
 }
 
-.code-editor-minimap {
-  -fx-border-width: 0 0 0 1;
-  -fx-cursor: hand;
-}
-
 /* Ensure virtualized scroll pane and content are transparent to show editor bg */
 .virtualized-scroll-pane,
 .virtualized-scroll-pane .viewport,
@@ -1450,6 +1447,9 @@ The editor.css file defines the visual styling for the editor module, including 
   -jvn-status-icon-normal: #a5a5a5;
   -jvn-status-icon-red: #f391a0;
 
+  -jvn-code-map-glass: linear-gradient(to bottom, #a9bdcf4a, #8394a54a 48%, #6875824a 51%, #7584924a);
+  -jvn-code-map-rim: #8294a3;
+  -jvn-code-map-hover-rim: #b0c5d5;
   -jvn-code-command: #b5d3ec;
   -jvn-code-string: #c3e88d;
   -jvn-code-number: #f5ab91;
@@ -3110,31 +3110,10 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-spacing: 12;
 }
 
-.editor-dialog-error-badge {
-  -fx-background-color: #5a232e;
-  -fx-background-radius: 6;
-  -fx-border-color: #a25668;
-  -fx-border-radius: 6;
-  -fx-text-fill: #ffe4ea;
-  -fx-font-size: 10px;
-  -fx-font-weight: 900;
-  -fx-padding: 3 7 3 7;
-}
-
-.editor-dialog-error-context {
-  -fx-text-fill: #eeeeee;
-  -fx-font-size: 12px;
-  -fx-font-weight: 800;
-}
-
 .editor-dialog-section-title {
   -fx-text-fill: #e0e0e0;
   -fx-font-size: 11px;
   -fx-font-weight: 900;
-}
-
-.editor-dialog-error-hint {
-  -fx-text-fill: #b9b9b9;
 }
 
 .editor-dialog-error-details {
@@ -3979,23 +3958,6 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-padding: 0;
 }
 
-.main-editor-command-bar .jvn-application-menu {
-  -fx-padding: 2 7 2 6;
-}
-
-.main-editor-command-bar .jvn-application-menu > .label {
-  -fx-content-display: graphic-only;
-  -fx-padding: 0;
-}
-
-.main-editor-command-bar .jvn-application-menu > .arrow-button {
-  -fx-padding: 0 0 0 4;
-}
-
-.main-editor-command-bar .jvn-application-menu > .arrow-button > .arrow {
-  -fx-background-color: #a7adb4;
-  -fx-padding: 2.5;
-}
 
 .toolbar-status-panel {
   -fx-background-color: #171717;
@@ -6776,155 +6738,6 @@ The editor.css file defines the visual styling for the editor module, including 
   -fx-cursor: default;
 }
 
-.trashman-actions {
-  -fx-alignment: center-left;
-}
-
-.trashman-options {
-  -fx-padding: 3 0 0 0;
-}
-
-.trashman-body {
-  -fx-padding: 10;
-}
-
-.trashman-card {
-  -fx-padding: 10;
-  -fx-background-color: rgba(255,255,255,0.035);
-  -fx-background-radius: 8;
-  -fx-border-color: rgba(255,255,255,0.09);
-  -fx-border-radius: 8;
-}
-
-.trashman-card-title {
-  -fx-text-fill: #a6a09a;
-  -fx-font-size: 10px;
-  -fx-font-weight: 800;
-}
-
-.trashman-card-value {
-  -fx-text-fill: #f0efed;
-  -fx-font-size: 13px;
-  -fx-font-weight: 800;
-}
-
-.trashman-card-detail {
-  -fx-text-fill: #a9a9a9;
-  -fx-font-size: 10px;
-}
-
-.trashman-graph-grid {
-  -fx-alignment: center-left;
-}
-
-.trashman-graph-card {
-  -fx-padding: 10;
-  -fx-background-color: rgba(255,255,255,0.035);
-  -fx-background-radius: 8;
-  -fx-border-color: rgba(255,255,255,0.09);
-  -fx-border-radius: 8;
-}
-
-.trashman-live-graph {
-  -fx-effect: innershadow(gaussian, rgba(0,0,0,0.20), 4, 0.4, 0, 1);
-}
-
-.trashman-section-title {
-  -fx-text-fill: #f0efed;
-  -fx-font-size: 13px;
-  -fx-font-weight: 800;
-}
-
-.trashman-row {
-  -fx-padding: 9;
-  -fx-background-color: rgba(0,0,0,0.20);
-  -fx-background-radius: 7;
-  -fx-border-color: rgba(255,255,255,0.07);
-  -fx-border-radius: 7;
-}
-
-.trashman-row-warn {
-  -fx-border-color: rgba(242, 200, 107, 0.38);
-}
-
-.trashman-row-title {
-  -fx-text-fill: #f4f4f4;
-  -fx-font-size: 12px;
-  -fx-font-weight: 800;
-}
-
-.trashman-row-detail {
-  -fx-text-fill: #c6c2bd;
-  -fx-font-size: 10px;
-}
-
-.trashman-chip {
-  -fx-text-fill: #f2c86b;
-  -fx-font-size: 9px;
-  -fx-font-weight: 800;
-  -fx-padding: 2 7 2 7;
-  -fx-background-color: rgba(242, 200, 107, 0.13);
-  -fx-background-radius: 999;
-  -fx-border-color: rgba(242, 200, 107, 0.34);
-  -fx-border-radius: 999;
-}
-
-.trashman-option-label {
-  -fx-text-fill: #bdb7af;
-  -fx-font-size: 11px;
-  -fx-font-weight: 800;
-}
-
-.trashman-spinner {
-  -fx-pref-width: 84px;
-  -fx-background-color: #202020;
-  -fx-border-color: #3b3b3b;
-  -fx-border-radius: 6;
-  -fx-background-radius: 6;
-}
-
-.trashman-spinner .text-field {
-  -fx-background-color: #202020;
-  -fx-text-fill: #f2f2f2;
-  -fx-prompt-text-fill: #7c7c7c;
-  -fx-background-radius: 6 0 0 6;
-}
-
-.trashman-spinner .increment-arrow-button,
-.trashman-spinner .decrement-arrow-button {
-  -fx-background-color: #2c2c2c;
-  -fx-background-radius: 0;
-  -fx-border-color: transparent;
-}
-
-.trashman-spinner .increment-arrow-button:hover,
-.trashman-spinner .decrement-arrow-button:hover {
-  -fx-background-color: #383838;
-}
-
-.trashman-spinner .increment-arrow,
-.trashman-spinner .decrement-arrow {
-  -fx-background-color: #e2e2e2;
-}
-
-.trashman-action-button {
-  -fx-font-size: 11px;
-  -fx-padding: 6 9 6 9;
-}
-
-.trashman-progress > .bar {
-  -fx-background-color: #d6b16e;
-}
-
-.trashman-progress > .track {
-  -fx-background-color: rgba(255,255,255,0.10);
-}
-
-.trashman-report {
-  -fx-font-family: "JetBrains Mono", "Consolas", monospace;
-  -fx-font-size: 10px;
-  -fx-pref-row-count: 8;
-}
 
 /* Keep Aero command graphics free of legacy button capsules in every tool theme. */
 .root .button.aero-icon-button,

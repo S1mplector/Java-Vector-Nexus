@@ -153,12 +153,11 @@ final class EditorCrashSupport {
           : "No crash log could be written.";
       EditorDialogs.error(
           null,
-          "JVN Editor",
+          outOfMemory ? "Editor memory exhausted" : "Unexpected editor error",
           outOfMemory
               ? "The editor exhausted its JVM memory on thread "
                   + (thread != null ? thread.getName() : "<unknown>") + "."
-              : "An unexpected editor error occurred on thread "
-                  + (thread != null ? thread.getName() : "<unknown>") + ".",
+              : "The editor could not complete the last action.",
           throwable,
           pathLine,
           outOfMemory

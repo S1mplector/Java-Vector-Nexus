@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +37,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.Clipboard;
@@ -49,7 +52,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 /**
- * Opens text-first layout/menu authoring windows with diagnostics, asset helpers,
+ * Opens visual layout and menu workspaces with source diagnostics, asset helpers,
  * and an authoritative save-and-run workflow.
  */
 public class LayoutStudioWindowManager {
@@ -98,11 +101,23 @@ public class LayoutStudioWindowManager {
         projectRoot,
         statusSink,
         runProjectHandler,
+        () -> openMenuDocuments(resolveProjectRoot(file, projectRoot)),
         () -> windows.remove(key)
     );
     windows.put(key, window);
     window.show();
     if (statusSink != null) statusSink.accept("Opened in Studio: " + file.getName());
+  }
+
+  private Map<String, String> openMenuDocuments(File project) {
+    Map<String, String> documents = new LinkedHashMap<>();
+    for (LayoutStudioWindow window : windows.values()) {
+      if (window.kind != Kind.DIALOGUE_LAYOUT && window.dirty
+          && canonicalPath(project).equals(canonicalPath(window.resolveProjectRootForRun()))) {
+        documents.put(LayoutRuntimePreview.menuPath(window.kind, window.file), window.codeEditor.getText());
+      }
+    }
+    return documents;
   }
 
   public boolean requestCloseAll() {
@@ -141,6 +156,16 @@ public class LayoutStudioWindowManager {
     if (name.endsWith(".style") || path.contains("/config/menu/styles/")) return Kind.MENU_STYLE;
     if ("dialogue.layout".equals(name) || (name.endsWith(".layout") && (path.contains("/config/ui/") || path.contains("/config/vn/")))) {
       return Kind.DIALOGUE_LAYOUT;
+    }
+    return null;
+  }
+
+  private static File resolveProjectRoot(File file, File fallback) {
+    if (fallback != null && fallback.isDirectory()) return fallback;
+    File cursor = file.getAbsoluteFile().getParentFile();
+    while (cursor != null) {
+      if (new File(cursor, "jvn.project").isFile()) return cursor;
+      cursor = cursor.getParentFile();
     }
     return null;
   }
@@ -210,7 +235,9 @@ public class LayoutStudioWindowManager {
     private final Label fileLabel = new Label();
     private final Label dirtyBadge = new Label();
 
-    private final BorderPane centerHost = new BorderPane();
+    private final LayoutDesignView design;
+    private final TabPane modes = new TabPane();
+    private final Tab designTab = new Tab("Design");
 
     private final TextField assetPathField = new TextField();
     private final ComboBox<String> assetKeyBox = new ComboBox<>();
@@ -241,6 +268,7 @@ public class LayoutStudioWindowManager {
                        File projectRoot,
                        Consumer<String> statusSink,
                        Consumer<File> runProjectHandler,
+                       Supplier<Map<String, String>> openDocuments,
                        Runnable onClosed) {
       this.file = file;
       this.kind = kind;
@@ -249,17 +277,18 @@ public class LayoutStudioWindowManager {
       this.runProjectHandler = runProjectHandler;
       this.onClosed = onClosed;
       codeEditor.useDslHighlighting();
+      design = new LayoutDesignView(file, resolveProjectRootForRun(), kind,
+          codeEditor::getText, codeEditor::replaceDocumentEdit, codeEditor::undo, codeEditor::redo, this::setStatus, openDocuments);
 
       this.stage = new Stage();
       stage.setResizable(true);
-      stage.setMinWidth(1200);
-      stage.setMinHeight(760);
+      stage.setMinWidth(900);
+      stage.setMinHeight(570);
 
       BorderPane root = new BorderPane();
       root.getStyleClass().add("layout-studio-root");
       root.setTop(buildToolbar());
       root.setCenter(buildContent());
-      root.setRight(buildUtilitiesPane());
       root.setBottom(buildStatusBar());
 
       Scene scene = new Scene(root, 1460, 900);
@@ -272,12 +301,14 @@ public class LayoutStudioWindowManager {
           this::saveAndRunProject
       );
       EditorTheme.apply(scene);
+      scene.getStylesheets().add(getClass().getResource("/com/jvn/editor/ui/layout-design.css").toExternalForm());
       stage.setScene(scene);
       applyLinuxDefaultWindowState(stage);
 
       bindSync();
       bindButtons();
       loadFromDisk();
+      codeEditor.goToLine(1);
 
       stage.setOnCloseRequest(e -> {
         if (!confirmCloseIfDirty()) {
@@ -285,6 +316,7 @@ public class LayoutStudioWindowManager {
         }
       });
       stage.setOnHidden(e -> {
+        design.close();
         if (onClosed != null) onClosed.run();
       });
     }
@@ -294,7 +326,7 @@ public class LayoutStudioWindowManager {
       applyLinuxDefaultWindowState(stage);
       Platform.runLater(() -> {
         stage.toFront();
-        codeEditor.requestFocus();
+        if (modes.getSelectionModel().getSelectedItem() != designTab) codeEditor.requestFocus();
       });
     }
 
@@ -329,6 +361,7 @@ public class LayoutStudioWindowManager {
       this.projectRoot = projectRoot;
       updateFileLabel();
       updateAssetUtilityState();
+      design.setRoot(resolveProjectRootForRun());
     }
 
     private Node buildToolbar() {
@@ -370,9 +403,22 @@ public class LayoutStudioWindowManager {
     }
 
     private Node buildContent() {
-      centerHost.setCenter(codeEditor);
-      centerHost.getStyleClass().add("layout-studio-center");
-      return centerHost;
+      BorderPane sourceView = new BorderPane(codeEditor);
+      sourceView.setRight(buildUtilitiesPane());
+      sourceView.getStyleClass().add("layout-studio-center");
+      var sourceTab = new Tab("Source", sourceView);
+      designTab.setContent(design);
+      modes.setId("layout-studio-modes");
+      modes.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+      modes.getTabs().addAll(designTab, sourceTab);
+      modes.getSelectionModel().selectedItemProperty().addListener((obs, old, mode) -> {
+        if (mode == designTab) design.refresh();
+        else Platform.runLater(codeEditor::requestFocus);
+      });
+      stage.focusedProperty().addListener((obs, old, focused) -> {
+        if (focused && modes.getSelectionModel().getSelectedItem() == designTab) design.sourceChanged();
+      });
+      return modes;
     }
 
     private Node buildUtilitiesPane() {
@@ -527,6 +573,7 @@ public class LayoutStudioWindowManager {
         if (syncing) return;
         updateDirtyState();
         refreshCodeDiagnostics(text);
+        if (modes.getSelectionModel().getSelectedItem() == designTab) design.sourceChanged();
       });
     }
 
@@ -694,6 +741,7 @@ public class LayoutStudioWindowManager {
       syncing = false;
       updateDirtyState();
       refreshCodeDiagnostics(template);
+      if (modes.getSelectionModel().getSelectedItem() == designTab) design.refresh();
       setStatus("Applied source template: " + selected + ". Review and save when ready.");
       codeEditor.requestFocus();
     }
@@ -742,6 +790,7 @@ public class LayoutStudioWindowManager {
         dirty = false;
         updateWindowTitle();
         setStatus("Loaded: " + file.getName());
+        if (modes.getSelectionModel().getSelectedItem() == designTab) design.refresh();
       } catch (Exception ex) {
         syncing = false;
         setStatus("Load failed: " + ex.getMessage());
@@ -749,6 +798,7 @@ public class LayoutStudioWindowManager {
     }
 
     private boolean save() {
+      if (modes.getSelectionModel().getSelectedItem() == designTab) design.commitInspectorField();
       try {
         Path target = file.toPath();
         Path parent = target.getParent();
@@ -804,14 +854,7 @@ public class LayoutStudioWindowManager {
     }
 
     private File resolveProjectRootForRun() {
-      if (projectRoot != null && projectRoot.isDirectory()) return projectRoot;
-      File cursor = file == null ? null : file.getParentFile();
-      while (cursor != null) {
-        File marker = new File(cursor, "jvn.project");
-        if (marker.isFile()) return cursor;
-        cursor = cursor.getParentFile();
-      }
-      return null;
+      return resolveProjectRoot(file, projectRoot);
     }
 
     private void browseExistingAsset() {
@@ -1100,6 +1143,7 @@ public class LayoutStudioWindowManager {
     }
 
     private boolean confirmCloseIfDirty() {
+      if (modes.getSelectionModel().getSelectedItem() == designTab) design.commitInspectorField();
       if (!dirty) return true;
 
       Label detail = new Label("Choose Save to keep changes, Discard to close without saving.");

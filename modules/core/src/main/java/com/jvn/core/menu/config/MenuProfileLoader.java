@@ -87,6 +87,7 @@ public final class MenuProfileLoader {
       "defaultItemStyle",
       "wrapSelection",
       "items",
+      "itemsMode",
       "backgroundAsset"
   );
 
@@ -508,9 +509,11 @@ public final class MenuProfileLoader {
     boolean wrapSelection = parseBoolean(p.getProperty("wrapSelection"), base == null || base.wrapSelection(), diagnostics, sourcePath, "wrapSelection");
 
     List<String> itemIds = parseCsv(p.getProperty("items"));
-    if (itemIds.isEmpty()) itemIds = collectItemIdsFromProperties(p);
-    if (itemIds.isEmpty() && base != null && !base.items().isEmpty()) {
-      for (MenuItemSpec i : base.items()) itemIds.add(i.id());
+    if (!"explicit".equalsIgnoreCase(p.getProperty("itemsMode", "").trim())) {
+      if (itemIds.isEmpty()) itemIds = collectItemIdsFromProperties(p);
+      if (itemIds.isEmpty() && base != null) {
+        for (MenuItemSpec i : base.items()) itemIds.add(i.id());
+      }
     }
 
     Map<String, MenuItemSpec> baseItems = new LinkedHashMap<>();

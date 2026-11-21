@@ -1,4 +1,4 @@
-# JVN Tutorial
+# Tutorial
 
 Choose **Start tutorial**, then select a topic and a lesson. Lessons can be opened in any order. **Back to topics** records completion and returns to the same category. Replaying a lesson counts once. **Progress and motion** shows your total and the motion options.
 

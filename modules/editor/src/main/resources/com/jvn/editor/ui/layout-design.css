@@ -1,0 +1,54 @@
+.layout-design .layout-design-toolbar,
+.layout-design .layout-design-outline,
+.layout-design .layout-design-properties,
+.layout-design .layout-design-error {
+    -fx-background-color: -jvn-aero-surface;
+    -fx-border-color: -jvn-aero-edge;
+    -fx-border-width: 0 0 1 0;
+}
+.layout-design .layout-design-outline { -fx-border-width: 0 1 0 0; }
+.layout-design .layout-design-properties { -fx-border-width: 0 0 0 1; }
+.layout-design .layout-design-heading {
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+.layout-design .layout-design-caption {
+    -fx-text-fill: -jvn-aero-muted;
+    -fx-font-size: 11px;
+}
+.layout-design .layout-design-desktop,
+.layout-design .layout-design-viewport > .viewport {
+    -fx-background-color: -jvn-aero-background;
+}
+.layout-design .layout-design-desktop > Group {
+    -fx-effect: dropshadow(gaussian, #0000005f, 12, 0.10, 0, 3);
+}
+.layout-design .layout-design-properties > .viewport {
+    -fx-background-color: -jvn-aero-surface;
+}
+.layout-design .layout-design-error { -fx-padding: 8 12; }
+.layout-design .list-view { -fx-background-insets: 0; }
+
+
+.layout-design .menu-button,
+.layout-design .combo-box:editable > .arrow-button {
+    -fx-background-color: linear-gradient(to bottom, derive(-jvn-aero-surface, 14%), -jvn-aero-surface);
+    -fx-border-color: -jvn-aero-edge;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+}
+.layout-design .menu-button:hover,
+.layout-design .combo-box:editable > .arrow-button:hover {
+    -fx-background-color: derive(-jvn-aero-surface, 22%);
+}
+.layout-design .menu-button > .label { -fx-text-fill: -jvn-aero-text; }
+.layout-design .menu-button .arrow,
+.layout-design .combo-box:editable .arrow { -fx-background-color: -jvn-aero-muted; }
+
+.layout-design .layout-design-swatch {
+    -fx-color-label-visible: false;
+    -fx-background-color: -jvn-aero-surface;
+    -fx-border-color: -jvn-aero-edge;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+}

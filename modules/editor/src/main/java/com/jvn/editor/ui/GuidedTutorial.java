@@ -89,14 +89,14 @@ final class GuidedTutorial {
     var items = new java.util.ArrayList<>(List.of(properties.getProperty("items").split(",")));
     items.remove("extras");
     properties.setProperty("items", String.join(",", items));
-    properties.setProperty("titleText", "JVN Tutorial");
+    properties.setProperty("titleText", "Tutorial");
     properties.setProperty("subtitleText", "");
     properties.setProperty("item.new_game.label", "Start tutorial");
     properties.setProperty("item.continue.label", "Load game");
     properties.setProperty("backgroundAsset", "assets/tutorial/white.png");
     properties.setProperty("hintsText", "");
     try (var writer = Files.newBufferedWriter(screen, StandardCharsets.UTF_8)) {
-      properties.store(writer, "JVN Tutorial");
+      properties.store(writer, "Tutorial");
     }
   }
 

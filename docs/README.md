@@ -1,13 +1,13 @@
 # JVN Documentation
 
 > [!TIP]
-> New to JVN? Start with [JVN Tutorial](guides/jvn-tutorial.md). Looking up one behavior? Use the [task index](INDEX.md). The [reading guide](guides/reading-the-docs.md) explains diagrams, annotations, and runnable examples.
+> New to JVN? Start with [Tutorial](guides/jvn-tutorial.md). Looking up one behavior? Use the [task index](INDEX.md). The [reading guide](guides/reading-the-docs.md) explains diagrams, annotations, and runnable examples.
 
 ```mermaid
 flowchart LR
   accTitle: Find the right JVN documentation
   accDescr: New authors follow the workshop, project work uses editor and scripting guides, and reusable features use the plugin API. All paths lead to runtime testing and release.
-  Start["What are you making?"] --> Learn["Learn: Ginger tutorial"]
+  Start["What are you making?"] --> Learn["Learn: Tutorial"]
   Start --> Story["Story: VNS and presentation"]
   Start --> World["Interactive scene: JES"]
   Start --> Tool["Reusable feature: plugins"]

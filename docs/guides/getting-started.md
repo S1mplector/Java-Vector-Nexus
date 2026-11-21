@@ -124,14 +124,14 @@ The editor opens with a Welcome dashboard showing:
 ## Step 3: Create a New Project
 
 1. Click **New Project** in the Welcome dashboard.
-2. Fill in project basics (name, author, location).
-3. Choose **Starter Story** for the Lavender prologue, **Tutorial Workspace with Ginger** for the [30 lessons](jvn-tutorial.md), or the blank template to create your own scene. Set resolution and menu theme.
-4. Select feature modules (sample script, menu profiles, save/load).
-5. Optionally enable Git version control.
-6. Review the generated layout preview.
-7. Click **Create**.
+2. Select **Writing Project** for an editable opening scene and working menus, **Tutorial** for the 30 lessons, or **Blank Sandbox** to design your own menus.
+3. Enter the game name, author and destination on **Project**.
+4. Set up menu profiles and optional Git integration in **Content**. Select the canvas and menu theme in **Runtime**.
+5. Open **Review** to inspect the generated files, release version and save ID. Choose **Create Project** or **Create Tutorial**.
 
-The wizard generates a complete project scaffold:
+See the [New Game Workspace reference](../project-setup/onboarding/new-project-wizard.md) for all setup options.
+
+A Writing Project includes these files:
 
 ```text
 MyProject/
@@ -147,9 +147,6 @@ MyProject/
 ├── scripts/
 │   └── story/prologue.vns
 ├── assets/
-│   ├── backgrounds/
-│   ├── characters/
-│   └── audio/{bgm,sfx,voices}
 ├── jvn.project
 └── README.md
 ```
@@ -158,14 +155,15 @@ MyProject/
 
 ## Step 4: Edit Your First Script
 
-Open `scripts/story/prologue.vns` from the project explorer. You'll see a starter script:
+In a Writing Project, open `scripts/story/prologue.vns` from the project explorer:
 
 ```vns
-@scenario prologue
-@character narrator "Narrator"
+@scenario Prologue
+@include /definitions/characters.vns
 
 @label start
-narrator: Welcome to your new visual novel!
+# Replace the line below with the first line of your game.
+narrator: Your opening line goes here.
 [end]
 ```
 

@@ -1,6 +1,6 @@
-# JVN Tutorial
+# Tutorial
 
-Choose **New Project → Tutorial Workspace with Ginger**, create the project, and press **Run**. Choose **Start tutorial**, pick a category and open a lesson. The 30 lessons can be taken in any order. **Back to topics** returns to the category and records completion once. **Progress and motion** shows your total and the motion controls.
+Choose **New Project → Tutorial**, create the project, and press **Run**. Choose **Start tutorial**, pick a category and open a lesson. The 30 lessons can be taken in any order. **Back to topics** returns to the category and records completion once. **Progress and motion** shows your total and the motion controls.
 
 ## Try a lesson with the source open
 
@@ -13,7 +13,7 @@ Choose **New Project → Tutorial Workspace with Ginger**, create the project, a
 
 The hub lives in `scripts/story/tutorial_hub.vns`. Each numbered lesson lives under `scripts/tutorial/`. Character and background declarations are in `scripts/definitions/characters.vns`. For your own teaching panel, follow [Show a source excerpt in dialogue](show-source-in-dialogue.md).
 
-The downloadable [0.9.3 tutorial](../project-setup/release/whats-new-0.9.3.md) documents that release. Generate a fresh workspace from the updated source checkout to get the lessons and code panel pictured here. Existing projects keep their editable copies.
+The [0.9.4 release](../project-setup/release/whats-new-0.9.4.md) includes the current playable tutorial download. You can also generate it in **New Project → Tutorial**.
 
 ## Lesson references
 

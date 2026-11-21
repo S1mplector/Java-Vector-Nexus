@@ -15,20 +15,19 @@ import org.fxmisc.richtext.CodeArea;
 import com.jvn.core.animation.TimelineData;
 import com.jvn.core.animation.TimelineDataParser;
 
-import javafx.geometry.Insets;
+import javafx.collections.ListChangeListener;
+import javafx.scene.Cursor;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 
 /**
- * VNS-aware script minimap.
- *
- * <p>This is intentionally not a VS Code-style text shrinker. It renders a
- * compact "script spine": labels, timeline blocks, dialogue beats, choices,
- * diagnostics, bookmarks, and the current viewport as semantic markers.</p>
+ * Whole-script overview with navigation, semantic markers, and the current viewport.
  */
 public final class VnsCodeMinimap extends StackPane {
   public enum DiagnosticSeverity { ERROR, WARNING, INFO }
@@ -62,8 +61,15 @@ public final class VnsCodeMinimap extends StackPane {
       "^\\s*(move|depth|pivot|rotate|scale|mirror|fade|visible|brightness|exposure|expression|show|hide|replace|scene|cameraMove|cameraZoom|property|event|playAudio)\\b",
       Pattern.CASE_INSENSITIVE);
 
+  private static final double MAP_WIDTH = 108;
+  private static final double MAP_INSET = 5;
+  private static final double MARKER_RAIL = 15;
+  private static final int SPEAKER_LOOKBACK_LINES = 15;
+
   private final CodeArea codeArea;
-  private final Canvas canvas = new Canvas(116, 100);
+  private final Canvas canvas = new Canvas();
+  private final Region viewport = new Region();
+  private final ListChangeListener<String> themeChange = change -> invalidateArtwork();
   private final Tooltip tooltip = new Tooltip("JVN script map");
   private String cachedText = "";
   private LineSummary[] cachedLines = new LineSummary[0];
@@ -71,28 +77,46 @@ public final class VnsCodeMinimap extends StackPane {
   private Set<Integer> bookmarks = Set.of();
   private List<TimelineBlock> timelines = List.of();
   private Map<TimelineBlock, TimelineSummary> timelineSummaries = Map.of();
-  private double lineHeight = 2.0;
-  private double mapOffsetY = 0.0;
+  private double lineHeight = 1;
+  private boolean artworkDirty = true;
 
   private record VisibleRange(int startLine, int endLine) {}
 
   public VnsCodeMinimap(CodeArea codeArea) {
     this.codeArea = codeArea;
     getStyleClass().add("code-editor-minimap");
-    setPadding(new Insets(0));
-    setMinWidth(116);
-    setPrefWidth(116);
-    setMaxWidth(116);
+    setAccessibleText("VNS script minimap");
+    setMinWidth(MAP_WIDTH);
+    setPrefWidth(MAP_WIDTH);
+    setMaxWidth(MAP_WIDTH);
     setMinHeight(0);
-    getChildren().add(canvas);
 
-    canvas.widthProperty().bind(widthProperty());
-    canvas.heightProperty().bind(heightProperty());
-    widthProperty().addListener((obs, oldValue, newValue) -> redraw());
-    heightProperty().addListener((obs, oldValue, newValue) -> redraw());
+    Pane track = new Pane(viewport, canvas);
+    track.getStyleClass().add("code-minimap-track");
+    track.setMinSize(0, 0);
+    viewport.getStyleClass().add("code-minimap-viewport");
+    viewport.setManaged(false);
+    viewport.setMouseTransparent(true);
+    canvas.setManaged(false);
+    canvas.setCursor(Cursor.HAND);
+    getChildren().add(track);
+
+    canvas.widthProperty().bind(track.widthProperty());
+    canvas.heightProperty().bind(track.heightProperty());
+    canvas.widthProperty().addListener((obs, oldValue, newValue) -> invalidateArtwork());
+    canvas.heightProperty().addListener((obs, oldValue, newValue) -> invalidateArtwork());
+    sceneProperty().addListener((obs, previous, current) -> {
+      if (previous != null) previous.getStylesheets().removeListener(themeChange);
+      if (current != null) current.getStylesheets().addListener(themeChange);
+      invalidateArtwork();
+    });
     canvas.setOnMousePressed(this::navigate);
     canvas.setOnMouseDragged(this::navigate);
     canvas.setOnMouseMoved(this::updateTooltip);
+    canvas.setOnScroll(event -> {
+      codeArea.scrollYBy(-event.getDeltaY());
+      event.consume();
+    });
     Tooltip.install(canvas, tooltip);
   }
 
@@ -101,14 +125,20 @@ public final class VnsCodeMinimap extends StackPane {
                           Collection<Integer> bookmarks,
                           Collection<TimelineBlock> timelines) {
     String safeText = text == null ? "" : text;
-    if (!safeText.equals(cachedText)) {
+    boolean textChanged = !safeText.equals(cachedText);
+    if (textChanged) {
       cachedText = safeText;
       cachedLines = analyzeLines(safeText);
     }
-    this.diagnostics = diagnostics == null ? List.of() : List.copyOf(diagnostics);
-    this.bookmarks = bookmarks == null ? Set.of() : new HashSet<>(bookmarks);
+    List<DiagnosticMarker> newDiagnostics = diagnostics == null ? List.of() : List.copyOf(diagnostics);
+    Set<Integer> newBookmarks = bookmarks == null ? Set.of() : new HashSet<>(bookmarks);
     List<TimelineBlock> newTimelines = timelines == null ? List.of() : List.copyOf(timelines);
-    if (!newTimelines.equals(this.timelines)) {
+    boolean timelinesChanged = !newTimelines.equals(this.timelines);
+    artworkDirty |= textChanged || timelinesChanged || !newDiagnostics.equals(this.diagnostics)
+        || !newBookmarks.equals(this.bookmarks);
+    this.diagnostics = newDiagnostics;
+    this.bookmarks = newBookmarks;
+    if (textChanged || timelinesChanged) {
       this.timelines = newTimelines;
       this.timelineSummaries = computeTimelineSummaries(newTimelines, cachedText);
     }
@@ -152,196 +182,128 @@ public final class VnsCodeMinimap extends StackPane {
     return String.format(Locale.ROOT, "%.2f s", durationMs / 1000.0);
   }
 
+  private void invalidateArtwork() {
+    artworkDirty = true;
+    redraw();
+  }
+
   public void redraw() {
     double width = canvas.getWidth();
     double height = canvas.getHeight();
-    GraphicsContext gc = canvas.getGraphicsContext2D();
-    gc.clearRect(0, 0, width, height);
-    drawBackground(gc, width, height);
-
+    double usableHeight = height - MAP_INSET * 2;
     int totalLines = cachedLines.length;
-    if (totalLines == 0 || height <= 0 || width <= 0) {
+    boolean visible = totalLines > 0 && usableHeight > 0 && width > MARKER_RAIL + MAP_INSET * 2;
+    viewport.setVisible(visible);
+    GraphicsContext gc = canvas.getGraphicsContext2D();
+    if (!visible) {
+      gc.clearRect(0, 0, width, height);
       return;
     }
 
-    lineHeight = Math.max(0.65, height / Math.max(1, totalLines));
-    VisibleRange visibleRange = visibleRange(totalLines);
-    mapOffsetY = computeMapOffset(height, totalLines, visibleRange);
-    drawTimelineBands(gc, width, height, totalLines);
-    drawScriptTexture(gc, width, height, totalLines);
-    drawLabels(gc, width, totalLines);
-    drawBookmarks(gc, width, totalLines);
-    drawDiagnostics(gc, width, totalLines);
-    drawViewport(gc, width, totalLines, visibleRange);
+    lineHeight = Math.min(4, usableHeight / totalLines);
+    if (artworkDirty) {
+      artworkDirty = false;
+      gc.clearRect(0, 0, width, height);
+      boolean light = EditorTheme.theme() == EditorTheme.Theme.LIGHT;
+      double railX = width - MARKER_RAIL;
+      gc.setFill(Color.web(light ? "#b4c5d2" : "#626970", 0.42));
+      gc.fillRect(railX, MAP_INSET, 1, usableHeight);
+      drawTimelineBands(gc, railX, totalLines, light);
+      drawScriptTexture(gc, railX, totalLines, light);
+      drawMarkers(gc, railX, totalLines, light);
+    }
+
+    VisibleRange range = visibleRange(totalLines);
+    double viewportHeight = Math.max(8, (range.endLine() - range.startLine() + 1) * lineHeight);
+    viewportHeight = Math.min(viewportHeight, usableHeight);
+    double y = Math.min(yForLine(range.startLine()), height - MAP_INSET - viewportHeight);
+    viewport.resizeRelocate(3, y, width - 6, viewportHeight);
   }
 
   public int totalLines() {
     return cachedLines.length;
   }
 
-  private void drawBackground(GraphicsContext gc, double width, double height) {
-    boolean light = lightTheme();
-    gc.setFill(Color.web(light ? "#f7f7f8" : "#08090b"));
-    gc.fillRect(0, 0, width, height);
-    gc.setFill(Color.web(light ? "#edf0f5" : "#11151c", light ? 0.88 : 0.82));
-    gc.fillRect(9, 0, width - 22, height);
-    gc.setFill(Color.web("#f0a23b", light ? 0.30 : 0.20));
-    gc.fillRect(7, 0, 1.25, height);
-    gc.setFill(Color.web("#7dcfff", light ? 0.20 : 0.13));
-    gc.fillRect(width - 11, 0, 1.0, height);
-  }
-
-  private void drawTimelineBands(GraphicsContext gc, double width, double height, int totalLines) {
+  private void drawTimelineBands(GraphicsContext gc, double railX, int totalLines, boolean light) {
     for (TimelineBlock block : timelines) {
       int start = clampLine(block.startLine(), totalLines);
       int end = clampLine(block.endLine(), totalLines);
-      if (end < start) continue;
       double y = yForLine(start);
-      double h = Math.max(2.5, (end - start + 1) * lineHeight);
-      if (y > height || y + h < 0) continue;
-
-      boolean light = lightTheme();
-      gc.setFill(Color.web(block.folded() ? "#f0a23b" : "#ff9f43",
-          light ? (block.folded() ? 0.16 : 0.28) : (block.folded() ? 0.12 : 0.20)));
-      gc.fillRoundRect(12, y, width - 28, h, 5, 5);
-      gc.setFill(Color.web("#ffb45a", block.folded() ? 0.55 : 0.82));
-      gc.fillRect(10, y, 3, h);
+      double height = Math.max(1, (end - start + 1) * lineHeight);
+      gc.setFill(Color.web(light ? "#5489aa" : "#7794ad", block.folded() ? 0.12 : 0.19));
+      gc.fillRoundRect(5, y, railX - 8, height, 3, 3);
+      gc.setFill(Color.web(light ? "#417395" : "#889fb3", block.folded() ? 0.45 : 0.68));
+      gc.fillRect(6, y, 1, height);
     }
   }
 
-  private void drawScriptTexture(GraphicsContext gc, double width, double height, int totalLines) {
-    double contentX = 16;
-    double contentW = Math.max(20, width - 34);
-    int firstLine = Math.max(0, (int) Math.floor(mapOffsetY / Math.max(0.1, lineHeight)) - 2);
-    int lastLine = Math.min(totalLines - 1,
-        (int) Math.ceil((mapOffsetY + height) / Math.max(0.1, lineHeight)) + 2);
-    for (int i = firstLine; i <= lastLine; i++) {
-      double y = yForLine(i);
-      if (y + lineHeight < 0) continue;
-      if (y > height) break;
+  private void drawScriptTexture(GraphicsContext gc, double railX, int totalLines, boolean light) {
+    double height = Math.clamp(lineHeight * 0.52, 0.85, 1.6);
+    double contentWidth = railX - 22;
+    int stride = Math.max(1, (int) Math.ceil(0.7 / lineHeight));
+    for (int i = 0; i < totalLines; i += stride) {
       LineSummary line = cachedLines[i];
       if (line.kind() == LineKind.EMPTY) continue;
-
-      Color color = lineColor(line);
-      if (color.getOpacity() <= 0.0) continue;
-      double h = Math.max(0.8, Math.min(2.4, lineHeight * 0.72));
-      double w = lineWidth(line, contentW);
-
-      if (line.kind() == LineKind.SPEAKER) {
-        gc.setFill(speakerColor(line.speaker(), 0.72));
-        gc.fillRect(contentX, y, 4, h);
-        gc.setFill(color);
-        gc.fillRoundRect(contentX + 6, y, w, h, 2, 2);
-      } else if (line.kind() == LineKind.CHOICE) {
-        gc.setFill(color);
-        gc.fillRoundRect(contentX + 8, y, Math.max(10, w), h, 4, 4);
-      } else {
-        gc.setFill(color);
-        gc.fillRect(contentX, y, w, h);
+      double y = yForLine(i) + (lineHeight - height) / 2;
+      double width = contentWidth * Math.clamp(line.length() / 88.0, 0.12, 1);
+      double x = switch (line.kind()) {
+        case SPEAKER, CHOICE -> 16;
+        case COMMENT, TEXT -> 13;
+        default -> 10;
+      };
+      gc.setFill(lineColor(line.kind(), light));
+      gc.fillRoundRect(x, y, width, height, 1, 1);
+    }
+    gc.setFill(lineColor(LineKind.LABEL, light));
+    for (int i = 0; i < totalLines; i++) {
+      if (cachedLines[i].kind() == LineKind.LABEL) {
+        gc.fillRect(5, yForLine(i) + Math.max(0, (lineHeight - 1.5) / 2), 3, 1.5);
       }
     }
   }
 
-  private void drawLabels(GraphicsContext gc, double width, int totalLines) {
-    for (int i = 0; i < totalLines; i++) {
-      LineSummary line = cachedLines[i];
-      if (line.kind() != LineKind.LABEL) continue;
-      double y = yForLine(i);
-      if (y + lineHeight < 0 || y > canvas.getHeight()) continue;
-      gc.setFill(Color.web("#f5c46b", 0.92));
-      gc.fillRoundRect(3, y, width - 18, Math.max(2.2, lineHeight * 1.6), 4, 4);
-      gc.setFill(Color.web("#0b0d10", 0.85));
-      gc.fillRect(5, y + 0.8, Math.max(8, Math.min(width - 26, line.label().length() * 2.8)), 1.0);
-    }
-  }
-
-  private void drawBookmarks(GraphicsContext gc, double width, int totalLines) {
-    if (bookmarks.isEmpty()) return;
-    gc.setFill(Color.web("#f8f8f2", 0.92));
+  private void drawMarkers(GraphicsContext gc, double railX, int totalLines, boolean light) {
+    gc.setFill(Color.web(light ? "#54759e" : "#9bb8d3"));
     for (int line : bookmarks) {
-      int clamped = clampLine(line, totalLines);
-      double y = yForLine(clamped);
-      if (y + lineHeight < 0 || y > canvas.getHeight()) continue;
-      gc.fillRoundRect(width - 8, y, 5, Math.max(2.0, lineHeight * 1.2), 2, 2);
+      double y = yForLine(clampLine(line, totalLines)) + lineHeight / 2;
+      gc.fillPolygon(new double[]{railX + 3, railX + 6, railX + 3},
+          new double[]{y - 2, y, y + 2}, 3);
+    }
+    // Errors take precedence when several marks share the same pixels.
+    for (DiagnosticSeverity severity : List.of(DiagnosticSeverity.INFO, DiagnosticSeverity.WARNING, DiagnosticSeverity.ERROR)) {
+      gc.setFill(switch (severity) {
+        case INFO -> Color.web(light ? "#497894" : "#8faac5");
+        case WARNING -> Color.web(light ? "#ad6927" : "#dbaa6c");
+        case ERROR -> Color.web(light ? "#a83841" : "#dd7b85");
+      });
+      for (DiagnosticMarker marker : diagnostics) {
+        if (marker.severity() != severity) continue;
+        double y = yForLine(clampLine(marker.line(), totalLines)) + lineHeight / 2;
+        gc.fillRoundRect(railX + 7, y - 1, 5, 2, 1, 1);
+      }
     }
   }
 
-  private void drawDiagnostics(GraphicsContext gc, double width, int totalLines) {
-    for (DiagnosticMarker marker : diagnostics) {
-      int line = clampLine(marker.line(), totalLines);
-      double y = yForLine(line);
-      if (y + lineHeight < 0 || y > canvas.getHeight()) continue;
-      String color = switch (marker.severity()) {
-        case WARNING -> "#ffcf66";
-        case INFO -> "#7aa2d8";
-        case ERROR -> "#ff5f7e";
-      };
-      gc.setFill(Color.web(color, 0.96));
-      gc.fillOval(width - 17, y - 1, 6, 6);
-    }
-  }
-
-  private void drawViewport(GraphicsContext gc, double width, int totalLines, VisibleRange visibleRange) {
-    int start = visibleRange.startLine();
-    int end = visibleRange.endLine();
-    double y = yForLine(start);
-    double h = Math.max(8, (end - start + 1) * lineHeight);
-    boolean light = lightTheme();
-    gc.setFill(Color.web(light ? "#111827" : "#e7edf6", light ? 0.07 : 0.10));
-    gc.fillRoundRect(1, y, width - 3, h, 5, 5);
-    gc.setStroke(Color.web(light ? "#111827" : "#e7edf6", light ? 0.36 : 0.62));
-    gc.setLineWidth(1.2);
-    gc.strokeRoundRect(1, y, width - 3, h, 5, 5);
-    gc.setFill(Color.web("#7dcfff", light ? 0.88 : 0.72));
-    gc.fillRect(0, y, 2, h);
-  }
-
-  private Color lineColor(LineSummary line) {
-    boolean light = lightTheme();
-    return switch (line.kind()) {
-      case COMMENT -> Color.web("#667085", light ? 0.44 : 0.34);
-      case DIRECTIVE -> Color.web("#8f55c8", light ? 0.76 : 0.70);
-      case COMMAND -> Color.web("#2d6cdf", light ? 0.66 : 0.62);
-      case SPEAKER -> Color.web("#b7791f", light ? 0.58 : 0.48);
-      case CHOICE -> Color.web("#3c8d40", light ? 0.72 : 0.70);
-      case TIMELINE -> Color.web("#e47a1f", light ? 0.92 : 0.85);
-      case TEXT -> Color.web("#6b7280", light ? 0.42 : 0.32);
-      case LABEL, EMPTY -> Color.TRANSPARENT;
+  private static Color lineColor(LineKind kind, boolean light) {
+    return switch (kind) {
+      case LABEL -> Color.web(light ? "#8a6334" : "#c2a47d");
+      case DIRECTIVE, COMMAND, TIMELINE -> Color.web(light ? "#4c6e8a" : "#8da7bb");
+      case SPEAKER, CHOICE -> Color.web(light ? "#466b5d" : "#92aa9b");
+      case TEXT -> Color.web(light ? "#6b7d8b" : "#879097");
+      case COMMENT -> Color.web(light ? "#a4b0b8" : "#62686e");
+      case EMPTY -> Color.TRANSPARENT;
     };
-  }
-
-  private boolean lightTheme() {
-    return EditorTheme.theme() == EditorTheme.Theme.LIGHT;
-  }
-
-  private double lineWidth(LineSummary line, double maxWidth) {
-    double normalized = Math.min(1.0, Math.max(0.12, line.length() / 88.0));
-    return Math.max(5, maxWidth * normalized);
-  }
-
-  private Color speakerColor(String speaker, double opacity) {
-    int hash = speaker == null ? 0 : Math.abs(speaker.toLowerCase(Locale.ROOT).hashCode());
-    Color[] palette = {
-        Color.web("#f5c46b", opacity),
-        Color.web("#7dcfff", opacity),
-        Color.web("#9ed67a", opacity),
-        Color.web("#ff8fa3", opacity),
-        Color.web("#d7b7ff", opacity)
-    };
-    return palette[hash % palette.length];
   }
 
   private void navigate(MouseEvent event) {
     int totalLines = cachedLines.length;
-    if (totalLines == 0 || lineHeight <= 0) return;
+    if (!event.isPrimaryButtonDown() || totalLines == 0 || !viewport.isVisible()) return;
     int targetLine = lineAtY(event.getY(), totalLines);
     codeArea.showParagraphAtTop(targetLine);
     codeArea.moveTo(targetLine, 0);
     codeArea.requestFocus();
     event.consume();
   }
-
-  private static final int SPEAKER_LOOKBACK_LINES = 15;
 
   private void updateTooltip(MouseEvent event) {
     int totalLines = cachedLines.length;
@@ -428,20 +390,12 @@ public final class VnsCodeMinimap extends StackPane {
     return new VisibleRange(start, end);
   }
 
-  private double computeMapOffset(double height, int totalLines, VisibleRange visibleRange) {
-    double fullHeight = totalLines * lineHeight;
-    if (fullHeight <= height) return 0.0;
-    double viewportCenter = ((visibleRange.startLine() + visibleRange.endLine() + 1) * 0.5) * lineHeight;
-    double desired = viewportCenter - height * 0.5;
-    return Math.max(0.0, Math.min(desired, fullHeight - height));
-  }
-
   private double yForLine(int line) {
-    return line * lineHeight - mapOffsetY;
+    return MAP_INSET + line * lineHeight;
   }
 
   private int lineAtY(double y, int totalLines) {
-    return clampLine((int) ((y + mapOffsetY) / lineHeight), totalLines);
+    return clampLine((int) ((y - MAP_INSET) / lineHeight), totalLines);
   }
 
   private static LineSummary[] analyzeLines(String text) {

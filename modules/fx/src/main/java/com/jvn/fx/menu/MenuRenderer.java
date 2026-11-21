@@ -30,6 +30,7 @@ import com.jvn.core.ui.BoundsPointCodec;
 import com.jvn.fx.ui.FxTextMetrics;
 import com.jvn.fx.ui.ProjectFontResolver;
 
+import com.jvn.fx.ui.RenderedBoundsListener;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
@@ -38,6 +39,12 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 public class MenuRenderer {
+  private RenderedBoundsListener boundsListener;
+
+  public void setRenderedBoundsListener(RenderedBoundsListener listener) {
+    boundsListener = listener;
+  }
+
   private static final Logger log = LoggerFactory.getLogger(MenuRenderer.class);
 
   private static final double SUBMENU_BACKGROUND_BLUR_RADIUS = 14.0;
@@ -105,7 +112,7 @@ public class MenuRenderer {
     drawScreenBackground(w, h, screenStyle, true, screenBg);
 
     if (usesDock(scene)) {
-      dock.render(gc, scene, theme, projectRoot, w, h, activeUiFontScale);
+      dock.render(gc, scene, theme, projectRoot, w, h, activeUiFontScale, boundsListener);
       return;
     }
 
@@ -124,7 +131,7 @@ public class MenuRenderer {
     }
 
     String[] items;
-    if (scene != null && scene.getItemCount() > 0) {
+    if (scene != null) {
       items = scene.getDisplayItems();
     } else {
       items = new String[] {
@@ -801,6 +808,7 @@ public class MenuRenderer {
     Font titleFont = resolveTitleFont(style);
     gc.setFont(titleFont);
     double tx = resolveTitleAlignedX(text, titleFont, w, layout);
+    reportTextBounds("@title", text, titleFont, tx, y, w);
 
     // Title shadow
     String shadowRaw = style != null ? style.titleShadowColor() : null;
@@ -896,6 +904,8 @@ public class MenuRenderer {
       Color color = resolveItemColor(style, sel, isEnabled);
       Font font = resolveItemFont(style, item);
       Rect rect = resolveItemRect(i, items.length, item, itemSpecs, layout, areaX, areaWidth, h);
+      if (boundsListener != null && item != null)
+        boundsListener.accept(item.id(), rect.x(), rect.y(), rect.w(), rect.h(), areaX, 0, areaWidth, h);
       boolean inlinePreviewEnabled = reserveInlineSlotPreviewSpace && isInlineSlotPreviewEnabled(item, true);
       Rect inlinePreviewRect = inlinePreviewEnabled ? resolveInlineSlotPreviewRect(item, rect) : null;
       double reservedRightSpace = inlinePreviewRect != null
@@ -1008,13 +1018,26 @@ public class MenuRenderer {
           case "right" -> w - textW - 20.0;
           default -> (w - textW) / 2.0;
         };
-    gc.fillText(text, clamp(x, 0, Math.max(0, w - textW)), h - Math.max(0, bottomMargin));
+    double left = clamp(x, 0, Math.max(0, w - textW));
+    double baseline = h - Math.max(0, bottomMargin);
+    reportTextBounds("@footer", text, hintFont, left, baseline, w);
+    gc.fillText(text, left, baseline);
   }
 
   private void drawCenteredText(String text, double w, double y, Font font, Color color) {
     gc.setFill(color);
     gc.setFont(font);
     gc.fillText(text, (w - measure(text, font)) / 2, y);
+  }
+
+  private void reportTextBounds(String id, String text, Font font, double x, double baseline, double width) {
+    if (boundsListener == null || text == null || text.isBlank()) return;
+    javafx.scene.text.Text sample = new javafx.scene.text.Text(text);
+    sample.setFont(font);
+    // Store the baseline as the authoring origin because the DSL positions text by baseline.
+    var bounds = sample.getLayoutBounds();
+    boundsListener.accept(id, x, baseline + bounds.getMinY(), bounds.getWidth(), bounds.getHeight(),
+        0, bounds.getMinY(), width, gc.getCanvas().getHeight());
   }
 
   private double measure(String s, Font f) {
@@ -1177,6 +1200,22 @@ public class MenuRenderer {
     return rect.contains(mouseX, mouseY);
   }
 
+  static Rect explicitItemRect(MenuItemSpec itemSpec, double areaX, double areaWidth, double h) {
+    if (itemSpec != null && itemSpec.boundsX() != null && itemSpec.boundsY() != null
+        && itemSpec.boundsWidth() != null && itemSpec.boundsHeight() != null) {
+      double x = resolveCoordinate(itemSpec.boundsX(), areaWidth) + areaX;
+      double y = resolveCoordinate(itemSpec.boundsY(), h);
+      double w = resolveSize(itemSpec.boundsWidth(), areaWidth);
+      double hh = resolveSize(itemSpec.boundsHeight(), h);
+      w = clamp(w, 8, Math.max(8, areaWidth));
+      hh = clamp(hh, 8, Math.max(8, h));
+      x = clamp(x, areaX, areaX + Math.max(0, areaWidth - w));
+      y = clamp(y, 0, Math.max(0, h - hh));
+      return new Rect(x, y, w, hh);
+    }
+    return null;
+  }
+
   private Rect resolveItemRect(
       int index,
       int count,
@@ -1207,18 +1246,8 @@ public class MenuRenderer {
       };
     }
 
-    if (itemSpec != null && itemSpec.boundsX() != null && itemSpec.boundsY() != null
-        && itemSpec.boundsWidth() != null && itemSpec.boundsHeight() != null) {
-      double x = resolveCoordinate(itemSpec.boundsX(), areaWidth) + areaX;
-      double y = resolveCoordinate(itemSpec.boundsY(), h);
-      double w = resolveSize(itemSpec.boundsWidth(), areaWidth);
-      double hh = resolveSize(itemSpec.boundsHeight(), h);
-      w = clamp(w, 8, Math.max(8, areaWidth));
-      hh = clamp(hh, 8, Math.max(8, h));
-      x = clamp(x, areaX, areaX + Math.max(0, areaWidth - w));
-      y = clamp(y, 0, Math.max(0, h - hh));
-      return new Rect(x, y, w, hh);
-    }
+    Rect positioned = explicitItemRect(itemSpec, areaX, areaWidth, h);
+    if (positioned != null) return positioned;
 
     double rowCursor = 0.0;
     if (itemSpecs != null) {
@@ -1540,7 +1569,7 @@ public class MenuRenderer {
     return path;
   }
 
-  private double resolveCoordinate(double value, double total) {
+  private static double resolveCoordinate(double value, double total) {
     return value <= 1.0 ? total * value : value;
   }
 
@@ -1548,7 +1577,7 @@ public class MenuRenderer {
     return Math.abs(value) <= 1.0 ? total * value : value;
   }
 
-  private double resolveSize(double value, double total) {
+  private static double resolveSize(double value, double total) {
     return value <= 1.0 ? total * Math.max(0, value) : value;
   }
 
@@ -2354,7 +2383,7 @@ public class MenuRenderer {
     return v < 0 ? 0 : (v > 1 ? 1 : v);
   }
 
-  private double clamp(double v, double min, double max) {
+  private static double clamp(double v, double min, double max) {
     if (Double.isNaN(v) || Double.isInfinite(v)) return min;
     if (v < min) return min;
     if (v > max) return max;
@@ -2685,7 +2714,7 @@ public class MenuRenderer {
     }
   }
 
-  private record Rect(double x, double y, double w, double h) {
+  record Rect(double x, double y, double w, double h) {
     boolean contains(double px, double py) {
       return px >= x && px <= x + w && py >= y && py <= y + h;
     }

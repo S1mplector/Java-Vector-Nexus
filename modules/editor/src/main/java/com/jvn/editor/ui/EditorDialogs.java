@@ -13,6 +13,7 @@ import java.util.function.Function;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -32,6 +33,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Modality;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
@@ -48,6 +50,7 @@ public final class EditorDialogs {
     FILE_IO("File or disk"),
     DSL_PARSE("DSL parse"),
     JAVA_CODE("Java code"),
+    EDITOR_RUNTIME("Editor runtime"),
     PROCESS("Process / Gradle"),
     ASSET("Asset"),
     AUDIO("Audio"),
@@ -133,11 +136,11 @@ public final class EditorDialogs {
   }
 
   public static void info(Window owner, String title, String message) {
-    show(owner, title, message, null, ActionSpec.accent("close", "Close", null));
+    showNotice(owner, title, message, DialogIcon.Kind.INFO);
   }
 
   public static void warning(Window owner, String title, String message) {
-    show(owner, title, message, null, ActionSpec.accent("close", "Close", null));
+    showNotice(owner, title, message, DialogIcon.Kind.WARNING);
   }
 
   public static void error(Window owner, String title, String message) {
@@ -150,14 +153,16 @@ public final class EditorDialogs {
                            Throwable cause,
                            String... recoveryHints) {
     ErrorDialogModel model = buildErrorDialogModel(title, message, cause, recoveryHints);
-    show(
-        owner,
-        title == null || title.isBlank() ? "Error" : title.trim(),
-        model.headline(),
-        model.content(),
-        ActionSpec.neutral("copy", "Copy Details", () -> copyToClipboard(model.report()))
-            .closeOnAction(false),
+    Stage stage = createStage(owner, normalizeDialogText(title, "Editor error"), model.summary(),
+        model.content(), null, new AtomicReference<>(), DialogIcon.Kind.ERROR,
+        ActionSpec.neutral("copy", "Copy Details", () -> copyToClipboard(model.report())).closeOnAction(false),
         ActionSpec.accent("close", "Close", null));
+    stage.showAndWait();
+  }
+
+  private static void showNotice(Window owner, String title, String message, DialogIcon.Kind icon) {
+    createStage(owner, title, message, null, null, new AtomicReference<>(), icon,
+        ActionSpec.accent("close", "Close", null)).showAndWait();
   }
 
   public static boolean confirm(Window owner,
@@ -271,40 +276,34 @@ public final class EditorDialogs {
     VBox content = new VBox(12);
     content.getStyleClass().add("editor-dialog-error-content");
 
-    HBox badgeRow = new HBox(8);
-    badgeRow.setAlignment(Pos.CENTER_LEFT);
-    Label badge = new Label("ERROR");
-    badge.getStyleClass().add("editor-dialog-error-badge");
-    Label context = new Label(title == null || title.isBlank() ? "JVN" : title.trim());
-    context.getStyleClass().add("editor-dialog-error-context");
-    context.setWrapText(true);
-    badgeRow.getChildren().addAll(badge, context);
-
-    VBox whatHappened = new VBox(5, sectionLabel("What happened"), bodyLabel(summary));
-    VBox typeBox = new VBox(5, sectionLabel("Type"), bodyLabel(type.label()));
-    content.getChildren().addAll(badgeRow, typeBox, whatHappened);
-
     if (root != null) {
-      content.getChildren().add(new VBox(5, sectionLabel("Likely cause"), bodyLabel(causeSummary(root))));
+      Label causeLabel = bodyLabel(causeSummary(root));
+      causeLabel.getStyleClass().add("editor-error-cause");
+      Label category = sectionLabel(type.label());
+      category.setMinWidth(Region.USE_PREF_SIZE);
+      HBox reason = new HBox(12, category, causeLabel);
+      reason.setAlignment(Pos.BASELINE_LEFT);
+      reason.getStyleClass().add("editor-error-diagnostics");
+      HBox.setHgrow(causeLabel, Priority.ALWAYS);
+      content.getChildren().add(reason);
     }
 
     if (!hints.isEmpty()) {
-      VBox hintBox = new VBox(5);
-      hintBox.getChildren().add(sectionLabel("What you can try"));
+      VBox hintBox = new VBox(7, sectionLabel("What you can do"));
       for (String hint : hints) {
-        hintBox.getChildren().add(hintLabel(hint));
+        Label bullet = new Label("•");
+        bullet.getStyleClass().add("editor-error-bullet");
+        HBox row = new HBox(9, bullet, bodyLabel(hint));
+        row.setAlignment(Pos.TOP_LEFT);
+        hintBox.getChildren().add(row);
       }
       content.getChildren().add(hintBox);
     }
 
     String report = buildErrorReport(title, type, summary, root, cause, hints);
-    TitledPane technicalDetails = technicalDetailsPane(report);
-    content.getChildren().add(technicalDetails);
-
-    return new ErrorDialogModel(
-        "JVN could not complete this action. Review the cause and next steps below.",
-        content,
-        report);
+    TitledPane details = technicalDetailsPane(report);
+    content.getChildren().add(details);
+    return new ErrorDialogModel(summary, content, report);
   }
 
   private static Label sectionLabel(String text) {
@@ -321,12 +320,6 @@ public final class EditorDialogs {
     return label;
   }
 
-  private static Label hintLabel(String text) {
-    Label label = bodyLabel("- " + normalizeDialogText(text, "Try the action again."));
-    label.getStyleClass().add("editor-dialog-error-hint");
-    return label;
-  }
-
   private static TitledPane technicalDetailsPane(String report) {
     TextArea details = new TextArea(report == null ? "" : report);
     details.setEditable(false);
@@ -336,8 +329,9 @@ public final class EditorDialogs {
 
     TitledPane pane = new TitledPane("Technical details", details);
     pane.getStyleClass().add("editor-dialog-error-details");
+    pane.setGraphic(DialogIcon.of(DialogIcon.Kind.REPORT, 18));
     pane.setExpanded(false);
-    pane.setCollapsible(true);
+    pane.setAnimated(false);
     return pane;
   }
 
@@ -356,6 +350,7 @@ public final class EditorDialogs {
       case PROJECT_CONTEXT -> hints.add("Reopen the project through the launcher so JVN has a valid project root.");
       case FILE_IO -> hints.add("Confirm the file or folder exists and your account has the required read/write permission.");
       case DSL_PARSE -> hints.add("Open the diagnostics panel for this DSL and fix the first parse error before retrying.");
+      case EDITOR_RUNTIME -> hints.add("Save your work and reopen the editor from Engine Hub. Use its build tools to refresh the editor launch files if the error returns.");
       case JAVA_CODE -> hints.add("Check the Java line number and compiler/runtime details, then rerun after the code compiles.");
       case PROCESS -> hints.add("Check the run console or terminal output for the process exit reason.");
       case ASSET -> hints.add("Verify referenced assets exist under the project folder and paths are relative to the project root.");
@@ -438,6 +433,9 @@ public final class EditorDialogs {
   }
 
   private static ErrorType classifyError(String summary, Throwable root, String title) {
+    if (root instanceof LinkageError || root instanceof ClassNotFoundException) {
+      return ErrorType.EDITOR_RUNTIME;
+    }
     String haystack = ((title == null ? "" : title) + " "
         + (summary == null ? "" : summary) + " "
         + (root == null || root.getMessage() == null ? "" : root.getMessage()) + " "
@@ -521,6 +519,17 @@ public final class EditorDialogs {
                                    Node focusTarget,
                                    AtomicReference<String> result,
                                    ActionSpec... actions) {
+    return createStage(owner, title, message, content, focusTarget, result, null, actions);
+  }
+
+  private static Stage createStage(Window owner,
+                                   String title,
+                                   String message,
+                                   Node content,
+                                   Node focusTarget,
+                                   AtomicReference<String> result,
+                                   DialogIcon.Kind notice,
+                                   ActionSpec... actions) {
     StackPane overlay = new StackPane();
     overlay.getStyleClass().add("editor-dialog-overlay");
 
@@ -532,6 +541,7 @@ public final class EditorDialogs {
 
     Label titleLabel = new Label(title == null || title.isBlank() ? "Dialog" : title.trim());
     titleLabel.getStyleClass().add("editor-dialog-title");
+    titleLabel.setWrapText(true);
 
     Label messageLabel = new Label(message == null ? "" : message.trim());
     messageLabel.getStyleClass().add("editor-dialog-message");
@@ -576,6 +586,14 @@ public final class EditorDialogs {
     for (ActionSpec spec : effectiveActions) {
       javafx.scene.control.Button button = new javafx.scene.control.Button(spec.label);
       button.getStyleClass().add("editor-dialog-button");
+      if (notice != null) {
+        switch (spec.id) {
+          case "copy" -> button.setGraphic(DialogIcon.of(DialogIcon.Kind.COPY, 17));
+          case "close" -> button.setGraphic(DialogIcon.of(DialogIcon.Kind.CLOSE, 17));
+          default -> {}
+        }
+        button.setDefaultButton(spec.defaultFocus);
+      }
       switch (spec.style) {
         case ACCENT -> button.getStyleClass().add("editor-dialog-button-accent");
         case DANGER -> button.getStyleClass().add("editor-dialog-button-danger");
@@ -599,9 +617,48 @@ public final class EditorDialogs {
       }
     }
 
-    card.getChildren().add(titleLabel);
-    if (showMessage) card.getChildren().add(messageLabel);
-    if (content != null) card.getChildren().add(bodyBox);
+    Runnable sizeNotice = () -> {};
+    if (notice == null) {
+      card.getChildren().add(titleLabel);
+      if (showMessage) card.getChildren().add(messageLabel);
+      if (content != null) card.getChildren().add(bodyBox);
+    } else {
+      card.getStyleClass().add("editor-notice");
+      overlay.getStyleClass().add("editor-notice-overlay");
+      Rectangle2D display = displayFor(owner);
+      card.setPrefWidth(Math.min(560, display.getWidth() - 60));
+
+      VBox headerText = new VBox(5, titleLabel);
+      headerText.setAlignment(Pos.CENTER_LEFT);
+      if (showMessage) headerText.getChildren().add(messageLabel);
+      HBox header = new HBox(13, DialogIcon.of(notice, 34), headerText);
+      header.getStyleClass().add("editor-notice-header");
+      header.setAlignment(Pos.CENTER_LEFT);
+      HBox.setHgrow(headerText, Priority.ALWAYS);
+      card.getChildren().add(header);
+
+      if (content != null) {
+        ScrollPane scroll = new ScrollPane(bodyBox);
+        scroll.getStyleClass().add("editor-notice-scroll");
+        scroll.setFitToWidth(true);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        double heightLimit = Math.max(140, display.getHeight() - 230);
+        card.getChildren().add(scroll);
+        sizeNotice = () -> {
+          scroll.setPrefHeight(Math.min(heightLimit, Math.ceil(bodyBox.prefHeight(card.getPrefWidth() - 2)) + 2));
+          stage.sizeToScene();
+          if (stage.isShowing() && stage.getY() + stage.getHeight() > display.getMaxY()) {
+            stage.setY(Math.max(display.getMinY(), display.getMaxY() - stage.getHeight()));
+          }
+        };
+        Runnable resize = sizeNotice;
+        TitledPane details = (TitledPane) content.lookup(".editor-dialog-error-details");
+        if (details != null) {
+          details.expandedProperty().addListener((obs, before, expanded) -> Platform.runLater(resize));
+        }
+      }
+      actionsBox.getStyleClass().add("editor-notice-actions");
+    }
     card.getChildren().add(actionsBox);
 
     overlay.getChildren().add(card);
@@ -626,6 +683,8 @@ public final class EditorDialogs {
     stage.setTitle(titleLabel.getText());
     stage.setScene(scene);
     stage.setResizable(false);
+    if (notice != null) overlay.applyCss();
+    sizeNotice.run();
     stage.sizeToScene();
     Platform.runLater(() -> {
       if (focusTarget != null) {
@@ -635,6 +694,14 @@ public final class EditorDialogs {
     return stage;
   }
 
-  private record ErrorDialogModel(String headline, VBox content, String report) {
+  private static Rectangle2D displayFor(Window owner) {
+    if (owner != null) {
+      var screens = Screen.getScreensForRectangle(owner.getX(), owner.getY(), owner.getWidth(), owner.getHeight());
+      if (!screens.isEmpty()) return screens.get(0).getVisualBounds();
+    }
+    return Screen.getPrimary().getVisualBounds();
+  }
+
+  private record ErrorDialogModel(String summary, VBox content, String report) {
   }
 }

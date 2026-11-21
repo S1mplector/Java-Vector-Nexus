@@ -49,9 +49,24 @@ public final class WhatsNewCatalog {
   private static Map<String, Release> createReleases() {
     Map<String, Release> releases = new LinkedHashMap<>();
     add(releases, new Release(
+        "v0.9.4", "Build menus visually and work on scripts with better editing tools.",
+        List.of(
+            new Section("Layout Studio", "Build and preview menus using the runtime renderer.", List.of(
+                "Drag menu items, dialogue boxes, and choices on the canvas.",
+                "Switch between Design and Source with one undo history."),
+                AeroIcon.Kind.LAYOUT, null),
+            new Section("Script editing", "VNS and JES have richer highlighting and completion.", List.of(
+                "Use the Aero minimap to see the full script and jump between sections.",
+                "The wiki highlights VNS, JES, layout properties, and other code examples."),
+                AeroIcon.Kind.SCRIPT_EDITOR, null),
+            new Section("New game workspace", "Choose Writing Project, Tutorial, or Blank Sandbox.", List.of(
+                "Tutorial includes 30 focused lessons with code examples.",
+                "Configure the project, viewport, and starter files in the wizard."),
+                AeroIcon.Kind.NEW_PROJECT, null)), true));
+    add(releases, new Release(
         "v0.9.3", "Meet Ginger in the tutorial workspace.",
         List.of(
-            new Section("Ginger’s studio", "Create a Tutorial Workspace with Ginger and choose Start tutorial.", List.of(
+            new Section("Ginger’s studio", "Choose Tutorial in New Project, then select Start tutorial.", List.of(
                 "Explore 30 lessons. Follow either branch in the envelope example and return to your topic list.",
                 "Use the arrows and Enter to choose a route. Progress follows you between lessons."),
                 AeroIcon.Kind.DOCUMENTATION, null),

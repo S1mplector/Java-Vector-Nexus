@@ -75,6 +75,7 @@ import com.jvn.fx.ui.ProjectFontResolver;
 
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
+import com.jvn.fx.ui.RenderedBoundsListener;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
@@ -89,6 +90,12 @@ import javafx.scene.text.FontWeight;
  * Renders visual novel elements using JavaFX Canvas
  */
 public class VnRenderer {
+  private RenderedBoundsListener boundsListener;
+
+  public void setRenderedBoundsListener(RenderedBoundsListener listener) {
+    boundsListener = listener;
+  }
+
   private static final Logger log = LoggerFactory.getLogger(VnRenderer.class);
   private static final long MIB = 1024L * 1024L;
   static final long SOURCE_IMAGE_CACHE_BUDGET_BYTES = 96L * MIB;
@@ -2478,6 +2485,7 @@ public class VnRenderer {
     double textBoxY = textBox.y();
     double textBoxWidth = textBox.width();
     double textBoxHeight = textBox.height();
+    if (boundsListener != null) boundsListener.accept("Dialogue box", textBoxX, textBoxY, textBoxWidth, textBoxHeight, 0, 0, width, height);
 
     // Draw text box background (asset if provided, otherwise default fill).
     String speakerName = resolveRuntimeText(dialogue.getSpeakerName());
@@ -2515,6 +2523,7 @@ public class VnRenderer {
         nameBoxW = uiLayout.nameBoxWidth();
       }
       double nameBoxH = uiLayout.nameBoxHeight();
+      if (boundsListener != null) boundsListener.accept("Speaker name", nameBoxX, nameBoxY, nameBoxW, nameBoxH, textBoxX, textBoxY, textBoxWidth, textBoxHeight);
       Image activeNameBoxImage = defaultDialogueStyle ? null : nameBoxImage;
       boolean clipNameBox = !defaultDialogueStyle && hasPolygon(nameBoxBoundsPolygon);
       if (clipNameBox) {
@@ -2623,6 +2632,7 @@ public class VnRenderer {
     double panelY = clamp(uiLayout.nvlY() * height, 0.0, height);
     double panelW = clamp(uiLayout.nvlWidth() * width, 120.0, width - panelX);
     double panelH = clamp(uiLayout.nvlHeight() * height, 80.0, height - panelY);
+    if (boundsListener != null) boundsListener.accept("NVL panel", panelX, panelY, panelW, panelH, 0, 0, width, height);
     double pad = uiLayout.nvlPadding();
     double speakerW = Math.max(40.0, uiLayout.nvlSpeakerWidth());
     double entryGap = Math.max(0.0, uiLayout.nvlEntryGap());
@@ -2675,6 +2685,7 @@ public class VnRenderer {
 
     BubbleGeometry bubble = resolveBubbleGeometry(
         dialogue, state, scenario, width, height, speaker, spans, revealedChars);
+    if (boundsListener != null) boundsListener.accept("Bubble", bubble.x(), bubble.y(), bubble.width(), bubble.height(), 0, 0, width, height);
     drawBubblePanel(bubble);
 
     double pad = uiLayout.bubbleTextPadding();
@@ -2819,6 +2830,9 @@ public class VnRenderer {
       VnUiActionButtonSpec button = textBoxButtons.get(i);
       if (button == null) continue;
       ButtonGeometry geometry = computeButtonGeometry(button, textBox, viewportWidth, viewportHeight);
+      if (boundsListener != null) boundsListener.accept("Button · " + button.id(), geometry.x(), geometry.y(), geometry.width(), geometry.height(),
+          button.viewportSpace() ? 0 : textBox.x(), button.viewportSpace() ? 0 : textBox.y(),
+          button.viewportSpace() ? viewportWidth : textBox.width(), button.viewportSpace() ? viewportHeight : textBox.height());
       boolean hovered = i == hoveredButtonIndex;
       boolean enabled = button.enabled();
 
@@ -3567,6 +3581,7 @@ public class VnRenderer {
   private void renderChoices(List<Choice> choices, double width, double height, int hoverIndex) {
     if (choices == null || choices.isEmpty()) return;
     ChoiceGeometry geo = computeChoiceGeometry(choices.size(), width, height);
+    if (boundsListener != null) boundsListener.accept("Choices", geo.choiceX(), geo.startY(), geo.choiceWidth(), geo.choiceHeight(), 0, 0, width, height);
 
     for (int i = 0; i < choices.size(); i++) {
       Choice choice = choices.get(i);

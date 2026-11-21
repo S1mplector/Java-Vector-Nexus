@@ -376,6 +376,7 @@ source of truth for docs changes.
 
 - [What's New in JVN 0.7.0](project-setup/release/whats-new-0.7.0.md) — licensing, Settings credit, and release verification
 
+- [What's New in JVN 0.9.4](project-setup/release/whats-new-0.9.4.md) — visual layouts, script editing, and the tutorial
 - [What's New in JVN 0.9.3](project-setup/release/whats-new-0.9.3.md) — Ginger, choice routing and in-game menus
 - [What's New in JVN 0.9.2](project-setup/release/whats-new-0.9.2.md) — Pip tutorial selection and graphite workspace colors
 - [What's New in JVN 0.9.1](project-setup/release/whats-new-0.9.1.md) — Build workspace, launch cache and Tutorial Workspace fixes
@@ -383,7 +384,7 @@ source of truth for docs changes.
 - [What's New in JVN 0.8.0](project-setup/release/whats-new-0.8.0.md) — authoring, asset loading, persistence, and live-reload reliability
 
 - [Show a source excerpt in dialogue](guides/show-source-in-dialogue.md) — live code panels for VNS, JES and configuration
-- [JVN Tutorial](guides/jvn-tutorial.md) — the built-in course across JVN systems
+- [Tutorial](guides/jvn-tutorial.md) — the built-in course across JVN systems
 
 - [Reading annotated examples and diagrams](guides/reading-the-docs.md)
 

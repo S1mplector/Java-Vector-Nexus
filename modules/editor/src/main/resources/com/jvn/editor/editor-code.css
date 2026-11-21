@@ -22,6 +22,14 @@
   -fx-background-color: -jvn-code-current-line;
 }
 
+/* RichTextFX positions this graphic independently of the scrolling paragraph.
+   Its opaque surface also covers text moving behind the line numbers. */
+.code-editor-gutter {
+  -fx-background-color: -jvn-aero-field;
+  -fx-padding: 0 7 0 0;
+  -fx-view-order: -1;
+}
+
 .lineno {
   -fx-background-color: -jvn-aero-surface;
   -fx-border-color: -jvn-aero-edge;
@@ -76,16 +84,32 @@
 }
 
 .code-editor-minimap {
-  -fx-background-color: -jvn-aero-surface;
-  -fx-border-color: -jvn-aero-edge;
+  -fx-padding: 4 4 4 5;
+  -fx-background-color: -jvn-aero-divider-rail, derive(-jvn-aero-surface, -2%);
+  -fx-background-insets: 0, 0 0 0 2;
 }
 
-.code-editor-minimap-separator {
-  -fx-background-color: -jvn-aero-edge;
+.code-minimap-track {
+  -fx-background-color: -jvn-aero-divider-edge, -jvn-aero-field;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-border-color: derive(-jvn-aero-edge, -12%) -jvn-aero-edge -jvn-aero-edge derive(-jvn-aero-edge, -12%);
+  -fx-border-radius: 4;
+}
+
+.code-minimap-viewport {
+  -fx-background-color: -jvn-code-map-glass;
+  -fx-background-radius: 3;
+  -fx-border-color: -jvn-code-map-rim;
+  -fx-border-radius: 3;
+  -fx-border-width: 1;
+}
+
+.code-minimap-track:hover .code-minimap-viewport {
+  -fx-border-color: -jvn-code-map-hover-rim;
 }
 
 .code-area .punct,
-.code-area .vns-format,
 .code-area .dsl-color,
 .code-area .jes-builtin,
 .code-area .text {
@@ -99,7 +123,6 @@
 .code-area .dsl-action,
 .code-area .jes-struct,
 .code-area .jes-action,
-.code-area .jes-prop,
 .code-area .tl-keyword {
   -fx-fill: -jvn-code-command;
 }
@@ -123,6 +146,10 @@
   -fx-fill: -jvn-code-comment;
 }
 
+.code-area .vns-format,
+.code-area .vns-variable,
+.code-area .vns-option,
+.code-area .jes-prop,
 .code-area .vns-speaker,
 .code-area .dsl-section,
 .code-area .jes-comptype,
@@ -134,4 +161,16 @@
 .code-area .sel-highlight {
   -fx-fill: -jvn-aero-text;
   -rtfx-background-color: -jvn-code-selection;
+}
+
+.code-completion-list {
+  -fx-background-insets: 0;
+  -fx-padding: 1;
+  -fx-border-width: 1;
+  -fx-border-color: -jvn-aero-edge;
+}
+.code-completion-list .list-cell {
+  -fx-padding: 3 10;
+  -fx-font-family: monospace;
+  -fx-font-size: 13px;
 }

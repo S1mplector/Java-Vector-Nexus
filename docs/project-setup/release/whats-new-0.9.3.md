@@ -11,5 +11,5 @@ Pause, Settings, Save and Load use the tutorial’s illustrated paper layout. Se
 - [Windows x64 installer](https://github.com/S1mplector/Java-Vector-Nexus/releases/download/engine-v0.9.3/jvn-engine-hub-0.9.3-windows-x64.exe)
 - [Linux x64 archive](https://github.com/S1mplector/Java-Vector-Nexus/releases/download/engine-v0.9.3/jvn-engine-hub-0.9.3-linux-x64.tar.gz)
 
-- [Playable Ginger tutorial](https://github.com/S1mplector/Java-Vector-Nexus/releases/download/engine-v0.9.3/Ginger-Tutorial.zip)
+- [Playable Tutorial](https://github.com/S1mplector/Java-Vector-Nexus/releases/download/engine-v0.9.3/Ginger-Tutorial.zip)
 - [Pause, Settings, Save and Load preview](https://github.com/S1mplector/Java-Vector-Nexus/releases/download/engine-v0.9.3/Ginger-menus.png)

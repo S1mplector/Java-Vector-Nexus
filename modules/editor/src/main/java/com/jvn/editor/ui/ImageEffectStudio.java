@@ -182,7 +182,7 @@ public final class ImageEffectStudio {
     });
   }
   private void error(String title, Exception failure) {
-    Alert alert = new Alert(Alert.AlertType.ERROR, failure.getMessage(), ButtonType.OK); alert.initOwner(stage); alert.setHeaderText(title); alert.show();
+    EditorDialogs.error(stage, title, "JVN could not complete this image operation.", failure);
   }
   private static String format(double value) { return java.math.BigDecimal.valueOf(Math.round(value * 1000) / 1000.0).stripTrailingZeros().toPlainString(); }
 }
