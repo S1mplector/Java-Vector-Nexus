@@ -209,10 +209,10 @@ class GuidedTutorialIntegrationTest {
       assertEquals("welcome", hub.getState().getVariable("tutorial_excerpt"));
       capture(hub, "welcome-code");
       goToChoice(hub, "goodbye", "greeting");
+      hub.update(700);
       assertNull(hub.getState().getVariable("ui.dialogueFacet"));
       assertNull(hub.getState().getCharacterPosition("ginger"));
       assertEquals(8, hub.getState().getCurrentNode().getChoices().size());
-      hub.update(700);
       capture(hub, "board");
       Set<String> visitedTopics = new HashSet<>();
       for (int page = 1; page <= 6; page++) {
