@@ -18,6 +18,7 @@ import java.lang.reflect.Field;
 import java.nio.file.*;
 import java.util.*;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.RadioButton;
@@ -199,9 +200,17 @@ class GuidedTutorialIntegrationTest {
         }
       }
       var hub = open(loader, "story/tutorial_hub.vns", Map.of());
-      assertEquals(VnNodeType.CHOICE, hub.getState().getCurrentNode().getType());
-      assertNull(hub.getState().getCharacterPosition("ginger"));
+      assertEquals(VnNodeType.DIALOGUE, hub.getState().getCurrentNode().getType());
+      var welcome = hub.getState().getCurrentNode().getDialogue();
+      assertEquals("Ginger", welcome.getSpeakerName());
+      assertTrue(welcome.getText().startsWith("Hello, welcome to the JVN tutorial! I'm Ginger."));
+      hub.advance();
+      assertEquals("tutorial_code", hub.getState().getVariable("ui.dialogueFacet"));
+      assertEquals("welcome", hub.getState().getVariable("tutorial_excerpt"));
+      capture(hub, "welcome-code");
       goToChoice(hub, "goodbye", "greeting");
+      assertNull(hub.getState().getVariable("ui.dialogueFacet"));
+      assertNull(hub.getState().getCharacterPosition("ginger"));
       assertEquals(8, hub.getState().getCurrentNode().getChoices().size());
       hub.update(700);
       capture(hub, "board");
@@ -224,6 +233,7 @@ class GuidedTutorialIntegrationTest {
       }
       assertEquals(TutorialCatalog.LESSONS.size(), visitedTopics.size());
       FxToolkit.runFx(() -> {
+        var legacyMenu = previousWizardMenu();
         var menu = new MainMenuScene(null, new VnSettings(), null, "story/tutorial_hub.vns", null);
         assertEquals("Tutorial", menu.getDisplayTitle());
         assertEquals("", menu.getDisplaySubtitle());
@@ -231,11 +241,20 @@ class GuidedTutorialIntegrationTest {
         assertNull(MenuTheme.fromAssets().getSecondaryMenuPortrait());
         assertEquals("Start tutorial", menu.getDisplayItems()[0]);
         menu.setSelected(0);
+        var theme = MenuTheme.fromAssets();
+        assertTrue(theme.isDockPresentation());
+        for (int[] size : new int[][] {{960, 540}, {1280, 720}}) {
+          var titleCanvas = new Canvas(size[0], size[1]);
+          var titleRenderer = new MenuRenderer(titleCanvas.getGraphicsContext2D(), theme);
+          titleRenderer.setProjectRoot(project.toFile());
+          verifyTitleDock(titleRenderer, menu, size[0], size[1]);
+          save(titleCanvas, size[0] == 960 ? "title-wizard-size" : "title");
+          legacyMenu.setSelected(0);
+          verifyTitleDock(titleRenderer, legacyMenu, size[0], size[1]);
+        }
         Canvas canvas = new Canvas(1280, 720);
-        var renderer = new MenuRenderer(canvas.getGraphicsContext2D(), MenuTheme.fromAssets());
+        var renderer = new MenuRenderer(canvas.getGraphicsContext2D(), theme);
         renderer.setProjectRoot(project.toFile());
-        renderer.renderMainMenu(menu, 1280, 720);
-        save(canvas, "title");
         var saves = new com.jvn.core.vn.save.VnSaveManager(parent.resolve("menu-saves").toString());
         var pause = new com.jvn.core.menu.PauseMenuScene(null, hub, saves, "story/tutorial_hub.vns", null);
         assertEquals("resume", pause.getItem(0).id());
@@ -296,6 +315,47 @@ class GuidedTutorialIntegrationTest {
     }
   }
 
+  private MainMenuScene previousWizardMenu() throws Exception {
+    Path path = project.resolve("config/menu/menus/main.menu");
+    String fresh = Files.readString(path);
+    var legacy = new StringBuilder(fresh).append('\n');
+    String[] ids = {"new_game", "continue", "settings", "extras", "quit"};
+    for (int row = 0; row < ids.length; row++) {
+      String key = "item." + ids[row] + ".bounds";
+      legacy.append(key).append("X=0.2800\n");
+      legacy.append(key).append("Width=0.4400\n");
+      legacy.append(key).append("Height=0.0720\n");
+      legacy.append(key).append(String.format(Locale.ROOT, "Y=%.4f%n", .34 + .082 * row));
+    }
+    try {
+      Files.writeString(path, legacy);
+      var menu = new MainMenuScene(null, new VnSettings(), null, "story/tutorial_hub.vns", null);
+      assertEquals(.072, menu.getItem(0).boundsHeight());
+      return menu;
+    } finally {
+      Files.writeString(path, fresh);
+    }
+  }
+
+  private static void verifyTitleDock(MenuRenderer renderer, MainMenuScene menu, int width, int height) {
+    Map<String, Rectangle2D> cards = new HashMap<>();
+    renderer.setRenderedBoundsListener((id, x, y, w, h, ox, oy, spaceW, spaceH) ->
+        cards.put(id, new Rectangle2D(x, y, w, h)));
+    renderer.renderMainMenu(menu, width, height);
+    assertEquals(Set.of("new_game", "continue", "settings", "quit"), cards.keySet());
+    double previousRight = 0;
+    for (int i = 0; i < menu.getItemCount(); i++) {
+      var card = cards.get(menu.getItem(i).id());
+      assertTrue(card.getMinX() > previousRight);
+      assertTrue(card.getMinY() > height * 0.62);
+      assertTrue(card.getHeight() >= 75);
+      assertTrue(card.getMaxX() < width && card.getMaxY() < height);
+      assertEquals(i, renderer.getHoverIndexForMainMenu(menu, width, height,
+          card.getMinX() + card.getWidth() / 2, card.getMinY() + card.getHeight() / 2));
+      previousRight = card.getMaxX();
+    }
+  }
+
   private void verifySourcePanels() throws Exception {
     var assets = new AssetCatalog();
     var result = VnReactiveScreenLoader.load(assets, "tutorial_code");
@@ -305,17 +365,19 @@ class GuidedTutorialIntegrationTest {
     assertEquals("${tutorial_source}", node.source());
     assertEquals("${tutorial_excerpt}", node.region());
     var languages = new HashSet<com.jvn.core.script.SyntaxRules>();
-    for (var lesson : TutorialCatalog.LESSONS) {
+    var scripts = new ArrayList<>(TutorialCatalog.LESSONS.stream().map(TutorialCatalog.Lesson::path).toList());
+    scripts.add("scripts/story/tutorial_hub.vns");
+    for (String script : scripts) {
       String source = null;
-      for (String line : Files.readAllLines(project.resolve(lesson.path()))) {
+      for (String line : Files.readAllLines(project.resolve(script))) {
         if (line.startsWith("[set tutorial_source ")) source = line.substring(21, line.length() - 1);
         if (!line.startsWith("[set tutorial_excerpt ")) continue;
         String region = line.substring(22, line.length() - 1);
         var excerpt = FacetCodeExcerpt.load(assets, source, region);
-        assertFalse(excerpt.lines().isEmpty(), lesson.path() + " " + region);
+        assertFalse(excerpt.lines().isEmpty(), script + " " + region);
         var file = Files.readAllLines(project.resolve(source));
         assertEquals(file.subList(excerpt.firstLine() - 1, excerpt.firstLine() - 1 + excerpt.lines().size()),
-            excerpt.lines(), lesson.path());
+            excerpt.lines(), script);
         languages.add(excerpt.syntax());
       }
     }

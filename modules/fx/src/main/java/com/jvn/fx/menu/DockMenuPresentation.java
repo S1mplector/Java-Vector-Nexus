@@ -1,6 +1,7 @@
 package com.jvn.fx.menu;
 
 import com.jvn.core.menu.MainMenuScene;
+import com.jvn.core.menu.config.MenuItemSpec;
 import com.jvn.fx.image.FxImageEffectCache;
 import com.jvn.fx.ui.ProjectFontResolver;
 import java.io.File;
@@ -38,14 +39,37 @@ final class DockMenuPresentation implements AutoCloseable {
     return new Bounds((w - total) / 2 + index * (width + gap), h * .68, width, Math.min(112, h * .17));
   }
 
-  private static Bounds itemBounds(MainMenuScene scene, int index, double w, double h) {
-    MenuRenderer.Rect rect = MenuRenderer.explicitItemRect(scene.getItem(index), 0, w, h);
+  private static Bounds itemBounds(MainMenuScene scene, int index, double w, double h, boolean useProjectBounds) {
+    MenuRenderer.Rect rect = useProjectBounds ? MenuRenderer.explicitItemRect(scene.getItem(index), 0, w, h) : null;
     return rect == null ? bounds(index, scene.getItemCount(), w, h) : new Bounds(rect.x(), rect.y(), rect.w(), rect.h());
   }
 
+  private static boolean hasLegacyTutorialRows(MainMenuScene scene) {
+    if (!"assets/tutorial/white.png".equals(scene.getMenuScreen().backgroundAsset())) return false;
+    int count = scene.getItemCount();
+    if (count < 2 || count > 4 || !"new_game".equals(scene.getItem(0).id())
+        || !"quit".equals(scene.getItem(count - 1).id())) return false;
+    // The old wizard left its list coordinates on the tutorial's dock, including a
+    // gap for the removed Extras button. Recognize that generated layout exactly.
+    for (int i = 0; i < count; i++) {
+      MenuItemSpec item = scene.getItem(i);
+      if (i > 0 && i < count - 1 && !"continue".equals(item.id()) && !"settings".equals(item.id())) return false;
+      int row = i + (i == count - 1 ? 1 : 0);
+      if (!matchesCoordinate(item.boundsX(), .28) || !matchesCoordinate(item.boundsWidth(), .44)
+          || !matchesCoordinate(item.boundsHeight(), .072)
+          || !matchesCoordinate(item.boundsY(), .34 + .082 * row)) return false;
+    }
+    return true;
+  }
+
+  private static boolean matchesCoordinate(Double value, double expected) {
+    return value != null && Math.abs(value - expected) < 0.000001;
+  }
+
   int hover(MainMenuScene scene, double w, double h, double x, double y) {
+    boolean useProjectBounds = !hasLegacyTutorialRows(scene);
     for (int i = 0; i < scene.getItemCount(); i++) {
-      Bounds b = itemBounds(scene, i, w, h);
+      Bounds b = itemBounds(scene, i, w, h, useProjectBounds);
       // Include the whole lift envelope, so a rising button cannot lose its hover.
       if (scene.isItemEnabled(i) && new Bounds(b.x(), b.y() - 16, b.width(), b.height() + 16).contains(x, y)) return i;
     }
@@ -58,6 +82,7 @@ final class DockMenuPresentation implements AutoCloseable {
     previousTime = now;
     long timeMs = now / 1_000_000;
     int count = scene.getItemCount();
+    boolean useProjectBounds = !hasLegacyTutorialRows(scene);
     if (focus.length != count) focus = new double[count];
     gc.save();
     gc.setTextAlign(TextAlignment.CENTER);
@@ -101,7 +126,7 @@ final class DockMenuPresentation implements AutoCloseable {
       boolean selected = scene.getSelected() == i && scene.isItemEnabled(i);
       double target = selected ? 1 : 0;
       focus[i] = theme.isMenuMotion() ? focus[i] + (target - focus[i]) * (1 - Math.exp(-dt * 16)) : target;
-      Bounds b = itemBounds(scene, i, w, h);
+      Bounds b = itemBounds(scene, i, w, h, useProjectBounds);
       double y = b.y() - (theme.isMenuMotion() ? focus[i] * 14 : 0);
       if (boundsListener != null)
         boundsListener.accept(scene.getItem(i).id(), b.x(), y, b.width(), b.height(), 0, 0, w, h);

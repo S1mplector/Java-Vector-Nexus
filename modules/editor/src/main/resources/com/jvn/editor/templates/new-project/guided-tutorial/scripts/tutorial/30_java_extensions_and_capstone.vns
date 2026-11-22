@@ -59,17 +59,28 @@ ginger: Select a configuration to test.
 [set example_default false]
 @label apply_preset
 # endregion
+[set tutorial_source scripts/tutorial/30_java_extensions_and_capstone.vns]
 [if example_default]
+[show ginger beside_code normal]
+[set tutorial_excerpt default_result]
+[set ui.dialogueFacet tutorial_code]
+# region default_result
 [stage clear]
 [sfx assets/tutorial/welcome.wav]
-ginger: The flag is true. This branch clears the stage preset and plays the confirmation sound.
+ginger: The flag is true, so the script clears the preset and plays a sound.
 narrator: {b}Selected configuration: Default.{/b}
+# endregion
 [else]
+[show ginger beside_code shy]
+[set tutorial_excerpt dusk_result]
+[set ui.dialogueFacet tutorial_code]
+# region dusk_result
 [stage dusk]
-[show ginger guide shy]
 ginger: The flag is false. This branch applies the dusk preset.
 narrator: {b}Selected configuration: Dusk.{/b}
+# endregion
 [endif]
+[clear ui.dialogueFacet]
 [stage clear]
 > Compare again -> compare_presets
 > Verify the full decision table -> practice

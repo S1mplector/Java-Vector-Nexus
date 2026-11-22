@@ -13,7 +13,7 @@ Choose **New Project → Tutorial**, create the project, and press **Run**. Choo
 
 The hub lives in `scripts/story/tutorial_hub.vns`. Each numbered lesson lives under `scripts/tutorial/`. Character and background declarations are in `scripts/definitions/characters.vns`. For your own teaching panel, follow [Show a source excerpt in dialogue](show-source-in-dialogue.md).
 
-The [0.9.4 release](../project-setup/release/whats-new-0.9.4.md) includes the current playable tutorial download. You can also generate it in **New Project → Tutorial**.
+The [0.9.5 release](../project-setup/release/whats-new-0.9.5.md) includes the current playable tutorial download. You can also generate it in **New Project → Tutorial**.
 
 ## Lesson references
 

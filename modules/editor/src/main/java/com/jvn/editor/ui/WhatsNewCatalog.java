@@ -49,6 +49,16 @@ public final class WhatsNewCatalog {
   private static Map<String, Release> createReleases() {
     Map<String, Release> releases = new LinkedHashMap<>();
     add(releases, new Release(
+        "v0.9.5", "A repaired tutorial title screen and more examples with Ginger.",
+        List.of(
+            new Section("Tutorial title screen", "The title and menu buttons have separate space on screen.", List.of(
+                "The updated runtime also corrects the default layout in older wizard-generated tutorials."),
+                AeroIcon.Kind.NEW_PROJECT, null),
+            new Section("Read the script as it runs", "Ginger introduces the tutorial with a line you can edit.", List.of(
+                "Follow live source excerpts for choices, movement, backgrounds, lighting, and more.",
+                "Create a new Tutorial project to get the updated lessons."),
+                AeroIcon.Kind.DOCUMENTATION, null)), true));
+    add(releases, new Release(
         "v0.9.4", "Build menus visually and work on scripts with better editing tools.",
         List.of(
             new Section("Layout Studio", "Build and preview menus using the runtime renderer.", List.of(

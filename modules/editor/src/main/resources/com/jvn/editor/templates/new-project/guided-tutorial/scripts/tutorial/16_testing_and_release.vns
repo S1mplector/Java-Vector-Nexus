@@ -8,13 +8,19 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide normal]
+[show ginger beside_code normal]
+[set tutorial_source scripts/tutorial/06_audio_and_music.vns]
+[set tutorial_excerpt before]
+[set ui.dialogueFacet tutorial_code]
 ginger: An export needs to work outside the original project directory. This check uses a script, an image and a sound from the tutorial as test inputs.
 ginger: In {b}Build & Publish → Checks{/b}, run the content scan. Resolve any missing references. Build a portable ZIP and extract it into a new folder.
-ginger: Launch the extracted copy. Open Sound effects and verify that the sprite appears and both sounds play. Then open Choices and labels and test each route.
-ginger: If a sound works only in the Editor, compare its VNS path with the files inside the package. Check spelling, case and folder structure.
+ginger: Launch the extracted copy and open Sound effects. The sprite should appear, and the first WAV should play as the highlighted line opens. Check that the second WAV plays on advance.
+ginger: If a sound works only in the Editor, find the highlighted path in the extracted package. Check spelling, case and folder structure.
+[set tutorial_source scripts/tutorial/10_choices_and_menus.vns]
+[set tutorial_excerpt routes]
 ginger: A successful export tells you the package was written. A cold run checks whether the runtime can resolve the entry script and its dependencies from the extracted files.
-ginger: Choose a short route that exercises different asset types. The sound lesson covers a script, a sprite and a WAV. The branching lesson checks that both label targets survive the export.
+ginger: Open Choices and labels in the extracted build. Both options in this block should reach their own message and then the shared result.
+[clear ui.dialogueFacet]
 > Check the extracted build -> practice
 > Review question -> check
 > Back to topics -> return_hub

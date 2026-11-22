@@ -86,6 +86,13 @@ final class GuidedTutorial {
     Path screen = root.resolve("config/menu/menus/main.menu");
     Properties properties = new Properties();
     try (var reader = Files.newBufferedReader(screen)) { properties.load(reader); }
+    // The generic scaffold places list rows explicitly. The tutorial dock lays out
+    // its own cards, including their hover targets, at the current viewport size.
+    properties.stringPropertyNames().stream()
+        .filter(key -> key.startsWith("item.") && (
+            key.endsWith(".boundsX") || key.endsWith(".boundsY")
+            || key.endsWith(".boundsWidth") || key.endsWith(".boundsHeight")))
+        .forEach(properties::remove);
     var items = new java.util.ArrayList<>(List.of(properties.getProperty("items").split(",")));
     items.remove("extras");
     properties.setProperty("items", String.join(",", items));

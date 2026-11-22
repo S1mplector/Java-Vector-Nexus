@@ -10,7 +10,9 @@
 [stage clear]
 [show ginger guide normal]
 ginger: Compare the sprite and background under the default lighting and the {b}dusk{/b} preset. Start by looking at the face and the edge of the sleeve.
+# region apply_dusk
 [stage dusk]
+# endregion
 [if !tutorial_still]
 [move ginger rightmark ease_in_out_cubic 640]
 [wait 640]
@@ -23,11 +25,13 @@ ginger: The dusk preset is active. Check which parts of the sprite are lit and h
 [wait 510]
 [move ginger guide normal exprdur=90]
 [endif]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/24_layer_groups_and_lighting.vns]
+[set tutorial_excerpt apply_dusk]
+[set ui.dialogueFacet tutorial_code]
+ginger: That single command applied the preset. The original lighting is back after [stage clear]. Both views use the same sprite art.
 [set tutorial_source scripts/definitions/dusk.stagepreset]
 [set tutorial_excerpt exposure]
-[set ui.dialogueFacet tutorial_code]
-[show ginger beside_code thoughtful]
-ginger: The script has now run [stage clear]. The original lighting is visible again. The sprite image is the same in both views.
 ginger: Open scripts/definitions/dusk.stagepreset in Lighting Studio. Adjust exposure, save and replay. Compare the two lighting states again at the same window size.
 ginger: A stage preset has several independent settings. Exposure changes the background's overall brightness. Tint also has a colour, a strength and a blend mode. The preset file records those separately.
 ginger: Pick a neutral part of the background and an edge of the character. Use the same two points in both captures so your comparison is repeatable.

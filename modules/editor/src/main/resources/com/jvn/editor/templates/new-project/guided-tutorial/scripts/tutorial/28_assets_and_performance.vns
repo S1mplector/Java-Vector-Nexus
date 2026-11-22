@@ -8,16 +8,23 @@
 [char ginger global on]
 [set ui.dialogueFadeMs 160]
 [stage clear]
-[show ginger guide thoughtful]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/28_assets_and_performance.vns]
+[set tutorial_excerpt cache_poses]
+[set ui.dialogueFacet tutorial_code]
 ginger: Use the {b}Render inspector{/b} in the Run workspace to compare cache entries, hits and misses. Make a note of the values while this pose is displayed.
 ginger: Advance to change the pose, then advance again to return to the original one. Compare the counters after each change.
-[show ginger guide normal]
-ginger: The sprite now uses another expression. It may already be resident if you opened another lesson earlier.
-[show ginger guide thoughtful]
-ginger: The first pose is back. A hit means a lookup reused an entry. A miss means the requested entry was unavailable. Other assets can affect the totals too.
+# region cache_poses
+[show ginger beside_code normal]
+ginger: The normal pose is visible.
+[show ginger beside_code thoughtful]
+ginger: The thoughtful pose is back.
+# endregion
+ginger: A hit means a lookup reused an entry. A miss means the requested entry was unavailable. Another lesson may already have loaded either pose.
 ginger: For a lighting example in the engine checkout, run scripts/examples/window-light/scene.vns. Observe repeated frames with the same rig before changing a light.
 ginger: An entry count describes what is resident. Hit and miss counts describe lookup events. Several requests can hit one resident entry, so those numbers measure different things.
 ginger: Take a counter reading before and after a defined sequence of poses. Use the difference between readings. A total accumulated since startup also includes earlier lessons.
+[clear ui.dialogueFacet]
 > Read the cache counters -> practice
 > Review question -> check
 > Back to topics -> return_hub

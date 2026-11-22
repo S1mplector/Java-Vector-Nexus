@@ -18,14 +18,21 @@ ginger: Each choice has a display label and a destination. Pick a branch. Both b
 > Run branch B -> branch_b
 @label branch_a
 # endregion
+[set tutorial_excerpt route_a]
+# region route_a
 [show ginger beside_code embarrassed]
 ginger: {b}Branch A{/b} ran. Its final jump skips branch B and goes straight to the shared result.
 [jump compare]
+# endregion
 @label branch_b
+[set tutorial_excerpt route_b]
+# region route_b
 [show ginger beside_code confused]
 ginger: {b}Branch B{/b} ran. The shared result follows immediately after this line.
 @label compare
+# endregion
 narrator: {i}Shared result. Both routes have reached the same label.{/i}
+[set tutorial_excerpt routes]
 ginger: Find the arrows after the two choices. Follow each destination down the file. Only branch A needs an explicit jump to avoid displaying the other branch.
 ginger: Change the visible text of branch A and leave its target alone. Run both options. Then swap the targets and compare the results again.
 ginger: On a choice line, the text before the arrow is what the player reads. The identifier after it is the destination. Changing the wording leaves the destination intact.

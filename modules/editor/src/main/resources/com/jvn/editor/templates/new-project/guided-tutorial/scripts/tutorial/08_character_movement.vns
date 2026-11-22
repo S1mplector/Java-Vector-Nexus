@@ -23,9 +23,11 @@ ginger: Reduced motion is enabled. The example leaves the sprite at guide and sk
 ginger: The sprite is at rightmark. The easing curve slows its movement near the end.
 [endif]
 [if !tutorial_still]
+# region return_move
 [move ginger guide ease_out_cubic 560]
 [wait 560]
 [move ginger guide thoughtful exprdur=90]
+# endregion
 [endif]
 [set tutorial_source scripts/tutorial/08_character_movement.vns]
 [set tutorial_excerpt move]
@@ -35,6 +37,8 @@ ginger: The first move takes 740 milliseconds. The return takes 560. Both use th
 ginger: Change the first move and its following wait to 1000. Replay and check that the next expression appears after the sprite arrives.
 ginger: The move names a destination and a duration. The following wait controls when the script continues. Read the two numbers independently, even when the author gave them the same value.
 ginger: At 740 ms the outward move and its wait end together. The next expression can mark arrival. If those numbers diverge, the expression can change during travel or after a pause.
+[set tutorial_excerpt return_move]
+ginger: The return uses the same three steps. The destination is guide, and the expression changes to thoughtful when the 560 ms wait finishes.
 [clear ui.dialogueFacet]
 > Match a move with its wait -> practice
 > Review question -> check

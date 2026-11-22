@@ -9,6 +9,15 @@
 [if !tutorial_count]
 [set tutorial_count 0]
 [endif]
+[show ginger beside_code normal]
+# region welcome
+ginger: Hello, welcome to the JVN tutorial! I'm Ginger. I'll show you how to turn a few lines of script into a playable visual novel.
+# endregion
+[set tutorial_source scripts/story/tutorial_hub.vns]
+[set tutorial_excerpt welcome]
+[set ui.dialogueFacet tutorial_code]
+ginger: That's the line you just read. Open this script in the Editor and try changing my greeting. Then pick any topic to see another example in action.
+[clear ui.dialogueFacet]
 @label topics
 [hide ginger]
 > Writing and branching -> topics_page_1
