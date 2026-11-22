@@ -60,6 +60,9 @@ jobs:
               "macos-arm64": ((".dmg", ".tar.gz"), "JVN Engine Hub.app/Contents/MacOS/JVN Engine Hub"),
               "linux-x64": ((".tar.gz",), "JVN Engine Hub/bin/JVN Engine Hub"),
           }[platform]
+          deb = downloads / f"jvn-engine-hub-{version}-linux-x64.deb"
+          if platform == "linux-x64" and deb.is_file():
+              suffixes = (*suffixes, ".deb")
           for suffix in suffixes:
               artifact = downloads / f"jvn-engine-hub-{version}-{platform}{suffix}"
               checksum = artifact.with_name(artifact.name + ".sha256")
@@ -75,6 +78,10 @@ jobs:
                       if suffix == ".dmg":
                           helpers["run"]("hdiutil", "verify", artifact)
                       helpers["smoke_installer"](artifact, work)
+                  elif suffix == ".deb":
+                      extracted = work / "extracted"
+                      helpers["run"]("dpkg-deb", "--extract", artifact, extracted)
+                      helpers["smoke_launcher"](extracted / "opt/jvn-engine-hub/bin/JVN Engine Hub", work / "workspace")
                   else:
                       extracted = work / "extracted"
                       if suffix == ".tar.gz":

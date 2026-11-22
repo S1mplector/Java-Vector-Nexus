@@ -1,0 +1,96 @@
+name: Add Debian package to an Engine Hub release
+on:
+  push:
+    branches: ['release/linux-deb-engine-v*']
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve the published Engine Hub tag
+        id: release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${GITHUB_REF_NAME#release/linux-deb-}"
+          [[ "$tag" =~ ^engine-v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          [[ "$(gh release view "$tag" --json isDraft --jq .isDraft)" = false ]]
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#engine-v}" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ steps.release.outputs.tag }}
+          path: release-source
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+          cache-dependency-path: release-source/**/*.gradle*
+      - name: Build the tagged Hub from source
+        working-directory: release-source
+        shell: bash
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          grep -Fx "jvnVersion=$VERSION" gradle.properties
+          ./gradlew :hub:test :hub:packageEngineHubLiteJar "-PjvnVersion=$VERSION" --no-daemon
+      - name: Package the tagged Hub and check installation
+        shell: bash
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          python3 scripts/package-native-hub.py "$VERSION" "release-source/build/distributions/jvn-engine-hub-lite-$VERSION.jar" \
+            build/linux-deb --source-root release-source --deb-only --test-install
+          bash scripts/verify-linux-hub-deb.sh "build/linux-deb/jvn-engine-hub-$VERSION-linux-x64.deb" "$VERSION"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: engine-hub-deb
+          path: build/linux-deb/*
+          if-no-files-found: error
+          compression-level: 0
+
+  publish:
+    needs: package
+    runs-on: ubuntu-24.04
+    concurrency: engine-release-${{ needs.package.outputs.version }}
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ needs.package.outputs.tag }}
+      VERSION: ${{ needs.package.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: engine-hub-deb
+      - name: Publish the installer and checksum
+        shell: bash
+        run: |
+          package="jvn-engine-hub-$VERSION-linux-x64.deb"
+          sha256sum --check --strict "$package.sha256"
+          published="$(gh release view "$TAG" --json assets --jq '.assets[].name')"
+          if grep -Fxq "$package" <<< "$published"; then
+            gh release download "$TAG" --pattern "$package" --clobber
+          fi
+          if grep -Fxq "$package.sha256" <<< "$published"; then
+            gh release download "$TAG" --pattern "$package.sha256" --clobber
+            sha256sum --check --strict "$package.sha256"
+          else
+            sha256sum "$package" > "$package.sha256"
+          fi
+          if ! grep -Fxq "$package" <<< "$published"; then
+            gh release upload "$TAG" "$package"
+          fi
+          if ! grep -Fxq "$package.sha256" <<< "$published"; then
+            gh release upload "$TAG" "$package.sha256"
+          fi

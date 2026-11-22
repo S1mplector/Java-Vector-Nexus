@@ -64,7 +64,8 @@ The Engine Hub release pipeline supports **0.x preview installers**. Tagged prev
 | --- | --- | --- |
 | Windows x64 | `.exe` | Run the installer, then open **JVN Engine Hub** from Start. |
 | macOS Apple Silicon | `.dmg` | Open the disk image and drag **JVN Engine Hub** into **Applications**. |
-| Linux x64 | `.tar.gz` | Extract the archive and run `bin/JVN Engine Hub`. |
+| Ubuntu and Linux Mint x64 | `.deb` | Run `sudo apt install ./jvn-engine-hub-<version>-linux-x64.deb`, then open **JVN Engine Hub** from the applications menu. |
+| Other Linux x64 distributions | `.tar.gz` | Extract the archive and run `bin/JVN Engine Hub`. |
 
 The packages include JDK 21 and the matching engine source. The first Editor build downloads Gradle and project dependencies. Maintainers can [ship a preview from a release tag](docs/project-setup/release/deployment.md#publish-the-engine-hub-desktop-apps).
 

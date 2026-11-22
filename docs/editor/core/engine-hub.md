@@ -95,7 +95,9 @@ Advanced values are stored in `~/.jvn-editor/render-pipeline.properties` and app
 
 ## Preview installers
 
-The Engine Hub supports binary releases throughout the 0.x series. On [GitHub Releases](https://github.com/S1mplector/Java-Vector-Nexus/releases), choose the Windows x64 installer (`.exe`), Apple Silicon disk image (`.dmg`), or Linux x64 archive (`.tar.gz`). Each contains JDK 21 and the corresponding Editor workspace. The first Editor launch uses the network to download missing build dependencies.
+The Engine Hub supports binary releases throughout the 0.x series. On [GitHub Releases](https://github.com/S1mplector/Java-Vector-Nexus/releases), choose the Windows x64 installer (`.exe`), Apple Silicon disk image (`.dmg`), Ubuntu and Linux Mint x64 installer (`.deb`), or portable Linux x64 archive (`.tar.gz`). Each contains JDK 21 and the corresponding Editor workspace. The first Editor launch uses the network to download missing build dependencies.
+
+On Ubuntu and Linux Mint, install the downloaded file with `sudo apt install ./jvn-engine-hub-<version>-linux-x64.deb` from its download directory. Open **JVN Engine Hub** from the applications menu or run `jvn-engine-hub`.
 
 From a checkout, launch the same Hub with `./jvn` on macOS/Linux or `jvn.bat` on Windows.
 

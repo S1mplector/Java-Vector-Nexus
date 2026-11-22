@@ -1,7 +1,7 @@
 name: Engine Hub release
 on:
   push:
-    branches: ['**']
+    branches: ['**', '!release/linux-deb-engine-v*']
     tags: ['engine-v*']
     paths:
       - '.github/workflows/engine-release.yml'
@@ -9,6 +9,7 @@ on:
       - 'build.gradle.kts'
       - 'modules/**'
       - 'scripts/package-native-hub.py'
+      - 'scripts/verify-linux-hub-deb.sh'
       - 'scripts/ship-engine.py'
       - 'scripts/windows-hub.iss'
   workflow_dispatch:
@@ -95,6 +96,10 @@ jobs:
       - name: Build packages and test the installed Hub
         shell: bash
         run: python scripts/package-native-hub.py "$VERSION" "build/distributions/jvn-engine-hub-lite-$VERSION.jar" build/native-hub --test-install
+      - name: Verify apt install on Ubuntu 22.04 and 24.04
+        if: runner.os == 'Linux'
+        shell: bash
+        run: bash scripts/verify-linux-hub-deb.sh "build/native-hub/jvn-engine-hub-$VERSION-linux-x64.deb" "$VERSION"
       - name: Include the wizard-generated tutorial and menu preview
         if: runner.os == 'Linux'
         shell: bash
@@ -132,7 +137,7 @@ jobs:
         run: |
           set -euo pipefail
           assets=()
-          for target in windows-x64.exe macos-arm64.dmg linux-x64.tar.gz windows-x64.zip macos-arm64.tar.gz; do
+          for target in windows-x64.exe macos-arm64.dmg linux-x64.deb linux-x64.tar.gz windows-x64.zip macos-arm64.tar.gz; do
             file="jvn-engine-hub-$VERSION-$target"
             test -s "$file"
             sha256sum --check --strict "$file.sha256"

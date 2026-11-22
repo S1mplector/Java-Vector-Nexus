@@ -4,6 +4,7 @@ import hashlib
 import os
 import platform
 import plistlib
+import re
 import shutil
 import struct
 import subprocess
@@ -11,6 +12,8 @@ import sys
 import tarfile
 import tempfile
 from pathlib import Path
+
+LINUX_PACKAGE = "jvn-engine-hub"
 
 
 def run(*args, **options):
@@ -32,7 +35,7 @@ def mac_icon(source, work):
     return result
 
 
-def smoke_launcher(binary, extract):
+def smoke_launcher(binary, extract, checkout=None):
     run(binary, "--extract-only", env={**os.environ, "JVN_PACKAGED_ENGINE_ROOT": str(extract)}, timeout=240)
     engines = list(extract.glob("*/*/engine"))
     if len(engines) != 1 or not (engines[0] / "modules/editor/build.gradle.kts").is_file():
@@ -41,7 +44,7 @@ def smoke_launcher(binary, extract):
     editor = Path("modules/editor/src/main")
     sources = editor / "java/com/jvn/editor/ui"
     templates = editor / "resources/com/jvn/editor/templates/new-project/guided-tutorial/scripts"
-    checkout = Path(__file__).resolve().parents[1]
+    checkout = checkout or Path(__file__).resolve().parents[1]
     required = [sources / "RunConsoleView.java", sources / "GameBuildPublisherView.java",
                 sources / "build/BuildArtifactService.java", templates / "story/tutorial_hub.vns"]
     required.extend(path.relative_to(checkout) for path in (checkout / templates / "tutorial").glob("*.vns"))
@@ -78,15 +81,68 @@ def mac_disk_image(app, stem, dest, work):
     return dmg
 
 
-def smoke_installer(installer, work):
+def linux_debian_package(app, icon, version, stem, arch, dest, work):
+    if not shutil.which("dpkg-deb"):
+        raise RuntimeError("Install dpkg-deb to build the Linux package")
+    staging = work / "deb"
+    prefix = Path("opt") / LINUX_PACKAGE
+    deb_arch = {"x64": "amd64", "arm64": "arm64"}[arch]
+    shutil.copytree(app, staging / prefix, symlinks=True)
+
+    binary = staging / "usr/bin" / LINUX_PACKAGE
+    binary.parent.mkdir(parents=True)
+    binary.symlink_to(Path("/") / prefix / "bin" / app.name)
+    desktop = staging / "usr/share/applications" / (LINUX_PACKAGE + ".desktop")
+    desktop.parent.mkdir(parents=True)
+    desktop.write_text(
+        "[Desktop Entry]\n"
+        "Type=Application\n"
+        "Name=JVN Engine Hub\n"
+        "Comment=Launch and manage the Java Vector Nexus editor\n"
+        f"Exec={LINUX_PACKAGE}\n"
+        f"Icon={LINUX_PACKAGE}\n"
+        "Categories=Development;IDE;\n"
+        "Terminal=false\n",
+        encoding="utf-8",
+    )
+    packaged_icon = staging / "usr/share/icons/hicolor/scalable/apps" / (LINUX_PACKAGE + ".svg")
+    packaged_icon.parent.mkdir(parents=True)
+    shutil.copyfile(icon.with_suffix(".svg"), packaged_icon)
+
+    control = staging / "DEBIAN/control"
+    control.parent.mkdir()
+    control.write_text(
+        f"Package: {LINUX_PACKAGE}\n"
+        f"Version: {version}\n"
+        f"Architecture: {deb_arch}\n"
+        "Section: devel\n"
+        "Priority: optional\n"
+        "Maintainer: JVN <141715261+S1mplector@users.noreply.github.com>\n"
+        "Depends: libc6 (>= 2.35), libgcc-s1, libstdc++6, zlib1g, libfreetype6, libfontconfig1,\n"
+        " libx11-6, libxext6, libxi6, libxrender1, libxtst6, libgtk-3-0t64 | libgtk-3-0,\n"
+        " libasound2t64 | libasound2, libgl1, fonts-dejavu-core\n"
+        "Homepage: https://github.com/S1mplector/Java-Vector-Nexus\n"
+        "Description: Java Vector Nexus desktop launcher and editor workspace\n"
+        " Includes a Java 21 development kit and the matching JVN engine source.\n",
+        encoding="utf-8",
+    )
+    package = dest / (stem + ".deb")
+    run("dpkg-deb", "--root-owner-group", "-Zgzip", "--build", staging, package)
+    return package
+
+
+def smoke_installer(installer, work, checkout=None):
     installed = work / "installed"
     if installer.suffix == ".exe":
         silent = ["/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART"]
         run(installer, *silent, "/SP-", f"/DIR={installed}", timeout=300)
         try:
-            smoke_launcher(installed / "JVN Engine Hub.exe", work / "installed-smoke")
+            smoke_launcher(installed / "JVN Engine Hub.exe", work / "installed-smoke", checkout)
         finally:
             run(next(installed.glob("unins*.exe")), *silent, timeout=180)
+    elif installer.suffix == ".deb":
+        run("dpkg-deb", "--extract", installer, installed)
+        smoke_launcher(installed / "opt" / LINUX_PACKAGE / "bin/JVN Engine Hub", work / "installed-smoke", checkout)
     else:
         installed.mkdir()
         mount = work / "mounted"
@@ -98,7 +154,7 @@ def smoke_installer(installer, work):
             run("ditto", mount / "JVN Engine Hub.app", installed / "JVN Engine Hub.app")
         finally:
             run("hdiutil", "detach", mount)
-        smoke_launcher(installed / "JVN Engine Hub.app/Contents/MacOS/JVN Engine Hub", work / "installed-smoke")
+        smoke_launcher(installed / "JVN Engine Hub.app/Contents/MacOS/JVN Engine Hub", work / "installed-smoke", checkout)
 
 
 def write_checksum(artifact):
@@ -113,16 +169,24 @@ def main():
     parser.add_argument("version")
     parser.add_argument("jar", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--source-root", type=Path,
+                        help="source checkout used to build the input jar")
+    parser.add_argument("--deb-only", action="store_true",
+                        help="build just the Debian package on Linux")
     parser.add_argument("--test-install", action="store_true",
-                        help="install and launch the finished EXE or DMG on a clean test machine")
+                        help="smoke test the finished installer")
     args = parser.parse_args()
+    if not re.fullmatch(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", args.version):
+        parser.error("version must be a numeric major.minor.patch")
     jar = args.jar.resolve(strict=True)
-    root = Path(__file__).resolve().parents[1]
+    root = args.source_root.resolve(strict=True) if args.source_root else Path(__file__).resolve().parents[1]
     icons = root / "modules/hub/src/main/resources/com/jvn/hub/images"
     jdk = Path(os.environ["JAVA_HOME"]).resolve(strict=True)
     windows = sys.platform == "win32"
     mac = sys.platform == "darwin"
     system = "windows" if windows else "macos" if mac else "linux"
+    if args.deb_only and not sys.platform.startswith("linux"):
+        parser.error("--deb-only requires Linux")
     arch = {"aarch64": "arm64", "arm64": "arm64", "x86_64": "x64", "amd64": "x64"}[platform.machine().lower()]
     stem = f"jvn-engine-hub-{args.version}-{system}-{arch}"
     destination = args.output.resolve()
@@ -153,21 +217,28 @@ def main():
             info.write_bytes(plistlib.dumps(properties))
             run("codesign", "--force", "--sign", "-", app)
             run("codesign", "--verify", "--deep", "--strict", app)
-        smoke_launcher(binary, work / "smoke")
-        artifacts = []
-        if windows or mac:
-            installer = (windows_installer(app, icon, args.version, stem, arch, products) if windows
-                         else mac_disk_image(app, stem, products, work))
-            if args.test_install:
-                smoke_installer(installer, work)
-            artifacts.append(installer)
+        smoke_launcher(binary, work / "smoke", root)
         if windows:
-            archive = Path(shutil.make_archive(str(products / stem), "zip", image, app.name))
+            installer = windows_installer(app, icon, args.version, stem, arch, products)
+        elif mac:
+            installer = mac_disk_image(app, stem, products, work)
+        elif args.deb_only or shutil.which("dpkg-deb"):
+            installer = linux_debian_package(app, icon, args.version, stem, arch, products, work)
         else:
-            archive = products / (stem + ".tar.gz")
-            with tarfile.open(archive, "w:gz", compresslevel=5) as bundle:
-                bundle.add(app, arcname=app.name)
-        artifacts.append(archive)
+            installer = None
+        artifacts = []
+        if installer is not None:
+            if args.test_install:
+                smoke_installer(installer, work, root)
+            artifacts.append(installer)
+        if not args.deb_only:
+            if windows:
+                archive = Path(shutil.make_archive(str(products / stem), "zip", image, app.name))
+            else:
+                archive = products / (stem + ".tar.gz")
+                with tarfile.open(archive, "w:gz", compresslevel=5) as bundle:
+                    bundle.add(app, arcname=app.name)
+            artifacts.append(archive)
         for artifact in artifacts:
             final = destination / artifact.name
             shutil.move(str(artifact), str(final))
