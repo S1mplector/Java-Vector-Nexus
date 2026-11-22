@@ -77,6 +77,7 @@ For a guided desktop build, follow the [Build workspace walkthrough](../../edito
 - [What's New in JVN 0.7.0](whats-new-0.7.0.md) — licensing, Settings credit, and release verification
 
 - [What's New in JVN 0.9.5](whats-new-0.9.5.md) — tutorial title screen and live script examples
+- [What's New in JVN 0.9.6](whats-new-0.9.6.md) — watercolor tutorial menus and continuous music
 - [What's New in JVN 0.9.4](whats-new-0.9.4.md) — visual layouts, script editing, and the tutorial
 - [What's New in JVN 0.9.3](whats-new-0.9.3.md) — Ginger, choice routing and in-game menus
 - [What's New in JVN 0.9.2](whats-new-0.9.2.md) — Pip tutorial selection and graphite workspace colors

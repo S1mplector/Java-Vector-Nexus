@@ -1,12 +1,21 @@
 titleText=Tutorial
 mainMenuPresentation=dock
-backgroundImage=assets/tutorial/white.png
+backgroundImage=assets/tutorial/ginger-autumn.jpg
+backgroundImageOpacity=0.60
 backgroundColor=#FFFFFF
+# Loop the same track on the title screen and in the lessons at the player's Music volume.
+bgm=assets/tutorial/zephiramusic-lofi-focus-606303.mp3
+continueBgmInGame=true
+# Draw the music spectrum over the artwork and behind the menu. Zero hides it.
+backgroundVisualizerOpacity=0.18
 titleFontFamily=assets/tutorial/CaveatBrush-Regular.ttf
+dockTitleFontFamily=Serif
+dockShowEngineVersion=true
+aeroGlass=true
 titleFontSize=108
 titleColor=#272727
 itemColor=#333333
 itemSelectedColor=#141414
 hintColor=#686868
 accentColor=#545454
-secondaryMenuPresentation=paper
+secondaryMenuPresentation=white

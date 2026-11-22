@@ -49,6 +49,12 @@ public final class WhatsNewCatalog {
   private static Map<String, Release> createReleases() {
     Map<String, Release> releases = new LinkedHashMap<>();
     add(releases, new Release(
+        "v0.9.6", "Ginger's tutorial has a watercolor title screen and looping music.",
+        List.of(new Section("Tutorial menus", "Settings, Save, and Load slide in over the background.", List.of(
+            "The title screen visualizer responds to the lo-fi track.",
+            "The same music keeps playing through the lessons and save loads."),
+            AeroIcon.Kind.NEW_PROJECT, null)), true));
+    add(releases, new Release(
         "v0.9.5", "A repaired tutorial title screen and more examples with Ginger.",
         List.of(
             new Section("Tutorial title screen", "The title and menu buttons have separate space on screen.", List.of(

@@ -62,6 +62,11 @@ public class FxAudioService implements AudioFacade {
   }
 
   @Override
+  public void ensureBgmPlaying(String trackId, boolean loop) {
+    runOnFxThread(() -> AudioFacade.super.ensureBgmPlaying(trackId, loop));
+  }
+
+  @Override
   public void stopBgm() {
     runOnFxThread(this::stopBgmFx);
   }

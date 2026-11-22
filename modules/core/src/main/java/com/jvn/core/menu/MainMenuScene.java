@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.jvn.core.audio.AudioFacade;
+import com.jvn.core.audio.AudioPlaybackStatus;
 import com.jvn.core.engine.Engine;
 import com.jvn.core.localization.Localization;
 import com.jvn.core.menu.config.MenuActionSpec;
@@ -77,11 +78,11 @@ public class MainMenuScene implements Scene {
   }
 
   /**
-   * Configure title screen BGM
+   * Configure title screen BGM. Pass NaN to use the player's music volume.
    */
   public void setTitleBgm(String path, double volume) {
     this.titleBgmPath = path;
-    this.titleBgmVolume = Math.max(0, Math.min(1, volume));
+    this.titleBgmVolume = Double.isNaN(volume) ? volume : Math.max(0, Math.min(1, volume));
   }
 
   public String getTitleBgmPath() { return titleBgmPath; }
@@ -311,7 +312,7 @@ public class MainMenuScene implements Scene {
     }
     if (engine != null) {
       engine.setFixedUpdateStepMs(settingsModel.getPhysicsFixedStepMs(), settingsModel.getPhysicsMaxSubSteps());
-      MenuAudioLifecycle.beginGameplay(audio);
+      MenuAudioLifecycle.beginGameplay(engine, audio);
       if (startIndex > 0) {
         vnScene.preflightState(startIndex);
         vnScene.getState().setCurrentNodeIndex(startIndex);
@@ -332,11 +333,7 @@ public class MainMenuScene implements Scene {
   @Override
   public void update(long deltaMs) {
     // Start title BGM on first update if configured
-    if (!bgmStarted && titleBgmPath != null && audio != null) {
-      audio.setBgmVolume((float) titleBgmVolume);
-      audio.playBgm(titleBgmPath, true);
-      bgmStarted = true;
-    }
+    if (!bgmStarted && audio != null && effectiveTitleBgm() != null) startTitleBgm();
   }
 
   @Override
@@ -344,16 +341,45 @@ public class MainMenuScene implements Scene {
     if (audio == null) return;
     // When no title BGM is configured, ensure gameplay BGM does not leak into menu screens.
     if (titleBgmPath == null || titleBgmPath.isBlank()) {
-      audio.stopBgm();
+      if (sharedMenuBgm() == null) audio.stopBgm();
       bgmStarted = false;
       return;
     }
-    // Resume title BGM if returning to menu
-    if (!bgmStarted) {
-      audio.setBgmVolume((float) titleBgmVolume);
-      audio.playBgm(titleBgmPath, true);
-      bgmStarted = true;
+    if (!bgmStarted) startTitleBgm();
+  }
+
+  @Override
+  public void onResume() {
+    String track = effectiveTitleBgm();
+    if (audio == null || track == null || !bgmStarted) return;
+    if (track.equals(sharedMenuBgm())) {
+      bgmStarted = false;
+      return;
     }
+    var snapshot = audio.snapshot();
+    if ("unknown".equals(snapshot.backendId())) return;
+    if (track.equals(snapshot.bgmTrackId())
+        && (snapshot.bgmStatus() == AudioPlaybackStatus.PLAYING
+            || snapshot.bgmStatus() == AudioPlaybackStatus.LOADING)) return;
+    bgmStarted = false;
+  }
+
+  private void startTitleBgm() {
+    String track = effectiveTitleBgm();
+    float volume = titleBgmPath == null || Double.isNaN(titleBgmVolume)
+        ? settingsModel.getBgmVolume() : (float) titleBgmVolume;
+    audio.setBgmVolume(volume);
+    if (track.equals(sharedMenuBgm())) audio.ensureBgmPlaying(track, true);
+    else audio.playBgm(track, true);
+    bgmStarted = true;
+  }
+
+  private String effectiveTitleBgm() {
+    return titleBgmPath == null || titleBgmPath.isBlank() ? sharedMenuBgm() : titleBgmPath;
+  }
+
+  private String sharedMenuBgm() {
+    return engine == null ? null : engine.getSharedMenuBgmPath();
   }
 
   @Override

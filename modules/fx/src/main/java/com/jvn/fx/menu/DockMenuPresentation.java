@@ -1,15 +1,20 @@
 package com.jvn.fx.menu;
 
+import com.jvn.branding.EngineBranding;
 import com.jvn.core.menu.MainMenuScene;
 import com.jvn.core.menu.config.MenuItemSpec;
 import com.jvn.fx.image.FxImageEffectCache;
+import com.jvn.fx.ui.AeroGlass;
+import com.jvn.fx.ui.FxTextMetrics;
 import com.jvn.fx.ui.ProjectFontResolver;
+import com.jvn.fx.ui.RenderedBoundsListener;
 import java.io.File;
 import java.util.Map;
+import java.util.function.Function;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.VPos;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
-import com.jvn.fx.ui.RenderedBoundsListener;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
@@ -21,7 +26,9 @@ import javafx.scene.text.TextAlignment;
 /** Optional title-screen presentation; shares the ordinary menu actions and selection model. */
 final class DockMenuPresentation implements AutoCloseable {
   private final FxImageEffectCache effects = new FxImageEffectCache();
+  private final FxTextMetrics textMetrics = new FxTextMetrics();
   private Image titleImage;
+  private Image engineWordmark;
   private String titleKey;
   private double[] focus = new double[0];
   private long previousTime;
@@ -76,7 +83,8 @@ final class DockMenuPresentation implements AutoCloseable {
     return -1;
   }
 
-  void render(GraphicsContext gc, MainMenuScene scene, MenuTheme theme, File root, double w, double h, double fontScale, RenderedBoundsListener boundsListener) {
+  void render(GraphicsContext gc, MainMenuScene scene, MenuTheme theme, File root, double w, double h,
+              double fontScale, RenderedBoundsListener boundsListener, Function<String, Image> loadIcon) {
     long now = System.nanoTime();
     double dt = previousTime == 0 ? 1.0 / 60 : Math.min(.05, (now - previousTime) / 1e9);
     previousTime = now;
@@ -90,7 +98,7 @@ final class DockMenuPresentation implements AutoCloseable {
     String title = scene.getDisplayTitle();
     if (title == null || title.isBlank()) title = theme.getTitleText();
     if (title == null || title.isBlank()) title = "JVN";
-    Font font = ProjectFontResolver.resolve(root, theme.getTitleFontFamily(), FontWeight.NORMAL,
+    Font font = ProjectFontResolver.resolve(root, theme.getDockTitleFontFamily(), FontWeight.NORMAL,
         Math.min(theme.getTitleFontSize() * fontScale, w * .085), "SansSerif");
     String key = title + "|" + font + "|" + theme.getTitleColor();
     if (!key.equals(titleKey)) {
@@ -110,18 +118,26 @@ final class DockMenuPresentation implements AutoCloseable {
     double titleWidth = Math.min(w * .9, titleImage.getWidth());
     double titleHeight = titleImage.getHeight() * titleWidth / titleImage.getWidth();
     gc.drawImage(titleFrame, (w - titleWidth) / 2, h * .26, titleWidth, titleHeight);
+    boolean showVersion = theme.showsEngineVersionOnDock();
+    if (showVersion) drawEngineVersion(gc, theme, w, h, fontScale);
     String subtitle = scene.getDisplaySubtitle();
     if (subtitle != null) {
       gc.setFill(theme.getHintColor());
-      gc.setFont(Font.font("SansSerif", Math.min(18, w * .015) * fontScale));
-      gc.fillText(subtitle, w / 2, h * .53, w * .88);
+      gc.setFont(Font.font(theme.interfaceFontFamily("SansSerif"), Math.min(18, w * .015) * fontScale));
+      gc.fillText(subtitle, w / 2, h * (showVersion ? .61 : .53), w * .88);
     }
 
     if (count > 0) {
       Bounds first = bounds(0, count, w, h), last = bounds(count - 1, count, w, h);
-      gc.setFill(Color.WHITE.interpolate(theme.getAccentColor(), .08));
-      gc.fillRoundRect(first.x() - 16, first.y() + 20, last.x() + last.width() - first.x() + 32, first.height() + 2, 32, 32);
+      double trayWidth = last.x() + last.width() - first.x() + 32;
+      if (theme.usesAeroGlass()) {
+        AeroGlass.TRAY.draw(gc, first.x() - 16, first.y() + 20, trayWidth, first.height() + 2, 26);
+      } else {
+        gc.setFill(Color.WHITE.interpolate(theme.getAccentColor(), .08));
+        gc.fillRoundRect(first.x() - 16, first.y() + 20, trayWidth, first.height() + 2, 32, 32);
+      }
     }
+    double layerOpacity = gc.getGlobalAlpha();
     for (int i = 0; i < count; i++) {
       boolean selected = scene.getSelected() == i && scene.isItemEnabled(i);
       double target = selected ? 1 : 0;
@@ -130,25 +146,65 @@ final class DockMenuPresentation implements AutoCloseable {
       double y = b.y() - (theme.isMenuMotion() ? focus[i] * 14 : 0);
       if (boundsListener != null)
         boundsListener.accept(scene.getItem(i).id(), b.x(), y, b.width(), b.height(), 0, 0, w, h);
-      gc.setGlobalAlpha(scene.isItemEnabled(i) ? 1 : .4);
-      gc.setFill(Color.WHITE.interpolate(theme.getAccentColor(), .20));
-      gc.fillRoundRect(b.x(), y + 5, b.width(), b.height(), 20, 20);
-      gc.setFill(Color.WHITE.interpolate(Color.WHITE.interpolate(theme.getAccentColor(), .12), focus[i]));
-      gc.fillRoundRect(b.x(), y, b.width(), b.height(), 20, 20);
-      gc.setStroke(Color.WHITE.interpolate(theme.getAccentColor(), .24).interpolate(theme.getAccentColor(), focus[i]));
-      gc.setLineWidth(selected ? 2 : 1);
-      gc.strokeRoundRect(b.x(), y, b.width(), b.height(), 20, 20);
+      gc.setGlobalAlpha(layerOpacity * (scene.isItemEnabled(i) ? 1 : .4));
+      if (theme.usesAeroGlass()) {
+        (selected ? AeroGlass.FOCUSED : AeroGlass.BUTTON).draw(gc, b.x(), y, b.width(), b.height(), 16);
+      } else {
+        gc.setFill(Color.WHITE.interpolate(theme.getAccentColor(), .20));
+        gc.fillRoundRect(b.x(), y + 5, b.width(), b.height(), 20, 20);
+        gc.setFill(Color.WHITE.interpolate(Color.WHITE.interpolate(theme.getAccentColor(), .12), focus[i]));
+        gc.fillRoundRect(b.x(), y, b.width(), b.height(), 20, 20);
+        gc.setStroke(Color.WHITE.interpolate(theme.getAccentColor(), .24).interpolate(theme.getAccentColor(), focus[i]));
+        gc.setLineWidth(selected ? 2 : 1);
+        gc.strokeRoundRect(b.x(), y, b.width(), b.height(), 20, 20);
+      }
       Color ink = selected ? theme.getItemSelectedColor() : theme.getItemColor();
       gc.setStroke(ink); gc.setFill(ink); gc.setLineWidth(1.8);
       double cx = b.x() + b.width() / 2, cy = y + b.height() * .33;
-      icon(gc, scene.getMenuItemSpec(i).id(), cx, cy);
-      gc.setFont(Font.font("SansSerif", FontWeight.MEDIUM, Math.min(18 * fontScale, b.width() * .15)));
+      MenuItemSpec item = scene.getMenuItemSpec(i);
+      String iconPath = item.iconPath();
+      if (iconPath == null && theme.isTutorialDock()) iconPath = MenuTheme.tutorialDockIcon(item.id());
+      Image customIcon = iconPath == null ? null : loadIcon.apply(iconPath);
+      if (customIcon != null) {
+        double size = Math.min(42.0, Math.min(b.height() * .44, b.width() * .36));
+        double scale = size / Math.max(customIcon.getWidth(), customIcon.getHeight());
+        double iw = customIcon.getWidth() * scale, ih = customIcon.getHeight() * scale;
+        gc.drawImage(customIcon, cx - iw / 2, cy - ih / 2, iw, ih);
+      } else {
+        icon(gc, item.id(), cx, cy);
+      }
+      gc.setFont(Font.font(theme.interfaceFontFamily("SansSerif"), FontWeight.MEDIUM,
+          Math.min(18 * fontScale, b.width() * .15)));
       gc.fillText(scene.getDisplayItems()[i], cx, y + b.height() * .78, b.width() - 16);
     }
-    gc.setGlobalAlpha(1);
-    gc.setFill(theme.getHintColor()); gc.setFont(Font.font("SansSerif", 13 * fontScale));
+    gc.setGlobalAlpha(layerOpacity);
+    gc.setFill(theme.getHintColor()); gc.setFont(Font.font(theme.interfaceFontFamily("SansSerif"), 13 * fontScale));
     String hint = scene.getDisplayHints();
     if (hint != null) gc.fillText(hint, w / 2, h * .94, w * .9);
+    gc.restore();
+  }
+
+  private void drawEngineVersion(GraphicsContext gc, MenuTheme theme, double w, double h, double fontScale) {
+    if (engineWordmark == null) engineWordmark = SwingFXUtils.toFXImage(EngineBranding.logo(), null);
+    String version = "v" + EngineBranding.version();
+    double size = Math.min(16 * fontScale, Math.min(w * .03, h * .038));
+    Font font = ProjectFontResolver.resolve(null, theme.interfaceFontFamily("SansSerif"), FontWeight.MEDIUM, size, "SansSerif");
+    double prefixWidth = textMetrics.width("For", font);
+    double versionWidth = textMetrics.width(version, font);
+    double logoWidth = size * 4.7;
+    double logoHeight = logoWidth * engineWordmark.getHeight() / engineWordmark.getWidth();
+    double gap = size * .35;
+    double left = (w - prefixWidth - logoWidth - versionWidth - 2 * gap) / 2;
+    double centerY = h * .545;
+
+    gc.save();
+    gc.setFont(font);
+    gc.setFill(theme.getTitleColor());
+    gc.setTextBaseline(VPos.CENTER);
+    gc.fillText("For", left + prefixWidth / 2, centerY);
+    double logoX = left + prefixWidth + gap;
+    gc.drawImage(engineWordmark, logoX, centerY - logoHeight / 2, logoWidth, logoHeight);
+    gc.fillText(version, logoX + logoWidth + gap + versionWidth / 2, centerY);
     gc.restore();
   }
 
@@ -162,6 +218,6 @@ final class DockMenuPresentation implements AutoCloseable {
     }
   }
 
-  void clear() { titleImage = null; titleKey = null; effects.clear(); previousTime = 0; }
+  void clear() { titleImage = null; titleKey = null; effects.clear(); textMetrics.clear(); previousTime = 0; }
   @Override public void close() { clear(); effects.close(); }
 }

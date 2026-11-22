@@ -5,8 +5,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.function.Consumer;
 
+import com.jvn.branding.SvgRasterizer;
 import com.jvn.fx.RenderThreadGuard;
 import com.jvn.core.assets.AssetCatalog;
 import com.jvn.core.assets.BoundedImageCache;
@@ -19,6 +24,7 @@ import com.jvn.core.menu.MainMenuScene;
 import com.jvn.core.menu.PauseMenuScene;
 import com.jvn.core.menu.SaveMenuScene;
 import com.jvn.core.menu.SettingsScene;
+import com.jvn.core.menu.config.MenuActionType;
 import com.jvn.core.menu.config.MenuItemSpec;
 import com.jvn.core.menu.config.MenuLayoutSpec;
 import com.jvn.core.menu.config.MenuStyleSpec;
@@ -26,11 +32,15 @@ import com.jvn.core.menu.gallery.GalleryEntry;
 import com.jvn.core.menu.gallery.GalleryScene;
 import com.jvn.core.menu.gallery.MusicRoomEntry;
 import com.jvn.core.menu.gallery.MusicRoomScene;
+import com.jvn.core.scene.Scene;
 import com.jvn.core.ui.BoundsPointCodec;
+import com.jvn.core.vn.VnScene;
 import com.jvn.fx.ui.FxTextMetrics;
+import com.jvn.fx.ui.AeroGlass;
 import com.jvn.fx.ui.ProjectFontResolver;
 
 import com.jvn.fx.ui.RenderedBoundsListener;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
@@ -61,10 +71,13 @@ public class MenuRenderer {
 
   private final GraphicsContext gc;
   private final DockMenuPresentation dock = new DockMenuPresentation();
+  private final TutorialMenuTransition tutorialTransition = new TutorialMenuTransition();
+  private MainMenuScene tutorialTitle;
   private MenuTheme theme;
   private static final long IMAGE_CACHE_BUDGET_BYTES = 48L * 1024L * 1024L;
   private final BoundedImageCache<Image> imageCache =
       new BoundedImageCache<>(128, IMAGE_CACHE_BUDGET_BYTES, FxImageMemory::estimatedBytes);
+  private final Set<String> failedSvgIcons = new HashSet<>();
   private final FxTextMetrics textMetrics = new FxTextMetrics();
   private File projectRoot;
   private double activeUiFontScale = 1.0;
@@ -87,32 +100,51 @@ public class MenuRenderer {
   public MenuRenderer(GraphicsContext gc, MenuTheme theme) { this.gc = gc; this.theme = (theme == null ? MenuTheme.defaults() : theme); }
   public void setTheme(MenuTheme t) {
     this.theme = (t == null ? MenuTheme.defaults() : t);
+    resetTutorialMenuTransition();
+    tutorialTitle = null;
     textMetrics.clear();
     dock.clear();
   }
   public MenuTheme getTheme() { return theme; }
   public void setProjectRoot(File root) {
-    if (!java.util.Objects.equals(projectRoot, root)) imageCache.clear();
+    if (!java.util.Objects.equals(projectRoot, root)) clearImageCache();
     this.projectRoot = root;
     textMetrics.clear();
     dock.clear();
   }
   public void setUiFontScale(double scale) {
     if (!Double.isFinite(scale)) scale = 1.0;
-    activeUiFontScale = Math.max(0.75, Math.min(2.0, scale));
+    double nextScale = Math.clamp(scale, 0.75, 2.0);
+    if (activeUiFontScale == nextScale) return;
+    activeUiFontScale = nextScale;
     textMetrics.clear();
     dock.clear();
   }
 
   public void renderMainMenu(MainMenuScene scene, double w, double h) {
+    renderMainMenu(scene, w, h, null);
+  }
+
+  public void renderMainMenu(MainMenuScene scene, double w, double h, Runnable drawTitleBackgroundLayer) {
     RenderThreadGuard.requireFxThread("MenuRenderer.renderMainMenu");
-    MenuLayoutSpec layout = scene != null ? scene.getMenuLayout() : null;
     MenuStyleSpec screenStyle = scene != null ? scene.getDefaultMenuStyle() : null;
     String screenBg = scene != null && scene.getMenuScreen() != null ? scene.getMenuScreen().backgroundAsset() : null;
-    drawScreenBackground(w, h, screenStyle, true, screenBg);
+    if (isTitleMenu(scene)) {
+      drawTitleBackdrop(w, h, screenStyle, screenBg);
+      if (drawTitleBackgroundLayer != null && theme.isMenuMotion()) drawTitleBackgroundLayer.run();
+    } else if (theme.usesWhiteSubmenus()) {
+      drawPaperBackdrop(w, h, false);
+    } else {
+      drawScreenBackground(w, h, screenStyle, true, screenBg);
+    }
+    drawMainMenuContents(scene, w, h);
+  }
 
+  private void drawMainMenuContents(MainMenuScene scene, double w, double h) {
+    MenuLayoutSpec layout = scene != null ? scene.getMenuLayout() : null;
+    MenuStyleSpec screenStyle = scene != null ? scene.getDefaultMenuStyle() : null;
     if (usesDock(scene)) {
-      dock.render(gc, scene, theme, projectRoot, w, h, activeUiFontScale, boundsListener);
+      dock.render(gc, scene, theme, projectRoot, w, h, activeUiFontScale, boundsListener, this::loadMenuIcon);
       return;
     }
 
@@ -163,9 +195,13 @@ public class MenuRenderer {
   }
 
   public void renderPauseMenu(PauseMenuScene scene, double w, double h) {
+    drawPauseMenu(scene, w, h, false);
+  }
+
+  private void drawPauseMenu(PauseMenuScene scene, double w, double h, boolean overlay) {
     MenuLayoutSpec layout = scene != null ? scene.getMenuLayout() : null;
     MenuStyleSpec screenStyle = scene != null ? scene.getDefaultMenuStyle() : null;
-    if (theme.usesPaperMenus()) drawPaperBackdrop(w, h);
+    if (theme.usesPaperMenus()) drawPaperBackdrop(w, h, overlay || scene != null && scene.getVnScene() != null);
     else drawGameplayMenuBackdrop(w, h);
 
     String title = scene != null ? scene.getDisplayTitle() : "Paused";
@@ -195,10 +231,14 @@ public class MenuRenderer {
   }
 
   public void renderSaveMenu(SaveMenuScene scene, double w, double h) {
+    drawSaveMenu(scene, w, h, false);
+  }
+
+  private void drawSaveMenu(SaveMenuScene scene, double w, double h, boolean overlay) {
     MenuLayoutSpec layout = scene != null ? scene.getMenuLayout() : null;
     MenuStyleSpec screenStyle = scene != null ? scene.getDefaultMenuStyle() : null;
     String screenBg = scene != null && scene.getMenuScreen() != null ? scene.getMenuScreen().backgroundAsset() : null;
-    if (theme.usesPaperMenus()) drawPaperBackdrop(w, h);
+    if (theme.usesPaperMenus()) drawPaperBackdrop(w, h, overlay || scene != null && scene.getCurrentVnScene() != null);
     else if (scene != null && scene.getCurrentVnScene() != null) drawGameplayMenuBackdrop(w, h);
     else drawScreenBackground(w, h, screenStyle, false, screenBg);
     String title = scene != null ? scene.getDisplayTitle() : Localization.t("save.title");
@@ -249,10 +289,14 @@ public class MenuRenderer {
   }
 
   public void renderLoadMenu(LoadMenuScene scene, double w, double h) {
+    drawLoadMenu(scene, w, h, false);
+  }
+
+  private void drawLoadMenu(LoadMenuScene scene, double w, double h, boolean overlay) {
     MenuLayoutSpec layout = scene != null ? scene.getMenuLayout() : null;
     MenuStyleSpec screenStyle = scene != null ? scene.getDefaultMenuStyle() : null;
     String screenBg = scene != null && scene.getMenuScreen() != null ? scene.getMenuScreen().backgroundAsset() : null;
-    if (theme.usesPaperMenus()) drawPaperBackdrop(w, h);
+    if (theme.usesPaperMenus()) drawPaperBackdrop(w, h, overlay || scene != null && scene.getGameplayVnScene() != null);
     else if (scene != null && scene.getGameplayVnScene() != null) drawGameplayMenuBackdrop(w, h);
     else drawScreenBackground(w, h, screenStyle, false, screenBg);
     String title = scene != null ? scene.getDisplayTitle() : Localization.t("load.title");
@@ -271,8 +315,8 @@ public class MenuRenderer {
       int configuredVisible = parseItemExtraInt(template, "visibleSlotCount", 0);
       int drawSlots = Math.max(emptySlots, configuredVisible);
       if (theme.usesPaperMenus()) {
-        gc.setFont(Font.font("SansSerif", Math.min(20, h * .035)));
-        gc.setFill(Color.web("#504a45"));
+        gc.setFont(Font.font(theme.interfaceFontFamily("SansSerif"), Math.min(20, h * .035)));
+        gc.setFill(theme.usesWhiteSubmenus() ? Color.gray(.28) : Color.web("#504a45"));
         gc.fillText(Localization.t("load.no_saves"), w * .40, h * .30);
       } else if (drawSlots > 0 && scene != null) {
         String[] items = new String[drawSlots];
@@ -372,8 +416,9 @@ public class MenuRenderer {
     MenuLayoutSpec layout = scene != null ? scene.getMenuLayout() : null;
     MenuStyleSpec screenStyle = scene != null ? scene.getDefaultMenuStyle() : null;
     MenuStyleSpec entryStyle = scene != null ? scene.getEntryStyle() : screenStyle;
-    String screenBg = scene != null && scene.getMenuScreen() != null ? scene.getMenuScreen().backgroundAsset() : null;
-    drawGameplayMenuBackdrop(w, h);
+    boolean white = theme.usesWhiteSubmenus();
+    if (white) drawPaperBackdrop(w, h, scene != null && scene.getVnScene() != null);
+    else drawGameplayMenuBackdrop(w, h);
 
     String title = scene != null ? scene.getDisplayTitle() : Localization.t("history.title");
     String subtitle = scene != null ? scene.getDisplaySubtitle() : null;
@@ -386,22 +431,25 @@ public class MenuRenderer {
     double lineHeight = layout != null && layout.lineHeight() > 0 ? layout.lineHeight() : 34.0;
     Rect content = resolveHistoryContentRect(layout, w, h, titleFont, subtitleFont, subtitle);
 
-    gc.setFill(Color.rgb(8, 12, 20, 0.74));
-    gc.fillRoundRect(content.x() - 12, content.y() - 10, content.w() + 24, content.h() + 20, 14, 14);
-    gc.setStroke(Color.rgb(215, 225, 245, 0.18));
-    gc.setLineWidth(1.2);
-    gc.strokeRoundRect(content.x() - 12, content.y() - 10, content.w() + 24, content.h() + 20, 14, 14);
+    if (!white) {
+      gc.setFill(Color.rgb(8, 12, 20, 0.74));
+      gc.fillRoundRect(content.x() - 12, content.y() - 10, content.w() + 24, content.h() + 20, 14, 14);
+      gc.setStroke(Color.rgb(215, 225, 245, 0.18));
+      gc.setLineWidth(1.2);
+      gc.strokeRoundRect(content.x() - 12, content.y() - 10, content.w() + 24, content.h() + 20, 14, 14);
+    }
 
     List<com.jvn.core.vn.VnHistory.HistoryEntry> entries = scene != null ? scene.getEntries() : List.of();
     int linesPerPage = scene != null ? scene.linesPerPage(h) : Math.max(1, (int) Math.floor(content.h() / lineHeight));
     int total = entries.size();
     int maxOffset = Math.max(0, total - linesPerPage);
     int effectiveOffset = Math.min(Math.max(0, scene != null ? scene.getScrollOffset() : 0), maxOffset);
-    int startIdx = Math.max(0, total - 1 - effectiveOffset);
+    int startIdx = total - 1 - effectiveOffset;
 
     gc.setFont(entryFont);
     Color entryColor = resolveItemColor(entryStyle, false, true);
-    Color emptyColor = parseColor(entryStyle != null ? entryStyle.itemDisabledColor() : null, Color.rgb(160, 170, 190, 0.9));
+    Color emptyColor = parseColor(entryStyle != null ? entryStyle.itemDisabledColor() : null,
+        white ? Color.gray(.4) : Color.rgb(160, 170, 190, 0.9));
     int drawn = 0;
     for (int i = startIdx; i >= 0 && drawn < linesPerPage; i--) {
       com.jvn.core.vn.VnHistory.HistoryEntry entry = entries.get(i);
@@ -409,8 +457,10 @@ public class MenuRenderer {
       String line = speakerPrefix + entry.getText();
       String truncated = truncateToWidth(line, Math.max(40, content.w() - 18), entryFont);
       double rowY = content.y() + drawn * lineHeight;
-      gc.setFill((drawn % 2 == 0) ? Color.rgb(255, 255, 255, 0.055) : Color.rgb(255, 255, 255, 0.03));
-      gc.fillRoundRect(content.x() - 4, rowY + 2, content.w() + 8, Math.max(18, lineHeight - 6), 8, 8);
+      if (!white) {
+        gc.setFill((drawn % 2 == 0) ? Color.rgb(255, 255, 255, 0.055) : Color.rgb(255, 255, 255, 0.03));
+        gc.fillRoundRect(content.x() - 4, rowY + 2, content.w() + 8, Math.max(18, lineHeight - 6), 8, 8);
+      }
       String shadowRaw = entryStyle != null ? entryStyle.itemShadowColor() : null;
       if (shadowRaw != null && !shadowRaw.isBlank()) {
         Color shadow = parseColor(shadowRaw, null);
@@ -437,13 +487,14 @@ public class MenuRenderer {
       double trackY = content.y();
       double trackW = 6;
       double trackH = content.h();
-      gc.setFill(Color.rgb(255, 255, 255, 0.12));
+      gc.setFill(white ? Color.gray(.9) : Color.rgb(255, 255, 255, 0.12));
       gc.fillRoundRect(trackX, trackY, trackW, trackH, 6, 6);
       double thumbFrac = Math.max(0.08, Math.min(1.0, (double) linesPerPage / (double) total));
       double thumbH = trackH * thumbFrac;
       double posFrac = maxOffset == 0 ? 0.0 : (double) effectiveOffset / (double) maxOffset;
       double thumbY = trackY + (trackH - thumbH) * posFrac;
-      gc.setFill(parseColor(entryStyle != null ? entryStyle.itemSelectedColor() : null, Color.rgb(150, 200, 255, 0.8)));
+      gc.setFill(parseColor(entryStyle != null ? entryStyle.itemSelectedColor() : null,
+          white ? Color.gray(.4) : Color.rgb(150, 200, 255, 0.8)));
       gc.fillRoundRect(trackX, thumbY, trackW, thumbH, 4, 4);
     }
 
@@ -463,10 +514,14 @@ public class MenuRenderer {
 
   public void renderSettings(SettingsScene scene, double w, double h) {
     if (scene != null) setUiFontScale(scene.getUiFontScale());
+    drawSettings(scene, w, h, false);
+  }
+
+  private void drawSettings(SettingsScene scene, double w, double h, boolean overlay) {
     MenuLayoutSpec layout = scene != null ? scene.getMenuLayout() : null;
     MenuStyleSpec screenStyle = scene != null ? scene.getDefaultMenuStyle() : null;
     String screenBg = scene != null && scene.getMenuScreen() != null ? scene.getMenuScreen().backgroundAsset() : null;
-    if (theme.usesPaperMenus()) drawPaperBackdrop(w, h);
+    if (theme.usesPaperMenus()) drawPaperBackdrop(w, h, overlay || scene != null && scene.getGameplayVnScene() != null);
     else if (scene != null && scene.getGameplayVnScene() != null) drawGameplayMenuBackdrop(w, h);
     else drawScreenBackground(w, h, screenStyle, false, screenBg);
     String title = scene != null ? scene.getDisplayTitle() : Localization.t("settings.title");
@@ -509,14 +564,89 @@ public class MenuRenderer {
     drawHints(hints, w, h, layout != null ? layout.hintsBottomMargin() : 20.0, screenStyle, layout);
   }
 
+  public boolean usesTutorialMenu(Scene scene) {
+    return theme.isTutorialDock() && theme.usesAeroGlass()
+        && (scene instanceof MainMenuScene main && isTitleMenu(main)
+            || scene instanceof PauseMenuScene || isTutorialPanel(scene));
+  }
+
+  public boolean acceptsTutorialMenuPointer(Scene scene) {
+    return !usesTutorialMenu(scene) || tutorialTransition.acceptsPointer(scene);
+  }
+
+  public void resetTutorialMenuTransition() {
+    tutorialTransition.reset();
+  }
+
+  public void renderTutorialMenu(Scene scene, double w, double h, long now,
+      Consumer<VnScene> drawGameplay, Consumer<MainMenuScene> drawSpectrum) {
+    RenderThreadGuard.requireFxThread("MenuRenderer.renderTutorialMenu");
+    VnScene gameplay = tutorialGameplayUnderlay(scene);
+    Scene previous = tutorialTransition.active();
+    boolean blend = theme.isMenuMotion() && previous != null && tutorialGameplayUnderlay(previous) == gameplay;
+    tutorialTransition.show(scene, now, blend, theme.isMenuMotion() && (blend || isTutorialPanel(scene)));
+
+    if (scene instanceof MainMenuScene main) tutorialTitle = main;
+    if (scene instanceof SettingsScene settings) setUiFontScale(settings.getUiFontScale());
+    if (gameplay != null) {
+      drawGameplay.accept(gameplay);
+    } else {
+      MenuStyleSpec titleStyle = tutorialTitle != null ? tutorialTitle.getDefaultMenuStyle() : null;
+      String artwork = tutorialTitle != null ? tutorialTitle.getMenuScreen().backgroundAsset() : null;
+      drawTitleBackdrop(w, h, titleStyle, artwork);
+      if (tutorialTitle != null && theme.isMenuMotion()) drawSpectrum.accept(tutorialTitle);
+    }
+
+    tutorialTransition.draw(now, (layer, visibility) -> {
+      boolean panel = isTutorialPanel(layer);
+      // Leave a little space between the title fading and the controls becoming legible.
+      double opacity = panel ? Math.max(0.0, (visibility - .12) / .88) : Math.pow(visibility, 4);
+      if (opacity == 0.0) return;
+      gc.save();
+      gc.setGlobalAlpha(gc.getGlobalAlpha() * opacity);
+      if (panel) gc.translate(-w * .27 * (1.0 - visibility), 0);
+      switch (layer) {
+        case MainMenuScene main -> drawMainMenuContents(main, w, h);
+        case PauseMenuScene pause -> drawPauseMenu(pause, w, h, true);
+        case SettingsScene settings -> drawSettings(settings, w, h, true);
+        case SaveMenuScene save -> drawSaveMenu(save, w, h, true);
+        case LoadMenuScene load -> drawLoadMenu(load, w, h, true);
+        default -> { }
+      }
+      gc.restore();
+    });
+  }
+
+  private static boolean isTutorialPanel(Scene scene) {
+    return scene instanceof SettingsScene || scene instanceof SaveMenuScene || scene instanceof LoadMenuScene;
+  }
+
+  private static VnScene tutorialGameplayUnderlay(Scene scene) {
+    return switch (scene) {
+      case PauseMenuScene pause -> pause.getVnScene();
+      case SettingsScene settings -> settings.getGameplayVnScene();
+      case SaveMenuScene save -> save.getCurrentVnScene();
+      case LoadMenuScene load -> load.getGameplayVnScene();
+      case null, default -> null;
+    };
+  }
+
   private void clear(double w, double h) {
     gc.setFill(theme.getBackgroundColor());
     gc.fillRect(0, 0, w, h);
   }
 
-  private void drawPaperBackdrop(double w, double h) {
-    gc.setFill(Color.web("#fcfaf7"));
+  private void drawPaperBackdrop(double w, double h, boolean hasUnderlay) {
+    if (theme.usesAeroGlass()) {
+      if (!hasUnderlay) drawTitleBackdrop(w, h, null, null);
+      double inset = Math.min(w, h) * .024;
+      AeroGlass.PANEL.draw(gc, inset, inset, w - 2 * inset, h - 2 * inset, 20);
+      return;
+    }
+    boolean white = theme.usesWhiteSubmenus();
+    gc.setFill(white ? Color.WHITE : Color.web("#fcfaf7"));
     gc.fillRect(0, 0, w, h);
+    if (white) return;
     gc.setFill(Color.web("#eee9e2"));
     gc.fillRect(0, 0, w * .32, h * .89);
     Image portrait = loadImage(theme.getSecondaryMenuPortrait());
@@ -530,12 +660,15 @@ public class MenuRenderer {
   }
 
   private void drawPaperTitle(String title, double w, double h) {
-    gc.setFill(Color.web("#302d2a"));
-    gc.setFont(ProjectFontResolver.resolve(projectRoot, theme.getTitleFontFamily(), FontWeight.NORMAL,
+    boolean white = theme.usesWhiteSubmenus();
+    gc.setFill(white ? Color.gray(.15) : Color.web("#302d2a"));
+    gc.setFont(ProjectFontResolver.resolve(projectRoot, theme.interfaceFontFamily(theme.getTitleFontFamily()), FontWeight.NORMAL,
         Math.min(w * .06, h * .095), "Serif"));
     if (title != null) gc.fillText(title, w * .035, h * .15, w * .26);
-    gc.setFill(Color.web("#a6644d"));
-    gc.fillRect(w * .035, h * .185, w * .06, 3);
+    if (!white) {
+      gc.setFill(Color.web("#a6644d"));
+      gc.fillRect(w * .035, h * .185, w * .06, 3);
+    }
   }
 
   private void drawGameplayMenuBackdrop(double w, double h) {
@@ -568,8 +701,17 @@ public class MenuRenderer {
     }
   }
 
-  private void drawScreenBackground(double w, double h, MenuStyleSpec style, boolean allowThemeImageFallback) {
-    drawScreenBackground(w, h, style, allowThemeImageFallback, null);
+  private void drawTitleBackdrop(double w, double h, MenuStyleSpec style, String screenAsset) {
+    Image art = loadImage(theme.fadedTitleImage(screenAsset));
+    if (art == null) {
+      drawScreenBackground(w, h, style, true, screenAsset);
+      return;
+    }
+    clear(w, h);
+    gc.save();
+    gc.setGlobalAlpha(gc.getGlobalAlpha() * theme.getBackgroundImageOpacity());
+    drawImageCover(art, new Rect(0, 0, w, h));
+    gc.restore();
   }
 
   private void drawScreenBackground(double w, double h, MenuStyleSpec style, boolean allowThemeImageFallback, String screenBgAsset) {
@@ -688,9 +830,10 @@ public class MenuRenderer {
     
     // Draw shadow if enabled
     if (theme.isLogoShadow()) {
-      gc.setGlobalAlpha(0.4);
+      double previousAlpha = gc.getGlobalAlpha();
+      gc.setGlobalAlpha(previousAlpha * 0.4);
       gc.drawImage(img, x + 4, y + 4, logoW, logoH);
-      gc.setGlobalAlpha(1.0);
+      gc.setGlobalAlpha(previousAlpha);
     }
     
     gc.drawImage(img, x, y, logoW, logoH);
@@ -749,6 +892,32 @@ public class MenuRenderer {
     return null;
   }
 
+  private Image loadMenuIcon(String path) {
+    if (path == null || !path.toLowerCase(Locale.ROOT).endsWith(".svg")) return loadImage(path);
+    Image cached = imageCache.get(path);
+    if (cached != null) return cached;
+    if (failedSvgIcons.contains(path)) return null;
+    try {
+      var url = new AssetCatalog().url(AssetType.IMAGE, path);
+      if (url == null && projectRoot != null) {
+        File file = new File(projectRoot, path);
+        if (file.isFile()) url = file.toURI().toURL();
+      }
+      if (url == null) url = getClass().getClassLoader().getResource(path);
+      if (url != null) {
+        try (var input = url.openStream()) {
+          Image icon = SwingFXUtils.toFXImage(SvgRasterizer.render(input, 144), null);
+          imageCache.put(path, icon);
+          return icon;
+        }
+      }
+    } catch (Exception ex) {
+      log.warn("Could not load SVG menu icon {}: {}", path, ex.getMessage());
+    }
+    failedSvgIcons.add(path);
+    return null;
+  }
+
   private List<String> buildFallbackImageCandidates(String originalPath) {
     List<String> out = new ArrayList<>();
     String lower = originalPath.toLowerCase();
@@ -774,6 +943,7 @@ public class MenuRenderer {
   }
 
   public void clearImageCache() {
+    failedSvgIcons.clear();
     imageCache.clear();
     dock.clear();
   }
@@ -917,10 +1087,13 @@ public class MenuRenderer {
         Image buttonBg = loadImage(backgroundAsset);
         if (buttonBg != null) {
           gc.drawImage(buttonBg, rect.x(), rect.y(), rect.w(), rect.h());
+        } else if (theme.usesAeroGlass()) {
+          (sel ? AeroGlass.FOCUSED : AeroGlass.BUTTON).draw(gc, rect.x(), rect.y(), rect.w(), rect.h(), 9);
         } else if (theme.usesPaperMenus()) {
-          gc.setFill(sel ? Color.web("#eee3d9") : Color.WHITE);
+          boolean white = theme.usesWhiteSubmenus();
+          gc.setFill(sel && !white ? Color.web("#eee3d9") : Color.WHITE);
           gc.fillRoundRect(rect.x(), rect.y(), rect.w(), rect.h(), 8, 8);
-          gc.setStroke(sel ? Color.web("#99634b") : Color.web("#d8d1c9"));
+          gc.setStroke(white ? Color.gray(sel ? .32 : .82) : (sel ? Color.web("#99634b") : Color.web("#d8d1c9")));
           gc.setLineWidth(sel ? 1.6 : 1);
           gc.strokeRoundRect(rect.x(), rect.y(), rect.w(), rect.h(), 8, 8);
         } else {
@@ -948,14 +1121,14 @@ public class MenuRenderer {
         }
       }
 
-      Image iconImage = item != null ? loadImage(item.iconPath()) : null;
+      Image iconImage = item != null ? loadMenuIcon(item.iconPath()) : null;
       double iconSize = 0;
       if (iconImage != null) {
         iconSize = clamp(rect.h() * 0.56, 12, 36);
         double iconX = rect.x() + 10;
         double iconY = rect.y() + (rect.h() - iconSize) / 2.0;
         double previousAlpha = gc.getGlobalAlpha();
-        gc.setGlobalAlpha(isEnabled ? 0.98 : 0.55);
+        gc.setGlobalAlpha(previousAlpha * (isEnabled ? 0.98 : 0.55));
         gc.drawImage(iconImage, iconX, iconY, iconSize, iconSize);
         gc.setGlobalAlpha(previousAlpha);
       }
@@ -1065,8 +1238,19 @@ public class MenuRenderer {
   }
 
   private boolean usesDock(MainMenuScene scene) {
-    return scene != null && theme.isDockPresentation()
-        && scene.getMenuId().equals(scene.getMenuProfile().defaultScreenId());
+    return scene != null && theme.isDockPresentation() && isTitleMenu(scene);
+  }
+
+  public boolean hasTutorialDockSettings(MainMenuScene scene) {
+    if (!theme.isTutorialDock() || !usesDock(scene)) return false;
+    for (int i = 0; i < scene.getItemCount(); i++) {
+      if (scene.isItemEnabled(i) && scene.getItem(i).action().type() == MenuActionType.SETTINGS_MENU) return true;
+    }
+    return false;
+  }
+
+  public boolean isTitleMenu(MainMenuScene scene) {
+    return scene == null || scene.getMenuId().equals(scene.getMenuProfile().defaultScreenId());
   }
 
   public int getHoverIndexForMainMenu(MainMenuScene scene, double w, double h, double mouseX, double mouseY) {
@@ -1737,7 +1921,7 @@ public class MenuRenderer {
       Rect itemRect = resolveItemRect(i, visibleDrawCount, specs[i], specs, layout, 0, listAreaWidth, h);
       Rect iconRect = resolveLoadSlotFavoriteIconRect(template, itemRect);
       double prevAlpha = gc.getGlobalAlpha();
-      gc.setGlobalAlpha(scene.isFavoriteAt(globalIndex) ? 1.0 : 0.28);
+      gc.setGlobalAlpha(prevAlpha * (scene.isFavoriteAt(globalIndex) ? 1.0 : 0.28));
       gc.drawImage(slotFavoriteIcon, iconRect.x(), iconRect.y(), iconRect.w(), iconRect.h());
       gc.setGlobalAlpha(prevAlpha);
     }
@@ -1951,9 +2135,11 @@ public class MenuRenderer {
           drawImageCover(placeholder, previewRect);
         }
       } else {
-        gc.setFill(theme.usesPaperMenus() ? Color.web("#e5ded6") : Color.rgb(32, 36, 48, 0.95));
+        gc.setFill(theme.usesWhiteSubmenus() ? Color.WHITE
+            : theme.usesPaperMenus() ? Color.web("#e5ded6") : Color.rgb(32, 36, 48, 0.95));
         gc.fillRoundRect(previewRect.x(), previewRect.y(), previewRect.w(), previewRect.h(), 7, 7);
-        gc.setFill(theme.usesPaperMenus() ? Color.web("#544b44") : Color.rgb(205, 212, 225, 0.85));
+        gc.setFill(theme.usesWhiteSubmenus() ? Color.gray(.32)
+            : theme.usesPaperMenus() ? Color.web("#544b44") : Color.rgb(205, 212, 225, 0.85));
         gc.setFont(theme.getHintFont());
         String txt = firstNonBlank(
             extra(itemSpec, "slotPreviewFallbackText"),
@@ -2188,7 +2374,9 @@ public class MenuRenderer {
     if (trackImage != null && !trackImage.isError()) {
       gc.drawImage(trackImage, x, y, w, trackH);
     } else {
-      gc.setFill(theme.usesPaperMenus() ? Color.web("#dbd3ca") : Color.rgb(255, 255, 255, 0.15));
+      gc.setFill(theme.usesAeroGlass() ? Color.rgb(117, 160, 190, .54)
+          : theme.usesWhiteSubmenus() ? Color.gray(.84)
+          : theme.usesPaperMenus() ? Color.web("#dbd3ca") : Color.rgb(255, 255, 255, 0.15));
       gc.fillRoundRect(x, y, w, trackH, 6, 6);
     }
 
@@ -2203,7 +2391,8 @@ public class MenuRenderer {
         gc.drawImage(fillImage, x, y, w, trackH);
         gc.restore();
       } else {
-        gc.setFill(highlight ? theme.getItemSelectedColor() : theme.getItemColor());
+        gc.setFill(theme.usesAeroGlass() ? Color.web(highlight ? "#2684C0" : "#518EB7")
+            : highlight ? theme.getItemSelectedColor() : theme.getItemColor());
         gc.fillRoundRect(x, y, w * fill, trackH, 6, 6);
       }
     }
@@ -2226,7 +2415,8 @@ public class MenuRenderer {
     if (knobImage != null && !knobImage.isError()) {
       gc.drawImage(knobImage, knobX, knobY, knobW, knobH);
     } else {
-      gc.setFill(theme.usesPaperMenus() ? Color.web("#875b46") : Color.WHITE);
+      gc.setFill(theme.usesAeroGlass() ? Color.web("#2D77AB") : theme.usesWhiteSubmenus() ? Color.gray(.24)
+          : theme.usesPaperMenus() ? Color.web("#875b46") : Color.WHITE);
       gc.fillOval(knobX, knobY, knobW, knobH);
     }
   }
@@ -2247,7 +2437,7 @@ public class MenuRenderer {
     gc.setFill(highlight ? Color.rgb(229, 101, 94, 0.95) : Color.rgb(220, 212, 154, 0.95));
     gc.fillRoundRect(rect.x(), rect.y(), rect.w(), rect.h(), 4, 4);
     gc.setFill(Color.rgb(18, 18, 18, 0.95));
-    gc.setFont(Font.font("SansSerif", FontWeight.BOLD, Math.max(10, Math.min(20, rect.h() * 0.58))));
+    gc.setFont(Font.font(theme.interfaceFontFamily("SansSerif"), FontWeight.BOLD, Math.max(10, Math.min(20, rect.h() * 0.58))));
     gc.fillText("R", rect.x() + rect.w() * 0.33, rect.y() + rect.h() * 0.72);
   }
 
@@ -2320,7 +2510,9 @@ public class MenuRenderer {
     }
     if (theme.usesPaperMenus()) {
       double y = rect.y() + rect.h() * .22, height = rect.h() * .56;
-      gc.setFill(enabled ? Color.web("#85563f") : Color.web("#a49e99"));
+      gc.setFill(theme.usesAeroGlass() ? Color.web(enabled ? "#3E8ABB" : "#879FAE")
+          : theme.usesWhiteSubmenus() ? Color.gray(enabled ? .32 : .62)
+          : (enabled ? Color.web("#85563f") : Color.web("#a49e99")));
       gc.fillRoundRect(rect.x(), y, rect.w(), height, height, height);
       double knob = height - 4;
       gc.setFill(Color.WHITE);
@@ -2425,10 +2617,10 @@ public class MenuRenderer {
 
   private Font resolveItemFont(MenuStyleSpec style, MenuItemSpec item) {
     if (style == null && item == null) return scaledFont(theme.getItemFont());
-    String family = firstNonBlank(
+    String family = theme.interfaceFontFamily(firstNonBlank(
         item != null ? item.fontFamily() : null,
         style != null ? style.itemFontFamily() : null,
-        theme.getItemFont().getFamily());
+        theme.getItemFont().getFamily()));
     double size = (item != null && item.fontSize() != null ? item.fontSize()
         : style != null && style.itemFontSize() != null ? style.itemFontSize()
         : theme.getItemFont().getSize()) * activeUiFontScale;
@@ -2444,7 +2636,7 @@ public class MenuRenderer {
 
   private Font resolveTitleFont(MenuStyleSpec style) {
     if (style == null) return scaledFont(theme.getTitleFont());
-    String family = firstNonBlank(style.titleFontFamily(), theme.getTitleFont().getFamily());
+    String family = theme.interfaceFontFamily(firstNonBlank(style.titleFontFamily(), theme.getTitleFont().getFamily()));
     double size = (style.titleFontSize() != null ? style.titleFontSize() : theme.getTitleFont().getSize())
         * activeUiFontScale;
     FontWeight weight = parseFontWeight(style.titleFontWeight(), FontWeight.BOLD);
@@ -2454,7 +2646,8 @@ public class MenuRenderer {
   private Font resolveSubtitleFont(MenuStyleSpec style) {
     Font titleFont = resolveTitleFont(style);
     Font hintFont = resolveHintFont(style);
-    String family = style != null ? firstNonBlank(style.titleFontFamily(), hintFont.getFamily(), titleFont.getFamily()) : hintFont.getFamily();
+    String family = theme.interfaceFontFamily(
+        style != null ? firstNonBlank(style.titleFontFamily(), hintFont.getFamily(), titleFont.getFamily()) : hintFont.getFamily());
     double size = Math.max(14.0, Math.min(titleFont.getSize() * 0.55, hintFont.getSize() * 1.35));
     FontWeight weight = style != null
         ? parseFontWeight(firstNonBlank(style.titleFontWeight(), style.hintsFontWeight()), FontWeight.NORMAL)
@@ -2464,7 +2657,7 @@ public class MenuRenderer {
 
   private Font resolveHintFont(MenuStyleSpec style) {
     if (style == null) return scaledFont(theme.getHintFont());
-    String family = firstNonBlank(style.hintsFontFamily(), theme.getHintFont().getFamily());
+    String family = theme.interfaceFontFamily(firstNonBlank(style.hintsFontFamily(), theme.getHintFont().getFamily()));
     double size = (style.hintsFontSize() != null ? style.hintsFontSize() : theme.getHintFont().getSize())
         * activeUiFontScale;
     FontWeight weight = parseFontWeight(style.hintsFontWeight(), FontWeight.NORMAL);

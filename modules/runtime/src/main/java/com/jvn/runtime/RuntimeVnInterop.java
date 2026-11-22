@@ -728,7 +728,8 @@ public class RuntimeVnInterop implements VnInterop, VnTimelineAccessorProvider {
       }
       case "main": {
         String script = toks.length >= 2 ? toks[1] : resolveDefaultScript(scene);
-        MainMenuScene m = new MainMenuScene(engine, new VnSettings(), new com.jvn.core.vn.save.VnSaveManager(), script, scene.getAudioFacade());
+        VnSettings settings = engine.getSharedMenuBgmPath() != null ? scene.getState().getSettings() : new VnSettings();
+        MainMenuScene m = new MainMenuScene(engine, settings, new com.jvn.core.vn.save.VnSaveManager(), script, scene.getAudioFacade());
         engine.scenes().push(m);
         return VnInteropResult.advance();
       }

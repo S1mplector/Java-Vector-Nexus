@@ -24,6 +24,11 @@ import java.util.Properties;
  * legacy fallbacks for older projects.
  */
 public class MenuTheme {
+  public static final String TUTORIAL_TITLE_ART = "assets/tutorial/ginger-autumn.jpg";
+  public static final String TUTORIAL_TITLE_MUSIC = "assets/tutorial/zephiramusic-lofi-focus-606303.mp3";
+  private static final double TUTORIAL_VISUALIZER_OPACITY = .18;
+  private static final String LEGACY_TUTORIAL_BACKGROUND = "assets/tutorial/white.png";
+
   // Colors
   private Color backgroundColor = Color.rgb(10, 12, 18);
   private Color titleColor = Color.WHITE;
@@ -63,15 +68,24 @@ public class MenuTheme {
   private String labelQuit = null;
 
   private boolean dockPresentation;
+  private boolean tutorialDock;
+  private boolean dockShowsEngineVersion;
+  private String dockTitleFontFamily;
+  private boolean aeroGlass;
   private boolean paperMenus;
+  private boolean whiteSubmenus;
+  private boolean legacyTutorialBackground;
   private String secondaryMenuPortrait;
   private boolean menuMotion = true;
   private String titleImageEffect;
 
   // Title screen assets
   private String backgroundImagePath = null; // path to background image
+  private double backgroundImageOpacity = 1.0;
+  private double backgroundVisualizerOpacity;
   private String logoImagePath = null; // path to logo/title image
   private String bgmPath = null; // path to background music
+  private boolean continueBgmInGame;
   private double logoX = 0.5; // logo X position (fraction of width, 0.5 = centered)
   private double logoY = 0.15; // logo Y position (fraction of height)
   private double logoScale = 1.0; // logo scale factor
@@ -196,17 +210,34 @@ public class MenuTheme {
 
     // Title screen assets
     backgroundImagePath = emptyToNull(p.getProperty("backgroundImage"));
-    paperMenus = "paper".equalsIgnoreCase(p.getProperty("secondaryMenuPresentation"));
-    secondaryMenuPortrait = p.getProperty("secondaryMenuPortrait");
     dockPresentation = "dock".equalsIgnoreCase(p.getProperty("mainMenuPresentation", "list"));
+    String secondaryPresentation = p.getProperty("secondaryMenuPresentation");
+    legacyTutorialBackground = dockPresentation && "paper".equalsIgnoreCase(secondaryPresentation)
+        && LEGACY_TUTORIAL_BACKGROUND.equals(backgroundImagePath)
+        && "assets/tutorial/CaveatBrush-Regular.ttf".equals(titleFontFamily);
+    whiteSubmenus = "white".equalsIgnoreCase(secondaryPresentation) || legacyTutorialBackground;
+    paperMenus = whiteSubmenus || "paper".equalsIgnoreCase(secondaryPresentation);
+    secondaryMenuPortrait = p.getProperty("secondaryMenuPortrait");
+    if (legacyTutorialBackground) backgroundImagePath = TUTORIAL_TITLE_ART;
+    tutorialDock = dockPresentation && whiteSubmenus && TUTORIAL_TITLE_ART.equals(backgroundImagePath)
+        && "assets/tutorial/CaveatBrush-Regular.ttf".equals(titleFontFamily);
+    dockTitleFontFamily = valueOr(p.getProperty("dockTitleFontFamily"), tutorialDock ? "Serif" : titleFontFamily);
+    dockShowsEngineVersion = parseBool(p.getProperty("dockShowEngineVersion"), tutorialDock);
+    aeroGlass = parseBool(p.getProperty("aeroGlass"), tutorialDock);
+    double opacity = parseDouble(p.getProperty("backgroundImageOpacity"), legacyTutorialBackground ? .60 : 1.0);
+    backgroundImageOpacity = Double.isFinite(opacity) ? Math.clamp(opacity, 0.0, 1.0) : 1.0;
+    double visualizerOpacity = parseDouble(p.getProperty("backgroundVisualizerOpacity"),
+        tutorialDock ? TUTORIAL_VISUALIZER_OPACITY : 0.0);
+    backgroundVisualizerOpacity = Double.isFinite(visualizerOpacity) ? Math.clamp(visualizerOpacity, 0.0, 1.0) : 0.0;
     menuMotion = parseBool(p.getProperty("menuMotion"), true);
     titleImageEffect = emptyToNull(p.getProperty("titleImageEffect"));
     logoImagePath = emptyToNull(p.getProperty("logoImage"));
-    bgmPath = emptyToNull(p.getProperty("bgm"));
+    bgmPath = emptyToNull(p.getProperty("bgm", tutorialDock ? TUTORIAL_TITLE_MUSIC : ""));
+    continueBgmInGame = parseBool(p.getProperty("continueBgmInGame"), tutorialDock);
     logoX = parseDouble(p.getProperty("logoX"), logoX);
     logoY = parseDouble(p.getProperty("logoY"), logoY);
     logoScale = parseDouble(p.getProperty("logoScale"), logoScale);
-    bgmVolume = parseDouble(p.getProperty("bgmVolume"), bgmVolume);
+    bgmVolume = parseDouble(p.getProperty("bgmVolume"), tutorialDock ? Double.NaN : bgmVolume);
     logoShadow = parseBool(p.getProperty("logoShadow"), logoShadow);
 
     gameplayDimColor = parseColor(p.getProperty("gameplayDimColor"), gameplayDimColor);
@@ -293,9 +324,9 @@ public class MenuTheme {
 
   public String getTitleFontFamily() { return titleFontFamily; }
   public int getTitleFontSize() { return titleFontSize; }
-  public Font getTitleFont() { return Font.font(titleFontFamily, titleFontWeight, titleFontSize); }
-  public Font getItemFont() { return Font.font(itemFontFamily, itemFontWeight, itemFontSize); }
-  public Font getHintFont() { return Font.font(hintFontFamily, hintFontWeight, hintFontSize); }
+  public Font getTitleFont() { return Font.font(interfaceFontFamily(titleFontFamily), titleFontWeight, titleFontSize); }
+  public Font getItemFont() { return Font.font(interfaceFontFamily(itemFontFamily), itemFontWeight, itemFontSize); }
+  public Font getHintFont() { return Font.font(interfaceFontFamily(hintFontFamily), hintFontWeight, hintFontSize); }
 
   public double getTitleY() { return titleY; }
   public double getListYStart() { return listYStart; }
@@ -312,13 +343,38 @@ public class MenuTheme {
 
   // Title screen asset getters
   public String getBackgroundImagePath() { return backgroundImagePath; }
+  public double getBackgroundImageOpacity() { return backgroundImageOpacity; }
+  public double getBackgroundVisualizerOpacity() { return backgroundVisualizerOpacity; }
   public boolean usesPaperMenus() { return paperMenus; }
+  public boolean usesWhiteSubmenus() { return whiteSubmenus; }
+  String fadedTitleImage(String screenAsset) {
+    if (legacyTutorialBackground && LEGACY_TUTORIAL_BACKGROUND.equals(screenAsset)) return backgroundImagePath;
+    if (backgroundImageOpacity >= 1.0) return null;
+    return screenAsset == null || screenAsset.isBlank() || screenAsset.equals(backgroundImagePath)
+        ? backgroundImagePath : null;
+  }
   public String getSecondaryMenuPortrait() { return secondaryMenuPortrait; }
   public boolean isDockPresentation() { return dockPresentation; }
+  public boolean isTutorialDock() { return tutorialDock; }
+  public static String tutorialDockIcon(String itemId) {
+    String file = switch (itemId) {
+      case "new_game" -> "start";
+      case "continue" -> "load";
+      case "settings" -> "settings";
+      case "quit" -> "quit";
+      default -> null;
+    };
+    return file == null ? null : "assets/tutorial/icons/" + file + ".svg";
+  }
+  public String getDockTitleFontFamily() { return valueOr(dockTitleFontFamily, titleFontFamily); }
+  public boolean showsEngineVersionOnDock() { return dockShowsEngineVersion; }
+  public boolean usesAeroGlass() { return aeroGlass; }
+  public String interfaceFontFamily(String fallback) { return aeroGlass ? getDockTitleFontFamily() : fallback; }
   public boolean isMenuMotion() { return menuMotion; }
   public String getTitleImageEffect() { return titleImageEffect; }
   public String getLogoImagePath() { return logoImagePath; }
   public String getBgmPath() { return bgmPath; }
+  public String getSharedBgmPath() { return continueBgmInGame ? bgmPath : null; }
   public double getLogoX() { return logoX; }
   public double getLogoY() { return logoY; }
   public double getLogoScale() { return logoScale; }

@@ -1,6 +1,7 @@
 package com.jvn.fx;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
@@ -8,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
+import java.util.Properties;
 
 import javax.imageio.ImageIO;
 
@@ -106,6 +108,7 @@ public class FxLauncher extends Application {
   private GraphicsContext gc;
   private VnRenderer vnRenderer;
   private MenuRenderer menuRenderer;
+  private RuntimeAttributionOverlay runtimeAttribution;
   private PhoneRenderer phoneRenderer;
   private FxBlitter2D blitter2D;
   private FxSceneRendererRegistry rendererRegistry;
@@ -116,6 +119,7 @@ public class FxLauncher extends Application {
   private @Nullable PauseTransition runtimeLoadingRevealDelay;
   private @Nullable FadeTransition runtimeLoadingFade;
   private File runtimeProjectRoot;
+  private boolean localTutorialProject;
   private ProjectHotReloadTracker hotReloadTracker;
   private double mouseX = 0;
   private double mouseY = 0;
@@ -206,10 +210,14 @@ public class FxLauncher extends Application {
           : current instanceof MainMenuScene main ? main.getSettingsModel()
           : current instanceof LoadMenuScene load ? load.getSettingsModel() : new com.jvn.core.vn.VnSettingsStore().load();
       var audio = gameplay != null ? gameplay.getAudioFacade() : null;
-      engine.scenes().push(new SettingsScene(engine, new com.jvn.core.vn.save.VnSaveManager(), "main", settings, audio));
+      SettingsScene options = new SettingsScene(
+          engine, new com.jvn.core.vn.save.VnSaveManager(), "main", settings, audio);
+      if (menuRenderer.getTheme().isTutorialDock()) options.withGameplayVnScene(gameplay);
+      engine.scenes().push(options);
     }, () -> {
       if (engine != null && engine.scenes().peek() instanceof SettingsScene) engine.scenes().pop();
     });
+    runtimeAttribution = attribution;
     root.getChildren().add(attribution);
     StackPane.setAlignment(canvas, javafx.geometry.Pos.TOP_CENTER);
     javafx.scene.Scene scene = new javafx.scene.Scene(root, width, height);
@@ -233,13 +241,16 @@ public class FxLauncher extends Application {
     this.gc = this.canvas.getGraphicsContext2D();
     this.vnRenderer = new VnRenderer(gc);
     MenuTheme menuTheme = MenuTheme.fromAssets();
+    if (engine != null) engine.setSharedMenuBgmPath(menuTheme.getSharedBgmPath());
     this.menuRenderer = new MenuRenderer(gc, menuTheme);
+    applyMenuAppearance(menuTheme);
     if (engine != null && engine.scenes().peek() instanceof MainMenuScene main
         && menuTheme.getBgmPath() != null && !menuTheme.getBgmPath().isBlank()) {
       main.setTitleBgm(menuTheme.getBgmPath(), menuTheme.getBgmVolume());
     }
     this.menuRenderer.setUiFontScale(pendingUiFontScale);
     this.runtimeProjectRoot = resolveAssetsRoot();
+    this.localTutorialProject = isLocalTutorialProject(runtimeProjectRoot);
     this.vnRenderer.setProjectRoot(runtimeProjectRoot);
     this.menuRenderer.setProjectRoot(runtimeProjectRoot);
     if (pendingAccessibilityTheme != null && !"none".equals(pendingAccessibilityTheme)) {
@@ -323,17 +334,7 @@ public class FxLauncher extends Application {
         handleToggleHistory();
       } else if (e.getCode() == KeyCode.S) {
         // S = Settings (in-game)
-        com.jvn.core.scene.Scene currentScene = engine.scenes().peek();
-        if (currentScene instanceof VnScene vn) {
-          String fallbackScript = resolveDefaultScriptForMenus(vn);
-          engine.scenes().push(new SettingsScene(
-              engine,
-              new com.jvn.core.vn.save.VnSaveManager(),
-              fallbackScript,
-              vn.getState().getSettings(),
-              vn.getAudioFacade()
-          ));
-        }
+        handleOpenSettingsMenu();
       } else if (e.getCode() == KeyCode.ESCAPE) {
         // ESC = Pop menu if in menu, otherwise open pause menu from VN scene
         if (!handleMenuBack()) handleOpenPauseMenu();
@@ -389,19 +390,7 @@ public class FxLauncher extends Application {
           if (actionMap.matches(InputActions.AUTO_TOGGLE, code)) handleToggleAutoPlay();
           if (actionMap.matches(InputActions.HIDE_UI, code)) handleToggleUI();
           if (actionMap.matches(InputActions.HISTORY, code)) handleToggleHistory();
-          if (actionMap.matches(InputActions.SETTINGS, code)) {
-            com.jvn.core.scene.Scene currentScene = engine.scenes().peek();
-            if (currentScene instanceof VnScene vn) {
-              String fallbackScript = resolveDefaultScriptForMenus(vn);
-              engine.scenes().push(new SettingsScene(
-                  engine,
-                  new com.jvn.core.vn.save.VnSaveManager(),
-                  fallbackScript,
-                  vn.getState().getSettings(),
-                  vn.getAudioFacade()
-              ));
-            }
-          }
+          if (actionMap.matches(InputActions.SETTINGS, code)) handleOpenSettingsMenu();
           if (actionMap.matches(InputActions.QUICK_SAVE, code)) handleQuickSave();
           if (actionMap.matches(InputActions.QUICK_LOAD, code)) handleQuickLoad();
           if (actionMap.matches(InputActions.ROLLBACK, code)) handleRollback();
@@ -439,7 +428,7 @@ public class FxLauncher extends Application {
       mouseY = toSceneY(e.getY(), currentScene);
       if (engine != null && engine.input() != null) engine.input().setMousePosition(mouseX, mouseY);
       // Hover selection for menus
-      if (engine != null) {
+      if (engine != null && menuRenderer.acceptsTutorialMenuPointer(currentScene)) {
         double rw = renderWidthForScene(currentScene);
         double rh = renderHeightForScene(currentScene);
         if (currentScene instanceof PauseMenuScene pause) {
@@ -544,7 +533,11 @@ public class FxLauncher extends Application {
           engine.scenes().pop();
           currentScene = engine.scenes().peek();
         }
-        attribution.showSettingsCredit(currentScene instanceof SettingsScene);
+        boolean hasDockSettings = currentScene instanceof MainMenuScene main && menuRenderer.hasTutorialDockSettings(main);
+        boolean tutorialPreview = localTutorialProject && menuRenderer.getTheme().isTutorialDock();
+        boolean settingsOpen = currentScene instanceof SettingsScene;
+        attribution.showSettingsCredit(settingsOpen && !tutorialPreview,
+            hasDockSettings || tutorialPreview && (settingsOpen || menuRenderer.usesTutorialMenu(currentScene)));
         syncPhoneOverlay(currentScene);
         pollProjectHotReload();
         // Use the AnimationTimer's nanosecond clock for the HUD. Engine frame
@@ -558,24 +551,24 @@ public class FxLauncher extends Application {
           long renderStart = inspectorSession == null ? 0 : System.nanoTime();
           double w = canvas.getWidth();
           double h = canvas.getHeight();
-          gc.setFill(Color.BLACK);
+          gc.setFill(usesWhiteMenuViewport(currentScene) ? Color.WHITE : Color.BLACK);
           gc.fillRect(0, 0, w, h);
 
           boolean rendered = false;
           if (rendererRegistry != null) {
             if (shouldUseAspectFitViewport(currentScene)) {
-              ViewportScaler2D.Transform vp = viewportTransform(w, h);
+              ViewportScaler2D.Transform vp = viewportTransform(w, h, currentScene);
               gc.save();
               gc.translate(vp.offsetX(), vp.offsetY());
               gc.scale(vp.scale(), vp.scale());
-              rendered = rendererRegistry.render(currentScene,
+              rendered = renderScene(currentScene,
                   new com.jvn.fx.render.FxSceneRendererRegistry.RenderContext(
-                      gc, blitter2D, vp.targetWidth(), vp.targetHeight(), mouseX, mouseY));
+                      gc, blitter2D, vp.targetWidth(), vp.targetHeight(), mouseX, mouseY), now);
               if (!rendered) drawDefaultScene(vp.targetWidth(), vp.targetHeight());
               gc.restore();
             } else {
-              rendered = rendererRegistry.render(currentScene,
-                  new com.jvn.fx.render.FxSceneRendererRegistry.RenderContext(gc, blitter2D, w, h, mouseX, mouseY));
+              rendered = renderScene(currentScene,
+                  new com.jvn.fx.render.FxSceneRendererRegistry.RenderContext(gc, blitter2D, w, h, mouseX, mouseY), now);
               if (!rendered) drawDefaultScene(w, h);
             }
           } else {
@@ -593,6 +586,30 @@ public class FxLauncher extends Application {
       }
     };
     timer.start();
+  }
+
+  private boolean renderScene(com.jvn.core.scene.Scene scene, FxSceneRendererRegistry.RenderContext ctx, long now) {
+    if (menuRenderer.usesTutorialMenu(scene)) {
+      if (scene instanceof MainMenuScene main) configureTitleMusic(main);
+      menuRenderer.renderTutorialMenu(scene, ctx.width(), ctx.height(), now,
+          vn -> renderFrozenVnUnderlay(vn, ctx.width(), ctx.height()),
+          main -> renderTitleSpectrum(main, ctx.width(), ctx.height()));
+      return true;
+    }
+    menuRenderer.resetTutorialMenuTransition();
+    return rendererRegistry.render(scene, ctx);
+  }
+
+  private void configureTitleMusic(MainMenuScene scene) {
+    MenuTheme theme = menuRenderer.getTheme();
+    if (scene.getTitleBgmPath() == null && theme.getBgmPath() != null && menuRenderer.isTitleMenu(scene)) {
+      scene.setTitleBgm(theme.getBgmPath(), theme.getBgmVolume());
+    }
+  }
+
+  private void renderTitleSpectrum(MainMenuScene scene, double width, double height) {
+    double opacity = menuRenderer.getTheme().getBackgroundVisualizerOpacity();
+    if (opacity > 0.0) vnRenderer.renderTitleAudioVisualizer(scene.getAudioFacade(), width, height, opacity);
   }
 
   private void sampleInspector(long now, long renderDuration, com.jvn.core.scene.Scene scene, double w, double h) {
@@ -827,7 +844,11 @@ public class FxLauncher extends Application {
         ctx.gc().fillRect(0, 0, ctx.width(), ctx.height());
       }
     });
-    reg.register(MainMenuScene.class, (scene, ctx) -> menuRenderer.renderMainMenu(scene, ctx.width(), ctx.height()));
+    reg.register(MainMenuScene.class, (scene, ctx) -> {
+      configureTitleMusic(scene);
+      menuRenderer.renderMainMenu(scene, ctx.width(), ctx.height(),
+          () -> renderTitleSpectrum(scene, ctx.width(), ctx.height()));
+    });
     reg.register(LoadMenuScene.class, (scene, ctx) -> {
       renderFrozenVnUnderlay(scene.getGameplayVnScene(), ctx.width(), ctx.height());
       menuRenderer.renderLoadMenu(scene, ctx.width(), ctx.height());
@@ -988,13 +1009,48 @@ public class FxLauncher extends Application {
     return !(scene instanceof Scene2D);
   }
 
-  private ViewportScaler2D.Transform viewportTransform(double viewportWidth, double viewportHeight) {
-    return ViewportScaler2D.fit(
+  private boolean usesWhiteMenuViewport(com.jvn.core.scene.Scene scene) {
+    return menuRenderer != null && menuRenderer.getTheme().usesWhiteSubmenus()
+        && (scene instanceof MainMenuScene || scene instanceof PauseMenuScene || scene instanceof SettingsScene
+            || scene instanceof SaveMenuScene || scene instanceof LoadMenuScene || scene instanceof HistoryMenuScene);
+  }
+
+  static boolean isLocalTutorialProject(File root) {
+    if (root == null) return false;
+    // Official exports carry the distribution contract alongside the game directory.
+    for (File dir = root; dir != null; dir = dir.getParentFile()) {
+      if (new File(dir, "JVN-EXPORT-CONTRACT.properties").isFile()) return false;
+    }
+    var manifest = new Properties();
+    try (var reader = Files.newBufferedReader(root.toPath().resolve("jvn.project"))) {
+      manifest.load(reader);
+      return "tutorial_workspace".equals(manifest.getProperty("scaffold.template"))
+          && "true".equalsIgnoreCase(manifest.getProperty("feature.tutorialPack"))
+          && "scripts/story/tutorial_hub.vns".equals(manifest.getProperty("entryVns"));
+    } catch (IOException | IllegalArgumentException invalidProject) {
+      return false;
+    }
+  }
+
+  private void applyMenuAppearance(MenuTheme theme) {
+    String font = theme.interfaceFontFamily(null);
+    if (fxScene != null) {
+      fxScene.getRoot().setStyle(font == null ? "" : "-fx-font-family: \"" + font.replace("\"", "\\\"") + "\";");
+    }
+    if (runtimeAttribution != null) runtimeAttribution.setGlassShortcut(theme.usesAeroGlass());
+  }
+
+  private ViewportScaler2D.Transform viewportTransform(
+      double viewportWidth, double viewportHeight, com.jvn.core.scene.Scene scene) {
+    var fit = ViewportScaler2D.fit(
         targetLogicalWidth(viewportWidth),
         targetLogicalHeight(viewportHeight),
         viewportWidth,
         viewportHeight
     );
+    if (menuRenderer == null || !menuRenderer.usesTutorialMenu(scene)) return fit;
+    return new ViewportScaler2D.Transform(fit.scale(), 0.0, 0.0,
+        viewportWidth / fit.scale(), viewportHeight / fit.scale());
   }
 
   private double targetLogicalWidth(double fallback) {
@@ -1023,31 +1079,31 @@ public class FxLauncher extends Application {
     if (canvas == null || !shouldUseAspectFitViewport(scene)) {
       return canvas != null ? canvas.getWidth() : 0.0;
     }
-    return targetLogicalWidth(canvas.getWidth());
+    return viewportTransform(canvas.getWidth(), canvas.getHeight(), scene).targetWidth();
   }
 
   private double renderHeightForScene(com.jvn.core.scene.Scene scene) {
     if (canvas == null || !shouldUseAspectFitViewport(scene)) {
       return canvas != null ? canvas.getHeight() : 0.0;
     }
-    return targetLogicalHeight(canvas.getHeight());
+    return viewportTransform(canvas.getWidth(), canvas.getHeight(), scene).targetHeight();
   }
 
   private double toSceneX(double canvasX, com.jvn.core.scene.Scene scene) {
     if (canvas == null || !shouldUseAspectFitViewport(scene)) return canvasX;
-    ViewportScaler2D.Transform vp = viewportTransform(canvas.getWidth(), canvas.getHeight());
+    ViewportScaler2D.Transform vp = viewportTransform(canvas.getWidth(), canvas.getHeight(), scene);
     return vp.screenToLogicalX(canvasX);
   }
 
   private double toSceneY(double canvasY, com.jvn.core.scene.Scene scene) {
     if (canvas == null || !shouldUseAspectFitViewport(scene)) return canvasY;
-    ViewportScaler2D.Transform vp = viewportTransform(canvas.getWidth(), canvas.getHeight());
+    ViewportScaler2D.Transform vp = viewportTransform(canvas.getWidth(), canvas.getHeight(), scene);
     return vp.screenToLogicalY(canvasY);
   }
 
   private boolean isPointInSceneViewport(double canvasX, double canvasY, com.jvn.core.scene.Scene scene) {
     if (canvas == null || !shouldUseAspectFitViewport(scene)) return true;
-    ViewportScaler2D.Transform vp = viewportTransform(canvas.getWidth(), canvas.getHeight());
+    ViewportScaler2D.Transform vp = viewportTransform(canvas.getWidth(), canvas.getHeight(), scene);
     return vp.containsScreen(canvasX, canvasY);
   }
 
@@ -1198,18 +1254,29 @@ public class FxLauncher extends Application {
     }
   }
 
+  private void handleOpenSettingsMenu() {
+    if (engine == null || !(engine.scenes().peek() instanceof VnScene vn)) return;
+    SettingsScene options = new SettingsScene(
+        engine, new com.jvn.core.vn.save.VnSaveManager(), resolveDefaultScriptForMenus(vn),
+        vn.getState().getSettings(), vn.getAudioFacade());
+    if (menuRenderer.getTheme().isTutorialDock()) options.withGameplayVnScene(vn);
+    engine.scenes().push(options);
+  }
+
   private void handleOpenLoadMenu() {
     if (engine == null) return;
     com.jvn.core.scene.Scene currentScene = engine.scenes().peek();
     if (currentScene instanceof VnScene vn) {
       String fallbackScript = resolveDefaultScriptForMenus(vn);
-      engine.scenes().push(new LoadMenuScene(
+      LoadMenuScene load = new LoadMenuScene(
           engine,
           new com.jvn.core.vn.save.VnSaveManager(),
           fallbackScript,
           vn.getState().getSettings(),
           vn.getAudioFacade()
-      ));
+      );
+      if (menuRenderer.getTheme().isTutorialDock()) load.withGameplayVnScene(vn);
+      engine.scenes().push(load);
     }
   }
 
@@ -1244,14 +1311,7 @@ public class FxLauncher extends Application {
       if (saveMode) {
         engine.scenes().push(new SaveMenuScene(engine, new com.jvn.core.vn.save.VnSaveManager(), vn));
       } else {
-        String fallbackScript = resolveDefaultScriptForMenus(vn);
-        engine.scenes().push(new LoadMenuScene(
-            engine,
-            new com.jvn.core.vn.save.VnSaveManager(),
-            fallbackScript,
-            state.getSettings(),
-            vn.getAudioFacade()
-        ));
+        handleOpenLoadMenu();
       }
       return;
     }
@@ -1277,6 +1337,7 @@ public class FxLauncher extends Application {
   private void handleMouseClick(double x, double y) {
     if (engine == null) return;
     com.jvn.core.scene.Scene currentScene = engine.scenes().peek();
+    if (!menuRenderer.acceptsTutorialMenuPointer(currentScene)) return;
     double rw = renderWidthForScene(currentScene);
     double rh = renderHeightForScene(currentScene);
     if (currentScene instanceof VnScene) {
@@ -1587,6 +1648,7 @@ public class FxLauncher extends Application {
   private void handleMouseDrag(double x, double y) {
     if (engine == null) return;
     com.jvn.core.scene.Scene currentScene = engine.scenes().peek();
+    if (!menuRenderer.acceptsTutorialMenuPointer(currentScene)) return;
     double rw = renderWidthForScene(currentScene);
     double rh = renderHeightForScene(currentScene);
     if (currentScene instanceof SettingsScene settings) {
@@ -1886,7 +1948,11 @@ public class FxLauncher extends Application {
       }
     }
     if (changes.menuChanged() || changes.localizationChanged()) {
-      menuRenderer.setTheme(MenuTheme.fromAssets());
+      MenuTheme theme = MenuTheme.fromAssets();
+      engine.setSharedMenuBgmPath(theme.getSharedBgmPath());
+      menuRenderer.setTheme(theme);
+      applyMenuAppearance(theme);
+      if (!changes.uiChanged() && !changes.assetsChanged()) vnRenderer.reloadUiLayout();
       menuRenderer.clearImageCache();
       reloadTopMenuScene();
     }
@@ -1960,7 +2026,10 @@ public class FxLauncher extends Application {
           main.getMenuId()
       );
       replacement.setSelected(main.getSelected());
-      if (main.getTitleBgmPath() != null) {
+      MenuTheme theme = menuRenderer.getTheme();
+      if (menuRenderer.isTitleMenu(replacement)) {
+        replacement.setTitleBgm(theme.getBgmPath(), theme.getBgmVolume());
+      } else if (main.getTitleBgmPath() != null) {
         replacement.setTitleBgm(main.getTitleBgmPath(), main.getTitleBgmVolume());
       }
       engine.scenes().replace(replacement);
@@ -1994,7 +2063,7 @@ public class FxLauncher extends Application {
           load.getDefaultScriptName(),
           load.getSettingsModel(),
           load.getAudioFacade()
-      );
+      ).withGameplayVnScene(load.getGameplayVnScene());
       if (load.isFavoritesOnly()) {
         replacement.toggleFavoritesOnly();
       }
@@ -2009,7 +2078,7 @@ public class FxLauncher extends Application {
           settings.getAudioFacade(),
           settings.getBindings(),
           settings.getMenuId()
-      );
+      ).withGameplayVnScene(settings.getGameplayVnScene());
       replacement.preferSelectionKey(settings.getSelectedKey());
       engine.scenes().replace(replacement);
     }

@@ -802,7 +802,7 @@ public class SettingsScene implements Scene {
       audio.setVoiceVolume(s.getVoiceVolume());
     }
     engine.setFixedUpdateStepMs(settings.getPhysicsFixedStepMs(), settings.getPhysicsMaxSubSteps());
-    MenuAudioLifecycle.beginGameplay(audio);
+    MenuAudioLifecycle.beginGameplay(engine, audio);
     engine.scenes().push(vnScene);
   }
 

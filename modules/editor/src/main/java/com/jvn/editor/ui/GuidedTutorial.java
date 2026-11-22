@@ -1,5 +1,6 @@
 package com.jvn.editor.ui;
 
+import com.jvn.fx.menu.MenuTheme;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -25,6 +26,12 @@ final class GuidedTutorial {
         "ginger_normal.png", "ginger_sad.png", "ginger_shy.png", "ginger_thoughtful.png")) {
       String path = "assets/tutorial/" + file;
       copy(root, path, path);
+    }
+    copyResource(root, "/" + MenuTheme.TUTORIAL_TITLE_ART, MenuTheme.TUTORIAL_TITLE_ART);
+    copyResource(root, "/" + MenuTheme.TUTORIAL_TITLE_MUSIC, MenuTheme.TUTORIAL_TITLE_MUSIC);
+    for (String id : List.of("new_game", "continue", "settings", "quit")) {
+      String path = MenuTheme.tutorialDockIcon(id);
+      copyResource(root, "/" + path, path);
     }
     Path portrait = root.resolve("assets/tutorial/ginger_normal.png");
     var image = javax.imageio.ImageIO.read(portrait.toFile());
@@ -100,17 +107,27 @@ final class GuidedTutorial {
     properties.setProperty("subtitleText", "");
     properties.setProperty("item.new_game.label", "Start tutorial");
     properties.setProperty("item.continue.label", "Load game");
-    properties.setProperty("backgroundAsset", "assets/tutorial/white.png");
+    properties.setProperty("backgroundAsset", MenuTheme.TUTORIAL_TITLE_ART);
     properties.setProperty("hintsText", "");
     try (var writer = Files.newBufferedWriter(screen, StandardCharsets.UTF_8)) {
       properties.store(writer, "Tutorial");
+      writer.write("\n# Custom SVG icons: keep the SVG in assets/ and point item.<id>.icon to it.\n"
+          + "# A square viewBox leaves room for the icon above the label. The menu action is set separately.\n");
+      for (String id : items) {
+        String icon = MenuTheme.tutorialDockIcon(id);
+        if (icon != null) writer.write("item." + id + ".icon=" + icon + "\n");
+      }
     }
   }
 
   private static void copy(Path root, String resource, String target) throws IOException {
+    copyResource(root, ROOT + resource, target);
+  }
+
+  private static void copyResource(Path root, String resource, String target) throws IOException {
     Path destination = root.resolve(target);
     Files.createDirectories(destination.getParent());
-    try (InputStream stream = GuidedTutorial.class.getResourceAsStream(ROOT + resource)) {
+    try (InputStream stream = GuidedTutorial.class.getResourceAsStream(resource)) {
       if (stream == null) throw new IOException("Missing JVN Tutorial resource " + resource);
       Files.copy(stream, destination, StandardCopyOption.REPLACE_EXISTING);
     }

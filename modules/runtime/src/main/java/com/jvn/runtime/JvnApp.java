@@ -2,6 +2,7 @@ package com.jvn.runtime;
 
 import com.jvn.core.config.ApplicationConfig;
 import com.jvn.core.engine.Engine;
+import com.jvn.core.engine.EngineListener;
 import com.jvn.core.assets.AssetCatalog;
 import com.jvn.core.assets.AssetType;
 import com.jvn.core.assets.AssetManager;
@@ -18,6 +19,7 @@ import com.jvn.core.menu.MainMenuScene;
 import com.jvn.core.project.ProjectHealthChecker;
 import com.jvn.fx.FxLauncher;
 import com.jvn.fx.audio.FxAudioService;
+import com.jvn.fx.menu.MenuTheme;
 import com.jvn.runtime.hotreload.HotReloadServer;
 import com.jvn.core.audio.AudioFacade;
 import com.jvn.scripting.jes.JesLoader;
@@ -340,12 +342,16 @@ public class JvnApp {
       } catch (Exception ignored) {
             // reason: non-critical operation; exception swallowed to prevent crash propagation
             }
+      engine.setSharedMenuBgmPath(MenuTheme.fromAssets().getSharedBgmPath());
       MainMenuScene menu = new MainMenuScene(engine, settingsModel, saveManager, resolvedEntryScript, audio);
       if (settingsModel != null) {
         engine.setFixedUpdateStepMs(settingsModel.getPhysicsFixedStepMs(), settingsModel.getPhysicsMaxSubSteps());
       }
       engine.scenes().push(menu);
-      if (playFrom != null) menu.startFromEntry(resolvedEntryScript, playFrom);
+      if (playFrom != null) {
+        if (engine.getSharedMenuBgmPath() == null) menu.startFromEntry(resolvedEntryScript, playFrom);
+        else startEntryOnFirstFrame(engine, menu, resolvedEntryScript, playFrom);
+      }
     }
 
     if ("swing".equalsIgnoreCase(ui)) {
@@ -358,6 +364,15 @@ public class JvnApp {
           settingsModel.getUiFontScale()
       );
     }
+  }
+
+  private static void startEntryOnFirstFrame(Engine engine, MainMenuScene menu, String script, String entry) {
+    engine.addListener(new EngineListener() {
+      @Override public void preUpdate(long deltaMs) {
+        engine.removeListener(this);
+        menu.startFromEntry(script, entry);
+      }
+    });
   }
 
   private static void configureAudioProjectRoot(AudioFacade audio, String assetRoot) {

@@ -21,14 +21,18 @@ class RuntimeAttributionTest {
       var overlay = new RuntimeAttributionOverlay(() -> actions[0]++, () -> actions[1]++);
       var scene = new Scene(overlay, 640, 360);
       overlay.applyCss(); overlay.layout();
-      ((Button)overlay.lookup("#jvn-runtime-settings")).fire();
+      var shortcut = (Button) overlay.lookup("#jvn-runtime-settings");
+      shortcut.fire();
       assertEquals(1,actions[0]);
-      overlay.showSettingsCredit(true);
+      overlay.showSettingsCredit(false, true);
+      assertFalse(shortcut.isVisible());
+      overlay.showSettingsCredit(true, true);
+      assertTrue(shortcut.isVisible());
       for (int[] size : new int[][] {{320,240},{640,360},{1280,720}}) {
         overlay.resize(size[0],size[1]); overlay.applyCss(); overlay.layout();
         var credit=overlay.lookup("#jvn-settings-credit");
         assertTrue(credit.isVisible()); assertEquals(1,credit.getOpacity());
-        assertEquals("Made with JVN (0.9.5)",credit.getAccessibleText());
+        assertEquals("Made with JVN (0.9.6)",credit.getAccessibleText());
         assertEquals(72,overlay.reservedHeightProperty().get());
         assertTrue(credit.getBoundsInParent().getMaxY() <= size[1]+1);
         assertEquals(1,credit.lookupAll(".image-view").size());
@@ -37,10 +41,11 @@ class RuntimeAttributionTest {
       Path image=Path.of("build/reports/licensing/runtime-settings-credit.png");
       Files.createDirectories(image.getParent());
       ImageIO.write(SwingFXUtils.fromFXImage(overlay.snapshot(null,null),null),"png",image.toFile());
-      ((Button)overlay.lookup("#jvn-runtime-settings")).fire();
+      shortcut.fire();
       assertEquals(1,actions[1]);
       overlay.showSettingsCredit(false);
       assertEquals(0,overlay.reservedHeightProperty().get());
+      assertTrue(shortcut.isVisible());
       return null;
     });
   }

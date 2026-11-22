@@ -444,7 +444,7 @@ public class SaveMenuScene implements Scene {
     }
     if (engine != null) {
       engine.setFixedUpdateStepMs(settingsModel.getPhysicsFixedStepMs(), settingsModel.getPhysicsMaxSubSteps());
-      MenuAudioLifecycle.beginGameplay(currentAudio());
+      MenuAudioLifecycle.beginGameplay(engine, currentAudio());
       engine.scenes().push(scene);
     }
   }

@@ -1,6 +1,7 @@
 package com.jvn.editor.ui;
 
 import com.jvn.core.assets.*;
+import com.jvn.core.menu.HistoryMenuScene;
 import com.jvn.core.menu.MainMenuScene;
 import com.jvn.core.vn.*;
 import com.jvn.core.vn.ui.FacetCodeExcerpt;
@@ -14,6 +15,7 @@ import com.jvn.fx.testkit.FxToolkit;
 import com.jvn.fx.testkit.FxToolkitExtension;
 import com.jvn.fx.vn.VnRenderer;
 import com.jvn.scripting.jes.JesLoader;
+import java.awt.image.BufferedImage;
 import java.lang.reflect.Field;
 import java.nio.file.*;
 import java.util.*;
@@ -64,6 +66,9 @@ class GuidedTutorialIntegrationTest {
     assertFalse(Files.exists(project.resolve("assets/demo/backgrounds/game.png")));
     assertFalse(Files.exists(project.resolve("assets/tutorial/lofi-music-2.mp3")));
     assertFalse(Files.exists(project.resolve("assets/tutorial/window-room.jpg")));
+    var titleArt = ImageIO.read(project.resolve(MenuTheme.TUTORIAL_TITLE_ART).toFile());
+    assertNotNull(titleArt);
+    assertTrue(Files.size(project.resolve(MenuTheme.TUTORIAL_TITLE_MUSIC)) > 0);
     var backdrop = ImageIO.read(project.resolve("assets/tutorial/white.png").toFile());
     for (int y = 0; y < backdrop.getHeight(); y++)
       for (int x = 0; x < backdrop.getWidth(); x++) assertEquals(0xffffffff, backdrop.getRGB(x, y));
@@ -83,6 +88,9 @@ class GuidedTutorialIntegrationTest {
     AssetCatalog.setDefaultManager(new FilesystemAssetManager(project));
     try {
       verifySourcePanels();
+      for (String id : List.of("new_game", "continue", "settings", "quit")) {
+        assertTrue(Files.readString(project.resolve(MenuTheme.tutorialDockIcon(id))).startsWith("<svg"), id);
+      }
       VnScenarioLoader loader = new VnScenarioLoader();
       String map = Files.readString(project.resolve("config/story/story.storymap"));
       var manifest = new Properties();
@@ -240,17 +248,35 @@ class GuidedTutorialIntegrationTest {
         assertEquals("", menu.getDisplayHints());
         assertNull(MenuTheme.fromAssets().getSecondaryMenuPortrait());
         assertEquals("Start tutorial", menu.getDisplayItems()[0]);
+        assertEquals(MenuTheme.TUTORIAL_TITLE_ART, menu.getMenuScreen().backgroundAsset());
+        for (var item : menu.getMenuScreen().items()) {
+          assertEquals(MenuTheme.tutorialDockIcon(item.id()), item.iconPath());
+        }
         menu.setSelected(0);
         var theme = MenuTheme.fromAssets();
+        assertEquals(MenuTheme.TUTORIAL_TITLE_MUSIC, theme.getBgmPath());
+        assertEquals(MenuTheme.TUTORIAL_TITLE_MUSIC, theme.getSharedBgmPath());
+        assertEquals(.18, theme.getBackgroundVisualizerOpacity());
         assertTrue(theme.isDockPresentation());
+        assertTrue(theme.usesWhiteSubmenus());
+        assertTrue(theme.usesAeroGlass());
+        assertEquals(.60, theme.getBackgroundImageOpacity());
+        assertEquals("Serif", theme.getDockTitleFontFamily());
+        assertTrue(theme.showsEngineVersionOnDock());
+        var legacyTheme = previousTutorialTheme();
         for (int[] size : new int[][] {{960, 540}, {1280, 720}}) {
           var titleCanvas = new Canvas(size[0], size[1]);
           var titleRenderer = new MenuRenderer(titleCanvas.getGraphicsContext2D(), theme);
           titleRenderer.setProjectRoot(project.toFile());
+          assertTrue(titleRenderer.hasTutorialDockSettings(menu));
           verifyTitleDock(titleRenderer, menu, size[0], size[1]);
+          assertFadedArtwork(titleCanvas, titleArt);
           save(titleCanvas, size[0] == 960 ? "title-wizard-size" : "title");
           legacyMenu.setSelected(0);
+          titleRenderer.setTheme(legacyTheme);
+          assertTrue(titleRenderer.hasTutorialDockSettings(legacyMenu));
           verifyTitleDock(titleRenderer, legacyMenu, size[0], size[1]);
+          assertFadedArtwork(titleCanvas, titleArt);
         }
         Canvas canvas = new Canvas(1280, 720);
         var renderer = new MenuRenderer(canvas.getGraphicsContext2D(), theme);
@@ -259,13 +285,22 @@ class GuidedTutorialIntegrationTest {
         var pause = new com.jvn.core.menu.PauseMenuScene(null, hub, saves, "story/tutorial_hub.vns", null);
         assertEquals("resume", pause.getItem(0).id());
         renderer.renderPauseMenu(pause, 1280, 720);
+        assertGlassSubmenu(canvas);
         save(canvas, "pause");
         renderer.renderSettings(new com.jvn.core.menu.SettingsScene(new VnSettings()), 1280, 720);
+        assertGlassSubmenu(canvas);
         save(canvas, "settings");
+        renderer.renderHistoryMenu(new HistoryMenuScene(null, null), 1280, 720);
+        assertGlassSubmenu(canvas);
+        var confirm = new MainMenuScene(null, new VnSettings(), null, "story/tutorial_hub.vns", null, "confirm_exit");
+        assertFalse(renderer.hasTutorialDockSettings(confirm));
+        renderer.renderMainMenu(confirm, 1280, 720);
+        assertGlassSubmenu(canvas);
         com.jvn.core.localization.Localization.init("en", getClass().getClassLoader());
         assertEquals("No saved games yet.", com.jvn.core.localization.Localization.t("load.no_saves"));
         var loadMenu = new com.jvn.core.menu.LoadMenuScene(null, saves, "story/tutorial_hub.vns", new VnSettings(), null);
         renderer.renderLoadMenu(loadMenu, 1280, 720);
+        assertGlassSubmenu(canvas);
         save(canvas, "empty-load");
         saves.save(hub.getState(), "Studio");
         String captures = System.getenv("JVN_TUTORIAL_QA_DIR");
@@ -276,11 +311,13 @@ class GuidedTutorialIntegrationTest {
         saveMenu.onEnter();
         assertEquals("Save game", saveMenu.getDisplayTitle());
         renderer.renderSaveMenu(saveMenu, 1280, 720);
+        assertGlassSubmenu(canvas);
         save(canvas, "save");
         loadMenu = new com.jvn.core.menu.LoadMenuScene(null, saves, "story/tutorial_hub.vns", new VnSettings(), null);
         assertEquals("Studio", loadMenu.getSelectedName());
         assertEquals("Load game", loadMenu.getDisplayTitle());
         renderer.renderLoadMenu(loadMenu, 1280, 720);
+        assertGlassSubmenu(canvas);
         save(canvas, "load");
         return null;
       });
@@ -318,7 +355,8 @@ class GuidedTutorialIntegrationTest {
   private MainMenuScene previousWizardMenu() throws Exception {
     Path path = project.resolve("config/menu/menus/main.menu");
     String fresh = Files.readString(path);
-    var legacy = new StringBuilder(fresh).append('\n');
+    var legacy = new StringBuilder(fresh.replace(MenuTheme.TUTORIAL_TITLE_ART, "assets/tutorial/white.png")
+        .replaceAll("(?m)^item\\.[^.]+\\.icon=.*\\R", "")).append('\n');
     String[] ids = {"new_game", "continue", "settings", "extras", "quit"};
     for (int row = 0; row < ids.length; row++) {
       String key = "item." + ids[row] + ".bounds";
@@ -335,6 +373,46 @@ class GuidedTutorialIntegrationTest {
     } finally {
       Files.writeString(path, fresh);
     }
+  }
+
+  private MenuTheme previousTutorialTheme() throws Exception {
+    var properties = new Properties();
+    try (var reader = Files.newBufferedReader(project.resolve("config/menu/theme/menu.theme"))) {
+      properties.load(reader);
+    }
+    properties.setProperty("backgroundImage", "assets/tutorial/white.png");
+    properties.setProperty("secondaryMenuPresentation", "paper");
+    properties.remove("backgroundImageOpacity");
+    properties.remove("dockTitleFontFamily");
+    properties.remove("dockShowEngineVersion");
+    properties.remove("aeroGlass");
+    var theme = MenuTheme.defaults();
+    theme.apply(properties);
+    assertTrue(theme.usesWhiteSubmenus());
+    assertTrue(theme.usesAeroGlass());
+    assertEquals("Serif", theme.getDockTitleFontFamily());
+    assertTrue(theme.showsEngineVersionOnDock());
+    return theme;
+  }
+
+  private static void assertFadedArtwork(Canvas canvas, BufferedImage artwork) {
+    int x = (int) (canvas.getWidth() * .10), y = (int) (canvas.getHeight() * .10);
+    var pixels = canvas.snapshot(null, null).getPixelReader();
+    int actual = pixels.getArgb(x, y);
+    int source = artwork.getRGB(artwork.getWidth() / 10, artwork.getHeight() / 10);
+    assertNotEquals(0xffffffff, actual, "The title should show the fall illustration");
+    for (int shift : new int[] {0, 8, 16}) {
+      int channel = (source >> shift) & 0xff;
+      assertEquals(.60 * channel + .40 * 255, (actual >> shift) & 0xff, 9.0, "Blend the artwork against white");
+    }
+  }
+
+  private static void assertGlassSubmenu(Canvas canvas) {
+    int w = (int) canvas.getWidth(), h = (int) canvas.getHeight();
+    var pixels = canvas.snapshot(null, null).getPixelReader();
+    var glass = pixels.getColor(w * 97 / 100, h / 2);
+    assertTrue(glass.getBlue() > glass.getRed(), "Submenu glass has a blue tint");
+    assertNotEquals(glass, pixels.getColor(2, h / 2), "Panel surface is distinct from the margin");
   }
 
   private static void verifyTitleDock(MenuRenderer renderer, MainMenuScene menu, int width, int height) {

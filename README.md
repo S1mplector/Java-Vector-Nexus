@@ -8,7 +8,7 @@
 
 JVN is a young, modular cross-platform Visual Novel engine and 2D animation toolkit written in Java.
 
-[What's new in v0.9.5](docs/project-setup/release/whats-new-0.9.5.md)
+[What's new in v0.9.6](docs/project-setup/release/whats-new-0.9.6.md)
 
 Documentation entrypoints:
 

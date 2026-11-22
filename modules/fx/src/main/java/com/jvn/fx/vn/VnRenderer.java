@@ -69,7 +69,9 @@ import com.jvn.core.vn.ui.VnUiLayoutSpec;
 import com.jvn.core.vn.ui.VnUiStyleSpec;
 import com.jvn.fx.RenderThreadGuard;
 import com.jvn.fx.FxImageMemory;
+import com.jvn.fx.menu.MenuTheme;
 import com.jvn.fx.scene2d.FxBlitter2D;
+import com.jvn.fx.ui.AeroGlass;
 import com.jvn.fx.ui.FxTextMetrics;
 import com.jvn.fx.ui.ProjectFontResolver;
 
@@ -106,6 +108,7 @@ public class VnRenderer {
 
   private final GraphicsContext gc;
   private AssetCatalog facetAssets = new AssetCatalog();
+  private MenuTheme interfaceTheme = MenuTheme.defaults();
   private final Map<VnFacetSpec.Node, FacetCodeBlock> facetCode = new java.util.WeakHashMap<>();
   private VnState dialogueFacetState;
   private String dialogueFacetId;
@@ -391,6 +394,7 @@ public class VnRenderer {
   }
 
   public void reloadUiLayout() {
+    interfaceTheme = MenuTheme.fromAssets(facetAssets, null);
     VnUiLayoutLoader.LoadResult result = projectRoot != null
         ? VnUiLayoutLoader.loadFromProjectRootWithDiagnostics(projectRoot)
         : VnUiLayoutLoader.loadFromAssetsWithDiagnostics();
@@ -2067,31 +2071,7 @@ public class VnRenderer {
       decayVisualizer(0.86, true);
       return;
     }
-    if (audioFacade == null) {
-      decayVisualizer(0.86, true);
-      return;
-    }
-
-    float[] magnitudes = audioFacade.getBgmSpectrumMagnitudes();
-    long updatedAt = audioFacade.getBgmSpectrumUpdatedAtNanos();
-    long nowNs = System.nanoTime();
-    boolean hasFreshData = magnitudes != null
-        && magnitudes.length > 0
-        && (updatedAt <= 0L || (nowNs - updatedAt) <= VnAudioVisualizerConfig.STALE_NS);
-
-    if (hasFreshData) {
-      mapSpectrumToTargets(magnitudes, visualizerTargets, activeBars);
-      updateAudioVisualizerState(activeBars);
-    } else {
-      decayVisualizer(0.9, false);
-      clearInactiveVisualizerState(activeBars);
-    }
-
-    double maxLevel = 0.0;
-    for (int i = 0; i < activeBars; i++) {
-      double level = visualizerLevels[i];
-      if (level > maxLevel) maxLevel = level;
-    }
+    double maxLevel = sampleAudioVisualizer(audioFacade, activeBars, false);
     if (maxLevel < 0.015) return;
 
     TextBoxGeometry textBox = computeTextBoxGeometry(width, height);
@@ -2110,6 +2090,58 @@ public class VnRenderer {
     drawAudioVisualizerBackdrop(settings, palette, sidePadding, regionTop, regionWidth, regionHeight, regionBottom);
     drawAudioVisualizerBars(settings, palette, activeBars, sidePadding, regionWidth, regionTop, regionBottom, regionHeight);
     gc.restore();
+  }
+
+  /** Draw the spectrum bars as a quiet layer over the title artwork. */
+  public void renderTitleAudioVisualizer(AudioFacade audio, double width, double height, double opacity) {
+    if (opacity <= 0.0 || width <= 8.0 || height <= 8.0) return;
+    AudioVisualizerSettings settings = new AudioVisualizerSettings(
+        true, VnAudioVisualizerConfig.DEFAULT_BARS, VnAudioVisualizerConfig.STYLE_MINIMAL,
+        "#805A4A", "#B1856E", opacity, false, .33, VnAudioVisualizerConfig.DEFAULT_Z);
+    double maxLevel = sampleAudioVisualizer(audio, settings.bars(), true);
+    if (maxLevel < 0.015) return;
+
+    double sidePadding = width * .07;
+    double regionBottom = height;
+    double regionHeight = height * settings.heightFactor();
+    AudioVisualizerPalette palette = resolveAudioVisualizerPalette(settings, maxLevel);
+    gc.save();
+    drawAudioVisualizerBars(settings, palette, settings.bars(), sidePadding, width - sidePadding * 2.0,
+        regionBottom - regionHeight, regionBottom, regionHeight);
+    gc.restore();
+  }
+
+  private double sampleAudioVisualizer(AudioFacade audio, int activeBars, boolean titleSpectrum) {
+    if (audio == null) {
+      decayVisualizer(0.86, true);
+      return 0.0;
+    }
+
+    float[] magnitudes = audio.getBgmSpectrumMagnitudes();
+    long updatedAt = audio.getBgmSpectrumUpdatedAtNanos();
+    long nowNs = System.nanoTime();
+    boolean hasFreshData = magnitudes != null
+        && magnitudes.length > 0
+        && (updatedAt <= 0L || (nowNs - updatedAt) <= VnAudioVisualizerConfig.STALE_NS);
+
+    if (hasFreshData) {
+      if (titleSpectrum) {
+        mapTitleSpectrumToTargets(magnitudes, activeBars);
+      } else {
+        mapSpectrumToTargets(magnitudes, visualizerTargets, activeBars);
+      }
+      updateAudioVisualizerState(activeBars);
+    } else {
+      decayVisualizer(0.9, false);
+      clearInactiveVisualizerState(activeBars);
+    }
+
+    double maxLevel = 0.0;
+    for (int i = 0; i < activeBars; i++) {
+      double level = visualizerLevels[i];
+      if (level > maxLevel) maxLevel = level;
+    }
+    return maxLevel;
   }
 
   private void updateAudioVisualizerState(int activeBars) {
@@ -2342,17 +2374,32 @@ public class VnRenderer {
       double sum = 0.0;
       int count = 0;
       for (int j = start; j < end; j++) {
-        double db = magnitudes[j];
-        double normalized = (db + 60.0) / 60.0;
-        normalized = clamp(normalized, 0.0, 1.0);
-        normalized = Math.pow(normalized, 0.72);
-        sum += normalized;
+        sum += normalizeSpectrumLevel(magnitudes[j]);
         count++;
       }
       double avg = count == 0 ? 0.0 : (sum / count);
       double freqWeight = 1.0 - (i / (double) activeBars) * 0.35;
       out[i] = clamp(avg * freqWeight, 0.0, 1.0);
     }
+  }
+
+  private void mapTitleSpectrumToTargets(float[] magnitudes, int bars) {
+    // Center the bass under the dock and give the lower bands more room.
+    double highestBin = (magnitudes.length - 1) * .25;
+    for (int i = 0; i < bars; i++) {
+      double distance = Math.abs(2.0 * (i + .5) / bars - 1.0);
+      double bin = distance * distance * highestBin;
+      int lower = (int) bin;
+      int upper = Math.min(lower + 1, magnitudes.length - 1);
+      double fraction = bin - lower;
+      double low = normalizeSpectrumLevel(magnitudes[lower]);
+      double high = normalizeSpectrumLevel(magnitudes[upper]);
+      visualizerTargets[i] = low + fraction * (high - low);
+    }
+  }
+
+  private double normalizeSpectrumLevel(double db) {
+    return Math.pow(clamp((db + 60.0) / 60.0, 0.0, 1.0), 0.72);
   }
 
   private record AudioVisualizerSettings(
@@ -2465,6 +2512,7 @@ public class VnRenderer {
   private void renderStandardDialogue(DialogueLine dialogue, VnState state, double width, double height, int hoveredButtonIndex) {
     if (dialogue == null) return;
     boolean defaultDialogueStyle = shouldUseDefaultDialogueUi(state) || shouldUseDefaultDialogueStyle(state);
+    boolean glass = !defaultDialogueStyle && usesGlass();
     Color activeTextBoxFillColor = defaultDialogueStyle ? TEXTBOX_COLOR : textBoxFillColor;
     Color activeNameBoxFillColor = defaultDialogueStyle ? NAME_BOX_COLOR : nameBoxFillColor;
     Color activeNameTextFillColor = resolveSpeakerColor(
@@ -2473,10 +2521,10 @@ public class VnRenderer {
     Color activeDialogueTextFillColor = defaultDialogueStyle ? TEXT_COLOR : dialogueTextFillColor;
     double fscale = state == null ? 1.0 : state.getSettings().getUiFontScale();
     Font activeNameFont = defaultDialogueStyle
-        ? Font.font(DEFAULT_FONT_FAMILY, FontWeight.BOLD, DEFAULT_NAME_FONT_SIZE * fscale)
+        ? Font.font(interfaceTheme.interfaceFontFamily(DEFAULT_FONT_FAMILY), FontWeight.BOLD, DEFAULT_NAME_FONT_SIZE * fscale)
         : nameFont;
     Font activeDialogueFont = defaultDialogueStyle
-        ? Font.font(DEFAULT_FONT_FAMILY, FontWeight.NORMAL, DEFAULT_DIALOGUE_FONT_SIZE * fscale)
+        ? Font.font(interfaceTheme.interfaceFontFamily(DEFAULT_FONT_FAMILY), FontWeight.NORMAL, DEFAULT_DIALOGUE_FONT_SIZE * fscale)
         : dialogueFont;
     double activeNameBoxOpacity = defaultDialogueStyle ? 1.0 : nameBoxRenderOpacity;
 
@@ -2505,6 +2553,8 @@ public class VnRenderer {
         gc.setFill(withOpacity(activeTextBoxFillColor, textBoxAssetOverlayOpacity));
         gc.fillRect(textBoxX, textBoxY, textBoxWidth, textBoxHeight);
       }
+    } else if (glass) {
+      AeroGlass.DIALOGUE.draw(gc, textBoxX, textBoxY, textBoxWidth, textBoxHeight, 14);
     } else {
       gc.setFill(activeTextBoxFillColor);
       gc.fillRect(textBoxX, textBoxY, textBoxWidth, textBoxHeight);
@@ -2534,6 +2584,8 @@ public class VnRenderer {
       if (activeNameBoxOpacity < 0.999) gc.setGlobalAlpha(prevAlpha * activeNameBoxOpacity);
       if (activeNameBoxImage != null) {
         gc.drawImage(activeNameBoxImage, nameBoxX, nameBoxY, nameBoxW, nameBoxH);
+      } else if (glass) {
+        AeroGlass.DIALOGUE.draw(gc, nameBoxX, nameBoxY, nameBoxW, nameBoxH, 7);
       } else {
         gc.setFill(activeNameBoxFillColor);
         gc.fillRect(nameBoxX, nameBoxY, nameBoxW, nameBoxH);
@@ -2638,7 +2690,11 @@ public class VnRenderer {
     double entryGap = Math.max(0.0, uiLayout.nvlEntryGap());
     double bodyGap = 16.0;
 
-    drawPanel(nvlPanelImage, nvlPanelFillColor, nvlPanelOpacity, panelX, panelY, panelW, panelH, 18.0, null, 0.0);
+    if (usesGlass() && nvlPanelImage == null) {
+      AeroGlass.DIALOGUE.draw(gc, panelX, panelY, panelW, panelH, 18);
+    } else {
+      drawPanel(nvlPanelImage, nvlPanelFillColor, nvlPanelOpacity, panelX, panelY, panelW, panelH, 18.0, null, 0.0);
+    }
 
     gc.save();
     gc.beginPath();
@@ -3229,17 +3285,17 @@ public class VnRenderer {
     choiceTextXAlign = clamp(resolved.choiceTextXAlign() == null ? 0.0 : resolved.choiceTextXAlign(), 0.0, 1.0);
 
     // Apply font settings from style spec (font weight from spec, with sensible defaults)
-    String nameFontFamily = resolved.nameTextFontFamily() != null ? resolved.nameTextFontFamily() : DEFAULT_FONT_FAMILY;
+    String nameFontFamily = interfaceTheme.interfaceFontFamily(firstNonBlank(resolved.nameTextFontFamily(), DEFAULT_FONT_FAMILY));
     int nameFontSize = resolved.nameTextFontSize() != null ? resolved.nameTextFontSize() : DEFAULT_NAME_FONT_SIZE;
     FontWeight nameFontWeight = parseFontWeight(resolved.nameTextFontWeight(), FontWeight.BOLD);
     this.nameFont = ProjectFontResolver.resolve(projectRoot, nameFontFamily, nameFontWeight, nameFontSize, DEFAULT_FONT_FAMILY);
 
-    String dialogueFontFamily = resolved.dialogueTextFontFamily() != null ? resolved.dialogueTextFontFamily() : DEFAULT_FONT_FAMILY;
+    String dialogueFontFamily = interfaceTheme.interfaceFontFamily(firstNonBlank(resolved.dialogueTextFontFamily(), DEFAULT_FONT_FAMILY));
     int dialogueFontSize = resolved.dialogueTextFontSize() != null ? resolved.dialogueTextFontSize() : DEFAULT_DIALOGUE_FONT_SIZE;
     FontWeight dialogueFontWeight = parseFontWeight(resolved.dialogueTextFontWeight(), FontWeight.NORMAL);
     this.dialogueFont = ProjectFontResolver.resolve(projectRoot, dialogueFontFamily, dialogueFontWeight, dialogueFontSize, DEFAULT_FONT_FAMILY);
 
-    String choiceFontFamily = resolved.choiceFontFamily() != null ? resolved.choiceFontFamily() : DEFAULT_FONT_FAMILY;
+    String choiceFontFamily = interfaceTheme.interfaceFontFamily(firstNonBlank(resolved.choiceFontFamily(), DEFAULT_FONT_FAMILY));
     int choiceFontSize = resolved.choiceFontSize() != null ? resolved.choiceFontSize() : DEFAULT_CHOICE_FONT_SIZE;
     FontWeight choiceFontWeightVal = parseFontWeight(resolved.choiceFontWeight(), FontWeight.NORMAL);
     this.choiceFont = ProjectFontResolver.resolve(projectRoot, choiceFontFamily, choiceFontWeightVal, choiceFontSize, DEFAULT_FONT_FAMILY);
@@ -3267,6 +3323,10 @@ public class VnRenderer {
       applyAccessibilityThemeOverrides(accessibilityTheme);
     }
     applyUiFontScale();
+  }
+
+  private boolean usesGlass() {
+    return interfaceTheme.usesAeroGlass() && (accessibilityTheme == null || !accessibilityTheme.isActive());
   }
 
   private void syncAccessibilitySettings(VnState state) {
@@ -3594,6 +3654,7 @@ public class VnRenderer {
           : (hovered ? firstNonNull(choiceButtonHoverImage, choiceButtonImage) : choiceButtonImage);
       double radius = choiceCornerRadius;
       boolean clipChoiceButton = hasPolygon(choiceButtonBoundsPolygon);
+      boolean glass = usesGlass() && buttonImage == null && !clipChoiceButton;
       if (buttonImage != null) {
         if (clipChoiceButton) {
           gc.save();
@@ -3603,6 +3664,12 @@ public class VnRenderer {
         } else {
           gc.drawImage(buttonImage, geo.choiceX(), y, geo.choiceWidth(), geo.choiceHeight());
         }
+      } else if (glass) {
+        gc.save();
+        if (!enabled) gc.setGlobalAlpha(gc.getGlobalAlpha() * .58);
+        (hovered && enabled ? AeroGlass.FOCUSED : AeroGlass.BUTTON)
+            .draw(gc, geo.choiceX(), y, geo.choiceWidth(), geo.choiceHeight(), 8);
+        gc.restore();
       } else {
         Color bg = !enabled ? choiceDisabledColor : (hovered ? choiceHoverColor : choiceBgColor);
         if (clipChoiceButton) {
@@ -3621,10 +3688,12 @@ public class VnRenderer {
       Color borderColor = !enabled ? choiceDisabledBorderColor : (hovered ? choiceHoverBorderColor : choiceBorderColor);
       gc.setStroke(borderColor);
       gc.setLineWidth(choiceBorderWidth);
-      if (clipChoiceButton) {
-        strokeLocalPolygon(choiceButtonBoundsPolygon, geo.choiceX(), y, geo.choiceWidth(), geo.choiceHeight());
-      } else {
-        gc.strokeRoundRect(geo.choiceX(), y, geo.choiceWidth(), geo.choiceHeight(), radius, radius);
+      if (!glass) {
+        if (clipChoiceButton) {
+          strokeLocalPolygon(choiceButtonBoundsPolygon, geo.choiceX(), y, geo.choiceWidth(), geo.choiceHeight());
+        } else {
+          gc.strokeRoundRect(geo.choiceX(), y, geo.choiceWidth(), geo.choiceHeight(), radius, radius);
+        }
       }
 
       // Text
@@ -3920,7 +3989,11 @@ public class VnRenderer {
 
   private void drawBubblePanel(BubbleGeometry bubble) {
     if (bubble == null) return;
-    drawPanel(
+    boolean glass = usesGlass() && bubbleImage == null;
+    if (glass) {
+      AeroGlass.DIALOGUE.draw(gc, bubble.x(), bubble.y(), bubble.width(), bubble.height(), bubbleCornerRadius);
+    } else {
+      drawPanel(
         bubbleImage,
         bubbleFillColor,
         bubbleOpacity,
@@ -3931,7 +4004,8 @@ public class VnRenderer {
         bubbleCornerRadius,
         bubbleBorderFillColor,
         bubbleBorderWidth
-    );
+      );
+    }
 
     double tailHalf = bubble.tailSize() * 0.58;
     double tailCenter = clamp(
@@ -3944,9 +4018,9 @@ public class VnRenderer {
     double[] ys = bubble.tailOnTop()
         ? new double[] {baseY, baseY, tipY}
         : new double[] {baseY, baseY, tipY};
-    gc.setFill(withOpacity(bubbleFillColor, bubbleOpacity));
+    gc.setFill(glass ? Color.rgb(24, 53, 84, .85) : withOpacity(bubbleFillColor, bubbleOpacity));
     gc.fillPolygon(xs, ys, 3);
-    gc.setStroke(bubbleBorderFillColor);
+    gc.setStroke(glass ? Color.rgb(51, 103, 148, .92) : bubbleBorderFillColor);
     gc.setLineWidth(bubbleBorderWidth);
     gc.strokePolygon(xs, ys, 3);
   }

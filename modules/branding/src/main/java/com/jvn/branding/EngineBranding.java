@@ -3,8 +3,6 @@ package com.jvn.branding;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.Properties;
-import org.apache.batik.transcoder.*;
-import org.apache.batik.transcoder.image.ImageTranscoder;
 
 /** Official bundled SVG and build version. Project assets and preferences cannot override these. */
 public final class EngineBranding {
@@ -33,26 +31,9 @@ public final class EngineBranding {
     } catch (IOException e) { throw new IllegalStateException(e); }
   }
   private static BufferedImage renderLogo() {
-    final BufferedImage[] result = new BufferedImage[1];
-    ImageTranscoder transcoder = new ImageTranscoder() {
-      @Override public BufferedImage createImage(int width, int height) {
-        return new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-      }
-      @Override public void writeImage(BufferedImage image, TranscoderOutput output) { result[0] = image; }
-    };
-    transcoder.setErrorHandler(new ErrorHandler() {
-      public void warning(TranscoderException e) throws TranscoderException { throw e; }
-      public void error(TranscoderException e) throws TranscoderException { throw e; }
-      public void fatalError(TranscoderException e) throws TranscoderException { throw e; }
-    });
-    transcoder.addTranscodingHint(ImageTranscoder.KEY_WIDTH, 760f);
-    transcoder.addTranscodingHint(ImageTranscoder.KEY_EXECUTE_ONLOAD, false);
-    transcoder.addTranscodingHint(ImageTranscoder.KEY_ALLOW_EXTERNAL_RESOURCES, false);
     try {
       // Only the engine-bundled document is accepted, never a project-provided SVG.
-      transcoder.transcode(new TranscoderInput(new ByteArrayInputStream(svg())), null);
-      if (result[0] == null) throw new IllegalStateException("JVN SVG produced no image");
-      return result[0];
-    } catch (TranscoderException e) { throw new IllegalStateException("Cannot render official JVN SVG", e); }
+      return SvgRasterizer.render(new ByteArrayInputStream(svg()), 760);
+    } catch (IOException e) { throw new IllegalStateException("Cannot render official JVN SVG", e); }
   }
 }

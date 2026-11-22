@@ -117,6 +117,7 @@ public class Engine implements AutoCloseable {
 
   /** Optional handler that intercepts custom menu actions at runtime. */
   private MenuActionHandler menuActionHandler;
+  private String sharedMenuBgmPath;
 
   // ──────────────────────────────────────────────────────────────────────────
   //  Timing parameters
@@ -627,4 +628,9 @@ public class Engine implements AutoCloseable {
 
   /** @return the current menu action handler, or {@code null} if not configured */
   public MenuActionHandler getMenuActionHandler() { return menuActionHandler; }
+
+  /** Optional music shared by the title menu and the game it opens. */
+  public void setSharedMenuBgmPath(String path) { sharedMenuBgmPath = path; }
+
+  public String getSharedMenuBgmPath() { return sharedMenuBgmPath; }
 }

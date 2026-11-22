@@ -377,6 +377,7 @@ source of truth for docs changes.
 - [What's New in JVN 0.7.0](project-setup/release/whats-new-0.7.0.md) — licensing, Settings credit, and release verification
 
 - [What's New in JVN 0.9.5](project-setup/release/whats-new-0.9.5.md) — tutorial title screen and live script examples
+- [What's New in JVN 0.9.6](project-setup/release/whats-new-0.9.6.md) — watercolor tutorial menus and continuous music
 - [What's New in JVN 0.9.4](project-setup/release/whats-new-0.9.4.md) — visual layouts, script editing, and the tutorial
 - [What's New in JVN 0.9.3](project-setup/release/whats-new-0.9.3.md) — Ginger, choice routing and in-game menus
 - [What's New in JVN 0.9.2](project-setup/release/whats-new-0.9.2.md) — Pip tutorial selection and graphite workspace colors

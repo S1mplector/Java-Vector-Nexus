@@ -559,7 +559,7 @@ public class LoadMenuScene implements Scene {
         audio.setSfxVolume(s.getSfxVolume());
         audio.setVoiceVolume(s.getVoiceVolume());
       }
-      MenuAudioLifecycle.beginGameplay(audio);
+      MenuAudioLifecycle.beginGameplay(engine, audio);
       engine.scenes().push(scene);
     } catch (Exception ignored) {
             // reason: non-critical operation; exception swallowed to prevent crash propagation
@@ -613,7 +613,7 @@ public class LoadMenuScene implements Scene {
     }
     if (engine != null) {
       engine.setFixedUpdateStepMs(settingsModel.getPhysicsFixedStepMs(), settingsModel.getPhysicsMaxSubSteps());
-      MenuAudioLifecycle.beginGameplay(audio);
+      MenuAudioLifecycle.beginGameplay(engine, audio);
       engine.scenes().push(scene);
     }
   }

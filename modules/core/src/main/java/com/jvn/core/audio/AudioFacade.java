@@ -37,6 +37,19 @@ public interface AudioFacade extends AutoCloseable {
    */
   void playBgm(String trackId, boolean loop);
 
+  /** Keep the requested track playing without restarting an active loop. */
+  default void ensureBgmPlaying(String trackId, boolean loop) {
+    AudioSnapshot current = snapshot();
+    if (trackId.equals(current.bgmTrackId()) && loop == current.bgmLooping()) {
+      switch (current.bgmStatus()) {
+        case PLAYING, LOADING -> { return; }
+        case PAUSED -> { resumeBgm(); return; }
+        default -> { }
+      }
+    }
+    playBgm(trackId, loop);
+  }
+
   /** Stop the currently playing background music. */
   void stopBgm();
 

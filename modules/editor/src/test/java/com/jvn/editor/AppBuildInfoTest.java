@@ -11,14 +11,14 @@ class AppBuildInfoTest {
 
   @Test
   void displayVersionLabelUsesFallbackForDev() {
-    assertEquals("v0.9.5", AppBuildInfo.displayVersionLabel("dev"));
-    assertEquals("v0.9.5", AppBuildInfo.displayVersionLabel("vdev"));
-    assertEquals("v0.9.5", AppBuildInfo.displayVersionLabel(""));
+    assertEquals("v0.9.6", AppBuildInfo.displayVersionLabel("dev"));
+    assertEquals("v0.9.6", AppBuildInfo.displayVersionLabel("vdev"));
+    assertEquals("v0.9.6", AppBuildInfo.displayVersionLabel(""));
   }
 
   @Test
   void displayVersionLabelMapsSnapshotToAlpha() {
-    assertEquals("v0.9.5 Alpha", AppBuildInfo.displayVersionLabel("0.9.5-SNAPSHOT"));
+    assertEquals("v0.9.6 Alpha", AppBuildInfo.displayVersionLabel("0.9.6-SNAPSHOT"));
   }
 
   @Test

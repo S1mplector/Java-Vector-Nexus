@@ -38,6 +38,7 @@ public final class AsyncAudioService implements AudioFacade {
   }
   @Override public void setProjectRoot(File root) { submit(() -> backend.setProjectRoot(root)); }
   @Override public void playBgm(String path, boolean loop) { submit(() -> backend.playBgm(path, loop)); }
+  @Override public void ensureBgmPlaying(String path, boolean loop) { submit(() -> backend.ensureBgmPlaying(path, loop)); }
   @Override public void stopBgm() { submit(backend::stopBgm); }
   @Override public void playSfx(String path) { submit(() -> backend.playSfx(path)); }
   @Override public void playVoice(String path) { submit(() -> backend.playVoice(path)); }
