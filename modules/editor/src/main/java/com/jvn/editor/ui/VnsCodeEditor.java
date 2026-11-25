@@ -55,6 +55,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -864,6 +866,10 @@ public class VnsCodeEditor extends BorderPane {
   }
 
   private javafx.scene.Node makeLineNumberLabel(int line) {
+    // RichTextFX collapses the paragraph text independently of its gutter graphic.
+    if (codeArea.getParagraph(line).getParagraphStyle().contains(RTFX_COLLAPSE_STYLE_CLASS)) {
+      return null;
+    }
     Label ln = new Label(String.format("%d", line + 1));
     ln.getStyleClass().add("lineno");
     if (line == highlightedIssueLine) {
@@ -936,7 +942,12 @@ public class VnsCodeEditor extends BorderPane {
       } else {
         foldBtn.setTooltip(new Tooltip(folded ? "Unfold section" : "Fold section"));
       }
-      foldBtn.setOnMouseClicked(e -> toggleFold(line));
+      foldBtn.setOnMouseClicked(e -> {
+        if (e.getButton() == MouseButton.PRIMARY) {
+          toggleFold(line);
+          e.consume();
+        }
+      });
       gutter.getChildren().add(foldBtn);
     }
 
@@ -2298,8 +2309,22 @@ public class VnsCodeEditor extends BorderPane {
   private record TimelineNavSummary(String detail, String targets) {}
 
   private void setupCodeFolding() {
-    // Code folding is managed through the gutter (makeLineNumberLabel).
-    // RichTextFX collapses paragraphs when their paragraph style includes "collapse".
+    codeArea.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+      if (foldedRegionStarts.isEmpty() || event.getButton() != MouseButton.PRIMARY
+          || event.getClickCount() != 1 || !event.isStillSincePress()
+          || event.isShiftDown() || event.isShortcutDown() || event.isAltDown()) return;
+      var point = codeArea.sceneToLocal(event.getSceneX(), event.getSceneY());
+      var character = codeArea.hit(point.getX(), point.getY()).getCharacterIndex();
+      if (character.isEmpty()) return;
+      int line = codeArea.offsetToPosition(character.getAsInt(), org.fxmisc.richtext.model.TwoDimensional.Bias.Forward)
+          .getMajor();
+      if (!foldedRegionStarts.contains(line)) return;
+      FoldRegion region = findFoldRegionStartingAtLine(line);
+      if (region != null && region.kind() == FoldKind.TIMELINE) {
+        toggleFold(line);
+        event.consume();
+      }
+    });
   }
 
   private List<FoldRegion> computeFoldRegions() {

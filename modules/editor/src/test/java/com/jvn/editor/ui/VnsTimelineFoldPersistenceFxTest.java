@@ -7,6 +7,13 @@ import com.jvn.fx.testkit.FxToolkit;
 import com.jvn.fx.testkit.FxToolkitExtension;
 import java.util.List;
 import java.util.concurrent.Callable;
+import javafx.event.Event;
+import javafx.scene.Scene;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.PickResult;
+import javafx.stage.Stage;
+import org.fxmisc.richtext.CodeArea;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -30,6 +37,43 @@ class VnsTimelineFoldPersistenceFxTest {
           + "    dur: 100\n"
           + "  }\n"
           + "}\n";
+
+  @Test
+  void foldedTimelineHeaderReopensWithoutEditingTheScript() throws Exception {
+    Stage stage = runFx(() -> {
+      VnsCodeEditor editor = new VnsCodeEditor();
+      editor.setText(TWO_TIMELINE_SCRIPT);
+      Stage window = new Stage();
+      Scene scene = new Scene(editor, 640, 480);
+      EditorTheme.apply(scene);
+      window.setScene(scene);
+      window.show();
+      editor.toggleTimelineFoldAtLineForTest(1);
+      return window;
+    });
+    try {
+      runFx(() -> {
+        var editor = (VnsCodeEditor) stage.getScene().getRoot();
+        editor.applyCss();
+        editor.layout();
+        var area = (CodeArea) editor.lookup(".code-area");
+        assertEquals(1, editor.exportFoldedTimelineBlocks().size());
+        org.junit.jupiter.api.Assertions.assertNull(area.getParagraphGraphicFactory().apply(2));
+        int start = area.getAbsolutePosition(1, 0);
+        var glyph = area.getCharacterBoundsOnScreen(start, start + 1).orElseThrow();
+        var point = area.getScene().getRoot().screenToLocal(glyph.getCenterX(), glyph.getCenterY());
+        Event.fireEvent(area, new MouseEvent(MouseEvent.MOUSE_CLICKED,
+            point.getX(), point.getY(), glyph.getCenterX(), glyph.getCenterY(),
+            MouseButton.PRIMARY, 1, false, false, false, false, false, false, false,
+            false, false, true, new PickResult(area, point.getX(), point.getY())));
+        assertTrue(editor.exportFoldedTimelineBlocks().isEmpty());
+        assertEquals(TWO_TIMELINE_SCRIPT, area.getText());
+        return null;
+      });
+    } finally {
+      FxToolkit.runFx(stage::close);
+    }
+  }
 
   @Test
   void restoreFoldedTimelineBlocksReappliesExportedFoldState() throws Exception {
