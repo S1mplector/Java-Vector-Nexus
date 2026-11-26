@@ -94,7 +94,8 @@ public final class InputActions {
     p.add(QUICK_LOAD, InputCode.key("F9"));
     p.add(SAVE_MENU, InputCode.key("F6"));
     p.add(ROLLBACK, InputCode.key("PAGE_UP"))
-        .add(ROLLBACK, InputCode.key("BACK_QUOTE")); // ` key
+        .add(ROLLBACK, InputCode.key("BACK_QUOTE"))
+        .add(ROLLBACK, InputCode.mouseWheel(1));
     p.add(ROLLFORWARD, InputCode.key("PAGE_DOWN"));
 
     // Menus

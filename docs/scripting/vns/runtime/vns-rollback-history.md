@@ -143,8 +143,16 @@ VnRollbackStack stack = new VnRollbackStack(200);
 
 | Key | Action |
 |-----|--------|
-| **Mouse Scroll Up** / **Page Up** | Roll back |
-| **Mouse Scroll Down** / **Page Down** | Roll forward |
+| **Scroll up** / **Page Up** / **Backquote** | Roll back in the JavaFX player |
+| **Page Down** | Roll forward |
+
+To customize rollback, edit `~/.jvn/input-bindings.properties` or the configured input-profile path. For example:
+
+```properties
+rollback=MOUSE_WHEEL|0||UP,KEYBOARD|0||PAGE_UP
+```
+
+Remove the wheel entry for keyboard-only rollback. Use `rollback=` to disable all rollback bindings. You can bind `MOUSE_WHEEL|0||DOWN` to `rollforward` as well. Restart the player after editing the file. If you previously loaded an Input Profile through Settings, reload it from disk before restarting. The history menu uses the wheel to move through its log.
 
 ---
 

@@ -184,8 +184,13 @@ public class Input {
   /** @return current mouse Y in logical coordinates */
   public double getMouseY() { return mouseY; }
 
-  /** Accumulate scroll wheel delta for the current frame. */
-  public void addScrollDeltaY(double dy) { this.scrollDeltaY += dy; }
+  /** Accumulate vertical scroll and record its direction as a momentary input. */
+  public void addScrollDeltaY(double dy) {
+    InputCode direction = InputCode.mouseWheel(dy);
+    if (direction == null) return;
+    scrollDeltaY += dy;
+    pressed.add(direction);
+  }
 
   /** @return accumulated scroll delta since last {@link #endFrame()} */
   public double getScrollDeltaY() { return scrollDeltaY; }

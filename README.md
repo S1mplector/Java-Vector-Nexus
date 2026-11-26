@@ -3,7 +3,8 @@
 <div align="left">
   <img src="docs/assets/images/jvn_logo.svg" width="460" alt="Java Vector Nexus logo">
   <br>
-  <strong>Current version:</strong> <a href="https://github.com/S1mplector/Java-Vector-Nexus/releases/tag/engine-v0.9.6">v0.9.6</a>
+  <strong>Development version:</strong> v0.9.7<br>
+  <strong>Latest release:</strong> <a href="https://github.com/S1mplector/Java-Vector-Nexus/releases/tag/engine-v0.9.6">v0.9.6</a>
 </div>
 
 JVN is a young, modular cross-platform Visual Novel engine and 2D animation toolkit written in Java.

@@ -5,14 +5,15 @@ import java.util.Objects;
 
 /**
  * Backend-agnostic input identifier that can represent keyboard keys,
- * mouse buttons, or gamepad controls.
+ * mouse buttons, wheel directions, or gamepad controls.
  *
  * <p>{@code InputCode} is an immutable value object used as the key for all
  * input-state lookups in {@link Input} and binding tables in {@link ActionMap}.
- * It unifies four device types under a single comparable identity:</p>
+ * It unifies five device types under a single comparable identity:</p>
  * <ul>
  *   <li>{@link Device#KEYBOARD} — identified by canonical key name.</li>
  *   <li>{@link Device#MOUSE_BUTTON} — identified by button index (1-based).</li>
+ *   <li>{@link Device#MOUSE_WHEEL} — identified by vertical scroll direction.</li>
  *   <li>{@link Device#GAMEPAD_BUTTON} — identified by gamepad index + button name.</li>
  *   <li>{@link Device#GAMEPAD_AXIS} — identified by gamepad index + axis name.</li>
  * </ul>
@@ -28,7 +29,7 @@ import java.util.Objects;
 public final class InputCode {
 
   /** The physical device family that this input code belongs to. */
-  public enum Device { KEYBOARD, MOUSE_BUTTON, GAMEPAD_BUTTON, GAMEPAD_AXIS }
+  public enum Device { KEYBOARD, MOUSE_BUTTON, MOUSE_WHEEL, GAMEPAD_BUTTON, GAMEPAD_AXIS }
 
   /** Device family. */
   private final Device device;
@@ -71,6 +72,15 @@ public final class InputCode {
    */
   public static InputCode mouse(int button) {
     return new InputCode(Device.MOUSE_BUTTON, null, button, 0);
+  }
+
+  private static final InputCode WHEEL_UP = new InputCode(Device.MOUSE_WHEEL, "UP", -1, 0);
+  private static final InputCode WHEEL_DOWN = new InputCode(Device.MOUSE_WHEEL, "DOWN", -1, 0);
+
+  /** Return the binding for a vertical scroll delta, or null for no vertical motion. */
+  public static InputCode mouseWheel(double deltaY) {
+    if (!Double.isFinite(deltaY) || deltaY == 0) return null;
+    return deltaY > 0 ? WHEEL_UP : WHEEL_DOWN;
   }
 
   /**
@@ -118,6 +128,7 @@ public final class InputCode {
     return switch (device) {
       case KEYBOARD -> "Key:" + (name == null ? "" : name);
       case MOUSE_BUTTON -> "Mouse:" + index;
+      case MOUSE_WHEEL -> "Wheel:" + name;
       case GAMEPAD_BUTTON -> "Pad" + gamepad + ":Btn:" + (name == null ? "" : name);
       case GAMEPAD_AXIS -> "Pad" + gamepad + ":Axis:" + (name == null ? "" : name);
     };
@@ -149,6 +160,7 @@ public final class InputCode {
     int pad = parseIntSafe(parts[1]);
     int idx = parseIntSafe(parts[2]);
     String nm = parts[3].isEmpty() ? null : parts[3];
+    if (d == Device.KEYBOARD && nm != null) nm = canonicalKey(nm);
     return new InputCode(d, nm, idx, pad);
   }
 
@@ -160,7 +172,7 @@ public final class InputCode {
   /** Canonicalise a key/button/axis name to upper-case, trimmed. */
   private static String canonicalKey(String key) {
     if (key == null) return "";
-    return key.trim().toUpperCase(Locale.ROOT);
+    return key.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
   }
 
   // ──────────────────────────────────────────────────────────────────────────

@@ -85,6 +85,10 @@ public class ActionBindingProfile {
       if (idx <= 0) continue;
       String action = line.substring(0, idx);
       String codes = line.substring(idx + 1);
+      if (codes.isBlank()) {
+        profile.bindings.computeIfAbsent(action, key -> new HashSet<>());
+        continue;
+      }
       for (String raw : codes.split(",")) {
         InputCode code = InputCode.decode(raw);
         if (code != null) profile.add(action, code);

@@ -502,6 +502,18 @@ public class FxLauncher extends Application {
           } else if (dy < 0) {
             historyScene.scrollByLines(-step);
           }
+        } else if (!e.isInertia() && actionMap != null
+            && currentScene instanceof VnScene vn && vn.getActiveError() == null
+            && vn.getState().getTopOverlayScreen() == null
+            && isPointInSceneViewport(e.getX(), e.getY(), vn)) {
+          InputCode direction = InputCode.mouseWheel(e.getDeltaY());
+          if (actionMap.matches(InputActions.ROLLBACK, direction)) {
+            handleRollback();
+            e.consume();
+          } else if (actionMap.matches(InputActions.ROLLFORWARD, direction)) {
+            handleRollforward();
+            e.consume();
+          }
         }
       }
     });

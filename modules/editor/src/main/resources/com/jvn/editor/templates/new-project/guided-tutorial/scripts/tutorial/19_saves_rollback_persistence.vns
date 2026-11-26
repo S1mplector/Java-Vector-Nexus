@@ -16,6 +16,7 @@ ginger: Save a slot before selecting a test value. You can reload that slot and 
 ginger: At the choices, open Pause and choose {b}Save{/b}. Create a slot, resume, then select A or B. Watch the value printed after the selection.
 ginger: A slot captures a particular moment in the route. Save before the choice to test both inputs from the same starting point. Save after the write to check how the resulting state restores.
 ginger: The printed result gives you a way to inspect example_value. A restored sprite alone cannot tell you whether the variable and script position came back together.
+ginger: Scroll up on the dialogue to roll back one step. Try it after choosing A or B. As you step back, watch for both the earlier line and its earlier variable value.
 @label select_value
 # region branches
 > Set value to A -> select_a
@@ -74,7 +75,9 @@ ginger: Store the value in VN state. Check the restored value and the current sc
 ginger: Create slot Before at the A/B choice. Choose A, advance to the printed value, and save again under a second name. You now have snapshots on opposite sides of the write.
 ginger: Load Before and choose B. The next readout should be B. Load the later slot and check the current line and readout before making any new choice.
 ginger: Trace that readout back to the assignment on each branch. Both routes use the same output line, so a difference there should come from a different stored value.
-ginger: Test rollback separately on the same route. Step back through dialogue and inspect when the value changes. Record the exact stop you reached rather than assuming one press returns to the choice.
+ginger: Test rollback separately on the same route. Scroll up or press Page Up to step back through dialogue and inspect when the value changes.
+ginger: Scroll-up rollback is customizable. In ~/.jvn/input-bindings.properties, the rollback row lists its controls. Keep MOUSE_WHEEL|0||UP to use scroll up, remove that entry to keep keyboard shortcuts only, or use an empty rollback row to disable all its shortcuts.
+ginger: Relaunch the game after editing the profile and repeat the exercise. If you already loaded a profile through Settings, reload Input Profile from disk before relaunching.
 @label practice_question
 ginger: Which slot lets you choose B without replaying the whole lesson?
 > The slot captured before the A/B choice. -> practice_result
