@@ -1,0 +1,63 @@
+# Parallel JES timelines
+@scenario tutorial_lesson_52
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/scenes/parallel_lab.jes]
+[set tutorial_excerpt movements]
+[set ui.dialogueFacet tutorial_code]
+ginger: Parallel starts both moves together and lets the next timeline action run while they move. Watch how the status text changes during the demo.
+@label lab
+> Run the movement comparison -> demo
+> Practice exercise -> practice
+> Review question -> check
+> Back to topics -> return_hub
+@label demo
+[jes push scripts/scenes/parallel_lab.jes label compare]
+@label compare
+ginger: The first event updates the status while the markers move. The wait holds the second event until the slower marker arrives. Remove the wait and see how early the status changes.
+[jump lab]
+@label return_hub
+[clear ui.dialogueFacet]
+[if !tutorial_done_52]
+[flag tutorial_done_52]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_10]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: Change the slower move to 1,500 ms. What else should change so the final status still matches its arrival?
+> Increase the wait from 1,200 ms to 1,500 ms. -> practice_result
+> Leave the wait at 1,200 ms. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: The wait is its own timeline action. It ends after the duration you set.
+[jump practice]
+@label practice_result
+ginger: Match the wait to the longer move, then replay the scene and compare the lower marker's arrival with the status change.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: Which action makes the final status wait for the slower marker?
+> The wait after the parallel block. -> correct
+> The parallel block itself. -> retry
+> Back to topics -> return_hub
+@label retry
+ginger: The first status update runs while the markers are still moving. Pause the main timeline explicitly to time the final update.
+[jump check]
+@label correct
+ginger: Use parallel to start actions together. Put a wait before the next cue when you need that cue to follow them at a known time.
+> Replay example -> start
+> Back to topics -> return_hub

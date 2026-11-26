@@ -1,6 +1,8 @@
 # Tutorial
 
-Choose **New Project → Tutorial**, create the project, and press **Run**. Choose **Start tutorial**, pick a category and open a lesson. The 30 lessons can be taken in any order. **Back to topics** returns to the category and records completion once. **Progress and motion** shows your total and the motion controls.
+Choose **New Project → Tutorial**, create the project, and press **Run**. Choose **Start tutorial** to meet Ginger. After her introduction, the pannable topic tree opens in the game window. Select a lesson to play. The 52 lessons can be taken in any order. **Back to topics** returns to the category and records completion once. **Progress and motion** shows your total and the motion controls.
+
+Drag on empty space to pan, scroll or pinch to zoom, and select a category heading to focus on its lessons. Use **Find a lesson** (Ctrl+F or Command+F) to search titles and categories. Select a result to bring its card into view. Use **Fit map** or Home to see the whole course, **+** and **−** to zoom from the keyboard, and **Full screen** or F11 to toggle the game window between full screen and its previous size. Edit the map titles, icons and routes in `config/ui/tutorial-topics.properties`.
 
 ## Try a lesson with the source open
 
@@ -13,7 +15,7 @@ Choose **New Project → Tutorial**, create the project, and press **Run**. Choo
 
 The hub lives in `scripts/story/tutorial_hub.vns`. Each numbered lesson lives under `scripts/tutorial/`. Character and background declarations are in `scripts/definitions/characters.vns`. For your own teaching panel, follow [Show a source excerpt in dialogue](show-source-in-dialogue.md).
 
-The [0.9.6 release](../project-setup/release/whats-new-0.9.6.md) includes the current playable tutorial download. You can also generate it in **New Project → Tutorial**.
+The [0.9.6 release](../project-setup/release/whats-new-0.9.6.md) includes an earlier playable tutorial download. Generate the expanded course in **New Project → Tutorial** from an editor build that includes the topic map.
 
 ## Lesson references
 
@@ -49,3 +51,25 @@ The [0.9.6 release](../project-setup/release/whats-new-0.9.6.md) includes the cu
 | 28. Assets and Performance | `28_assets_and_performance.vns` | [Asset Management & Path Resolution](../runtime/systems/asset-management.md) |
 | 29. Accessibility, Settings and Controls | `29_accessibility_and_controls.vns` | [VNS Settings & Playback Modes](../scripting/vns/runtime/vns-settings-modes.md) |
 | 30. Extensions and Capstone | `30_java_extensions_and_capstone.vns` | [Java + JES + VNS Cross Development](../scripting/vns/integration/java-jes-cross-development.md) |
+| 31. Gated choices | `31_gated_choices.vns` | [Reference](../scripting/vns/language/vns-choices.md) |
+| 32. Display slots | `32_display_slots.vns` | [Reference](../scripting/vns/presentation/vns-display-slots.md) |
+| 33. Text styles | `33_text_styles.vns` | [Reference](../scripting/vns/language/vns-text-formatting.md) |
+| 34. Persistent profiles | `34_profile_state.vns` | [Reference](../scripting/vns/language/vns-variables.md) |
+| 35. Shared declarations | `35_shared_declarations.vns` | [Reference](../scripting/vns/language/vns-directives.md) |
+| 36. Audio channels | `36_audio_channels.vns` | [Reference](../scripting/vns/presentation/vns-audio.md) |
+| 37. Modal results | `37_facet_return_values.vns` | [Reference](../scripting/ui/facets.md) |
+| 38. Topic map | `38_topic_map.vns` | [Reference](../scripting/vns/language/vns-choices.md) |
+| 39. JES widgets | `39_jes_widgets.vns` | [Reference](../scripting/jes/gameplay/jes-ui-widgets.md) |
+| 40. JES cameras | `40_jes_camera.vns` | [Reference](../scripting/jes/systems/jes-camera.md) |
+| 41. History contrast | `41_history_contrast.vns` | [Reference](../scripting/vns/runtime/vns-rollback-history.md) |
+| 42. Release smoke tests | `42_release_smoke_check.vns` | [Reference](../project-setup/release/deployment.md) |
+| 43. Tilemaps and collision | `43_tilemap_world.vns` | [Reference](../guides/jes-by-example/07-tilemap-world.md) |
+| 44. Physics and restitution | `44_physics_lab.vns` | [Reference](../guides/jes-by-example/09-physics-bodies.md) |
+| 45. AI steering and pathfinding | `45_ai_lab.vns` | [Reference](../scripting/jes/gameplay/jes-ai.md) |
+| 46. RPG items and stats | `46_inventory_lab.vns` | [Reference](../scripting/jes/gameplay/jes-rpg.md) |
+| 47. Plural and number formatting | `47_plural_format.vns` | [Reference](../scripting/vns/language/vns-text-formatting.md) |
+| 48. Layer groups and pivot points | `48_group_pivots.vns` | [Reference](../scripting/vns/presentation/vns-movable-layer-groups.md) |
+| 49. JES keyboard actions | `49_jes_input.vns` | [JES Input Bindings](../scripting/jes/systems/jes-input.md) |
+| 50. JES results in VNS | `50_jes_return.vns` | [JES VN Bridge & Java Hooks](../scripting/jes/integration/jes-bridge.md) |
+| 51. Tile triggers | `51_tile_triggers.vns` | [JES Tilemaps](../scripting/jes/systems/jes-tilemaps.md) |
+| 52. Parallel JES timelines | `52_parallel_timeline.vns` | [JES Timeline](../scripting/jes/timeline/jes-timeline.md#parallel) |

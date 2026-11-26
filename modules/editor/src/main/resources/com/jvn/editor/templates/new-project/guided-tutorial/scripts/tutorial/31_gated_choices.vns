@@ -1,0 +1,75 @@
+# Conditional choices
+@scenario tutorial_lesson_31
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/31_gated_choices.vns]
+[set tutorial_excerpt options]
+[set ui.dialogueFacet tutorial_code]
+[set lab_pass false]
+ginger: The archive has a locked door. Check the options, borrow a pass and come back. The same VNS choice block responds to the new state.
+@label lab
+# region options
+> Borrow a pass -> borrow
+> Enter the archive -> enter [if lab_pass]
+> Return the pass -> surrender [if lab_pass]
+> Back to topics -> return_hub
+> Practice exercise -> practice
+> Review question -> check
+# endregion
+@label borrow
+[flag lab_pass]
+ginger: A pass changes one variable. See which choices appear.
+[jump lab]
+@label surrender
+[unflag lab_pass]
+ginger: The flag is false. The conditional choices should disappear again.
+[jump lab]
+@label enter
+ginger: You reached the archive. Edit the condition on Enter and replay both cases. Keep Borrow unconditional so the player always has a way forward.
+[jump lab]
+@label return_hub
+[clear ui.dialogueFacet]
+[if !tutorial_done_31]
+[flag tutorial_done_31]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_7]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: Borrow and return the pass without changing the script. Which entry must remain available?
+> Enter the archive before borrowing. -> practice_hint
+> Borrow a pass at the initial state. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: An unconditional Borrow route makes the locked state navigable.
+[jump practice]
+@label practice_result
+ginger: An unconditional Borrow route makes the locked state navigable.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the interactive lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: The pass is false. Should the archive choice be visible?
+> No, its condition is false. -> correct
+> Yes, the target label exists. -> retry
+> Back to topics -> return_hub
+@label retry
+[show ginger guide confused]
+ginger: Visibility comes from the condition, even when the label exists.
+[jump check]
+@label correct
+ginger: Visibility comes from the condition, even when the label exists.
+> Back to topics -> return_hub
+> Replay example -> start

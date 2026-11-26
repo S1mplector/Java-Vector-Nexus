@@ -16,23 +16,28 @@ ginger: Hello, welcome to the JVN tutorial! I'm Ginger. I'll show you how to tur
 [set tutorial_source scripts/story/tutorial_hub.vns]
 [set tutorial_excerpt welcome]
 [set ui.dialogueFacet tutorial_code]
-ginger: That's the line you just read. Open this script in the Editor and try changing my greeting. Then pick any topic to see another example in action.
+ginger: That's the line you just read. Open this script in the Editor and try changing my greeting. Next you’ll see the topic tree. Drag it to explore, or select a lesson to try it.
 [clear ui.dialogueFacet]
 @label topics
 [hide ginger]
+[set ui.topicMap config/ui/tutorial-topics.properties]
 > Writing and branching -> topics_page_1
 > Characters and backgrounds -> topics_page_2
 > Animation, audio and lighting -> topics_page_3
 > Text and interfaces -> topics_page_4
 > Game systems -> topics_page_5
 > Testing and editor tools -> topics_page_6
+> Authoring workshop -> topics_page_7
+> UI, gameplay and release labs -> topics_page_8
+> Interactive worlds -> topics_page_9
+> Reusable systems -> topics_page_10
 > Progress and motion -> options
 > Return to title -> goodbye
 @label goodbye
 [mainmenu story/tutorial_hub.vns]
 [end]
 @label options
-narrator: Completed lessons: {b}${tutorial_count} / 30{/b}.
+narrator: Completed lessons: {b}${tutorial_count} / 52{/b}.
 > Use reduced motion -> still
 > Enable movement -> motion
 > All topics -> topics
@@ -47,6 +52,7 @@ narrator: Completed lessons: {b}${tutorial_count} / 30{/b}.
 @label topics_page_1
 [hide ginger]
 [bg room]
+[set ui.topicMap config/ui/tutorial-topics.properties]
 > Dialogue -> open_dialogue
 > Pauses and timing -> open_narration
 > Variables and conditions -> open_variables
@@ -56,6 +62,7 @@ narrator: Completed lessons: {b}${tutorial_count} / 30{/b}.
 @label topics_page_2
 [hide ginger]
 [bg room]
+[set ui.topicMap config/ui/tutorial-topics.properties]
 > Expressions -> open_expressions
 > Backgrounds -> open_images
 > Transitions -> open_transitions
@@ -65,6 +72,7 @@ narrator: Completed lessons: {b}${tutorial_count} / 30{/b}.
 @label topics_page_3
 [hide ginger]
 [bg room]
+[set ui.topicMap config/ui/tutorial-topics.properties]
 > Sound effects -> open_audio
 > Puppeteer timelines -> open_puppeteer
 > Sprite effects -> open_plugins_and_line_boil
@@ -74,6 +82,7 @@ narrator: Completed lessons: {b}${tutorial_count} / 30{/b}.
 @label topics_page_4
 [hide ginger]
 [bg room]
+[set ui.topicMap config/ui/tutorial-topics.properties]
 > Localization -> open_localization
 > Dialogue layout -> open_ui_layout
 > Dialogue and narration -> open_dialogue_presentation
@@ -83,6 +92,7 @@ narrator: Completed lessons: {b}${tutorial_count} / 30{/b}.
 @label topics_page_5
 [hide ginger]
 [bg room]
+[set ui.topicMap config/ui/tutorial-topics.properties]
 > Opening a JES scene -> open_vns_jes
 > Saving and rollback -> open_saves_rollback_persistence
 > Editing JES entities -> open_jes_entities_input_widgets
@@ -92,11 +102,54 @@ narrator: Completed lessons: {b}${tutorial_count} / 30{/b}.
 @label topics_page_6
 [hide ginger]
 [bg room]
+[set ui.topicMap config/ui/tutorial-topics.properties]
 > Debugging a scene -> open_best_practices
 > Testing a build -> open_testing_release
 > Previewing an edit -> open_editor_workflows
 > Rendering performance -> open_assets_and_performance
 > Reduced motion -> open_accessibility_and_controls
+> All topics -> topics
+@label topics_page_7
+[hide ginger]
+[bg room]
+[set ui.topicMap config/ui/tutorial-topics.properties]
+> Conditional choices -> open_gated_choices
+> Named display slots -> open_display_slots
+> Inline text styles -> open_text_styles
+> Persistent profile state -> open_profile_state
+> Shared script declarations -> open_shared_declarations
+> Audio channels and mixing -> open_audio_channels
+> All topics -> topics
+@label topics_page_8
+[hide ginger]
+[bg room]
+[set ui.topicMap config/ui/tutorial-topics.properties]
+> Modal panels and results -> open_facet_return_values
+> Choice maps and navigation -> open_topic_map
+> JES buttons and sliders -> open_jes_widgets
+> JES cameras and parallax -> open_jes_camera
+> History and UI contrast -> open_history_contrast
+> Package and smoke test -> open_release_smoke_check
+> All topics -> topics
+@label topics_page_9
+[hide ginger]
+[bg room]
+[set ui.topicMap config/ui/tutorial-topics.properties]
+> Tilemaps and collision -> open_tilemap_world
+> Physics and restitution -> open_physics_lab
+> AI steering and pathfinding -> open_ai_lab
+> JES keyboard actions -> open_jes_input
+> Tile triggers -> open_tile_triggers
+> All topics -> topics
+@label topics_page_10
+[hide ginger]
+[bg room]
+[set ui.topicMap config/ui/tutorial-topics.properties]
+> RPG items and stats -> open_inventory_lab
+> Plural and number formatting -> open_plural_format
+> Layer groups and pivot points -> open_group_pivots
+> JES results in VNS -> open_jes_return
+> Parallel JES timelines -> open_parallel_timeline
 > All topics -> topics
 @label open_dialogue
 [goto T01_Dialogue:start]
@@ -158,3 +211,47 @@ narrator: Completed lessons: {b}${tutorial_count} / 30{/b}.
 [goto T29_Accessibility:start]
 @label open_java_extensions_and_capstone
 [goto T30_Extensions:start]
+@label open_gated_choices
+[goto T31_GatedChoices:start]
+@label open_display_slots
+[goto T32_DisplaySlots:start]
+@label open_text_styles
+[goto T33_TextStyles:start]
+@label open_profile_state
+[goto T34_ProfileState:start]
+@label open_shared_declarations
+[goto T35_Includes:start]
+@label open_audio_channels
+[goto T36_SoundChannels:start]
+@label open_facet_return_values
+[goto T37_ModalResults:start]
+@label open_topic_map
+[goto T38_TopicMap:start]
+@label open_jes_widgets
+[goto T39_JesWidgets:start]
+@label open_jes_camera
+[goto T40_JesCamera:start]
+@label open_history_contrast
+[goto T41_HistoryStyle:start]
+@label open_release_smoke_check
+[goto T42_ReleaseSmoke:start]
+@label open_tilemap_world
+[goto T43_Tilemap:start]
+@label open_physics_lab
+[goto T44_Physics:start]
+@label open_ai_lab
+[goto T45_AiLab:start]
+@label open_inventory_lab
+[goto T46_InventoryLab:start]
+@label open_plural_format
+[goto T47_PluralFormat:start]
+@label open_group_pivots
+[goto T48_GroupPivots:start]
+@label open_jes_input
+[goto T49_JesInput:start]
+@label open_jes_return
+[goto T50_JesReturn:start]
+@label open_tile_triggers
+[goto T51_TileTriggers:start]
+@label open_parallel_timeline
+[goto T52_ParallelTimeline:start]

@@ -1,0 +1,68 @@
+# Package and smoke test
+@scenario tutorial_lesson_42
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/42_release_smoke_check.vns]
+[set tutorial_excerpt probe]
+[set ui.dialogueFacet tutorial_code]
+ginger: A release check should exercise your entry point and packaged assets. Here is a probe that depends on a picture and a short sound.
+> Run the asset probe -> probe
+> Back to topics -> return_hub
+> Practice exercise -> practice
+> Review question -> check
+@label probe
+# region probe
+[bg room]
+[show ginger guide thoughtful]
+[sfx assets/tutorial/welcome.wav]
+# endregion
+ginger: You should see the room and my thoughtful sprite, and hear a cue. Now run the exported build and try the same exercise.
+ginger: Open the topic map, play this probe, save, close the game and load the save. You have checked navigation, assets and persistence in the build players receive.
+> Run the probe again -> probe
+> Back to topics -> return_hub
+@label return_hub
+[clear ui.dialogueFacet]
+[if !tutorial_done_42]
+[flag tutorial_done_42]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_8]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: The sprite loads but you hear no cue. Which check narrows it down?
+> Rename the background. -> practice_hint
+> Check the effect volume and the packaged WAV path. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Use the same effect settings in the editor and package, then verify the asset path.
+[jump practice]
+@label practice_result
+ginger: Use the same effect settings in the editor and package, then verify the asset path.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the interactive lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: Which check exercises the exported build?
+> Launch the package and run the asset probe. -> correct
+> Check the source file name alone. -> retry
+> Back to topics -> return_hub
+@label retry
+[show ginger guide confused]
+ginger: The package must resolve its runtime assets and navigation.
+[jump check]
+@label correct
+ginger: The package must resolve its runtime assets and navigation.
+> Back to topics -> return_hub
+> Replay example -> start

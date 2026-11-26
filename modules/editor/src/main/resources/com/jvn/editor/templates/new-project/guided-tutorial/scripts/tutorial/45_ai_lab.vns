@@ -1,0 +1,67 @@
+# AI steering and pathfinding
+@scenario tutorial_lesson_45
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/45_ai_lab.vns]
+[set tutorial_excerpt open_ai]
+[set ui.dialogueFacet tutorial_code]
+ginger: Move the green marker. The ochre follower uses a chase behavior and the same collision map. Compare whether it can follow through the gap.
+@label lab
+> Run the follower demo -> demo
+> Back to topics -> return_hub
+> Practice exercise -> practice
+> Review question -> check
+@label demo
+# region open_ai
+[jes push scripts/scenes/ai_lab.jes label compare]
+# endregion
+@label compare
+[set tutorial_source scripts/scenes/ai_lab.jes]
+[set tutorial_excerpt ai]
+ginger: Set aggroRange to 96 and change the initial positions. The follower should only activate when the target is close enough.
+[jump lab]
+@label return_hub
+[clear ui.dialogueFacet]
+[if !tutorial_done_45]
+[flag tutorial_done_45]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_9]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: Set aggroRange to 96. What should you test?
+> Only the original outline color. -> practice_hint
+> Approach the follower from outside the range, then cross inside. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: The AI compares the distance to its configured range and handles movement toward the target.
+[jump practice]
+@label practice_result
+ginger: The AI compares the distance to its configured range and handles movement toward the target.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: What controls when the follower activates?
+> Its aggro range and target distance. -> correct
+> The image format of the follower. -> retry
+> Back to topics -> return_hub
+@label retry
+ginger: The AI compares the distance to its configured range and handles movement toward the target.
+[jump check]
+@label correct
+ginger: The AI compares the distance to its configured range and handles movement toward the target.
+> Back to topics -> return_hub
+> Replay example -> start

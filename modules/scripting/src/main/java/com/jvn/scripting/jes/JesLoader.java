@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.jvn.core.assets.AssetCatalog;
+import com.jvn.core.assets.AssetType;
 import com.jvn.core.physics.RigidBody2D;
 import com.jvn.core.scene2d.CharacterEntity2D;
 import com.jvn.core.scene2d.Label2D;
@@ -488,7 +490,12 @@ public class JesLoader {
 
   private static void loadLayerIntoTilemap(TileMap2D tm, String path) {
     if (tm == null || path == null || path.isBlank()) return;
-    try (InputStream in = JesLoader.class.getClassLoader().getResourceAsStream(path)) {
+    AssetCatalog assets = new AssetCatalog();
+    // Use the active project manager first; retain direct classpath paths for
+    // older bundled JES maps.
+    try (InputStream in = assets.exists(AssetType.OTHER, path)
+        ? assets.open(AssetType.OTHER, path)
+        : JesLoader.class.getClassLoader().getResourceAsStream(path)) {
       if (in == null) return;
       try (BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
         String line;

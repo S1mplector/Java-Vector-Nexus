@@ -82,14 +82,14 @@ class GuidedTutorialIntegrationTest {
       assertEquals(1280, bitmap.getHeight(), pose);
       assertTrue(bitmap.getColorModel().hasAlpha(), pose);
     }
-    for (String jes : List.of("panel", "collider")) {
+    for (String jes : List.of("panel", "collider", "widgets", "camera", "tile_world", "physics_lab", "ai_lab", "inventory_lab", "input_lab", "return_lab", "trigger_lab", "parallel_lab")) {
       assertDoesNotThrow(() -> JesLoader.load(Files.readString(project.resolve("scripts/scenes/" + jes + ".jes"))));
     }
     AssetCatalog.setDefaultManager(new FilesystemAssetManager(project));
     try {
       verifySourcePanels();
       for (String id : List.of("new_game", "continue", "settings", "quit")) {
-        assertTrue(Files.readString(project.resolve(MenuTheme.tutorialDockIcon(id))).startsWith("<svg"), id);
+        assertNotNull(ImageIO.read(project.resolve(MenuTheme.tutorialDockIcon(id)).toFile()), id);
       }
       VnScenarioLoader loader = new VnScenarioLoader();
       String map = Files.readString(project.resolve("config/story/story.storymap"));
@@ -220,16 +220,17 @@ class GuidedTutorialIntegrationTest {
       hub.update(700);
       assertNull(hub.getState().getVariable("ui.dialogueFacet"));
       assertNull(hub.getState().getCharacterPosition("ginger"));
-      assertEquals(8, hub.getState().getCurrentNode().getChoices().size());
+      assertEquals("config/ui/tutorial-topics.properties", hub.getState().getVariable("ui.topicMap"));
+      assertEquals(12, hub.getState().getCurrentNode().getChoices().size());
       capture(hub, "board");
       Set<String> visitedTopics = new HashSet<>();
-      for (int page = 1; page <= 6; page++) {
+      for (int page = 1; page <= 10; page++) {
         var pageScene = open(loader, "story/tutorial_hub.vns", Map.of());
         goToChoice(pageScene, "topics_page_" + page, "board");
         pick(pageScene, "topics_page_" + page);
         goToChoice(pageScene, "topics", "page " + page);
         var choices = pageScene.getState().getCurrentNode().getChoices();
-        assertEquals(6, choices.size());
+        assertEquals(page == 7 || page == 8 ? 7 : 6, choices.size());
         for (var choice : choices) {
           if ("topics".equals(choice.getTargetLabel())) continue;
           assertTrue(visitedTopics.add(choice.getTargetLabel()));

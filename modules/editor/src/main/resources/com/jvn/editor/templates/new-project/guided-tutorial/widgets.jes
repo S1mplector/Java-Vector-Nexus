@@ -1,0 +1,37 @@
+scene "Widget workshop" {
+  entity "paper" {
+    component Sprite2D { image: "assets/tutorial/white.png" x: 0 y: 0 w: 1920 h: 1080 }
+  }
+  entity "title" {
+    component Label2D { text: "Slider and button workshop" x: 80 y: 90 size: 32 color: rgb(0.18,0.12,0.09,1) }
+  }
+  entity "panel" {
+    component Panel2D { x: 80 y: 160 w: 600 h: 280 fill: rgb(0.96,0.90,0.80,1) }
+  }
+  entity "hint" {
+    component Label2D { text: "Drag the slider, then click Return or press Esc." x: 110 y: 184 size: 18 color: rgb(0.18,0.12,0.09,1) }
+  }
+  // region slider
+  entity "slider" {
+    component Slider2D {
+      x: 110 y: 250 w: 480 h: 28
+      min: 0 max: 100 value: 25
+      trackColor: rgb(0.55,0.49,0.43,1)
+      fillColor: rgb(0.57,0.31,0.19,1)
+      knobColor: rgb(0.99,0.96,0.91,1)
+    }
+  }
+  // endregion
+  entity "back" {
+    component Button2D {
+      x: 110 y: 330 w: 180 h: 50
+      text: "Return" call: "return"
+      normal: rgb(0.25,0.35,0.29,1)
+      hover: rgb(0.35,0.47,0.37,1)
+      pressed: rgb(0.14,0.25,0.19,1)
+      textColor: rgb(1,1,1,1) fontSize: 20
+    }
+  }
+  on key "ESCAPE" do return
+  on key "ENTER" do return
+}

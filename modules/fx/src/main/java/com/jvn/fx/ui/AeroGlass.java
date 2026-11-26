@@ -30,6 +30,12 @@ public enum AeroGlass {
     this.rimWidth = rimWidth;
   }
 
+  /** Exposes the same paint stops and bevel to scene-graph controls as to the canvas menus. */
+  public String cssPalette(String prefix) {
+    return prefix + "-fill: " + fill.toString().replace("0x", "#") + ";"
+        + prefix + "-rim: " + rim.toString().replace("0x", "#") + ";";
+  }
+
   public void draw(GraphicsContext gc, double x, double y, double w, double h, double arc) {
     if (w < 4 || h < 4) return;
     gc.save();

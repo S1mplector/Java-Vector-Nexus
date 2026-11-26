@@ -1,0 +1,68 @@
+# JES buttons and sliders
+@scenario tutorial_lesson_39
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/39_jes_widgets.vns]
+[set tutorial_excerpt push_widgets]
+[set ui.dialogueFacet tutorial_code]
+ginger: Drag the slider and hover over Return in this JES scene. Click the button or press Esc to return.
+@label lab
+> Run the control panel -> widgets
+> Back to topics -> return_hub
+> Practice exercise -> practice
+> Review question -> check
+@label widgets
+# region push_widgets
+[jes push scripts/scenes/widgets.jes label compare]
+# endregion
+@label compare
+[set tutorial_source scripts/scenes/widgets.jes]
+[set tutorial_excerpt slider]
+ginger: Change the slider default from 25 to 50 in widgets.jes and reopen it. The button's appearance and its return action can be edited independently.
+[jump lab]
+@label return_hub
+[clear ui.dialogueFacet]
+[if !tutorial_done_39]
+[flag tutorial_done_39]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_8]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: Set value to 50 with the same min and max. What should you see?
+> The slider range doubles. -> practice_hint
+> The knob starts at the midpoint. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: The initial value changes the starting knob position. The range is still 0 to 100.
+[jump practice]
+@label practice_result
+ginger: The initial value changes the starting knob position. The range is still 0 to 100.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the interactive lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: Which component sets the current slider value?
+> Slider2D. -> correct
+> Label2D. -> retry
+> Back to topics -> return_hub
+@label retry
+[show ginger guide confused]
+ginger: The slider defines min, max and value. Labels present text.
+[jump check]
+@label correct
+ginger: The slider defines min, max and value. Labels present text.
+> Back to topics -> return_hub
+> Replay example -> start

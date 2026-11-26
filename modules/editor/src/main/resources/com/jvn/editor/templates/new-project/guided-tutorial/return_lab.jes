@@ -1,0 +1,21 @@
+scene "Choose a postcard" {
+  entity "title" {
+    component Label2D { text: "Choose a postcard" x: 45 y: 40 size: 34 bold: true }
+  }
+  entity "hill" {
+    component Panel2D { x: 45 y: 110 w: 230 h: 120 fill: rgb(0.27,0.40,0.30,1) }
+    component Label2D { text: "1   Hillside" x: 72 y: 151 size: 25 bold: true }
+  }
+  entity "water" {
+    component Panel2D { x: 310 y: 110 w: 230 h: 120 fill: rgb(0.23,0.36,0.47,1) }
+    component Label2D { text: "2   Waterfront" x: 337 y: 151 size: 25 bold: true }
+  }
+  entity "help" {
+    component Label2D { text: "Press 1 or 2 to take a card, or Esc to leave." x: 45 y: 265 size: 21 }
+  }
+  // region returns
+  on key "1" do return { card: "hillside" stamp_count: 1 }
+  on key "2" do return { card: "waterfront" stamp_count: 2 }
+  on key "ESCAPE" do return { card: "none" stamp_count: 0 }
+  // endregion
+}

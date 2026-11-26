@@ -7,7 +7,9 @@ import com.jvn.core.assets.ClasspathAssetManager;
 import com.jvn.core.assets.FilesystemAssetManager;
 import com.jvn.core.config.ApplicationConfig;
 import com.jvn.core.engine.Engine;
+import com.jvn.core.physics.RigidBody2D;
 import com.jvn.core.vn.*;
+import com.jvn.scripting.jes.runtime.JesScene2D;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -54,7 +56,7 @@ class TutorialChoiceRoutingTest {
 
   @Test
   @EnabledIfEnvironmentVariable(named = "JVN_GENERATED_TUTORIAL", matches = ".+")
-  void allThirtyWizardLessonChoicesReturnToTheirOwnCategory(@TempDir Path home) throws Exception {
+  void allWizardLessonChoicesReturnToTheirOwnCategory(@TempDir Path home) throws Exception {
     Path project = Path.of(System.getenv("JVN_GENERATED_TUTORIAL"));
     String previousHome = System.getProperty("user.home");
     String previousGame = System.getProperty(VnStoragePaths.GAME_ID_PROPERTY);
@@ -66,9 +68,14 @@ class TutorialChoiceRoutingTest {
     try {
       var engine = new Engine(ApplicationConfig.builder().build());
       var hub = start(engine, "story/tutorial_hub.vns");
+      assertEquals(VnNodeType.DIALOGUE, hub.getState().getCurrentNode().getType());
+      assertNull(hub.getState().getVariable("ui.topicMap"));
+      choices(hub);
+      assertEquals("config/ui/tutorial-topics.properties", hub.getState().getVariable("ui.topicMap"));
       Set<String> visited = new HashSet<>();
       int[][] expected = {{1, 2, 7, 10, 11}, {3, 4, 5, 8, 13}, {6, 9, 18, 23, 24},
-          {14, 15, 20, 21, 22}, {17, 19, 25, 26, 30}, {12, 16, 27, 28, 29}};
+          {14, 15, 20, 21, 22}, {17, 19, 25, 26, 30}, {12, 16, 27, 28, 29},
+          {31, 32, 33, 34, 35, 36}, {37, 38, 39, 40, 41, 42}, {43, 44, 45, 49, 51}, {46, 47, 48, 50, 52}};
       for (int page = 0; page < expected.length; page++) {
         choose(hub, "topics_page_" + (page + 1));
         for (int index = 0; index < expected[page].length; index++) {
@@ -152,6 +159,73 @@ class TutorialChoiceRoutingTest {
             assertEquals(true, lesson.getState().getVariable("example_default"));
             assertNotEquals("dusk", lesson.getState().getActiveStagePresetId());
           }
+          if (expected[page][index] == 43 || expected[page][index] == 45) {
+            choose(lesson, "demo");
+            var lab = assertInstanceOf(JesScene2D.class, engine.scenes().peek());
+            var hero = lab.find("hero");
+            double start = hero.getX();
+            press(lab, engine, "RIGHT");
+            press(lab, engine, "RIGHT");
+            assertEquals(start + 96, hero.getX(), 0.001);
+            press(lab, engine, "RIGHT");
+            assertEquals(start + 96, hero.getX(), 0.001);
+            press(lab, engine, "ESCAPE");
+            assertSame(lesson, engine.scenes().peek());
+          }
+          if (expected[page][index] == 49) {
+            choose(lesson, "demo");
+            var lab = assertInstanceOf(JesScene2D.class, engine.scenes().peek());
+            press(lab, engine, "C", "B");
+            var bodies = lab.getWorld().getBodies();
+            assertEquals(2, bodies.size());
+            assertEquals(RigidBody2D.ShapeType.CIRCLE, bodies.get(0).getShapeType());
+            assertEquals(RigidBody2D.ShapeType.AABB, bodies.get(1).getShapeType());
+            press(lab, engine, "ENTER", "ESCAPE");
+            assertSame(lesson, engine.scenes().peek());
+          }
+          if (expected[page][index] == 50) {
+            var keys = java.util.List.of("ESCAPE", "1", "2");
+            var cards = java.util.List.of("none", "hillside", "waterfront");
+            for (int stamps = 0; stamps < keys.size(); stamps++) {
+              choose(lesson, "demo");
+              var lab = assertInstanceOf(JesScene2D.class, engine.scenes().peek());
+              press(lab, engine, keys.get(stamps));
+              assertSame(lesson, engine.scenes().peek());
+              assertEquals(cards.get(stamps), lesson.getState().getVariable("card"));
+              assertEquals(stamps, ((Number) lesson.getState().getVariable("stamp_count")).intValue());
+            }
+          }
+          if (expected[page][index] == 51) {
+            choose(lesson, "demo");
+            var lab = assertInstanceOf(JesScene2D.class, engine.scenes().peek());
+            press(lab, engine, "RIGHT");
+            assertSame(lab, engine.scenes().peek());
+            press(lab, engine, "RIGHT");
+            assertSame(lesson, engine.scenes().peek());
+            assertEquals("stamped", lesson.getState().getVariable("checkpoint_status"));
+            assertEquals(4, ((Number) lesson.getState().getVariable("tileX")).intValue());
+            assertEquals(3, ((Number) lesson.getState().getVariable("tileY")).intValue());
+            choose(lesson, "demo");
+            var replay = assertInstanceOf(JesScene2D.class, engine.scenes().peek());
+            press(replay, engine, "ESCAPE");
+            assertSame(lesson, engine.scenes().peek());
+            assertEquals("cancelled", lesson.getState().getVariable("checkpoint_status"));
+            assertNull(lesson.getState().getVariable("tileX"));
+          }
+          if (expected[page][index] == 52) {
+            choose(lesson, "demo");
+            var lab = assertInstanceOf(JesScene2D.class, engine.scenes().peek());
+            var status = assertInstanceOf(com.jvn.core.scene2d.Label2D.class, lab.find("status"));
+            for (int frame = 0; frame < 70; frame++) lab.update(16);
+            assertEquals(510.0, lab.find("fast").getX(), 0.001);
+            assertTrue(lab.find("slow").getX() > 150 && lab.find("slow").getX() < 510);
+            assertEquals("The timeline continues during movement.", status.getText());
+            for (int frame = 0; frame < 55; frame++) lab.update(16);
+            assertEquals(510.0, lab.find("slow").getX(), 0.001);
+            assertEquals("Both markers arrived.", status.getText());
+            press(lab, engine, "ENTER");
+            assertSame(lesson, engine.scenes().peek());
+          }
           choose(lesson, "return_hub");
           hub = assertInstanceOf(VnScene.class, engine.scenes().peek());
           assertEquals("tutorial_topics", hub.getScenario().getId());
@@ -159,10 +233,11 @@ class TutorialChoiceRoutingTest {
           assertEquals(choice.getTargetLabel(), choices(hub).get(index).getTargetLabel());
           assertNull(hub.getState().getCharacterPosition("ginger"));
           assertNull(hub.getState().getVariable("ui.dialogueFacet"));
+          assertEquals("config/ui/tutorial-topics.properties", hub.getState().getVariable("ui.topicMap"));
         }
         choose(hub, "topics");
       }
-      assertEquals(30, visited.size());
+      assertEquals(52, visited.size());
       choose(hub, "goodbye");
       assertInstanceOf(com.jvn.core.menu.MainMenuScene.class, engine.scenes().peek());
     } finally {
@@ -180,6 +255,15 @@ class TutorialChoiceRoutingTest {
     scene.setInterop(new RuntimeVnInterop(engine));
     engine.scenes().push(scene);
     return scene;
+  }
+
+  private static void press(JesScene2D scene, Engine engine, String... keys) {
+    var input = engine.input();
+    scene.setInput(input);
+    for (String key : keys) input.keyDown(key);
+    scene.update(16);
+    for (String key : keys) input.keyUp(key);
+    input.endFrame();
   }
 
   private static java.util.List<Choice> choices(VnScene scene) {

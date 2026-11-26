@@ -1,0 +1,28 @@
+scene "Find the checkpoint" {
+  tileset "paper_tiles" { image: "assets/tutorial/labs/tiles.png" tileW: 16 tileH: 16 cols: 2 }
+  map "workshop" {
+    tileset: "paper_tiles" width: 10 height: 8 tileW: 48 tileH: 48
+    layer "floor" { data: "assets/tutorial/labs/floor.csv" }
+    // region trigger
+    layer "checkpoint" {
+      data: "assets/tutorial/labs/checkpoint.csv"
+      triggerCall: "return"
+      checkpoint_status: "stamped"
+    }
+    // endregion
+    layer "walls" { data: "assets/tutorial/labs/walls.csv" collision: true }
+  }
+  entity "hero" {
+    component Character2D {
+      spriteSheet: "assets/tutorial/labs/player.png" frameW: 16 frameH: 16 cols: 1
+      drawW: 32 drawH: 32 startTileX: 2 startTileY: 3 controllable: true
+      animations: "down:0-0,left:0-0,right:0-0" startAnim: "down"
+    }
+  }
+  entity "hint" {
+    component Label2D { text: "Use Left and Right. Step onto the dark tile, or press Esc." x: 20 y: 410 size: 23 }
+  }
+  on key "LEFT" do moveHero { dir: "left" }
+  on key "RIGHT" do moveHero { dir: "right" }
+  on key "ESCAPE" do return { checkpoint_status: "cancelled" }
+}

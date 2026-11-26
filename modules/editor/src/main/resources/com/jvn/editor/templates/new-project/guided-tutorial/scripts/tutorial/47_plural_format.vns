@@ -1,0 +1,73 @@
+# Plural and number formatting
+@scenario tutorial_lesson_47
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/47_plural_format.vns]
+[set tutorial_excerpt formatted]
+[set ui.dialogueFacet tutorial_code]
+ginger: The same dialogue will display a different plural form when the number changes.
+@label lab
+> Set count to zero -> zero
+> Set count to one -> one
+> Set count to three -> three
+> Back to topics -> return_hub
+> Practice exercise -> practice
+> Review question -> check
+@label zero
+[set lab_books 0]
+[jump result]
+@label one
+[set lab_books 1]
+[jump result]
+@label three
+[set lab_books 3]
+@label result
+# region formatted
+ginger: {lab_books, plural, =0{No notebooks} one{# notebook} other{# notebooks}} on the desk.
+# endregion
+[jump lab]
+@label return_hub
+[clear ui.dialogueFacet]
+[if !tutorial_done_47]
+[flag tutorial_done_47]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_10]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: Change the count to three. What do you expect?
+> The literal # symbol. -> practice_hint
+> Three notebooks. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: The explicit match takes precedence before the plural category fallback.
+[jump practice]
+@label practice_result
+ginger: The explicit match takes precedence before the plural category fallback.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: Which plural form applies at count 0?
+> The explicit =0 branch. -> correct
+> The one branch. -> retry
+> Back to topics -> return_hub
+@label retry
+ginger: The explicit match takes precedence before the plural category fallback.
+[jump check]
+@label correct
+ginger: The explicit match takes precedence before the plural category fallback.
+> Back to topics -> return_hub
+> Replay example -> start

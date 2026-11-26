@@ -1,0 +1,78 @@
+# Layer groups and pivot points
+@scenario tutorial_lesson_48
+@include /definitions/characters.vns
+@character lab_card "Card" scale=0.60
+@charlayer lab_card base assets/tutorial/labs/card-base.png
+@charlayer lab_card strip assets/tutorial/labs/card-mark.png
+@charlayer lab_card dot assets/tutorial/labs/card-dot.png
+@chargroup lab_card inner pivot=0.5,0.5 $strip | $dot
+@charpreset lab_card neutral $base | $inner
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/48_group_pivots.vns]
+[set tutorial_excerpt tilt]
+[set ui.dialogueFacet tutorial_code]
+ginger: The card, strip and dot use separate PNGs on a common canvas. The strip and dot belong to one group; the backing card is separate.
+@label lab
+> Rotate the inner group -> tilt
+> Back to topics -> return_hub
+> Practice exercise -> practice
+> Review question -> check
+@label tilt
+[hide ginger]
+[show lab_card guide neutral]
+[if !tutorial_still]
+# region tilt
+timeline {
+  rotate "lab_card_inner" { deg: 22 dur: 700 }
+}
+# endregion
+[endif]
+narrator: The inner group rotates together. The card backing stays fixed. Edit pivot=0.5,0.5 in this file and compare the same angle.
+[hide lab_card]
+[jump lab]
+@label return_hub
+[hide lab_card]
+[clear ui.dialogueFacet]
+[if !tutorial_done_48]
+[flag tutorial_done_48]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_10]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: Change only the group pivot. What should remain the same?
+> All textures shift to a new file. -> practice_hint
+> The angle and layer membership. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: The group lists two layers, so both receive the transform. The backing stays fixed.
+[jump practice]
+@label practice_result
+ginger: The group lists two layers, so both receive the transform. The backing stays fixed.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: What rotates together when targeting lab_card_inner?
+> The strip and the dot. -> correct
+> The backing card alone. -> retry
+> Back to topics -> return_hub
+@label retry
+ginger: The group lists two layers, so both receive the transform. The backing stays fixed.
+[jump check]
+@label correct
+ginger: The group lists two layers, so both receive the transform. The backing stays fixed.
+> Back to topics -> return_hub
+> Replay example -> start

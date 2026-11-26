@@ -1,0 +1,63 @@
+# JES keyboard actions
+@scenario tutorial_lesson_49
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/scenes/input_lab.jes]
+[set tutorial_excerpt bindings]
+[set ui.dialogueFacet tutorial_code]
+ginger: Each line binds a key press to a named action. The block passes arguments to that action. C places a circle on the left. B places a box on the right.
+@label lab
+> Run the keyboard lab -> demo
+> Practice exercise -> practice
+> Review question -> check
+> Back to topics -> return_hub
+@label demo
+[jes push scripts/scenes/input_lab.jes label compare]
+@label compare
+ginger: Try changing r from 28 to 42, then rerun the lab. The circle should grow at the same spawn point.
+[jump lab]
+@label return_hub
+[clear ui.dialogueFacet]
+[if !tutorial_done_49]
+[flag tutorial_done_49]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_9]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: Keep C as the spawn key and move its circle farther right. Which parameter should you edit?
+> Increase x. -> practice_result
+> Increase r. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: The action reads x and y as coordinates. It reads r as the radius.
+[jump practice]
+@label practice_result
+ginger: Increase x and keep r fixed. Rerun the lab to compare the two spawn positions.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: Which part assigns the B key its behavior?
+> The action name after do. -> correct
+> The height inside the argument block. -> retry
+> Back to topics -> return_hub
+@label retry
+ginger: The key picks which binding to run. The action name picks the behavior.
+[jump check]
+@label correct
+ginger: Exactly. spawnBox creates the box and reads w and h as its dimensions.
+> Replay example -> start
+> Back to topics -> return_hub

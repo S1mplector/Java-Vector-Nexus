@@ -1,0 +1,69 @@
+# History and UI contrast
+@scenario tutorial_lesson_41
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/41_history_contrast.vns]
+[set tutorial_excerpt history]
+[set ui.dialogueFacet tutorial_code]
+# region history
+ginger: The copper bookmark is in the blue notebook.
+ginger: Press {b}B{/b} during dialogue to open history. Find the notebook colour in the previous line, close history and answer.
+# endregion
+> Blue -> notebook_blue
+> Green -> hint
+> Back to topics -> return_hub
+> Practice exercise -> practice
+> Review question -> check
+@label notebook_blue
+ginger: The text said blue. Try opening history again over a bright scene and a dark one. Keep the text, speaker name and highlighted row readable in both cases.
+> Replay the example -> start
+> Back to topics -> return_hub
+@label hint
+ginger: Look for the earlier line mentioning the bookmark.
+[jump start]
+@label return_hub
+[clear ui.dialogueFacet]
+[if !tutorial_done_41]
+[flag tutorial_done_41]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_8]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: Test a bright and a dark scene. What should you check?
+> Whether the character changes expression. -> practice_hint
+> Text and speaker contrast against the actual history panel. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: The history text and controls should remain legible over both scenes.
+[jump practice]
+@label practice_result
+ginger: The history text and controls should remain legible over both scenes.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the interactive lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: Where should the backlog text colour be edited?
+> The history menu style. -> correct
+> The voice audio cue. -> retry
+> Back to topics -> return_hub
+@label retry
+[show ginger guide confused]
+ginger: The history style controls the displayed text ink. Dialogue provides the logged content.
+[jump check]
+@label correct
+ginger: The history style controls the displayed text ink. Dialogue provides the logged content.
+> Back to topics -> return_hub
+> Replay example -> start

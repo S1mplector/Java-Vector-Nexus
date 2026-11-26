@@ -1,0 +1,62 @@
+# Inline text styles
+@scenario tutorial_lesson_33
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/33_text_styles.vns]
+[set tutorial_excerpt markup]
+[set ui.dialogueFacet tutorial_code]
+ginger: See how the same sentence reads when you change where it places the emphasis.
+# region markup
+ginger: I asked for the {b}blue{/b} notebook, {i}please{/i}.
+# endregion
+ginger: Move the bold tags to notebook and rerun the line. Keep please italic. Then check that the next line returns to the normal style.
+> Replay the line -> start
+> Back to topics -> return_hub
+> Practice exercise -> practice
+> Review question -> check
+@label return_hub
+[clear ui.dialogueFacet]
+[if !tutorial_done_33]
+[flag tutorial_done_33]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_7]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: Remove the closing bold tag in a disposable copy. What should you inspect?
+> The image's file name. -> practice_hint
+> Where emphasis ends in the rendered line. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Keep opening and closing tags paired so styles have an explicit scope.
+[jump practice]
+@label practice_result
+ginger: Keep opening and closing tags paired so styles have an explicit scope.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the interactive lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: What changes when you move the bold tags?
+> The words that receive emphasis. -> correct
+> The speaker's name. -> retry
+> Back to topics -> return_hub
+@label retry
+[show ginger guide confused]
+ginger: The speaker ID stays the same. Tags affect the text spans they surround.
+[jump check]
+@label correct
+ginger: The speaker ID stays the same. Tags affect the text spans they surround.
+> Back to topics -> return_hub
+> Replay example -> start

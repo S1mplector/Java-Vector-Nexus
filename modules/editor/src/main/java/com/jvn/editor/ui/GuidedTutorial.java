@@ -21,6 +21,15 @@ final class GuidedTutorial {
     copy(root, "assets/tutorial/dusk.stagepreset", "scripts/definitions/dusk.stagepreset");
     copy(root, "guided-tutorial/collider.jes", "scripts/scenes/collider.jes");
     copy(root, "guided-tutorial/panel.jes", "scripts/scenes/panel.jes");
+    copy(root, "guided-tutorial/widgets.jes", "scripts/scenes/widgets.jes");
+    copy(root, "guided-tutorial/camera.jes", "scripts/scenes/camera.jes");
+    for (String scene : List.of("tile_world", "physics_lab", "ai_lab", "inventory_lab", "input_lab", "return_lab", "trigger_lab", "parallel_lab")) {
+      copy(root, "guided-tutorial/" + scene + ".jes", "scripts/scenes/" + scene + ".jes");
+    }
+    for (String file : List.of("tiles.png", "player.png", "npc.png", "floor.csv", "walls.csv", "checkpoint.csv",
+        "card-base.png", "card-mark.png", "card-dot.png")) {
+      copy(root, "guided-tutorial/lab-assets/" + file, "assets/tutorial/labs/" + file);
+    }
     for (String file : List.of("white.png", "welcome.wav", "CaveatBrush-Regular.ttf", "CaveatBrush-OFL.txt",
         "ginger_angry.png", "ginger_annoyed.png", "ginger_confused.png", "ginger_embarrassed.png",
         "ginger_normal.png", "ginger_sad.png", "ginger_shy.png", "ginger_thoughtful.png")) {
@@ -33,6 +42,19 @@ final class GuidedTutorial {
       String path = MenuTheme.tutorialDockIcon(id);
       copyResource(root, "/" + path, path);
     }
+    String topicMap = "config/ui/tutorial-topics.properties";
+    copyCourse(root, topicMap);
+    Properties topics = new Properties();
+    try (var reader = Files.newBufferedReader(root.resolve(topicMap))) { topics.load(reader); }
+    var icons = new java.util.LinkedHashSet<String>();
+    for (String key : topics.stringPropertyNames()) {
+      if (key.endsWith(".icon")) icons.add(topics.getProperty(key));
+    }
+    for (String id : List.of("fullscreen", "settings", "back")) {
+      icons.add("assets/tutorial/icons/" + id + ".png");
+    }
+    for (String icon : icons) copyResource(root, "/" + icon, icon);
+    copyResource(root, "/assets/tutorial/icons/NOTICE.txt", "assets/tutorial/icons/NOTICE.txt");
     Path portrait = root.resolve("assets/tutorial/ginger_normal.png");
     var image = javax.imageio.ImageIO.read(portrait.toFile());
     int size = Math.min(image.getWidth(), image.getHeight());
@@ -87,7 +109,7 @@ final class GuidedTutorial {
     try (var reader = Files.newBufferedReader(registry)) { menuRegistry.load(reader); }
     menuRegistry.setProperty("menus", menuRegistry.getProperty("menus") + ",pause");
     try (var writer = Files.newBufferedWriter(registry)) { menuRegistry.store(writer, "Tutorial menus"); }
-    for (String style : List.of("default", "submenu", "settings", "slot")) {
+    for (String style : List.of("default", "submenu", "settings", "slot", "history")) {
       copy(root, "guided-tutorial/tutorial.style", "config/menu/styles/" + style + ".style");
     }
     Path screen = root.resolve("config/menu/menus/main.menu");
@@ -111,8 +133,8 @@ final class GuidedTutorial {
     properties.setProperty("hintsText", "");
     try (var writer = Files.newBufferedWriter(screen, StandardCharsets.UTF_8)) {
       properties.store(writer, "Tutorial");
-      writer.write("\n# Custom SVG icons: keep the SVG in assets/ and point item.<id>.icon to it.\n"
-          + "# A square viewBox leaves room for the icon above the label. The menu action is set separately.\n");
+      writer.write("\n# Custom icons: keep the PNG in assets/ and point item.<id>.icon to it.\n"
+          + "# A square canvas leaves room for the icon above the label. The menu action is set separately.\n");
       for (String id : items) {
         String icon = MenuTheme.tutorialDockIcon(id);
         if (icon != null) writer.write("item." + id + ".icon=" + icon + "\n");

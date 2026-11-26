@@ -1,0 +1,76 @@
+# Audio channels and mixing
+@scenario tutorial_lesson_36
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/36_audio_channels.vns]
+[set tutorial_excerpt cue]
+[set ui.dialogueFacet tutorial_code]
+ginger: This exercise separates a one-shot sound from the title music. Open it from the title screen so you can hear both channels.
+@label compare
+> Play a one-shot cue -> sound
+> Pause the music -> pause_music
+> Resume the music -> resume_music
+> Back to topics -> return_hub
+> Practice exercise -> practice
+> Review question -> check
+@label sound
+# region cue
+[sfx assets/tutorial/welcome.wav]
+# endregion
+ginger: The cue uses the sound effects channel. Replay with effects at zero and music left audible.
+[jump compare]
+@label pause_music
+[bgm_pause]
+ginger: The music is paused. You can still play the cue.
+[jump compare]
+@label resume_music
+[bgm_resume]
+ginger: The music resumes at its previous position.
+[jump compare]
+@label return_hub
+[bgm_resume]
+[clear ui.dialogueFacet]
+[if !tutorial_done_36]
+[flag tutorial_done_36]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_7]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: Music is paused and the cue remains audible. What does this show?
+> The pause command failed. -> practice_hint
+> The effects channel can play independently. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: BGM pause affects the music track. Restore it before leaving the lab.
+[jump practice]
+@label practice_result
+ginger: BGM pause affects the music track. Restore it before leaving the lab.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the interactive lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: Which channel does the one-shot sfx command use?
+> Sound effects. -> correct
+> Background music. -> retry
+> Back to topics -> return_hub
+@label retry
+[show ginger guide confused]
+ginger: The cue and the BGM have separate controls.
+[jump check]
+@label correct
+ginger: The cue and the BGM have separate controls.
+> Back to topics -> return_hub
+> Replay example -> start

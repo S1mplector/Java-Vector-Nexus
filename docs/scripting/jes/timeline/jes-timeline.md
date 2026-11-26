@@ -583,7 +583,7 @@ parallel {
 }
 ```
 
-All child actions start at the same time. The `parallel` block completes when the **longest** child finishes.
+All child actions start at the same time and run independently of the main timeline. The next action in the main timeline can run while the children are moving. Insert a `wait` before a later cue when it must follow moves with a known duration.
 
 ### `loop`
 

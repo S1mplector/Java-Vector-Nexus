@@ -1,0 +1,31 @@
+scene "Parallel timeline" {
+  entity "heading" {
+    component Label2D { text: "Both markers start together" x: 36 y: 40 size: 32 bold: true }
+  }
+  entity "fast" {
+    component Sprite2D { image: "assets/tutorial/labs/player.png" x: 150 y: 120 w: 44 h: 44 }
+  }
+  entity "slow" {
+    component Sprite2D { image: "assets/tutorial/labs/npc.png" x: 150 y: 205 w: 44 h: 44 }
+  }
+  entity "status" {
+    component Label2D { text: "Getting ready…" x: 36 y: 280 size: 24 }
+  }
+  entity "hint" {
+    component Label2D { text: "Enter or Esc returns to the lesson." x: 36 y: 334 size: 20 }
+  }
+  timeline {
+    wait 600
+    // region movements
+    parallel {
+      move "fast" { x: 510 dur: 450 }
+      move "slow" { x: 510 dur: 1200 }
+    }
+    event "setLabelText" { target: "status" text: "The timeline continues during movement." }
+    wait 1200
+    event "setLabelText" { target: "status" text: "Both markers arrived." }
+    // endregion
+  }
+  on key "ENTER" do return
+  on key "ESCAPE" do return
+}

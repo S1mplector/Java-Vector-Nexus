@@ -37,14 +37,14 @@ ginger: Find the arrows after the two choices. Follow each destination down the 
 ginger: Change the visible text of branch A and leave its target alone. Run both options. Then swap the targets and compare the results again.
 ginger: On a choice line, the text before the arrow is what the player reads. The identifier after it is the destination. Changing the wording leaves the destination intact.
 ginger: After a branch has run, execution continues down the file unless a command redirects it. Branch A needs its jump because branch B sits between A and the shared result.
-# region svg_icons
-# The title screen uses SVG icons directly. For a menu-enabled project, save a
-# self-contained SVG under assets/ and point item.<id>.icon to its project path
-# in config/menu/menus/main.menu. Drawing with a square viewBox fits the dock.
-# Example: item.new_game.icon=assets/tutorial/icons/start.svg
+# region png_icons
+# The title screen uses hand-drawn PNG icons. For a menu-enabled project, save a
+# transparent PNG under assets/ and point item.<id>.icon to its project path
+# in config/menu/menus/main.menu. Drawing with a square canvas fits the dock.
+# Example: item.new_game.icon=assets/tutorial/icons/new_entry.png
 # endregion
-[set tutorial_excerpt svg_icons]
-ginger: The title screen's buttons have their own artwork. To swap in your SVG, put it under assets and edit the button's icon line in main.menu. The action stays the same.
+[set tutorial_excerpt png_icons]
+ginger: The title screen's buttons have their own artwork. To swap in your PNG, put it under assets and edit the button's icon line in main.menu. The action stays the same.
 [clear ui.dialogueFacet]
 > Trace a branching script -> practice
 > Review question -> check

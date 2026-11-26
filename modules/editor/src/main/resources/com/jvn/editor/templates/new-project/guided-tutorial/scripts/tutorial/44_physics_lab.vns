@@ -1,0 +1,67 @@
+# Physics and restitution
+@scenario tutorial_lesson_44
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/44_physics_lab.vns]
+[set tutorial_excerpt open_physics]
+[set ui.dialogueFacet tutorial_code]
+ginger: The two circles start with equal velocity and travel toward an identical wall. Compare how far they travel after the collision.
+@label lab
+> Run the collision -> demo
+> Back to topics -> return_hub
+> Practice exercise -> practice
+> Review question -> check
+@label demo
+# region open_physics
+[jes push scripts/scenes/physics_lab.jes label compare]
+# endregion
+@label compare
+[set tutorial_source scripts/scenes/physics_lab.jes]
+[set tutorial_excerpt restitution]
+ginger: Change the smaller restitution value to 1. Reopen and compare. The world resolves the collision each frame, so the animation comes from the simulation.
+[jump lab]
+@label return_hub
+[clear ui.dialogueFacet]
+[if !tutorial_done_44]
+[flag tutorial_done_44]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_9]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: Which comparison isolates restitution?
+> Change both circles’ speed and mass. -> practice_hint
+> Keep both velocities fixed and change just restitution. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: The rebound coefficient changes the response to collision.
+[jump practice]
+@label practice_result
+ginger: The rebound coefficient changes the response to collision.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: What does restitution control?
+> The rebound after a collision. -> correct
+> How many tiles are in the map. -> retry
+> Back to topics -> return_hub
+@label retry
+ginger: The rebound coefficient changes the response to collision.
+[jump check]
+@label correct
+ginger: The rebound coefficient changes the response to collision.
+> Back to topics -> return_hub
+> Replay example -> start

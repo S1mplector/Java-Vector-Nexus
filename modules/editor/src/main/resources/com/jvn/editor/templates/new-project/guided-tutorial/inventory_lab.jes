@@ -1,0 +1,34 @@
+scene "Inventory and recovery" {
+  item "tea" { name: "Tea" type: "consumable" maxStack: 10 hpRestore: 20 }
+  entity "guest" {
+    component Sprite2D { image: "assets/tutorial/labs/player.png" x: 60 y: 130 w: 96 h: 96 }
+    // region items
+    component Stats { maxHp: 100 hp: 40 }
+    component Inventory { slots: 5 items: "tea*2" }
+    // endregion
+  }
+  entity "title" {
+    component Label2D { text: "Recovery: start at 40 HP, use two teas." x: 50 y: 45 size: 24 }
+  }
+  entity "help" {
+    component Label2D { text: "Timeline calls use one item at a time. Enter or Esc: return." x: 50 y: 270 size: 19 }
+  }
+  entity "tea1" {
+    component Sprite2D { image: "assets/tutorial/labs/npc.png" x: 230 y: 140 w: 48 h: 48 }
+  }
+  entity "tea2" {
+    component Sprite2D { image: "assets/tutorial/labs/npc.png" x: 302 y: 140 w: 48 h: 48 }
+  }
+  // region healing
+  timeline {
+    wait 600
+    event "useItem" { user: "guest" itemId: "tea" }
+    fade "tea1" { alpha: 0 dur: 300 }
+    wait 600
+    event "useItem" { user: "guest" itemId: "tea" }
+    fade "tea2" { alpha: 0 dur: 300 }
+  }
+  // endregion
+  on key "ENTER" do return
+  on key "ESCAPE" do return
+}

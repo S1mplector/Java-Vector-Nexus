@@ -358,13 +358,13 @@ public class MenuTheme {
   public boolean isTutorialDock() { return tutorialDock; }
   public static String tutorialDockIcon(String itemId) {
     String file = switch (itemId) {
-      case "new_game" -> "start";
-      case "continue" -> "load";
+      case "new_game" -> "new_entry";
+      case "continue", "load" -> "open_folder";
       case "settings" -> "settings";
-      case "quit" -> "quit";
+      case "quit" -> "exit";
       default -> null;
     };
-    return file == null ? null : "assets/tutorial/icons/" + file + ".svg";
+    return file == null ? null : "assets/tutorial/icons/" + file + ".png";
   }
   public String getDockTitleFontFamily() { return valueOr(dockTitleFontFamily, titleFontFamily); }
   public boolean showsEngineVersionOnDock() { return dockShowsEngineVersion; }

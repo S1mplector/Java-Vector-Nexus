@@ -1189,6 +1189,8 @@ public class JesScene2D extends Scene2DBase {
         // reason: user-registered callback must not crash the animation loop
         log.warn("JesScene2D: input binding action handler '{}' threw an exception", b.action, ignored);
       }
+    } else if (!handled && callHandlers.containsKey(b.action)) {
+      invokeCall(b.action, b.props);
     }
   }
 

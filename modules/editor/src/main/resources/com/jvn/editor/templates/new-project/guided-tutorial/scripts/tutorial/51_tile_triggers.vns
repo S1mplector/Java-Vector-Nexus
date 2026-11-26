@@ -1,0 +1,73 @@
+# Tile triggers
+@scenario tutorial_lesson_51
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/scenes/trigger_lab.jes]
+[set tutorial_excerpt trigger]
+[set ui.dialogueFacet tutorial_code]
+ginger: This map uses the floor for artwork, the walls for collision, and the checkpoint layer for events. Walk right onto the dark checkpoint to return here.
+@label lab
+> Walk to the checkpoint -> demo
+> Practice exercise -> practice
+> Review question -> check
+> Back to topics -> return_hub
+@label demo
+[clear checkpoint_status]
+[clear tileX]
+[clear tileY]
+[jes push scripts/scenes/trigger_lab.jes label result]
+@label result
+[if checkpoint_status == "stamped"]
+ginger: The trigger returned from tile (${tileX}, ${tileY}). The extra checkpoint_status field came from the layer. The engine supplied the coordinates.
+[else]
+ginger: You left without reaching the checkpoint. Go back in and walk onto the dark tile to test the map's return.
+[endif]
+[jump lab]
+@label return_hub
+[clear ui.dialogueFacet]
+[clear checkpoint_status]
+[clear tileX]
+[clear tileY]
+[if !tutorial_done_51]
+[flag tutorial_done_51]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_9]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: Move the checkpoint one tile to the left without moving a wall. Which file holds the marked cell?
+> checkpoint.csv -> practice_result
+> walls.csv -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Look at the data property inside the checkpoint layer. The marked cell is the 1 on the fourth row.
+[jump practice]
+@label practice_result
+ginger: Move the 1 one cell left and restore its old cell to -1. Run the lab again and check that your reported x coordinate drops from 4 to 3.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: When does the checkpoint return to this scene?
+> When the player steps onto a nonempty cell in the trigger layer. -> correct
+> When the map finishes drawing the checkpoint sprite. -> retry
+> Back to topics -> return_hub
+@label retry
+ginger: Drawing and movement are separate. The engine checks the trigger at the player's destination cell.
+[jump check]
+@label correct
+ginger: The trigger passes the marked tile's coordinates and the layer fields to its call.
+> Replay example -> start
+> Back to topics -> return_hub

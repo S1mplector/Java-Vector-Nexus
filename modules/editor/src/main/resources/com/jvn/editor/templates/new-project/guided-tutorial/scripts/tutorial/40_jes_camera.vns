@@ -1,0 +1,72 @@
+# JES cameras and parallax
+@scenario tutorial_lesson_40
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/40_jes_camera.vns]
+[set tutorial_excerpt push_camera]
+[set ui.dialogueFacet tutorial_code]
+ginger: A JES camera can travel past layers at different rates. Look at the distant and nearby landmarks while the view moves.
+@label lab
+> Run the camera demo -> camera
+> Back to topics -> return_hub
+> Practice exercise -> practice
+> Review question -> check
+@label camera
+[if tutorial_still]
+ginger: Reduced motion is enabled. You can read the camera setup in the code panel without playing the moving scene.
+[jump compare]
+[endif]
+# region push_camera
+[jes push scripts/scenes/camera.jes label compare]
+# endregion
+@label compare
+[set tutorial_source scripts/scenes/camera.jes]
+[set tutorial_excerpt parallax]
+ginger: Compare the two landmarks. Change the distant landmark's parallax factor to 1 in camera.jes and reopen the demo.
+[jump lab]
+@label return_hub
+[clear ui.dialogueFacet]
+[if !tutorial_done_40]
+[flag tutorial_done_40]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_8]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: Set distant and near to the same factor. What should happen?
+> The camera pan stops. -> practice_hint
+> Both landmarks shift by the same amount. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Their relative horizontal displacement should now stay constant during the pan.
+[jump practice]
+@label practice_result
+ginger: Their relative horizontal displacement should now stay constant during the pan.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the interactive lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: Which landmark moves less during the camera pan?
+> The distant landmark with factor 0.3. -> correct
+> The landmark with factor 1. -> retry
+> Back to topics -> return_hub
+@label retry
+[show ginger guide confused]
+ginger: The parallax factor scales displacement from camera movement.
+[jump check]
+@label correct
+ginger: The parallax factor scales displacement from camera movement.
+> Back to topics -> return_hub
+> Replay example -> start

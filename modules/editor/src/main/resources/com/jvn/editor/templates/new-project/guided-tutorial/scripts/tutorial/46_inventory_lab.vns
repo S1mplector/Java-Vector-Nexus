@@ -1,0 +1,67 @@
+# RPG items and stats
+@scenario tutorial_lesson_46
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/46_inventory_lab.vns]
+[set tutorial_excerpt open_inventory]
+[set ui.dialogueFacet tutorial_code]
+ginger: The guest starts at 40 HP and carries two teas. Each useItem event consumes one and restores 20 HP. The paired fades illustrate the two events.
+@label lab
+> Play the item sequence -> demo
+> Back to topics -> return_hub
+> Practice exercise -> practice
+> Review question -> check
+@label demo
+# region open_inventory
+[jes push scripts/scenes/inventory_lab.jes label compare]
+# endregion
+@label compare
+[set tutorial_source scripts/scenes/inventory_lab.jes]
+[set tutorial_excerpt healing]
+ginger: Calculate the final HP and remaining inventory. Inspect those values from Java via getStats and getInventory. The icons are authored timeline cues; a live HUD would instead read the actual inventory and stats.
+[jump lab]
+@label return_hub
+[clear ui.dialogueFacet]
+[if !tutorial_done_46]
+[flag tutorial_done_46]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_10]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: Set starting HP to 90 and rerun both events. What should happen?
+> HP increases to 130. -> practice_hint
+> HP stops at the configured maximum of 100. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Each use consumes one item and restores its configured amount, capped at maxHp.
+[jump practice]
+@label practice_result
+ginger: Each use consumes one item and restores its configured amount, capped at maxHp.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: What remains after two teas restore 20 each, starting at 40 HP?
+> 80 HP and zero teas. -> correct
+> 40 HP and two teas. -> retry
+> Back to topics -> return_hub
+@label retry
+ginger: Each use consumes one item and restores its configured amount, capped at maxHp.
+[jump check]
+@label correct
+ginger: Each use consumes one item and restores its configured amount, capped at maxHp.
+> Back to topics -> return_hub
+> Replay example -> start

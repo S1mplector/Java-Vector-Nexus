@@ -664,6 +664,7 @@ public class RuntimeVnInterop implements VnInterop, VnTimelineAccessorProvider {
       js.registerCall("pop", props -> engine.scenes().pop());
       new JesVnBridge(engine).attach(js);
       java.util.function.Consumer<java.util.Map<String,Object>> doReturn = props -> {
+        if (engine.scenes().peek() != js) return;
         // Set variables if provided
         if (props != null) {
           for (var e : props.entrySet()) {
@@ -683,7 +684,7 @@ public class RuntimeVnInterop implements VnInterop, VnTimelineAccessorProvider {
         if (label == null) label = defaultReturnLabel;
         engine.scenes().pop();
         if (label != null && !label.isBlank()) {
-          vnScene.getState().jumpToLabel(label);
+          vnScene.jumpToLabel(label);
         }
       };
       js.registerCall("return", doReturn);

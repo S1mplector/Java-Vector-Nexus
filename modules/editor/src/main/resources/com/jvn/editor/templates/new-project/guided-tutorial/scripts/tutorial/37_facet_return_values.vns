@@ -1,0 +1,71 @@
+# Modal panels and results
+@scenario tutorial_lesson_37
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/37_facet_return_values.vns]
+[set tutorial_excerpt call_panel]
+[set ui.dialogueFacet tutorial_code]
+ginger: A modal panel can send a result back to VNS. This progress card has Continue and Close. Try both and compare the next line.
+@label lab
+> Open the panel -> open_panel
+> Back to topics -> return_hub
+> Practice exercise -> practice
+> Review question -> check
+@label open_panel
+[set example_name "Modal result"]
+[set example_progress 0.75]
+# region call_panel
+[screen call tutorial_card]
+[if screen.return.tutorial_card == "continue" goto accepted]
+# endregion
+ginger: You closed the panel. No approval was recorded.
+[jump lab]
+@label accepted
+ginger: You selected Continue. Edit the target of Continue in tutorial_card.facet. The script must test for the returned value.
+[jump lab]
+@label return_hub
+[clear ui.dialogueFacet]
+[if !tutorial_done_37]
+[flag tutorial_done_37]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_8]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: If Continue is renamed on screen, what determines the branch?
+> The translated button label. -> practice_hint
+> The return action target. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: The display text can change without changing the returned value.
+[jump practice]
+@label practice_result
+ginger: The display text can change without changing the returned value.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the interactive lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: Where does the selected button's result become available?
+> The screen.return variable. -> correct
+> The original progress number. -> retry
+> Back to topics -> return_hub
+@label retry
+[show ginger guide confused]
+ginger: A call waits for a return action and exposes its target as a variable.
+[jump check]
+@label correct
+ginger: A call waits for a return action and exposes its target as a variable.
+> Back to topics -> return_hub
+> Replay example -> start

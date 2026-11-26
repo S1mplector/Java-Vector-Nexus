@@ -1,0 +1,74 @@
+# Named display slots
+@scenario tutorial_lesson_32
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/32_display_slots.vns]
+[set tutorial_excerpt slots]
+[set ui.dialogueFacet tutorial_code]
+ginger: Let's put two portraits at the same position. Named slots let commands address the portraits individually.
+@label compare
+> Stack both portraits -> stack
+> Back to topics -> return_hub
+> Practice exercise -> practice
+> Review question -> check
+@label stack
+[hide ginger]
+# region slots
+[show ginger guide thoughtful slot=rear z=0]
+[show ginger guide confused slot=front z=10]
+# endregion
+narrator: The confused portrait is in front. Try removing just the front slot.
+> Hide only the front slot -> reveal
+> Back to topics -> return_hub
+@label reveal
+[hide slot=front]
+narrator: The thoughtful portrait is still there. Swap the two z values and replay. The position decides where the portraits go. The slot decides which instance a command addresses.
+[jump compare]
+@label return_hub
+[hide slot=rear]
+[hide slot=front]
+[clear ui.dialogueFacet]
+[if !tutorial_done_32]
+[flag tutorial_done_32]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_7]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: Swap the z values, then hide front. What should still happen?
+> Hide whichever portrait now renders on top. -> practice_hint
+> Remove the front slot even if it renders behind rear. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Layer order and slot addressing are separate; hiding front still removes front.
+[jump practice]
+@label practice_result
+ginger: Layer order and slot addressing are separate; hiding front still removes front.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the interactive lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: What identifies the front portrait when both use the same position?
+> The front slot ID. -> correct
+> The centre position alone. -> retry
+> Back to topics -> return_hub
+@label retry
+[show ginger guide confused]
+ginger: Position is shared. The slot uniquely identifies the visible instance.
+[jump check]
+@label correct
+ginger: Position is shared. The slot uniquely identifies the visible instance.
+> Back to topics -> return_hub
+> Replay example -> start

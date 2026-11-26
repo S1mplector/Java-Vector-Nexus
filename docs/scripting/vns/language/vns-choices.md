@@ -11,7 +11,7 @@ Each choice line starts with `>`. Consecutive choice lines are grouped into a si
 ```text
 > Choice text
 > Choice text -> targetLabel
-> Choice text [if condition] -> targetLabel
+> Choice text -> targetLabel [if condition]
 ```
 
 **Basic example:**
@@ -95,8 +95,8 @@ Both multi-line and inline choices support condition suffixes with `[if expressi
 ```vns
 narrator: What will you do?
 
-> Storm the castle [if army_size >= 100] -> siege
-> Sneak through the sewers [if has_map] -> infiltrate
+> Storm the castle -> siege [if army_size >= 100]
+> Sneak through the sewers -> infiltrate [if has_map]
 > Negotiate peace -> negotiate
 > Retreat -> retreat
 ```
@@ -199,11 +199,11 @@ A central hub the player returns to, with choices that unlock/change over time.
 @label hub
 narrator: You're in the village square.
 
-> Visit the blacksmith [if !sword_bought] -> blacksmith
-> Visit the blacksmith (sword purchased) [if sword_bought] -> blacksmith_done
+> Visit the blacksmith -> blacksmith [if !sword_bought]
+> Visit the blacksmith (sword purchased) -> blacksmith_done [if sword_bought]
 > Enter the tavern -> tavern
-> Talk to the elder [if elder_available] -> elder
-> Leave the village [if quest_complete] -> depart
+> Talk to the elder -> elder [if elder_available]
+> Leave the village -> depart [if quest_complete]
 
 @label blacksmith
 [set sword_bought true]
@@ -333,8 +333,8 @@ narrator: The merchant eyes you carefully.
 @label offer_gold
 narrator: How much gold?
 
-> 50 coins [if coins >= 50] -> pay_50
-> 100 coins [if coins >= 100] -> pay_100
+> 50 coins -> pay_50 [if coins >= 50]
+> 100 coins -> pay_100 [if coins >= 100]
 > Nevermind -> negotiate
 
 @label pay_50

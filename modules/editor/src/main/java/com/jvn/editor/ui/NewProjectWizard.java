@@ -61,7 +61,7 @@ import javafx.stage.*;
 public class NewProjectWizard extends Stage {
   private enum ProjectTemplate {
     WRITING_PROJECT("Writing Project", "One editable opening scene with a title screen, save slots, and settings."),
-    TUTORIAL_WORKSPACE("Tutorial", "Learn with Ginger in 30 playable lessons, with examples you can edit."),
+    TUTORIAL_WORKSPACE("Tutorial", "Learn with Ginger in " + TutorialCatalog.LESSONS.size() + " playable lessons, with examples you can edit."),
     BLANK_SANDBOX("Blank Sandbox", "One editable opening scene and an empty menu registry for your own interface."),
     CUSTOM("Custom", "Custom selection. The switches in Content determine the files this project will contain.");
 
@@ -626,7 +626,7 @@ public class NewProjectWizard extends Stage {
   private Region createFeatureModulesPane() {
     VBox box = new VBox(10);
 
-    chkTutorialPack = createCheckBox("Tutorial (30 topics)", false);
+    chkTutorialPack = createCheckBox("Tutorial (" + TutorialCatalog.LESSONS.size() + " topics)", false);
     chkBundledDemoAssets = createCheckBox("Lavender artwork and demo music", false);
     chkTitleScreen = createCheckBox("Main Menu Profile Pack", true);
     chkSaveSystem = createCheckBox("Load/Save Menu Profiles", true);
@@ -690,7 +690,7 @@ public class NewProjectWizard extends Stage {
     options.add(chkHistoryBacklog, 1, 2);
     options.add(chkBlankMenus, 0, 3);
 
-    tip(chkTutorialPack, "Start at Ginger’s topic menu and play any of the 30 lessons.");
+    tip(chkTutorialPack, "Meet Ginger, then explore the topic tree to play any of the " + TutorialCatalog.LESSONS.size() + " lessons.");
     tip(chkBundledDemoAssets, "Copy Lavender’s sprites, backgrounds and music into the project assets folder.");
     tip(chkTitleScreen, "Create menu screens, layouts, styles and their registry.");
     tip(chkSaveSystem, "Create the default load and save menus.");

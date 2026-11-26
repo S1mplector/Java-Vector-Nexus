@@ -124,7 +124,7 @@ The editor opens with a Welcome dashboard showing:
 ## Step 3: Create a New Project
 
 1. Click **New Project** in the Welcome dashboard.
-2. Select **Writing Project** for an editable opening scene and working menus, **Tutorial** for the 30 lessons, or **Blank Sandbox** to design your own menus.
+2. Select **Writing Project** for an editable opening scene and working menus, **Tutorial** for the 52 lessons, or **Blank Sandbox** to design your own menus.
 3. Enter the game name, author and destination on **Project**.
 4. Set up menu profiles and optional Git integration in **Content**. Select the canvas and menu theme in **Runtime**.
 5. Open **Review** to inspect the generated files, release version and save ID. Choose **Create Project** or **Create Tutorial**.

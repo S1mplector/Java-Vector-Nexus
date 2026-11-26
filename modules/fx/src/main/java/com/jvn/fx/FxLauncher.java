@@ -57,6 +57,7 @@ import com.jvn.fx.ui.ProjectFontResolver;
 import com.jvn.core.diagnostics.PerformanceHud;
 import com.jvn.fx.diagnostics.FxPerformanceHudOverlay;
 import com.jvn.fx.vn.VnRenderer;
+import com.jvn.fx.vn.VnTopicMapView;
 import com.sun.management.OperatingSystemMXBean;
 
 import javafx.animation.AnimationTimer;
@@ -199,6 +200,8 @@ public class FxLauncher extends Application {
       this.perfHud = createPerfHud();
       root.getChildren().add(this.perfHud);
     }
+    var topicMap = new VnTopicMapView(canvas::requestFocus);
+    root.getChildren().add(topicMap);
     RuntimeAttributionOverlay attribution = new RuntimeAttributionOverlay(() -> {
       if (engine == null || engine.scenes().peek() instanceof SettingsScene) return;
       var current = engine.scenes().peek();
@@ -268,6 +271,7 @@ public class FxLauncher extends Application {
 
     // Input handling
     scene.setOnKeyPressed(e -> {
+      if (topicMap.isActive()) return;
       com.jvn.core.scene.Scene cur = engine != null ? engine.scenes().peek() : null;
       if (cur instanceof VnScene vn && vn.getActiveError() != null) {
         if (e.getCode() == KeyCode.ENTER || e.getCode() == KeyCode.R || e.getCode() == KeyCode.F5) {
@@ -551,6 +555,7 @@ public class FxLauncher extends Application {
         attribution.showSettingsCredit(settingsOpen && !tutorialPreview,
             hasDockSettings || tutorialPreview && (settingsOpen || menuRenderer.usesTutorialMenu(currentScene)));
         syncPhoneOverlay(currentScene);
+        topicMap.sync(currentScene instanceof VnScene vn ? vn : null, runtimeProjectRoot);
         pollProjectHotReload();
         // Use the AnimationTimer's nanosecond clock for the HUD. Engine frame
         // statistics intentionally store millisecond deltas and can therefore

@@ -1,0 +1,28 @@
+scene "Parallax workshop" {
+  entity "paper" {
+    component Sprite2D { image: "assets/tutorial/white.png" x: 0 y: 0 w: 2400 h: 1200 }
+  }
+  entity "distant" {
+    component Panel2D { x: 220 y: 120 w: 140 h: 120 fill: rgb(0.55,0.66,0.67,1) }
+  }
+  entity "near" {
+    component Panel2D { x: 220 y: 290 w: 140 h: 120 fill: rgb(0.73,0.40,0.23,1) }
+  }
+  entity "hint" {
+    component Label2D { text: "Blue: distant / Ochre: near. Enter or Esc: return." x: 30 y: 30 size: 23 color: rgb(0.18,0.12,0.09,1) }
+  }
+  // region parallax
+  timeline {
+    setParallax "paper" { px: 0 py: 0 }
+    setParallax "hint" { px: 0 py: 0 }
+    setParallax "distant" { px: 0.3 py: 1 }
+    setParallax "near" { px: 1 py: 1 }
+    wait 700
+    cameraMove { x: 140 y: 0 dur: 1400 }
+    wait 700
+    cameraMove { x: 0 y: 0 dur: 1400 }
+  }
+  // endregion
+  on key "ENTER" do return
+  on key "ESCAPE" do return
+}

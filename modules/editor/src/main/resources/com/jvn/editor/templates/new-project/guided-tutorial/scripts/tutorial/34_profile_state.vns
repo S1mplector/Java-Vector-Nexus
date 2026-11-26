@@ -1,0 +1,78 @@
+# Persistent profile state
+@scenario tutorial_lesson_34
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/34_profile_state.vns]
+[set tutorial_excerpt record]
+[set ui.dialogueFacet tutorial_code]
+ginger: A regular variable belongs to the current run and its saves. Use a persistent key for a milestone you want to read from a fresh run.
+@label lab
+> Record a tutorial stamp -> record
+> Read the stored stamp -> read_stamp
+> Delete this example stamp -> erase
+> Back to topics -> return_hub
+> Practice exercise -> practice
+> Review question -> check
+@label record
+# region record
+[persistent flag tutorial_lab_stamp]
+# endregion
+ginger: The stamp is saved in this project's profile. Return to the title and start again, then reopen this lesson and read it.
+[jump lab]
+@label read_stamp
+[if persistent.tutorial_lab_stamp]
+ginger: The stamp is present.
+[else]
+ginger: There is no stamp in this profile yet.
+[endif]
+[jump lab]
+@label erase
+[persistent clear tutorial_lab_stamp]
+ginger: The example key is gone. Try reading the stamp again.
+[jump lab]
+@label return_hub
+[clear ui.dialogueFacet]
+[if !tutorial_done_34]
+[flag tutorial_done_34]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_7]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: How do you remove just the example stamp?
+> Reset the whole profile. -> practice_hint
+> Clear the key tutorial_lab_stamp. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Clear the single persistent key and replay Read the stored stamp.
+[jump practice]
+@label practice_result
+ginger: Clear the single persistent key and replay Read the stored stamp.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the interactive lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: Which store can retain a stamp from a fresh run?
+> The persistent profile. -> correct
+> Only the scene's local variables. -> retry
+> Back to topics -> return_hub
+@label retry
+[show ginger guide confused]
+ginger: The persistent store is scoped to the game profile, independent of a save slot.
+[jump check]
+@label correct
+ginger: The persistent store is scoped to the game profile, independent of a save slot.
+> Back to topics -> return_hub
+> Replay example -> start

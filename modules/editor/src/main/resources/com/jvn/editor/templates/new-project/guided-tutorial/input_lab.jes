@@ -1,0 +1,20 @@
+scene "Keyboard actions" {
+  entity "title" {
+    component Label2D { text: "Keyboard actions" x: 38 y: 38 size: 34 bold: true }
+  }
+  entity "help" {
+    component Label2D { text: "C: spawn a circle    B: spawn a box    Enter or Esc: return" x: 38 y: 96 size: 22 }
+  }
+  entity "left" {
+    component Label2D { text: "C" x: 170 y: 155 size: 24 bold: true }
+  }
+  entity "right" {
+    component Label2D { text: "B" x: 430 y: 155 size: 24 bold: true }
+  }
+  // region bindings
+  on key "C" do spawnCircle { x: 178 y: 230 r: 28 }
+  on key "B" do spawnBox { x: 438 y: 230 w: 56 h: 56 }
+  // endregion
+  on key "ENTER" do return
+  on key "ESCAPE" do return
+}

@@ -1,0 +1,4 @@
+Hand-drawn tutorial icons from Simjot.
+Copyright (c) 2024–2025 Ilgaz Mehmetoğlu.
+Source: https://github.com/S1mplector/Simjot/tree/6cc360eb15e235584a1863460abd8b13c1f6c97d/Simjot/src/main/resources/img/icons/original
+Original PNGs reused with the project owner’s permission for the JVN tutorial.

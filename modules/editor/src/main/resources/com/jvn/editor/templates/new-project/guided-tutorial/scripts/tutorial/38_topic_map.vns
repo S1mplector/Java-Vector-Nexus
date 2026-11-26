@@ -1,0 +1,62 @@
+# Choice maps and navigation
+@scenario tutorial_lesson_38
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source config/ui/tutorial-topics.properties]
+[set tutorial_excerpt sample_card]
+[set ui.dialogueFacet tutorial_code]
+ginger: The topic map links branches to choices. Open config/ui/tutorial-topics.properties and find this lesson, then change its title.
+# region link
+# open_topic_map.title=Choice maps and navigation
+# endregion
+ginger: Restart the tutorial, advance past my introduction and select the renamed card on the tree. It still opens this script. Compare the card ID with open_topic_map in tutorial_hub.vns.
+ginger: Drag empty space, scroll to zoom, or choose Fit map. Search by title or category with Ctrl+F or Command+F. Select a match to focus its card, then press Enter to open it. Full screen expands the game window. Press F11 again to return to its previous size.
+> Back to topics -> return_hub
+> Practice exercise -> practice
+> Review question -> check
+@label return_hub
+[clear ui.dialogueFacet]
+[if !tutorial_done_38]
+[flag tutorial_done_38]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_8]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: You renamed the lesson in the map config. What should the next playthrough do?
+> Open a new script with the same name as the new title. -> practice_hint
+> Display the new title and open the same route. -> practice_result
+> Back to topics -> return_hub
+@label practice_hint
+ginger: Title and destination are independent fields. Reopen the map and test the renamed card.
+[jump practice]
+@label practice_result
+ginger: Title and destination are independent fields. Reopen the map and test the renamed card.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the interactive lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: What must a lesson card's target match?
+> A VNS choice target. -> correct
+> The image file name. -> retry
+> Back to topics -> return_hub
+@label retry
+[show ginger guide confused]
+ginger: The map displays the title and icon, and navigates by the choice target.
+[jump check]
+@label correct
+ginger: The map displays the title and icon, and navigates by the choice target.
+> Back to topics -> return_hub
+> Replay example -> start

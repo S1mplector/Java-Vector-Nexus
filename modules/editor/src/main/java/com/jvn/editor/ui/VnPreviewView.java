@@ -56,6 +56,7 @@ import com.jvn.fx.menu.MenuRenderer;
 import com.jvn.fx.menu.MenuTheme;
 import com.jvn.fx.phone.PhoneRenderer;
 import com.jvn.fx.vn.VnRenderer;
+import com.jvn.fx.vn.VnTopicMapView;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -87,6 +88,10 @@ public class VnPreviewView extends StackPane {
       "Digits: Choice selection");
 
   private final Canvas canvas = new Canvas(1200, 740);
+  private final VnTopicMapView topicMap = new VnTopicMapView(() -> {
+    syncStoryboardLineFromScene();
+    requestFocus();
+  });
   private final GraphicsContext gc = canvas.getGraphicsContext2D();
   private final VnRenderer renderer = new VnRenderer(gc);
   private final MenuRenderer menuRenderer = new MenuRenderer(gc, MenuTheme.fromAssets());
@@ -143,7 +148,7 @@ public class VnPreviewView extends StackPane {
   VnPreviewView(AudioFacade audio) {
     this.audio = audio;
     configureStoryboardHud();
-    getChildren().addAll(canvas, phoneRenderer);
+    getChildren().addAll(canvas, phoneRenderer, topicMap);
     StackPane.setAlignment(storyboardHud, Pos.TOP_RIGHT);
     StackPane.setMargin(storyboardHud, new Insets(12));
     setFocusTraversable(true);
@@ -161,7 +166,9 @@ public class VnPreviewView extends StackPane {
     canvas.addEventHandler(MouseEvent.MOUSE_RELEASED, this::handleStoryboardOffsetRelease);
     canvas.setOnScroll(this::handleScroll);
 
-    setOnKeyPressed(this::handleKeyPressed);
+    setOnKeyPressed(event -> {
+      if (!topicMap.isActive()) handleKeyPressed(event);
+    });
 
     Tooltip.install(canvas, previewTooltip);
 
@@ -449,6 +456,7 @@ public class VnPreviewView extends StackPane {
     double canvasW = canvas.getWidth();
     double canvasH = canvas.getHeight();
     if (scene == null) {
+      topicMap.sync(null, projectRoot);
       renderEmptyPreview(canvasW, canvasH);
       VnErrorOverlay visibleError = resolveVisibleError();
       if (visibleError != null) {
@@ -488,6 +496,8 @@ public class VnPreviewView extends StackPane {
       gc.restore();
     }
     syncPhoneOverlay();
+    topicMap.sync(overlayScene == null && resolveVisibleError() == null && !isStoryboardModeActive()
+        ? scene : null, projectRoot);
 
     // Render error overlay on top of everything (in screen space)
     VnErrorOverlay visibleError = resolveVisibleError();
@@ -1846,6 +1856,7 @@ public class VnPreviewView extends StackPane {
   }
 
   public void dispose() {
+    topicMap.sync(null, projectRoot);
     playbackActive = false;
     stopAudio();
     scene = null;

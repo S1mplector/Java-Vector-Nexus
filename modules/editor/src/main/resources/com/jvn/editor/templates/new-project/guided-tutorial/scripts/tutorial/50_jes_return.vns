@@ -1,0 +1,75 @@
+# JES results in VNS
+@scenario tutorial_lesson_50
+@include /definitions/characters.vns
+@label start
+[mode dialogue standard]
+[set ui.dialogueUi project]
+[bg room]
+[stage clear]
+[show ginger beside_code thoughtful]
+[set tutorial_source scripts/tutorial/50_jes_return.vns]
+[set tutorial_excerpt launch]
+[set ui.dialogueFacet tutorial_code]
+ginger: Open the postcard scene and choose a card. JES sends that card's name and stamp count back to this VNS scene.
+@label lab
+> Open the postcard scene -> demo
+> Practice exercise -> practice
+> Review question -> check
+> Back to topics -> return_hub
+@label demo
+# region launch
+[clear card]
+[clear stamp_count]
+[jes push scripts/scenes/return_lab.jes label result]
+# endregion
+@label result
+[set tutorial_source scripts/scenes/return_lab.jes]
+[set tutorial_excerpt returns]
+[if card == "none"]
+ginger: You left without a card. Esc returned a stamp count of ${stamp_count}.
+[else]
+ginger: Your card is from the ${card}. The stamp count came back as ${stamp_count}.
+[endif]
+[jump lab]
+@label return_hub
+[clear ui.dialogueFacet]
+[clear card]
+[clear stamp_count]
+[if !tutorial_done_50]
+[flag tutorial_done_50]
+[inc tutorial_count]
+[endif]
+[stage clear]
+[goto TutorialHub:topics_page_10]
+[end]
+
+@label practice
+[show ginger beside_code thoughtful]
+[set ui.dialogueFacet tutorial_code]
+ginger: Give the waterfront postcard three stamps. Which file owns the value that VNS receives?
+> The JES scene that returns stamp_count. -> practice_result
+> The VNS dialogue that displays stamp_count. -> practice_hint
+> Back to topics -> return_hub
+@label practice_hint
+ginger: VNS substitutes the value from the return action. Find the binding for key 2.
+[jump practice]
+@label practice_result
+ginger: Update key 2's return block, then pick Waterfront again to check the result.
+[clear ui.dialogueFacet]
+> Review question -> check
+> Try the lab again -> start
+> Back to topics -> return_hub
+@label check
+[clear ui.dialogueFacet]
+[show ginger guide normal]
+ginger: Where does VNS resume after the postcard scene returns?
+> At the result label named in the push command. -> correct
+> At the first label of the tutorial hub. -> retry
+> Back to topics -> return_hub
+@label retry
+ginger: The push command names a return label in the calling scene.
+[jump check]
+@label correct
+ginger: Yes. The return action closes JES, copies its payload into VNS variables, and resumes the lesson at result.
+> Replay example -> start
+> Back to topics -> return_hub
